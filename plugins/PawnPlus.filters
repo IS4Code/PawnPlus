@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="lib">
+      <UniqueIdentifier>{3C8C880B-A895-887C-3111-9F7C9D19947C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\sampgdk">
+      <UniqueIdentifier>{895362e9-8379-4bbb-bf26-8bcc1277b64c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\sdk">
+      <UniqueIdentifier>{cf2fd8c7-4b12-4411-bef1-d247294dc722}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\subhook">
+      <UniqueIdentifier>{6d8ef65d-493d-4e62-9d9e-e1bc12c71109}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\raknet">
+      <UniqueIdentifier>{b0131f12-1adf-47e7-80d6-9f9cf545694b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Pools">
+      <UniqueIdentifier>{851fbdac-9464-4006-8405-be291cd681d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Hooks">
+      <UniqueIdentifier>{8b47fa9b-b09f-4a2b-b153-fb1c290c91bf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\amxfunctions.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CCallbackManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CModelSizes.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CPlayerData.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CServer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\RPCs.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scripting.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Utils.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\sdk\amxplugin.cpp">
+      <Filter>lib\sdk</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\subhook\subhook.c">
+      <Filter>lib\subhook</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\raknet\BitStream.cpp">
+      <Filter>lib\raknet</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CPickupPool.cpp">
+      <Filter>src\Pools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CGangZonePool.cpp">
+      <Filter>src\Pools</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Addresses.cpp">
+      <Filter>src\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Hooks.cpp">
+      <Filter>src\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Functions.cpp">
+      <Filter>src\Hooks</Filter>
+    </ClCompile>
+    <ClCompile Include="lib\sampgdk\sampgdk.c">
+      <Filter>lib\sampgdk</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\amxfunctions.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CCallbackManager.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CModelSizes.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CPlayerData.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CVector.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CServer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\main.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RPCs.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Scripting.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Structs.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Utils.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\subhook\subhook.h">
+      <Filter>lib\subhook</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\raknet\BitStream.h">
+      <Filter>lib\raknet</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CPickupPool.h">
+      <Filter>src\Pools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\CGangZonePool.h">
+      <Filter>src\Pools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Addresses.h">
+      <Filter>src\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Hooks.h">
+      <Filter>src\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="src\Functions.h">
+      <Filter>src\Hooks</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sampgdk\sampgdk.h">
+      <Filter>lib\sampgdk</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PawnPlus.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PawnPlus.rc" />
+  </ItemGroup>
+</Project>
