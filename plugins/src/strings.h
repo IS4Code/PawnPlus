@@ -9,8 +9,8 @@ namespace Strings
 	typedef std::basic_string<cell> cell_string;
 	extern cell NullValue1[1];
 	extern cell NullValue2[2];
-	cell_string *Create(const cell *addr, bool temp, bool wide);
-	cell_string *Create(const cell *addr, bool temp, size_t length, bool wide);
+	cell_string *Create(const cell *addr, bool temp, bool truncate, bool fixnulls);
+	cell_string *Create(const cell *addr, bool temp, size_t length, bool truncate, bool fixnulls);
 	cell_string *Add(const std::string &str, bool temp);
 	cell_string *Add(cell_string &&str, bool temp);
 	bool Free(const cell_string *str);

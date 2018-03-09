@@ -8,7 +8,8 @@ namespace Natives
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
-		auto str = Strings::Create(addr, true, static_cast<bool>(params[2]));
+		int flags = params[2];
+		auto str = Strings::Create(addr, true, flags & 1, flags & 2);
 		return reinterpret_cast<cell>(str);
 	}
 
@@ -17,7 +18,8 @@ namespace Natives
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
-		auto str = Strings::Create(addr, true, static_cast<size_t>(params[2]), static_cast<bool>(params[3]));
+		int flags = params[2];
+		auto str = Strings::Create(addr, true, static_cast<size_t>(params[2]), flags & 1, flags & 2);
 		return reinterpret_cast<cell>(str);
 	}
 
@@ -44,7 +46,7 @@ namespace Natives
 		return params[1];
 	}
 
-	// native str_free(&StringTag:str);
+	// native bool:str_free(&StringTag:str);
 	static cell AMX_NATIVE_CALL str_free(AMX *amx, cell *params)
 	{
 		cell *addr;
@@ -122,14 +124,19 @@ namespace Natives
 			return 0;
 		}
 
-		cell len = params[5] - params[4] + 1;
-		if(len > params[3])
+		cell len = params[5] - params[4];
+		if(len >= params[3])
 		{
-			len = params[3];
+			len = params[3] - 1;
 		}
 
-		std::memcpy(addr, &(*str)[0], len * sizeof(cell));
-		return len - 1;
+		if(len >= 0)
+		{
+			std::memcpy(addr, &(*str)[0], len * sizeof(cell));
+			addr[len] = 0;
+			return len;
+		}
+		return 0;
 	}
 
 	// native str_getc(StringTag:str, pos);

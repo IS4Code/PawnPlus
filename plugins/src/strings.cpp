@@ -24,7 +24,7 @@ bool FindPtrInList(const list_type &list, const void *ptr);
 cell_string *FindStrInList(const list_type &list, const cell *str);
 bool FreeInList(list_type &list, const cell_string *str);
 
-cell_string *Strings::Create(const cell *addr, bool temp, bool wide)
+cell_string *Strings::Create(const cell *addr, bool temp, bool truncate, bool fixnulls)
 {
 	if(!addr[0])
 	{
@@ -65,13 +65,13 @@ cell_string *Strings::Create(const cell *addr, bool temp, bool wide)
 		}while (*c);
 
 		cell_string *str = new cell_string(addr, pos);
-		if(!wide)
+		if(truncate)
 		{
 			for(size_t i = 0; i < pos; i++)
 			{
 				cell &c = (*str)[i];
 				c &= 0xFF;
-				if(c == 0) c = 0x00FFFF00;
+				if(fixnulls && c == 0) c = 0x00FFFF00;
 			}
 		}
 		if(temp)
@@ -85,15 +85,22 @@ cell_string *Strings::Create(const cell *addr, bool temp, bool wide)
 	}
 }
 
-cell_string *Strings::Create(const cell *addr, bool temp, size_t length, bool wide)
+cell_string *Strings::Create(const cell *addr, bool temp, size_t length, bool truncate, bool fixnulls)
 {
 	cell_string *str = new cell_string(addr, length);
-	if(!wide)
+	if(truncate)
 	{
 		for(size_t i = 0; i < length; i++)
 		{
 			cell &c = (*str)[i];
 			c &= 0xFF;
+			if(fixnulls && c == 0) c = 0x00FFFF00;
+		}
+	}else if(fixnulls)
+	{
+		for(size_t i = 0; i < length; i++)
+		{
+			cell &c = (*str)[i];
 			if(c == 0) c = 0x00FFFF00;
 		}
 	}

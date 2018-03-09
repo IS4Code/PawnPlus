@@ -1,4 +1,4 @@
-/** PawnPlus by IllidanS4 **/
+/** PawnPlus v0.1 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 /* Configuration */
@@ -13,6 +13,11 @@ native pawn_unregister_callback(callback:id);
 
 /* Tasks and async */
 
+#if !defined PP_NO_ALIASES
+#define await task_await
+#define yield task_yield
+#endif
+
 native task:wait_ticks(ticks);
 native task:wait_ms(interval);
 native task:task_new();
@@ -20,11 +25,8 @@ native task_set_result(task:task, {_,Float}:result);
 native task_get_result(task:task);
 native task:task_ticks(ticks);
 native task:task_ms(interval);
-native task:task_await(task:task);
+native task_await(task:task);
 native task_yield({_,Float}:value);
-
-#define await task_await
-#define yield task_yield
 
 /* Strings */
 
@@ -33,13 +35,27 @@ native task_yield({_,Float}:value);
 #define STRING_NULL (GlobalString:0)
 #define INVALID_CHAR (0xFFFFFF00)
 
-native String:str_new(const str[], bool:wide=true);
-native String:str_new_arr(const arr[], size=sizeof(arr), bool:wide=true);
+#if !defined PP_NO_ALIASES
+#define @ str_new
+#endif
+
+enum
+{
+    str_preserve = 0,
+    str_truncate = 1,
+    str_no_nulls = 2
+}
+
+native String:str_new(const str[], mode=str_preserve);
+native String:str_new_arr(const arr[], size=sizeof(arr), mode=str_preserve);
 native AmxString:str_addr(StringTag:str);
 native GlobalString:str_to_global(StringTag:str);
 native String:str_to_local(StringTag:str);
-native str_free(&StringTag:str);
+native bool:str_free(&StringTag:str);
 native bool:str_is_valid(StringTag:str);
+/*
+native String:str_new_nulls(const str[], mode=str_preserve, size=sizeof(str));
+*/
 
 native str_len(StringTag:str);
 native str_get(StringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
@@ -53,6 +69,9 @@ native String:str_float(Float:val);
 native String:str_cat(StringTag:str1, StringTag:str2);
 native String:str_sub(StringTag:str, start=0, end=cellmax);
 native String:str_clone(StringTag:str);
+/*
+native String:str_val({_,StringTags,Float}:val, tag=tagof(val));
+*/
 
 native String:str_set(StringTag:target, StringTag:other);
 native String:str_append(StringTag:target, StringTag:other);
@@ -71,11 +90,50 @@ stock String:str_val({_,StringTags,Float}:val, tag=tagof(val))
         return str_int(_:val);
     }else if(tag == tag_string || tag == tag_global_string)
     {
-        return String:val;
+        return str_clone(String:val);
     }else{
         return STRING_NULL;
     }
 }
+
+stock String:str_new_nulls(const str[], mode=str_preserve, size=sizeof(str))
+{
+    return str_new_arr(str, size-1, mode);
+}
+
+#define PP_PROHIBIT_UNARY_OPERATORS(%0) \
+    forward operator-(%0:arg); \
+    forward %0:operator=(_:arg); \
+    forward %0:operator=(Float:arg)
+
+PP_PROHIBIT_UNARY_OPERATORS(String);
+PP_PROHIBIT_UNARY_OPERATORS(GlobalString);
+PP_PROHIBIT_UNARY_OPERATORS(AmxString);
+
+forward String:operator=(AmxString:arg);
+forward GlobalString:operator=(AmxString:arg);
+
+#undef PP_PROHIBIT_UNARY_OPERATORS
+    
+#define PP_PROHIBIT_BINARY_OPEARTORS(%0,%1) \
+    forward operator+(%0:arg1,%1:arg2); \
+    forward operator-(%0:arg1,%1:arg2); \
+    forward operator*(%0:arg1,%1:arg2); \
+    forward operator/(%0:arg1,%1:arg2); \
+    forward operator%(%0:arg1,%1:arg2)
+    
+#define PP_PROHIBIT_BINARY_OPEARTORS2(%0) \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,_); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,Float); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,String); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,GlobalString); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxString)
+
+PP_PROHIBIT_BINARY_OPEARTORS2(String);
+PP_PROHIBIT_BINARY_OPEARTORS2(GlobalString);
+PP_PROHIBIT_BINARY_OPEARTORS2(AmxString);
+
+#undef PP_PROHIBIT_BINARY_OPEARTORS
 
 stock GlobalString:operator=(String:arg) return str_to_global(arg);
 stock String:operator=(GlobalString:arg) return String:arg;
@@ -90,13 +148,3 @@ stock bool:operator==(String:arg1, String:arg2) return !str_cmp(arg1, arg2);
 stock bool:operator==(String:arg1, GlobalString:arg2) return !str_cmp(arg1, arg2);
 stock bool:operator==(GlobalString:arg1, String:arg2) return !str_cmp(arg1, arg2);
 stock bool:operator==(GlobalString:arg1, GlobalString:arg2) return !str_cmp(arg1, arg2);
-
-#define PP_PROHIBIT_OPERATORS(%0) \
-    forward %0:operator=(_:arg); \
-    forward %0:operator=(Float:arg)
-
-PP_PROHIBIT_OPERATORS(String);
-PP_PROHIBIT_OPERATORS(GlobalString);
-PP_PROHIBIT_OPERATORS(AmxString);
-
-#undef PP_PROHIBIT_OPERATORS
