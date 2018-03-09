@@ -80,7 +80,7 @@
       <OmitFramePointers>true</OmitFramePointers>
       <StructMemberAlignment>1Byte</StructMemberAlignment>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>BOOST_ALL_NO_LIB;BOOST_CHRONO_HEADER_ONLY;_CRT_SECURE_NO_WARNINGS;NDEBUG;SAMPGDK_AMALGAMATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -111,6 +111,7 @@
       <ProgramDataBaseFileName>$(OutDir)PawnPlus.pdb</ProgramDataBaseFileName>
       <Optimization>Disabled</Optimization>
       <StructMemberAlignment>1Byte</StructMemberAlignment>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>BOOST_ALL_NO_LIB;BOOST_CHRONO_HEADER_ONLY;_CRT_SECURE_NO_WARNINGS;SAMPGDK_AMALGAMATION;%(PreprocessorDefinitions)</PreprocessorDefinitions>

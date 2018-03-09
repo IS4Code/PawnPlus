@@ -6,6 +6,7 @@
 #include "sdk/amx/amx.h"
 #include <functional>
 #include <stack>
+#include <unordered_map>
 
 struct AMX_CONTEXT
 {

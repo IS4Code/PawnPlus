@@ -42,9 +42,11 @@ cell_string *Strings::Create(const cell *addr, bool temp, bool truncate, bool fi
 		cell_string *str;
 		if(temp)
 		{
-			str = tmp_string_list.emplace_back(new cell_string(pos, 0)).get();
+			tmp_string_list.emplace_back(new cell_string(pos, 0));
+			str = tmp_string_list[tmp_string_list.size() - 1].get();
 		}else{
-			str = string_list.emplace_back(new cell_string(pos, 0)).get();
+			string_list.emplace_back(new cell_string(pos, 0));
+			str = string_list[string_list.size() - 1].get();
 		}
 
 		pos = -1;

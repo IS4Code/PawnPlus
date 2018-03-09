@@ -15,8 +15,8 @@ std::vector<std::pair<std::chrono::system_clock::time_point, task_id>> timerTask
 Task &TaskPool::CreateNew()
 {
 	size_t id = pool.size();
-	Task &task = pool.emplace_back(id);
-	return task;
+	pool.emplace_back(id);
+	return pool[id];
 }
 
 Task *TaskPool::Get(task_id id)
