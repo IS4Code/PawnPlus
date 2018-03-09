@@ -179,7 +179,7 @@ namespace Hooks
 template <class Func>
 void RegisterAmxHook(subhook_t &hook, int index, Func *fnptr)
 {
-	hook = subhook_new(((Func**)pAMXFunctions)[index], fnptr, {});
+	hook = subhook_new(reinterpret_cast<void*>(((Func**)pAMXFunctions)[index]), reinterpret_cast<void*>(fnptr), {});
 	subhook_install(hook);
 }
 

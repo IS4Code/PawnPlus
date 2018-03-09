@@ -1,4 +1,5 @@
 #include "reset.h"
+#include "fixes/linux.h"
 #include <cstring>
 
 typedef void(*logprintf_t)(char* format, ...);

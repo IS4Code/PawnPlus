@@ -2,6 +2,7 @@
 #define EVENTS_H_INCLUDED
 
 #include "sdk/amx/amx.h"
+#include <stddef.h>
 #include <string>
 #include <vector>
 

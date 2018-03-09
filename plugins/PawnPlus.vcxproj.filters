@@ -60,6 +60,9 @@
     <Filter Include="src\natives">
       <UniqueIdentifier>{71c1ee38-d627-4bb5-be86-326015713a39}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\fixes">
+      <UniqueIdentifier>{a4f5795c-e570-4d20-94c0-c5b807b429a6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lib\subhook\subhook.h">
@@ -103,6 +106,9 @@
     </ClInclude>
     <ClInclude Include="src\events.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\fixes\linux.h">
+      <Filter>src\fixes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

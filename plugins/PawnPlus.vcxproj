@@ -163,6 +163,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClInclude Include="src\context.h" />
     <ClInclude Include="src\events.h" />
+    <ClInclude Include="src\fixes\linux.h" />
     <ClInclude Include="src\hooks.h" />
     <ClInclude Include="src\natives.h" />
     <ClInclude Include="src\reset.h" />

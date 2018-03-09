@@ -2,6 +2,7 @@
 #include "../hooks.h"
 #include "../events.h"
 #include <memory>
+#include <string.h>
 
 typedef void(*logprintf_t)(char* format, ...);
 extern logprintf_t logprintf;

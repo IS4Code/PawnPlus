@@ -1,20 +1,25 @@
-GPP = g++ -m32 -Ilib -fno-stack-protector
-GCC = gcc -m32 -Ilib -fno-stack-protector
-OUTFILE = "./PawnPlus.so"
+GPP = g++ -m32 -std=c++11 -Ilib -fno-stack-protector -nodefaultlibs
+GCC = gcc -m32 -Ilib -fno-stack-protector -nodefaultlibs
+LINK = $(GCC)
+PP_OUTFILE = "./PawnPlus.so"
 
 COMPILE_FLAGS = -c -O3 -fpack-struct=1 -fPIC -w -DLINUX
 
-Async = -D PawnPlus $(COMPILE_FLAGS)
+PawnPlus = -D PawnPlus $(COMPILE_FLAGS)
 
 all: PawnPlus
 
 clean:
 	-rm -f *~ *.o *.so
+  
+static: GPP = g++ -m32 -std=c++11 -Ilib -fno-stack-protector -static-libgcc -static-libstdc++
+static: GCC = gcc -m32 -Ilib -fno-stack-protector -static-libgcc -static-libstdc++
+static: LINK = $(GPP)
+static: all
 
 PawnPlus: clean
 	$(GPP) $(PawnPlus) ./lib/sdk/*.cpp
-	$(GPP) $(PawnPlus) ./lib/subhook/*.cpp
+	$(GCC) $(PawnPlus) ./lib/subhook/*.c
 	$(GPP) $(PawnPlus) ./src/natives/*.cpp
-	$(GPP) $(PawnPlus) ./src/utils/*.cpp
 	$(GPP) $(PawnPlus) ./src/*.cpp
-	$(GCC) -nodefaultlibs -fshort-wchar -shared -o $(OUTFILE) *.o
+	$(LINK) -fshort-wchar -shared -o $(PP_OUTFILE) *.o

@@ -1,5 +1,6 @@
 #include "../natives.h"
 #include "../strings.h"
+#include <cstring>
 
 namespace Natives
 {
@@ -217,7 +218,7 @@ namespace Natives
 	// native String:str_sub(StringTag:str, start=0, end=cellmax);
 	static cell AMX_NATIVE_CALL str_sub(AMX *amx, cell *params)
 	{
-		if(params[1] == 0) return reinterpret_cast<cell>(Strings::Add({}, true));
+		if(params[1] == 0) return reinterpret_cast<cell>(Strings::Add(Strings::cell_string(), true));
 
 		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
 		if(Strings::ClampRange(*str, params[2], params[3]))
@@ -268,7 +269,7 @@ namespace Natives
 	// native String:str_clone(StringTag:str);
 	static cell AMX_NATIVE_CALL str_clone(AMX *amx, cell *params)
 	{
-		if(params[1] == 0) return reinterpret_cast<cell>(Strings::Add({}, true));
+		if(params[1] == 0) return reinterpret_cast<cell>(Strings::Add(Strings::cell_string(), true));
 
 		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
 		auto str2 = *str;

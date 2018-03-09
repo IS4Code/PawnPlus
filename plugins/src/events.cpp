@@ -3,6 +3,7 @@
 #include "context.h"
 
 #include <unordered_map>
+#include <string.h>
 
 typedef void(*logprintf_t)(char* format, ...);
 extern logprintf_t logprintf;
