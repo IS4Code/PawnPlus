@@ -3,7 +3,7 @@ PawnPlus v0.1
 
 _PawnPlus_ extends the possibilities of the Pawn scripting language with new constructs, data types, and programming techniques.
 
-With this plugin, you can used techniques like asynchronous programming, task-based programming, lightweight form of delegates, and dynamic data objects to make programming in Pawn easier, simpler, and more efficient.
+With this plugin, you can use techniques like asynchronous programming, task-based programming, lightweight form of delegates, and dynamic data objects to make programming in Pawn easier, simpler, and more efficient.
 
 ## Documentation
 See the [wiki](//github.com/IllidanS4/PawnPlus/wiki) for documentation and tutorials on how to use this plugin.
