@@ -1,4 +1,4 @@
-/** PawnPlus v0.1 by IllidanS4 **/
+/** PawnPlus v0.1.1 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 /* Configuration */
@@ -37,6 +37,9 @@ native task_yield({_,Float}:value);
 
 #if !defined PP_NO_ALIASES
 #define @ str_new
+#if defined PP_MORE_ALIASES
+#define @@ str_val
+#endif
 #endif
 
 enum
@@ -92,7 +95,7 @@ stock String:str_val({_,StringTags,Float}:val, tag=tagof(val))
     {
         return str_clone(String:val);
     }else{
-        return STRING_NULL;
+        return String:STRING_NULL;
     }
 }
 
@@ -148,3 +151,21 @@ stock bool:operator==(String:arg1, String:arg2) return !str_cmp(arg1, arg2);
 stock bool:operator==(String:arg1, GlobalString:arg2) return !str_cmp(arg1, arg2);
 stock bool:operator==(GlobalString:arg1, String:arg2) return !str_cmp(arg1, arg2);
 stock bool:operator==(GlobalString:arg1, GlobalString:arg2) return !str_cmp(arg1, arg2);
+
+stock String:operator%(String:arg1, String:arg2) return str_cat(arg1, arg2);
+stock String:operator%(GlobalString:arg1, String:arg2) return str_cat(arg1, arg2);
+stock String:operator%(GlobalString:arg1, GlobalString:arg2) return str_cat(arg1, arg2);
+#if !defined PP_NO_AUTO_STRINGS
+stock String:operator=(arg) return str_int(arg);
+stock String:operator=(Float:arg) return str_float(arg);
+stock GlobalString:operator=(arg) return str_to_global(str_int(arg));
+stock GlobalString:operator=(Float:arg) return str_to_global(str_float(arg));
+stock String:operator%(String:arg1, arg2) return str_cat(arg1, str_int(arg2));
+stock String:operator%(GlobalString:arg1, arg2) return str_cat(arg1, str_int(arg2));
+stock String:operator%(arg1, String:arg2) return str_cat(str_int(arg1), arg2);
+stock String:operator%(arg1, GlobalString:arg2) return str_cat(str_int(arg1), arg2);
+stock String:operator%(String:arg1, Float:arg2) return str_cat(arg1, str_float(arg2));
+stock String:operator%(GlobalString:arg1, Float:arg2) return str_cat(arg1, str_float(arg2));
+stock String:operator%(Float:arg1, String:arg2) return str_cat(str_float(arg1), arg2);
+stock String:operator%(Float:arg1, GlobalString:arg2) return str_cat(str_float(arg1), arg2);
+#endif
