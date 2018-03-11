@@ -99,7 +99,7 @@ namespace Hooks
 			if(ctx.awaiting_task != -1)
 			{
 				TaskPool::Get(ctx.awaiting_task)->Register(AMX_RESET(amx));
-				*retval = ctx.result;
+				if(retval != nullptr) *retval = ctx.result;
 				amx->error = ret = AMX_ERR_NONE;
 			}
 		}
