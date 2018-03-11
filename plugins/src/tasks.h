@@ -14,8 +14,8 @@ typedef size_t task_id;
 class Task
 {
 	const task_id id;
-	cell result;
-	bool completed;
+	cell result = 0;
+	bool completed = false;
 	std::vector<AMX_RESET> waiting;
 public:
 	Task(task_id id) : id(id)
