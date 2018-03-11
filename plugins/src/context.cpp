@@ -54,7 +54,7 @@ void Context::Remove(AMX *amx)
 int Context::Push(AMX *amx)
 {
 	globalExecLevel++;
-	amx_infos.at(amx).contexts.emplace();
+	amx_infos[amx].contexts.emplace();
 
 	return globalExecLevel;
 }
