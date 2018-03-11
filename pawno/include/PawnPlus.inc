@@ -1,4 +1,4 @@
-/** PawnPlus v0.1.1 by IllidanS4 **/
+/** PawnPlus v0.1.2 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 /* Configuration */
@@ -14,8 +14,8 @@ native pawn_unregister_callback(callback:id);
 /* Tasks and async */
 
 #if !defined PP_NO_ALIASES
-#define await task_await
-#define yield task_yield
+#define await%9\32;%0; task_await(%0);
+#define yield%9\32;%0; task_yield(%0);
 #endif
 
 native task:wait_ticks(ticks);
@@ -138,26 +138,26 @@ PP_PROHIBIT_BINARY_OPEARTORS2(AmxString);
 
 #undef PP_PROHIBIT_BINARY_OPEARTORS
 
-stock GlobalString:operator=(String:arg) return str_to_global(arg);
+native GlobalString:operator=(String:arg) = str_to_global;
 stock String:operator=(GlobalString:arg) return String:arg;
-stock AmxString:operator=(String:arg) return str_addr(arg);
-stock AmxString:operator=(GlobalString:arg) return str_addr(arg);
+native AmxString:operator=(String:arg) = str_addr;
+native AmxString:operator=(GlobalString:arg) = str_addr;
 
-stock String:operator+(String:arg1, String:arg2) return str_cat(arg1, arg2);
-stock String:operator+(String:arg1, GlobalString:arg2) return str_cat(arg1, arg2);
-stock String:operator+(GlobalString:arg1, String:arg2) return str_cat(arg1, arg2);
-stock String:operator+(GlobalString:arg1, GlobalString:arg2) return str_cat(arg1, arg2);
+native String:operator+(String:arg1, String:arg2) = str_cat;
+native String:operator+(String:arg1, GlobalString:arg2) = str_cat;
+native String:operator+(GlobalString:arg1, String:arg2) = str_cat;
+native String:operator+(GlobalString:arg1, GlobalString:arg2) = str_cat;
 stock bool:operator==(String:arg1, String:arg2) return !str_cmp(arg1, arg2);
 stock bool:operator==(String:arg1, GlobalString:arg2) return !str_cmp(arg1, arg2);
 stock bool:operator==(GlobalString:arg1, String:arg2) return !str_cmp(arg1, arg2);
 stock bool:operator==(GlobalString:arg1, GlobalString:arg2) return !str_cmp(arg1, arg2);
 
-stock String:operator%(String:arg1, String:arg2) return str_cat(arg1, arg2);
-stock String:operator%(GlobalString:arg1, String:arg2) return str_cat(arg1, arg2);
-stock String:operator%(GlobalString:arg1, GlobalString:arg2) return str_cat(arg1, arg2);
+native String:operator%(String:arg1, String:arg2) = str_cat;
+native String:operator%(GlobalString:arg1, String:arg2) = str_cat;
+native String:operator%(GlobalString:arg1, GlobalString:arg2) = str_cat;
 #if !defined PP_NO_AUTO_STRINGS
-stock String:operator=(arg) return str_int(arg);
-stock String:operator=(Float:arg) return str_float(arg);
+native String:operator=(arg) = str_int;
+native String:operator=(Float:arg) = str_float;
 stock GlobalString:operator=(arg) return str_to_global(str_int(arg));
 stock GlobalString:operator=(Float:arg) return str_to_global(str_float(arg));
 stock String:operator%(String:arg1, arg2) return str_cat(arg1, str_int(arg2));
