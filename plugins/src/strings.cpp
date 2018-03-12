@@ -26,9 +26,16 @@ bool FreeInList(list_type &list, const cell_string *str);
 
 cell_string *Strings::Create(const cell *addr, bool temp, bool truncate, bool fixnulls)
 {
-	if(!addr[0])
+	if(addr == nullptr || !addr[0])
 	{
-		return nullptr;
+		cell_string *str = new cell_string();
+		if(temp)
+		{
+			tmp_string_list.emplace_back(str);
+		} else {
+			string_list.emplace_back(str);
+		}
+		return str;
 	}else if(addr[0] & 0xFF000000)
 	{
 		const char *c;
