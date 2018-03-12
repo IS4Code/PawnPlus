@@ -19,6 +19,7 @@ namespace Strings
 	void SetCache(const cell_string *str);
 	const cell_string *FindCache(const cell *str);
 	cell GetAddress(AMX *amx, const cell_string *str);
+	cell GetBufferAddress(AMX *amx, const cell_string *str);
 	bool IsNullAddress(AMX *amx, cell addr);
 	bool MoveToGlobal(const cell_string *str);
 	bool MoveToLocal(const cell_string *str);

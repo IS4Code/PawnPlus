@@ -31,6 +31,13 @@ namespace Natives
 		return Strings::GetAddress(amx, str);
 	}
 
+	// native AmxStringBuffer:str_buf_addr(StringTag:str);
+	static cell AMX_NATIVE_CALL str_buf_addr(AMX *amx, cell *params)
+	{
+		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		return Strings::GetBufferAddress(amx, str);
+	}
+
 	// native GlobalString:str_to_global(StringTag:str);
 	static cell AMX_NATIVE_CALL str_to_global(AMX *amx, cell *params)
 	{
@@ -292,6 +299,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_new),
 	AMX_DECLARE_NATIVE(str_new_arr),
 	AMX_DECLARE_NATIVE(str_addr),
+	AMX_DECLARE_NATIVE(str_buf_addr),
 	AMX_DECLARE_NATIVE(str_to_global),
 	AMX_DECLARE_NATIVE(str_free),
 	AMX_DECLARE_NATIVE(str_is_valid),

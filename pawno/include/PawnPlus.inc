@@ -52,6 +52,7 @@ enum
 native String:str_new(const str[], mode=str_preserve);
 native String:str_new_arr(const arr[], size=sizeof(arr), mode=str_preserve);
 native AmxString:str_addr(StringTag:str);
+native AmxStringBuffer:str_buf_addr(StringTag:str);
 native GlobalString:str_to_global(StringTag:str);
 native String:str_to_local(StringTag:str);
 native bool:str_free(&StringTag:str);
@@ -112,9 +113,12 @@ stock String:str_new_nulls(const str[], mode=str_preserve, size=sizeof(str))
 PP_PROHIBIT_UNARY_OPERATORS(String);
 PP_PROHIBIT_UNARY_OPERATORS(GlobalString);
 PP_PROHIBIT_UNARY_OPERATORS(AmxString);
+PP_PROHIBIT_UNARY_OPERATORS(AmxStringBuffer);
 
 forward String:operator=(AmxString:arg);
 forward GlobalString:operator=(AmxString:arg);
+forward String:operator=(AmxStringBuffer:arg);
+forward GlobalString:operator=(AmxStringBuffer:arg);
 
 #undef PP_PROHIBIT_UNARY_OPERATORS
     
@@ -130,11 +134,13 @@ forward GlobalString:operator=(AmxString:arg);
     PP_PROHIBIT_BINARY_OPEARTORS(%0,Float); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,String); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,GlobalString); \
-    PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxString)
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxString); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxStringBuffer)
 
 PP_PROHIBIT_BINARY_OPEARTORS2(String);
 PP_PROHIBIT_BINARY_OPEARTORS2(GlobalString);
 PP_PROHIBIT_BINARY_OPEARTORS2(AmxString);
+PP_PROHIBIT_BINARY_OPEARTORS2(AmxStringBuffer);
 
 #undef PP_PROHIBIT_BINARY_OPEARTORS
 
@@ -142,6 +148,10 @@ native GlobalString:operator=(String:arg) = str_to_global;
 stock String:operator=(GlobalString:arg) return String:arg;
 native AmxString:operator=(String:arg) = str_addr;
 native AmxString:operator=(GlobalString:arg) = str_addr;
+native AmxStringBuffer:operator=(String:arg) = str_buf_addr;
+native AmxStringBuffer:operator=(GlobalString:arg) = str_buf_addr;
+
+stock AmxStringBuffer:operator+(AmxStringBuffer:arg1, arg2) return AmxStringBuffer:(_:arg1+arg2);
 
 native String:operator+(String:arg1, String:arg2) = str_cat;
 native String:operator+(String:arg1, GlobalString:arg2) = str_cat;

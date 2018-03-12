@@ -168,6 +168,12 @@ cell Strings::GetAddress(AMX *amx, const cell_string *str)
 	return reinterpret_cast<cell>(str) - reinterpret_cast<cell>(data);
 }
 
+cell Strings::GetBufferAddress(AMX *amx, const cell_string *str)
+{
+	unsigned char *data = (amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat);
+	return reinterpret_cast<cell>(&(*str)[0]) - reinterpret_cast<cell>(data);
+}
+
 bool Strings::IsNullAddress(AMX *amx, cell addr)
 {
 	unsigned char *data = (amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat);
