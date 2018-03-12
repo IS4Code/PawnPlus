@@ -139,6 +139,7 @@
     <ClCompile Include="src\natives\pawn.cpp" />
     <ClCompile Include="src\natives\str.cpp" />
     <ClCompile Include="src\natives\task.cpp" />
+    <ClCompile Include="src\object_pool.cpp" />
     <ClCompile Include="src\reset.cpp" />
     <ClCompile Include="src\strings.cpp" />
     <ClCompile Include="src\tasks.cpp" />
@@ -166,6 +167,7 @@
     <ClInclude Include="src\fixes\linux.h" />
     <ClInclude Include="src\hooks.h" />
     <ClInclude Include="src\natives.h" />
+    <ClInclude Include="src\object_pool.h" />
     <ClInclude Include="src\reset.h" />
     <ClInclude Include="src\strings.h" />
     <ClInclude Include="src\tasks.h" />

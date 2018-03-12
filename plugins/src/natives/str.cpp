@@ -10,7 +10,7 @@ namespace Natives
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
 		int flags = params[2];
-		auto str = Strings::Create(addr, true, flags & 1, flags & 2);
+		auto str = strings::create(addr, true, flags & 1, flags & 2);
 		return reinterpret_cast<cell>(str);
 	}
 
@@ -20,37 +20,37 @@ namespace Natives
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
 		int flags = params[2];
-		auto str = Strings::Create(addr, true, static_cast<size_t>(params[2]), flags & 1, flags & 2);
+		auto str = strings::create(addr, true, static_cast<size_t>(params[2]), flags & 1, flags & 2);
 		return reinterpret_cast<cell>(str);
 	}
 
 	// native AmxString:str_addr(StringTag:str);
 	static cell AMX_NATIVE_CALL str_addr(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
-		return Strings::GetAddress(amx, str);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
+		return strings::pool.get_address(amx, str);
 	}
 
 	// native AmxStringBuffer:str_buf_addr(StringTag:str);
 	static cell AMX_NATIVE_CALL str_buf_addr(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
-		return Strings::GetBufferAddress(amx, str);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
+		return strings::pool.get_inner_address(amx, str);
 	}
 
 	// native GlobalString:str_to_global(StringTag:str);
 	static cell AMX_NATIVE_CALL str_to_global(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
-		Strings::MoveToGlobal(str);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
+		strings::pool.move_to_global(str);
 		return params[1];
 	}
 
 	// native String:str_to_local(StringTag:str);
 	static cell AMX_NATIVE_CALL str_to_local(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
-		Strings::MoveToLocal(str);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
+		strings::pool.move_to_local(str);
 		return params[1];
 	}
 
@@ -59,7 +59,7 @@ namespace Natives
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
-		bool ok = Strings::Free(reinterpret_cast<Strings::cell_string*>(*addr));
+		bool ok = strings::pool.free(reinterpret_cast<strings::cell_string*>(*addr));
 		*addr = 0;
 		return static_cast<cell>(ok);
 	}
@@ -67,8 +67,8 @@ namespace Natives
 	// native bool:str_is_valid(StringTag:str);
 	static cell AMX_NATIVE_CALL str_is_valid(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
-		return static_cast<cell>(Strings::IsValid(str));
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
+		return static_cast<cell>(strings::pool.is_valid(str));
 	}
 
 
@@ -77,29 +77,29 @@ namespace Natives
 	{
 		if(params[1] == 0)
 		{
-			auto str = *reinterpret_cast<Strings::cell_string*>(params[2]);
-			return reinterpret_cast<cell>(Strings::Add(std::move(str), true));
+			auto str = *reinterpret_cast<strings::cell_string*>(params[2]);
+			return reinterpret_cast<cell>(strings::pool.add(std::move(str), true));
 		}
 		if(params[2] == 0)
 		{
-			auto str = *reinterpret_cast<Strings::cell_string*>(params[1]);
-			return reinterpret_cast<cell>(Strings::Add(std::move(str), true));
+			auto str = *reinterpret_cast<strings::cell_string*>(params[1]);
+			return reinterpret_cast<cell>(strings::pool.add(std::move(str), true));
 		}
 
-		auto str = *reinterpret_cast<Strings::cell_string*>(params[1]) + *reinterpret_cast<Strings::cell_string*>(params[2]);
-		return reinterpret_cast<cell>(Strings::Add(std::move(str), true));
+		auto str = *reinterpret_cast<strings::cell_string*>(params[1]) + *reinterpret_cast<strings::cell_string*>(params[2]);
+		return reinterpret_cast<cell>(strings::pool.add(std::move(str), true));
 	}
 
 	// native String:str_int(val);
 	static cell AMX_NATIVE_CALL str_int(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(Strings::Add(std::to_string(static_cast<int>(params[1])), true));
+		return reinterpret_cast<cell>(strings::create(std::to_string(static_cast<int>(params[1])), true));
 	}
 
 	// native String:str_float(Float:val);
 	static cell AMX_NATIVE_CALL str_float(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(Strings::Add(std::to_string(amx_ctof(params[1])), true));
+		return reinterpret_cast<cell>(strings::create(std::to_string(amx_ctof(params[1])), true));
 	}
 
 	// native str_len(StringTag:str);
@@ -107,7 +107,7 @@ namespace Natives
 	{
 		if(params[1] == 0) return 0;
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
 		return static_cast<cell>(str->size());
 	}
 
@@ -125,9 +125,9 @@ namespace Natives
 			return 0;
 		}
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
 
-		if(!Strings::ClampRange(*str, params[4], params[5]))
+		if(!strings::clamp_range(*str, params[4], params[5]))
 		{
 			return 0;
 		}
@@ -152,9 +152,9 @@ namespace Natives
 	{
 		if(params[1] == 0) return 0;
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
 
-		if(Strings::ClampPos(*str, params[2]))
+		if(strings::clamp_pos(*str, params[2]))
 		{
 			return (*str)[params[2]];
 		}
@@ -166,9 +166,9 @@ namespace Natives
 	{
 		if(params[1] == 0) return 0;
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
 
-		if(Strings::ClampPos(*str, params[2]))
+		if(strings::clamp_pos(*str, params[2]))
 		{
 			cell c = (*str)[params[2]];
 			(*str)[params[2]] = params[3];
@@ -182,13 +182,13 @@ namespace Natives
 	{
 		if(params[1] == 0) return params[1];
 
-		auto str1 = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str1 = reinterpret_cast<strings::cell_string*>(params[1]);
 
 		if(params[2] == 0)
 		{
 			str1->clear();
 		} else {
-			auto str2 = reinterpret_cast<Strings::cell_string*>(params[2]);
+			auto str2 = reinterpret_cast<strings::cell_string*>(params[2]);
 			str1->assign(*str2);
 		}
 		return params[1];
@@ -199,8 +199,8 @@ namespace Natives
 	{
 		if(params[1] == 0 || params[2] == 0) return params[1];
 
-		auto str1 = reinterpret_cast<Strings::cell_string*>(params[1]);
-		auto str2 = reinterpret_cast<Strings::cell_string*>(params[2]);
+		auto str1 = reinterpret_cast<strings::cell_string*>(params[1]);
+		auto str2 = reinterpret_cast<strings::cell_string*>(params[2]);
 		str1->append(*str2);
 		return params[1];
 	}
@@ -210,9 +210,9 @@ namespace Natives
 	{
 		if(params[1] == 0) return params[1];
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
 
-		if(Strings::ClampRange(*str, params[2], params[3]))
+		if(strings::clamp_range(*str, params[2], params[3]))
 		{
 			str->erase(params[2], params[3] - params[2]);
 		} else {
@@ -225,13 +225,13 @@ namespace Natives
 	// native String:str_sub(StringTag:str, start=0, end=cellmax);
 	static cell AMX_NATIVE_CALL str_sub(AMX *amx, cell *params)
 	{
-		if(params[1] == 0) return reinterpret_cast<cell>(Strings::Add(Strings::cell_string(), true));
+		if(params[1] == 0) return reinterpret_cast<cell>(strings::pool.add(true));
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
-		if(Strings::ClampRange(*str, params[2], params[3]))
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
+		if(strings::clamp_range(*str, params[2], params[3]))
 		{
 			auto substr = str->substr(params[2], params[3] - params[2]);
-			return reinterpret_cast<cell>(Strings::Add(std::move(substr), true));
+			return reinterpret_cast<cell>(strings::pool.add(std::move(substr), true));
 		}
 		return 0;
 	}
@@ -241,8 +241,8 @@ namespace Natives
 	{
 		if(params[1] == 0 && params[2] == 0) return true;
 
-		auto str1 = reinterpret_cast<Strings::cell_string*>(params[1]);
-		auto str2 = reinterpret_cast<Strings::cell_string*>(params[2]);
+		auto str1 = reinterpret_cast<strings::cell_string*>(params[1]);
+		auto str2 = reinterpret_cast<strings::cell_string*>(params[2]);
 		if(str1 == nullptr)
 		{
 			return str2->size() == 0;
@@ -259,7 +259,7 @@ namespace Natives
 	{
 		if(params[1] == 0) return true;
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
 		return static_cast<cell>(str->empty());
 	}
 
@@ -268,7 +268,7 @@ namespace Natives
 	{
 		if(params[1] == 0) return 0;
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
 		str->clear();
 		return params[1];
 	}
@@ -276,11 +276,11 @@ namespace Natives
 	// native String:str_clone(StringTag:str);
 	static cell AMX_NATIVE_CALL str_clone(AMX *amx, cell *params)
 	{
-		if(params[1] == 0) return reinterpret_cast<cell>(Strings::Add(Strings::cell_string(), true));
+		if(params[1] == 0) return reinterpret_cast<cell>(strings::pool.add(true));
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
 		auto str2 = *str;
-		return reinterpret_cast<cell>(Strings::Add(std::move(str2), true));
+		return reinterpret_cast<cell>(strings::pool.add(std::move(str2), true));
 	}
 
 	// native String:str_resize(StringTag:str, capacity, padding=0);
@@ -288,7 +288,7 @@ namespace Natives
 	{
 		if(params[1] == 0) return 0;
 
-		auto str = reinterpret_cast<Strings::cell_string*>(params[1]);
+		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
 		str->resize(static_cast<size_t>(params[2]), params[3]);
 		return params[1];
 	}

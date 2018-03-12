@@ -10,9 +10,6 @@
     <ClCompile Include="lib\subhook\subhook.c">
       <Filter>lib\subhook</Filter>
     </ClCompile>
-    <ClCompile Include="src\reset.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\tasks.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -39,6 +36,12 @@
     </ClCompile>
     <ClCompile Include="src\events.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\object_pool.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\reset.cpp">
+      <Filter>src\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -83,17 +86,11 @@
     <ClInclude Include="lib\subhook\subhook_x86.h">
       <Filter>lib\subhook</Filter>
     </ClInclude>
-    <ClInclude Include="src\reset.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\tasks.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\utils\optional.h">
       <Filter>src\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="src\natives.h">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\hooks.h">
       <Filter>src</Filter>
@@ -109,6 +106,15 @@
     </ClInclude>
     <ClInclude Include="src\fixes\linux.h">
       <Filter>src\fixes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\object_pool.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\reset.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\natives.h">
+      <Filter>src\natives</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

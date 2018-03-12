@@ -26,7 +26,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 
 	Context::RegisterGroundCallback(
 		[](AMX *amx){
-			Strings::ClearCacheAndTemporary();
+			strings::pool.clear_tmp();
 		}
 	);
 

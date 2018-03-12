@@ -115,32 +115,32 @@ namespace Hooks
 
 		if(ret == AMX_ERR_MEMACCESS)
 		{
-			if(Strings::IsNullAddress(amx, amx_addr))
+			if(strings::pool.is_null_address(amx, amx_addr))
 			{
-				Strings::NullValue1[0] = 0;
-				*phys_addr = Strings::NullValue1;
+				strings::null_value1[0] = 0;
+				*phys_addr = strings::null_value1;
 				return AMX_ERR_NONE;
 			}
-			auto ptr = Strings::Get(amx, amx_addr);
+			auto ptr = strings::pool.get(amx, amx_addr);
 			if(ptr != nullptr)
 			{
-				Strings::SetCache(ptr);
+				strings::pool.set_cache(ptr);
 				*phys_addr = &(*ptr)[0];
 				return AMX_ERR_NONE;
 			}
 		}else if(ret == 0)
 		{
-			if(Strings::IsNullAddress(amx, **phys_addr))
+			if(strings::pool.is_null_address(amx, **phys_addr))
 			{
-				Strings::NullValue2[0] = 1;
-				Strings::NullValue2[1] = 0;
-				*phys_addr = Strings::NullValue2;
+				strings::null_value2[0] = 1;
+				strings::null_value2[1] = 0;
+				*phys_addr = strings::null_value2;
 				return AMX_ERR_NONE;
 			}
-			auto ptr = Strings::Get(amx, **phys_addr);
+			auto ptr = strings::pool.get(amx, **phys_addr);
 			if(ptr != nullptr)
 			{
-				Strings::SetCache(ptr);
+				strings::pool.set_cache(ptr);
 				*phys_addr = &(*ptr)[0];
 				return AMX_ERR_NONE;
 			}
@@ -150,7 +150,7 @@ namespace Hooks
 
 	int AMXAPI amx_StrLen(const cell *cstring, int *length)
 	{
-		auto str = Strings::FindCache(cstring);
+		auto str = strings::pool.find_cache(cstring);
 		if(str != nullptr)
 		{
 			*length = str->size();

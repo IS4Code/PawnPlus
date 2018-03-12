@@ -1,32 +1,23 @@
 #ifndef STRINGS_H_INCLUDED
 #define STRINGS_H_INCLUDED
 
+#include "object_pool.h"
 #include "sdk/amx/amx.h"
 #include <string>
 
-namespace Strings
+namespace strings
 {
 	typedef std::basic_string<cell> cell_string;
-	extern cell NullValue1[1];
-	extern cell NullValue2[2];
-	cell_string *Create(const cell *addr, bool temp, bool truncate, bool fixnulls);
-	cell_string *Create(const cell *addr, bool temp, size_t length, bool truncate, bool fixnulls);
-	cell_string *Add(const std::string &str, bool temp);
-	cell_string *Add(cell_string &&str, bool temp);
-	bool Free(const cell_string *str);
-	cell_string *Get(AMX *amx, cell addr);
-	bool IsValid(const cell_string *str);
-	void SetCache(const cell_string *str);
-	const cell_string *FindCache(const cell *str);
-	cell GetAddress(AMX *amx, const cell_string *str);
-	cell GetBufferAddress(AMX *amx, const cell_string *str);
-	bool IsNullAddress(AMX *amx, cell addr);
-	bool MoveToGlobal(const cell_string *str);
-	bool MoveToLocal(const cell_string *str);
-	void ClearCacheAndTemporary();
+	extern cell null_value1[1];
+	extern cell null_value2[2];
+	extern object_pool<cell_string> pool;
 
-	bool ClampRange(const cell_string &str, cell &start, cell &end);
-	bool ClampPos(const cell_string &str, cell &pos);
+	cell_string *create(const cell *addr, bool temp, bool truncate, bool fixnulls);
+	cell_string *create(const cell *addr, bool temp, size_t length, bool truncate, bool fixnulls);
+	cell_string *create(const std::string &str, bool temp);
+
+	bool clamp_range(const cell_string &str, cell &start, cell &end);
+	bool clamp_pos(const cell_string &str, cell &pos);
 }
 
 #endif
