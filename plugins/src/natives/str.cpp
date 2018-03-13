@@ -292,6 +292,26 @@ namespace Natives
 		str->resize(static_cast<size_t>(params[2]), params[3]);
 		return params[1];
 	}
+
+	// native String:str_format(const format[], {StringTags,Float,_}:...);
+	static cell AMX_NATIVE_CALL str_format(AMX *amx, cell *params)
+	{
+		cell *format;
+		amx_GetAddr(amx, params[1], &format);
+		int flen;
+		amx_StrLen(format, &flen);
+
+		auto str = strings::format(amx, format, flen, params[0] - 1, params + 2, true);
+		return reinterpret_cast<cell>(str);
+	}
+
+	// native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
+	static cell AMX_NATIVE_CALL str_format_s(AMX *amx, cell *params)
+	{
+		auto strformat = reinterpret_cast<strings::cell_string*>(params[1]);
+		auto str = strings::format(amx, &(*strformat)[0], strformat->size(), params[0] - 1, params + 2, true);
+		return reinterpret_cast<cell>(str);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -322,6 +342,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_del),
 	AMX_DECLARE_NATIVE(str_clear),
 	AMX_DECLARE_NATIVE(str_resize),
+
+	AMX_DECLARE_NATIVE(str_format),
+	AMX_DECLARE_NATIVE(str_format_s),
 };
 
 int RegisterStringsNatives(AMX *amx)

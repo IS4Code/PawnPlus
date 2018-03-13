@@ -16,6 +16,8 @@ namespace strings
 	cell_string *create(const cell *addr, bool temp, size_t length, bool truncate, bool fixnulls);
 	cell_string *create(const std::string &str, bool temp);
 
+	cell_string *format(AMX *amx, const cell *format, int flen, int argc, cell *args, bool temp);
+
 	bool clamp_range(const cell_string &str, cell &start, cell &end);
 	bool clamp_pos(const cell_string &str, cell &pos);
 }
