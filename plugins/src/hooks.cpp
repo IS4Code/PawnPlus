@@ -23,6 +23,8 @@ subhook_t amx_GetAddr_h;
 subhook_t amx_StrLen_h;
 subhook_t amx_FindPublic_h;
 
+bool hook_ref_args = false;
+
 std::unordered_map<AMX*, AMX_CALLBACK> originalCallbacks;
 
 int AMXAPI amx_CustomCallback(AMX *amx, cell index, cell *result, cell *params)
@@ -128,8 +130,12 @@ namespace Hooks
 				*phys_addr = &(*ptr)[0];
 				return AMX_ERR_NONE;
 			}
-		}else if(ret == 0)
+		}else if(ret == 0 && hook_ref_args)
 		{
+			// Variadic functions pass all arguments by ref
+			// so checking the actual cell value is necessary,
+			// but there is a chance that it will interpret
+			// a number as a string. Better have it disabled by default.
 			if(strings::pool.is_null_address(amx, **phys_addr))
 			{
 				strings::null_value2[0] = 1;
@@ -213,4 +219,9 @@ void Hooks::ToggleStrLen(bool toggle)
 	}else{
 		subhook_remove(amx_StrLen_h);
 	}
+}
+
+void Hooks::ToggleRefArgs(bool toggle)
+{
+	hook_ref_args = toggle;
 }

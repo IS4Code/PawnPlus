@@ -4,6 +4,7 @@
 /* Configuration */
 
 native pp_hook_strlen(bool:hook);
+native pp_hook_check_ref_args(bool:hook);
 
 /* Pawn */
 

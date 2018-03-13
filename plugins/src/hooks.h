@@ -10,6 +10,7 @@ namespace Hooks
 	void Register();
 	void Unregister();
 	void ToggleStrLen(bool toggle);
+	void ToggleRefArgs(bool toggle);
 }
 
 #endif
