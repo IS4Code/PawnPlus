@@ -2,7 +2,7 @@
 #include <string>
 #include <algorithm>
 
-template <class ObjType>
+/*template <class ObjType>
 auto object_pool<ObjType>::add(object_ptr obj, bool temp) -> object_ptr
 {
 	if(temp)
@@ -12,18 +12,32 @@ auto object_pool<ObjType>::add(object_ptr obj, bool temp) -> object_ptr
 		object_list.emplace_back(obj);
 	}
 	return obj;
-}
+}*/
 
 template <class ObjType>
 auto object_pool<ObjType>::add(bool temp) -> object_ptr
 {
-	return add(new ObjType(), temp);
+	if(temp)
+	{
+		tmp_object_list.emplace_back(new ObjType());
+		return tmp_object_list.back().get();
+	} else {
+		object_list.emplace_back(new ObjType());
+		return object_list.back().get();
+	}
 }
 
 template <class ObjType>
 auto object_pool<ObjType>::add(ObjType &&obj, bool temp) -> object_ptr
 {
-	return add(new ObjType(std::move(obj)), temp);
+	if(temp)
+	{
+		tmp_object_list.emplace_back(new ObjType(std::move(obj)));
+		return tmp_object_list.back().get();
+	} else {
+		object_list.emplace_back(new ObjType(std::move(obj)));
+		return object_list.back().get();
+	}
 }
 
 template <class ObjType>

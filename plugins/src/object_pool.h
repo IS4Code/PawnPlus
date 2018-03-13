@@ -23,7 +23,7 @@ private:
 	
 public:
 	object_ptr add(bool temp);
-	object_ptr add(object_ptr obj, bool temp);
+	//object_ptr add(object_ptr obj, bool temp);
 	object_ptr add(ObjType &&obj, bool temp);
 	cell get_address(AMX *amx, const_object_ptr obj) const;
 	cell get_inner_address(AMX *amx, const_object_ptr obj) const;

@@ -30,7 +30,7 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 			c = reinterpret_cast<const char*>(addr) + pos / 4 + ipos;
 		}while(*c);
 
-		cell_string *str = pool.add(new cell_string(pos, 0), temp);
+		cell_string *str = pool.add(cell_string(pos, 0), temp);
 
 		pos = -1;
 		do{
@@ -49,7 +49,7 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 			c = addr + pos;
 		}while (*c);
 
-		cell_string *str = new cell_string(addr, pos);
+		cell_string *str = pool.add(cell_string(addr, pos), temp);
 		if(truncate)
 		{
 			for(size_t i = 0; i < pos; i++)
@@ -59,13 +59,13 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 				if(fixnulls && c == 0) c = 0x00FFFF00;
 			}
 		}
-		return pool.add(str, temp);
+		return str;
 	}
 }
 
 cell_string *strings::create(const cell *addr, bool temp, size_t length, bool truncate, bool fixnulls)
 {
-	cell_string *str = new cell_string(addr, length);
+	cell_string *str = pool.add(cell_string(addr, length), temp);
 	if(truncate)
 	{
 		for(size_t i = 0; i < length; i++)
@@ -82,18 +82,18 @@ cell_string *strings::create(const cell *addr, bool temp, size_t length, bool tr
 			if(c == 0) c = 0x00FFFF00;
 		}
 	}
-	return pool.add(str, temp);
+	return str;
 }
 
 cell_string *strings::create(const std::string &str, bool temp)
 {
 	size_t len = str.size();
-	cell_string *cstr = new cell_string(len, '\0');
+	cell_string *cstr = pool.add(cell_string(len, '\0'), temp);
 	for(size_t i = 0; i < len; i++)
 	{
 		(*cstr)[i] = static_cast<cell>(str[i]);
 	}
-	return pool.add(cstr, temp);
+	return cstr;
 }
 
 bool strings::clamp_range(const cell_string &str, cell &start, cell &end)
