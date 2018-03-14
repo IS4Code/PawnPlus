@@ -84,6 +84,11 @@ native String:str_del(StringTag:target, start=0, end=cellmax);
 native String:str_clear(StringTag:str);
 native String:str_resize(StringTag:str, size, padding=0);
 
+native String:str_format(const format[], {StringTags,Float,_}:...);
+native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
+native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
+native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,Float,_}:...);
+
 stock String:str_val({_,StringTags,Float}:val, tag=tagof(val))
 {
     static tag_string = tagof(String:), tag_global_string = tagof(GlobalString:), tag_float = tagof(Float:), tag_int = tagof(_:);

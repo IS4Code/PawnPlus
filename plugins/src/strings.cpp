@@ -105,6 +105,22 @@ cell_string *strings::create(const std::string &str, bool temp)
 	return pool.add(convert(str), temp);
 }
 
+void add_query(std::basic_stringbuf<cell> *buf, const cell *str, int len)
+{
+	const cell *start = str;
+	while(len--)
+	{
+		if(*str == '\'')
+		{
+			buf->sputn(start, str - start + 1);
+			buf->sputc('\'');
+			start = str + 1;
+		}
+		str++;
+	}
+	buf->sputn(start, str - start);
+}
+
 void add_format(std::basic_ostringstream<cell> &oss, std::basic_stringbuf<cell> *buf, const cell *begin, const cell *end, cell *arg)
 {
 	ptrdiff_t flen = end - begin;
@@ -123,6 +139,19 @@ void add_format(std::basic_ostringstream<cell> &oss, std::basic_stringbuf<cell> 
 			buf->sputn(&(*str)[0], str->size());
 		}
 		break;
+		case 'q':
+		{
+			int len;
+			amx_StrLen(arg, &len);
+			add_query(buf, arg, len);
+		}
+		break;
+		case 'Q':
+		{
+			auto str = reinterpret_cast<cell_string*>(*arg);
+			add_query(buf, &(*str)[0], str->size());
+		}
+		break;
 		case 'd':
 		case 'i':
 		{
@@ -139,6 +168,7 @@ void add_format(std::basic_ostringstream<cell> &oss, std::basic_stringbuf<cell> 
 			buf->sputc(*arg);
 		}
 		break;
+		case 'h':
 		case 'x':
 		{
 			//thanks MSVC!!!
