@@ -1,4 +1,4 @@
-/** PawnPlus v0.1.2 by IllidanS4 **/
+/** PawnPlus v0.2 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 /* Configuration */
@@ -52,6 +52,7 @@ enum
 
 native String:str_new(const str[], mode=str_preserve);
 native String:str_new_arr(const arr[], size=sizeof(arr), mode=str_preserve);
+native String:str_new_buf(size);
 native AmxString:str_addr(StringTag:str);
 native AmxStringBuffer:str_buf_addr(StringTag:str);
 native GlobalString:str_to_global(StringTag:str);
