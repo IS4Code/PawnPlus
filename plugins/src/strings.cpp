@@ -105,23 +105,23 @@ cell_string *strings::create(const std::string &str, bool temp)
 	return pool.add(convert(str), temp);
 }
 
-void add_query(std::basic_stringbuf<cell> *buf, const cell *str, int len)
+void add_query(strings::cell_string &buf, const cell *str, int len)
 {
 	const cell *start = str;
 	while(len--)
 	{
 		if(*str == '\'')
 		{
-			buf->sputn(start, str - start + 1);
-			buf->sputc('\'');
+			buf.append(start, str - start + 1);
+			buf.append(1, '\'');
 			start = str + 1;
 		}
 		str++;
 	}
-	buf->sputn(start, str - start);
+	buf.append(start, str - start);
 }
 
-void add_format(std::basic_ostringstream<cell> &oss, std::basic_stringbuf<cell> *buf, const cell *begin, const cell *end, cell *arg)
+void add_format(strings::cell_string &buf, const cell *begin, const cell *end, cell *arg)
 {
 	ptrdiff_t flen = end - begin;
 	switch(*end)
@@ -130,13 +130,13 @@ void add_format(std::basic_ostringstream<cell> &oss, std::basic_stringbuf<cell> 
 		{
 			int len;
 			amx_StrLen(arg, &len);
-			buf->sputn(arg, len);
+			buf.append(arg, len);
 		}
 		break;
 		case 'S':
 		{
 			auto str = reinterpret_cast<cell_string*>(*arg);
-			buf->sputn(&(*str)[0], str->size());
+			buf.append(&(*str)[0], str->size());
 		}
 		break;
 		case 'q':
@@ -155,17 +155,17 @@ void add_format(std::basic_ostringstream<cell> &oss, std::basic_stringbuf<cell> 
 		case 'd':
 		case 'i':
 		{
-			oss << convert(std::to_string(*arg));
+			buf.append(convert(std::to_string(*arg)));
 		}
 		break;
 		case 'f':
 		{
-			oss << convert(std::to_string(amx_ctof(*arg)));
+			buf.append(convert(std::to_string(amx_ctof(*arg))));
 		}
 		break;
 		case 'c':
 		{
-			buf->sputc(*arg);
+			buf.append(1, *arg);
 		}
 		break;
 		case 'h':
@@ -174,27 +174,26 @@ void add_format(std::basic_ostringstream<cell> &oss, std::basic_stringbuf<cell> 
 			//thanks MSVC!!!
 			std::ostringstream s;
 			s << std::hex << std::uppercase << *arg;
-			oss << convert(s.str());
+			buf.append(convert(s.str()));
 		}
 		break;
 		case 'b':
 		{
 			std::bitset<8> bits(*arg);
-			oss << bits;
+			buf.append(bits.to_string<cell>());
 		}
 		break;
 		case 'u':
 		{
-			oss << convert(std::to_string(static_cast<ucell>(*arg)));
+			buf.append(convert(std::to_string(static_cast<ucell>(*arg))));
 		}
 		break;
 	}
 }
 
-cell_string strings::format(AMX *amx, const cell *format, int flen, int argc, cell *args)
+void strings::format(AMX *amx, strings::cell_string &buf, const cell *format, int flen, int argc, cell *args)
 {
-	std::basic_ostringstream<cell> oss;
-	std::basic_stringbuf<cell> *buf = oss.rdbuf();
+	buf.reserve(flen+8*argc);
 
 	int argn = 0;
 
@@ -203,12 +202,12 @@ cell_string strings::format(AMX *amx, const cell *format, int flen, int argc, ce
 	{
 		if(*c == '%' && flen > 0)
 		{
-			buf->sputn(format, c - format);
+			buf.append(format, c - format);
 
 			const cell *start = ++c;
 			if(*c == '%')
 			{
-				buf->sputc('%');
+				buf.append(1, '%');
 				format = c + 1;
 				flen--;
 			}else{
@@ -220,16 +219,14 @@ cell_string strings::format(AMX *amx, const cell *format, int flen, int argc, ce
 				}else{
 					cell *argv;
 					amx_GetAddr(amx, args[argn++], &argv);
-					add_format(oss, buf, start, c, argv);
+					add_format(buf, start, c, argv);
 				}
 				format = c + 1;
 			}
 		}
 		c++;
 	}
-	buf->sputn(format, c - format);
-
-	return oss.str();
+	buf.append(format, c - format);
 }
 
 bool strings::clamp_range(const cell_string &str, cell &start, cell &end)
