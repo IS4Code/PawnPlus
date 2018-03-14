@@ -161,10 +161,9 @@ void add_format(std::basic_ostringstream<cell> &oss, std::basic_stringbuf<cell> 
 	}
 }
 
-cell_string *strings::format(AMX *amx, const cell *format, int flen, int argc, cell *args, bool temp)
+cell_string strings::format(AMX *amx, const cell *format, int flen, int argc, cell *args)
 {
 	std::basic_ostringstream<cell> oss;
-
 	std::basic_stringbuf<cell> *buf = oss.rdbuf();
 
 	int argn = 0;
@@ -200,7 +199,7 @@ cell_string *strings::format(AMX *amx, const cell *format, int flen, int argc, c
 	}
 	buf->sputn(format, c - format);
 
-	return pool.add(oss.str(), temp);
+	return oss.str();
 }
 
 bool strings::clamp_range(const cell_string &str, cell &start, cell &end)
