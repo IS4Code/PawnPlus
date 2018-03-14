@@ -22,12 +22,12 @@ native pawn_unregister_callback(callback:id);
 native task:wait_ticks(ticks);
 native task:wait_ms(interval);
 native task:task_new();
-native task_set_result(task:task, {_,Float}:result);
+native task_set_result(task:task, {_,Float,StringTags}:result);
 native task_get_result(task:task);
 native task:task_ticks(ticks);
 native task:task_ms(interval);
 native task_await(task:task);
-native task_yield({_,Float}:value);
+native task_yield({_,Float,StringTags}:value);
 
 /* Strings */
 
@@ -66,8 +66,9 @@ native str_len(StringTag:str);
 native str_get(StringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
 native str_getc(StringTag:str, pos);
 native str_setc(StringTag:str, pos, value);
-native bool:str_cmp(StringTag:str1, StringTag:str2);
+native str_cmp(StringTag:str1, StringTag:str2);
 native bool:str_empty(StringTag:str);
+native bool:str_equal(StringTag:str1, StringTag:str2);
 
 native String:str_int(val);
 native String:str_float(Float:val);
@@ -163,10 +164,10 @@ native String:operator+(String:arg1, String:arg2) = str_cat;
 native String:operator+(String:arg1, GlobalString:arg2) = str_cat;
 native String:operator+(GlobalString:arg1, String:arg2) = str_cat;
 native String:operator+(GlobalString:arg1, GlobalString:arg2) = str_cat;
-stock bool:operator==(String:arg1, String:arg2) return !str_cmp(arg1, arg2);
-stock bool:operator==(String:arg1, GlobalString:arg2) return !str_cmp(arg1, arg2);
-stock bool:operator==(GlobalString:arg1, String:arg2) return !str_cmp(arg1, arg2);
-stock bool:operator==(GlobalString:arg1, GlobalString:arg2) return !str_cmp(arg1, arg2);
+native bool:operator==(String:arg1, String:arg2) = str_equal;
+native bool:operator==(String:arg1, GlobalString:arg2) = str_equal;
+native bool:operator==(GlobalString:arg1, String:arg2) = str_equal;
+native bool:operator==(GlobalString:arg1, GlobalString:arg2) = str_equal;
 
 native String:operator%(String:arg1, String:arg2) = str_cat;
 native String:operator%(GlobalString:arg1, String:arg2) = str_cat;

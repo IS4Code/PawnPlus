@@ -24,6 +24,13 @@ namespace Natives
 		return reinterpret_cast<cell>(str);
 	}
 
+	// native String:str_new_buf(size);
+	static cell AMX_NATIVE_CALL str_new_buf(AMX *amx, cell *params)
+	{
+		cell size = params[1];
+		return reinterpret_cast<cell>(strings::pool.add(strings::cell_string(size - 1, 0), true));
+	}
+
 	// native AmxString:str_addr(StringTag:str);
 	static cell AMX_NATIVE_CALL str_addr(AMX *amx, cell *params)
 	{
@@ -263,6 +270,24 @@ namespace Natives
 		return static_cast<cell>(str->empty());
 	}
 
+	// native bool:str_equal(StringTag:str1, StringTag:str2);
+	static cell AMX_NATIVE_CALL str_equal(AMX *amx, cell *params)
+	{
+		if(params[1] == 0 && params[2] == 0) return true;
+
+		auto str1 = reinterpret_cast<strings::cell_string*>(params[1]);
+		auto str2 = reinterpret_cast<strings::cell_string*>(params[2]);
+		if(str1 == nullptr)
+		{
+			return str2->size() == 0;
+		}
+		if(str2 == nullptr)
+		{
+			return str1->size() == 0;
+		}
+		return *str1 == *str2;
+	}
+
 	// native String:str_clear(StringTag:str);
 	static cell AMX_NATIVE_CALL str_clear(AMX *amx, cell *params)
 	{
@@ -349,6 +374,7 @@ static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(str_new),
 	AMX_DECLARE_NATIVE(str_new_arr),
+	AMX_DECLARE_NATIVE(str_new_buf),
 	AMX_DECLARE_NATIVE(str_addr),
 	AMX_DECLARE_NATIVE(str_buf_addr),
 	AMX_DECLARE_NATIVE(str_to_global),
@@ -361,6 +387,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_setc),
 	AMX_DECLARE_NATIVE(str_cmp),
 	AMX_DECLARE_NATIVE(str_empty),
+	AMX_DECLARE_NATIVE(str_equal),
 
 	AMX_DECLARE_NATIVE(str_int),
 	AMX_DECLARE_NATIVE(str_float),
