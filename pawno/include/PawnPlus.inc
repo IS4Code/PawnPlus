@@ -1,6 +1,25 @@
 /** PawnPlus v0.2 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
+/* Definitions */
+
+#if !defined PP_NO_ALIASES
+#define await%9\32;%0; task_await(%0);
+#define yield%9\32;%0; task_yield(%0);
+#endif
+
+#define StringTags String,GlobalString
+#define StringTag {StringTags}
+#define STRING_NULL (GlobalString:0)
+#define INVALID_CHAR (0xFFFFFF00)
+
+#if !defined PP_NO_ALIASES
+#define @ str_new
+#if defined PP_MORE_ALIASES
+#define @@ str_val
+#endif
+#endif
+
 /* Configuration */
 
 native pp_hook_strlen(bool:hook);
@@ -14,11 +33,6 @@ native pawn_unregister_callback(callback:id);
 
 /* Tasks and async */
 
-#if !defined PP_NO_ALIASES
-#define await%9\32;%0; task_await(%0);
-#define yield%9\32;%0; task_yield(%0);
-#endif
-
 native task:wait_ticks(ticks);
 native task:wait_ms(interval);
 native task:task_new();
@@ -30,18 +44,6 @@ native task_await(task:task);
 native task_yield({_,Float,StringTags}:value);
 
 /* Strings */
-
-#define StringTags String,GlobalString
-#define StringTag {StringTags}
-#define STRING_NULL (GlobalString:0)
-#define INVALID_CHAR (0xFFFFFF00)
-
-#if !defined PP_NO_ALIASES
-#define @ str_new
-#if defined PP_MORE_ALIASES
-#define @@ str_val
-#endif
-#endif
 
 enum
 {
