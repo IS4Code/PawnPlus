@@ -8,6 +8,7 @@
 #include <sstream>
 #include <cctype>
 #include <bitset>
+#include <iomanip>
 
 using namespace strings;
 
@@ -121,6 +122,44 @@ void add_query(strings::cell_string &buf, const cell *str, int len)
 	buf.append(start, str - start);
 }
 
+namespace aux
+{
+	void push_args(std::ostream &ostream)
+	{
+
+	}
+
+	template <class Arg, class... Args>
+	void push_args(std::ostream &ostream, Arg &&arg, Args&&... args)
+	{
+		ostream << std::forward<Arg>(arg);
+		push_args(ostream, std::forward<Args>(args)...);
+	}
+
+	template <class Obj, class... Args>
+	std::string to_string(Obj &&obj, Args&&... args)
+	{
+		std::ostringstream ostream;
+		push_args(ostream, std::forward<Args>(args)...);
+		ostream << std::forward<Obj>(obj);
+		return ostream.str();
+	}
+
+	template <class NumType>
+	NumType parse_num(const cell *str, size_t &pos)
+	{
+		bool neg = str[pos] == '-';
+		if(neg) pos++;
+		NumType val = 0;
+		cell c;
+		while(std::isdigit(c = str[pos++]))
+		{
+			val = (val * 10) + (c - '0');
+		}
+		return neg ? -val : val;
+	}
+}
+
 void add_format(strings::cell_string &buf, const cell *begin, const cell *end, cell *arg)
 {
 	ptrdiff_t flen = end - begin;
@@ -160,7 +199,14 @@ void add_format(strings::cell_string &buf, const cell *begin, const cell *end, c
 		break;
 		case 'f':
 		{
-			buf.append(convert(std::to_string(amx_ctof(*arg))));
+			if(*begin == '.')
+			{
+				size_t pos = 0;
+				auto precision = aux::parse_num<std::streamsize>(begin + 1, pos);
+				buf.append(convert(aux::to_string(amx_ctof(*arg), std::setprecision(precision), std::fixed)));
+			}else{
+				buf.append(convert(std::to_string(amx_ctof(*arg))));
+			}
 		}
 		break;
 		case 'c':
@@ -171,10 +217,12 @@ void add_format(strings::cell_string &buf, const cell *begin, const cell *end, c
 		case 'h':
 		case 'x':
 		{
-			//thanks MSVC!!!
-			std::ostringstream s;
-			s << std::hex << std::uppercase << *arg;
-			buf.append(convert(s.str()));
+			buf.append(convert(aux::to_string(*arg, std::hex, std::uppercase)));
+		}
+		break;
+		case 'o':
+		{
+			buf.append(convert(aux::to_string(*arg, std::oct)));
 		}
 		break;
 		case 'b':
