@@ -10,8 +10,14 @@ namespace aux
 {
 	class thread : public std::thread
 	{
-		std::mutex mutex;
-		std::condition_variable sync1;
+		union {
+			char _0;
+			std::mutex mutex;
+		};
+		union {
+			char _1;
+			std::condition_variable sync1;
+		};
 		volatile bool started;
 
 		void global_init();
@@ -21,26 +27,39 @@ namespace aux
 		template<class Function, class... Args>
 		std::function<typename std::result_of<Function(Args...)>::type(Args...)> wrap_func(Function&& f)
 		{
+			// must be initialized before the thread starts
+			started = false;
+			new (&mutex) std::mutex();
+			new (&sync1) std::condition_variable();
+
 			global_init();
 			return [=](Args&&... args)
 			{
 				thread_init();
-				std::invoke(f, std::forward<Args>(args)...);
+				f(std::forward<Args>(args)...);
+				//invoke<Function, Args...>(f, std::forward<Args>(args)...);
+				//std::invoke(f, std::forward<Args>(args)...);
 				thread_exit();
 			};
 		}
 
 	public:
 		template<class Function, class... Args>
-		explicit thread(Function&& f, Args&&... args) : mutex(), sync1(), started(false)
+		explicit thread(Function&& f, Args&&... args)
+			: std::thread(wrap_func<Function, Args...>(std::forward<Function>(f)), std::forward<Args>(args)...)
 		{
-			// 
-			this->std::thread::thread(wrap_func<Function, Args...>(std::forward<Function>(f)), std::forward<Args>(args)...);
+			
 		}
 
 		void start();
 		void pause();
 		void resume();
+
+		~thread()
+		{
+			mutex.~mutex();
+			sync1.~condition_variable();
+		}
 	};
 }
 

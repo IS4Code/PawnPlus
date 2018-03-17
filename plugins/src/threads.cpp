@@ -8,7 +8,8 @@
 #include <condition_variable>
 #include <tuple>
 
-std::unordered_multimap<AMX*, class thread_state> running_threads;
+class thread_state;
+extern std::unordered_multimap<AMX*, thread_state*> running_threads;
 
 class thread_state
 {
@@ -28,7 +29,7 @@ class thread_state
 		// how do I identify myself from within the AMX?
 		// well I can copy code to produce instances of this function for each instance,
 		// and since subhook already does pretty undefined behaviour, why not
-		auto &self = running_threads.find(amx)->second; //race condition
+		auto &self = *running_threads.find(amx)->second; //race condition
 		{
 			std::unique_lock<std::mutex> lock(self.mutex);
 			self.reset = AMX_RESET(amx);
@@ -66,10 +67,13 @@ class thread_state
 
 public:
 	thread_state(AMX *amx) : amx(amx), orig_callback(amx->callback), reset(amx),
-	thread(&thread_state::run, this)
+		thread([=]() { run(); })
 	{
 
 	}
+
+	thread_state(const thread_state&) = delete;
+	thread_state &operator=(const thread_state&) = delete;
 
 	void set_safe(bool safe)
 	{
@@ -143,11 +147,13 @@ public:
 	}
 };
 
+std::unordered_multimap<AMX*, thread_state*> running_threads;
+
 namespace Threads
 {
 	void DetachThread(AMX *amx, bool safe)
 	{
-		auto &state = running_threads.emplace(amx, amx)->second;
+		auto &state = *running_threads.emplace(amx, new thread_state(amx))->second;
 		state.set_safe(safe);
 		state.start();
 	}
@@ -157,7 +163,7 @@ namespace Threads
 		auto bounds = running_threads.equal_range(amx);
 		for(auto it = bounds.first; it != bounds.second; it++)
 		{
-			it->second.pause();
+			it->second->pause();
 		}
 	}
 
@@ -166,7 +172,7 @@ namespace Threads
 		auto bounds = running_threads.equal_range(amx);
 		for(auto it = bounds.first; it != bounds.second; it++)
 		{
-			it->second.resume();
+			it->second->resume();
 		}
 	}
 
@@ -174,7 +180,7 @@ namespace Threads
 	{
 		for(auto &thread : running_threads)
 		{
-			thread.second.sync();
+			thread.second->sync();
 		}
 	}
 }
