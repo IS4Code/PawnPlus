@@ -1,5 +1,6 @@
 #include "reset.h"
 #include "tasks.h"
+#include "threads.h"
 #include "strings.h"
 #include "hooks.h"
 #include "natives.h"
@@ -30,7 +31,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 		}
 	);
 
-	logprintf(" PawnPlus v0.2 loaded");
+	logprintf(" PawnPlus v0.3 loaded");
 	logprintf(" Created by IllidanS4");
 	return true;
 }
@@ -39,7 +40,7 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
 	Hooks::Unregister();
 
-	logprintf(" PawnPlus v0.2 unloaded");
+	logprintf(" PawnPlus v0.3 unloaded");
 }
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) 
@@ -58,4 +59,5 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx)
 PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 {
 	TaskPool::OnTick();
+	Threads::SyncThreads();
 }

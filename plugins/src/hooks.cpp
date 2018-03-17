@@ -3,6 +3,7 @@
 #include "strings.h"
 #include "context.h"
 #include "events.h"
+#include "threads.h"
 
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
@@ -98,11 +99,23 @@ namespace Hooks
 		if(ret == AMX_ERR_SLEEP)
 		{
 			auto &ctx = Context::Get(amx);
-			if(ctx.awaiting_task != -1)
+			switch(ctx.pause_reason)
 			{
-				TaskPool::Get(ctx.awaiting_task)->Register(AMX_RESET(amx));
-				if(retval != nullptr) *retval = ctx.result;
-				amx->error = ret = AMX_ERR_NONE;
+				case PauseReason::Await:
+				{
+					if(ctx.awaiting_task != -1)
+					{
+						TaskPool::Get(ctx.awaiting_task)->Register(AMX_RESET(amx));
+						if(retval != nullptr) *retval = ctx.result;
+						amx->error = ret = AMX_ERR_NONE;
+					}
+				}
+				case PauseReason::Detach:
+				{
+					if(retval != nullptr) *retval = ctx.result;
+					Threads::DetachThread(amx, ctx.natives_protect);
+					amx->error = ret = AMX_ERR_NONE;
+				}
 			}
 		}
 		Context::Pop(amx);

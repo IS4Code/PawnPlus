@@ -1,4 +1,4 @@
-/** PawnPlus v0.2 by IllidanS4 **/
+/** PawnPlus v0.3 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 /* Definitions */
@@ -42,6 +42,8 @@ native task:task_ticks(ticks);
 native task:task_ms(interval);
 native task_await(task:task);
 native task_yield({_,Float,StringTags}:value);
+native thread_detach(bool:natives_protect=true);
+native thread_attach();
 
 /* Strings */
 

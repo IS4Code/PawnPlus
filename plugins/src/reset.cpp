@@ -5,7 +5,7 @@
 typedef void(*logprintf_t)(char* format, ...);
 extern logprintf_t logprintf;
 
-AMX_RESET::AMX_RESET(AMX* amx) : context(Context::Get(amx)), amx(amx), cip(amx->cip), frm(amx->frm), pri(amx->pri), alt(amx->alt), hea(amx->hea), reset_hea(amx->reset_hea), stk(amx->stk), reset_stk(amx->reset_stk)
+AMX_RESET::AMX_RESET(AMX* amx) : context(Context::TryGet(amx)), amx(amx), cip(amx->cip), frm(amx->frm), pri(amx->pri), alt(amx->alt), hea(amx->hea), reset_hea(amx->reset_hea), stk(amx->stk), reset_stk(amx->reset_stk)
 {
 	unsigned char *dat, *h, *s;
 
@@ -24,6 +24,12 @@ AMX_RESET::AMX_RESET(AMX* amx) : context(Context::Get(amx)), amx(amx), cip(amx->
 }
 
 void AMX_RESET::restore() const
+{
+	restore_no_context();
+	Context::Restore(amx, context);
+}
+
+void AMX_RESET::restore_no_context() const
 {
 	unsigned char *dat, *h, *s;
 
@@ -46,8 +52,6 @@ void AMX_RESET::restore() const
 
 	size_t stack_size = amxhdr->stp - amxhdr->dat - stk;
 	std::memcpy(s, stack.get(), stack_size);
-
-	Context::Restore(amx, context);
 }
 
 AMX_RESET::AMX_RESET(AMX_RESET &&obj) : context(obj.context), amx(obj.amx), cip(obj.cip), frm(obj.frm), pri(obj.pri), alt(obj.alt), hea(obj.hea), reset_hea(obj.reset_hea), heap(std::move(obj.heap)), stk(obj.stk), reset_stk(obj.reset_stk), stack(std::move(obj.stack))

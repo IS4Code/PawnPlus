@@ -113,8 +113,10 @@ namespace Natives
 		auto task = TaskPool::Get(id);
 		if(task != nullptr && !task->Completed())
 		{
+			auto &ctx = Context::Get(amx);
+			ctx.pause_reason = PauseReason::Await;
+			ctx.awaiting_task = id;
 			amx_RaiseError(amx, AMX_ERR_SLEEP);
-			Context::Get(amx).awaiting_task = id;
 			return 1;
 		}
 		return 0;
@@ -132,6 +134,23 @@ namespace Natives
 		}
 		return 0;
 	}
+
+	// native thread_detach(bool:natives_protect=true);
+	static cell AMX_NATIVE_CALL thread_detach(AMX *amx, cell *params)
+	{
+		auto &ctx = Context::Get(amx);
+		ctx.natives_protect = static_cast<bool>(params[1]);
+		ctx.pause_reason = PauseReason::Detach;
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return 1;
+	}
+
+	// native thread_attach();
+	static cell AMX_NATIVE_CALL thread_attach(AMX *amx, cell *params)
+	{
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return 1;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -145,6 +164,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_ms),
 	AMX_DECLARE_NATIVE(task_await),
 	AMX_DECLARE_NATIVE(task_yield),
+	AMX_DECLARE_NATIVE(thread_detach),
+	AMX_DECLARE_NATIVE(thread_attach),
 };
 
 int RegisterTasksNatives(AMX *amx)

@@ -43,6 +43,18 @@
     <ClCompile Include="src\reset.cpp">
       <Filter>src\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\thread_posix.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\thread_win.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\thread.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\threads.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -115,6 +127,12 @@
     </ClInclude>
     <ClInclude Include="src\natives.h">
       <Filter>src\natives</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\thread.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\threads.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

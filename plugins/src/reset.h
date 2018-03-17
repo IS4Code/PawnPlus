@@ -21,6 +21,7 @@ public:
 	AMX_RESET &operator=(AMX_RESET &&obj);
 
 	void restore() const;
+	void restore_no_context() const;
 };
 
 #endif

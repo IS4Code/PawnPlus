@@ -95,8 +95,21 @@ AMX_STATE &Context::GetState(AMX *amx)
 
 AMX_CONTEXT &Context::Get(AMX *amx)
 {
-	auto &info = amx_infos.at(amx);
-	return info.contexts.top();
+	return amx_infos.at(amx).contexts.top();
+}
+
+AMX_CONTEXT Context::TryGet(AMX *amx)
+{
+	auto it = amx_infos.find(amx);
+	if(it != amx_infos.end())
+	{
+		auto &stack = it->second.contexts;
+		if(!stack.empty())
+		{
+			return stack.top();
+		}
+	}
+	return AMX_CONTEXT();
 }
 
 void Context::Restore(AMX *amx, const AMX_CONTEXT &context)

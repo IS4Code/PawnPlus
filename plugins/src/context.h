@@ -8,11 +8,20 @@
 #include <stack>
 #include <unordered_map>
 
+enum class PauseReason
+{
+	None,
+	Await,
+	Detach
+};
+
 struct AMX_CONTEXT
 {
+	PauseReason pause_reason = PauseReason::None;
 	size_t awaiting_task = -1;
 	size_t task_object = -1;
 	cell result = 0;
+	bool natives_protect = false;
 };
 
 struct AMX_STATE
@@ -37,6 +46,7 @@ namespace Context
 	void Restore(AMX *amx, const AMX_CONTEXT &context);
 	bool IsPresent(AMX *amx);
 	AMX_CONTEXT &Get(AMX *amx);
+	AMX_CONTEXT TryGet(AMX *amx);
 
 	void RegisterGroundCallback(const std::function<void(AMX*)> &callback);
 

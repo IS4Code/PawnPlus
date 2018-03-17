@@ -143,6 +143,10 @@
     <ClCompile Include="src\reset.cpp" />
     <ClCompile Include="src\strings.cpp" />
     <ClCompile Include="src\tasks.cpp" />
+    <ClCompile Include="src\threads.cpp" />
+    <ClCompile Include="src\utils\thread.cpp" />
+    <ClCompile Include="src\utils\thread_posix.cpp" />
+    <ClCompile Include="src\utils\thread_win.cpp" />
     <ClInclude Include="lib\subhook\subhook_linux.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExcludedFromBuild>
@@ -171,7 +175,9 @@
     <ClInclude Include="src\reset.h" />
     <ClInclude Include="src\strings.h" />
     <ClInclude Include="src\tasks.h" />
+    <ClInclude Include="src\threads.h" />
     <ClInclude Include="src\utils\optional.h" />
+    <ClInclude Include="src\utils\thread.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />
