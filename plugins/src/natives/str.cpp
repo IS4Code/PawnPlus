@@ -336,7 +336,7 @@ namespace Natives
 	{
 		auto strformat = reinterpret_cast<strings::cell_string*>(params[1]);
 		auto str = strings::pool.add(true);
-		strings::format(amx, *str, &(*strformat)[0], strformat->size(), params[0] - 1, params + 2);
+		strings::format(amx, *str, &(*strformat)[0], strformat->size(), params[0] / sizeof(cell) - 1, params + 2);
 		return reinterpret_cast<cell>(str);
 	}
 
@@ -353,7 +353,7 @@ namespace Natives
 		amx_StrLen(format, &flen);
 
 
-		strings::format(amx, *str, format, flen, params[0] - 2, params + 3);
+		strings::format(amx, *str, format, flen, params[0] / sizeof(cell) - 2, params + 3);
 		return params[1];
 	}
 
@@ -365,7 +365,7 @@ namespace Natives
 		str->clear();
 
 		auto strformat = reinterpret_cast<strings::cell_string*>(params[2]);
-		strings::format(amx, *str, &(*strformat)[0], strformat->size(), params[0] - 2, params + 3);
+		strings::format(amx, *str, &(*strformat)[0], strformat->size(), params[0] / sizeof(cell) - 2, params + 3);
 		return params[1];
 	}
 }
