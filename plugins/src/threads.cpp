@@ -106,7 +106,6 @@ public:
 		if(attach)
 		{
 			attach = false;
-
 			reset.restore_no_context();
 			cell retval;
 			amx_Exec(amx, &retval, AMX_EXEC_CONT);
@@ -119,6 +118,24 @@ public:
 		{
 			started = true;
 			thread.start();
+		}
+	}
+
+	void join()
+	{
+		if(started && !pending)
+		{
+			thread.join();
+			auto bounds = running_threads.equal_range(amx);
+			for(auto it = bounds.first; it != bounds.second; it++)
+			{
+				if(it->second == this)
+				{
+					running_threads.erase(it);
+					break;
+				}
+			}
+			delete this;
 		}
 	}
 
@@ -184,6 +201,15 @@ namespace Threads
 		for(auto it = bounds.first; it != bounds.second; it++)
 		{
 			it->second->resume();
+		}
+	}
+
+	void JoinThreads(AMX *amx)
+	{
+		auto bounds = running_threads.equal_range(amx);
+		for(auto it = bounds.first; it != bounds.second; it++)
+		{
+			it->second->join();
 		}
 	}
 

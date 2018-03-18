@@ -36,12 +36,17 @@ namespace aux
 
 	void thread::pause()
 	{
-		SuspendThread(static_cast<HANDLE>(native_handle()));
+		HANDLE hThread = static_cast<HANDLE>(native_handle());
+		SuspendThread(hThread);
+		CONTEXT ctx;
+		ctx.ContextFlags = CONTEXT_CONTROL;
+		GetThreadContext(hThread, &ctx);
 	}
 
 	void thread::resume()
 	{
-		ResumeThread(static_cast<HANDLE>(native_handle()));
+		HANDLE hThread = static_cast<HANDLE>(native_handle());
+		ResumeThread(hThread);
 	}
 }
 

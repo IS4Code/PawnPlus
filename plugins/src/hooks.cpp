@@ -97,7 +97,8 @@ namespace Hooks
 		//printf("STK %d, STP %d, HEA %d, HLW %d, FRM %d, CIP %d",
 		//	amx->stk, amx->stp, amx->hea, amx->hlw, amx->frm, amx->cip);
 
-		Threads::PauseThreads(amx);
+		//Threads::PauseThreads(amx);
+		Threads::JoinThreads(amx);
 		Context::Push(amx);
 		int ret = amx_ExecOrig(amx, retval, index);
 		if(ret == AMX_ERR_SLEEP)
@@ -123,7 +124,7 @@ namespace Hooks
 			}
 		}
 		Context::Pop(amx);
-		Threads::ResumeThreads(amx);
+		//Threads::ResumeThreads(amx);
 		return ret;
 	}
 
