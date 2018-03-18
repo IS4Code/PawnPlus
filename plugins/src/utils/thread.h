@@ -60,8 +60,6 @@ namespace aux
 			mutex.~mutex();
 			sync1.~condition_variable();
 		}
-
-		static int this_id();
 	};
 }
 

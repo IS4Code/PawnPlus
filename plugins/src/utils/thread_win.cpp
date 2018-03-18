@@ -48,11 +48,6 @@ namespace aux
 		HANDLE hThread = static_cast<HANDLE>(native_handle());
 		ResumeThread(hThread);
 	}
-
-	int thread::this_id()
-	{
-		return GetCurrentThreadId();
-	}
 }
 
 #endif

@@ -76,11 +76,6 @@ namespace aux
 	{
 		pthread_kill(native_handle(), SIGUSR2);
 	}
-
-	int thread::this_id()
-	{
-		return reinterpret_cast<int>(pthread_self());
-	}
 }
 
 #endif
