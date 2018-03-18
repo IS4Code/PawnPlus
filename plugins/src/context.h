@@ -21,7 +21,7 @@ struct AMX_CONTEXT
 	size_t awaiting_task = -1;
 	size_t task_object = -1;
 	cell result = 0;
-	bool natives_protect = false;
+	bool auto_sync = false;
 };
 
 struct AMX_STATE

@@ -61,9 +61,6 @@ namespace Hooks
 			}
 		}
 
-		//printf("STK %d, STP %d, HEA %d, HLW %d, FRM %d, CIP %d",
-		//	amx->stk, amx->stp, amx->hea, amx->hlw, amx->frm, amx->cip);
-
 		//Threads::PauseThreads(amx);
 		Threads::JoinThreads(amx);
 		Context::Push(amx);
@@ -87,7 +84,7 @@ namespace Hooks
 				{
 					if(retval != nullptr) *retval = ctx.result;
 					amx->error = ret = AMX_ERR_NONE;
-					Threads::DetachThread(amx, ctx.natives_protect);
+					Threads::DetachThread(amx, ctx.auto_sync);
 				}
 				break;
 			}

@@ -7,6 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <tuple>
+#include <limits>
 
 class thread_state;
 extern std::unordered_multimap<AMX*, thread_state*> running_threads;
@@ -22,9 +23,12 @@ class thread_state
 	std::tuple<int, cell, cell*, cell*> pending_callback;
 	bool started = false;
 	std::condition_variable resume_sync;
+	std::condition_variable join_sync;
 	volatile bool pending = false;
 	volatile bool attach = false;
 	volatile bool done = false;
+
+	static constexpr cell sync_index = std::numeric_limits<cell>::min();
 
 	static AMXAPI int new_callback(AMX *amx, cell index, cell *result, cell *params)
 	{
@@ -35,12 +39,19 @@ class thread_state
 		{
 			std::unique_lock<std::mutex> lock(self.mutex);
 			self.reset = AMX_RESET(amx);
-			amx->callback = self.orig_callback;
+			if(self.safe)
+			{
+				amx->callback = self.orig_callback;
+			}
 			self.pending_callback = std::make_tuple(0, index, result, params);
 			self.pending = true;
+			self.join_sync.notify_all();
 			self.resume_sync.wait(lock);
 			self.reset.restore_no_context();
-			amx->callback = &new_callback;
+			if(self.safe)
+			{
+				amx->callback = &new_callback;
+			}
 			return std::get<0>(self.pending_callback);
 		}
 	}
@@ -57,13 +68,28 @@ class thread_state
 		}
 
 		cell retval;
-		int ret = amx_ExecOrig(amx, &retval, AMX_EXEC_CONT);
-		amx->callback = orig_callback;
-		if(ret == AMX_ERR_SLEEP)
+		while(true)
 		{
+			int ret = amx_ExecOrig(amx, &retval, AMX_EXEC_CONT);
 			amx->error = 0;
-			reset = AMX_RESET(amx);
-			attach = true;
+			if(ret == AMX_ERR_SLEEP)
+			{
+				switch(amx->pri)
+				{
+					case -1:
+						if(safe)
+						{
+							amx->callback = orig_callback;
+						}
+						reset = AMX_RESET(amx);
+						attach = true;
+						join_sync.notify_all();
+						return;
+					case -2:
+						new_callback(amx, sync_index, nullptr, nullptr);
+						break;
+				}
+			}
 		}
 	}
 
@@ -104,7 +130,15 @@ public:
 			{
 				amx->callback = orig_callback;
 			}
-			std::get<0>(pending_callback) = amx->callback(amx, std::get<1>(pending_callback), std::get<2>(pending_callback), std::get<3>(pending_callback));
+			cell &result = std::get<0>(pending_callback);
+			cell index = std::get<1>(pending_callback);
+			if(index != sync_index)
+			{
+				result = amx->callback(amx, index, std::get<2>(pending_callback), std::get<3>(pending_callback));
+			}else{
+				result = 1;
+			}
+			
 			if(safe)
 			{
 				orig_callback = amx->callback;
@@ -129,10 +163,12 @@ public:
 
 	bool join()
 	{
-		if(started && !pending && !attach && !done)
+		if(started && !done)
 		{
-			thread.join();
-			if(!attach)
+			std::unique_lock<std::mutex> lock(mutex);
+			if(pending || attach || done) return false;
+			join_sync.wait(lock);
+			if(!pending && !attach)
 			{
 				delete this;
 				return true;
@@ -143,9 +179,11 @@ public:
 
 	void pause()
 	{
-		std::lock_guard<std::mutex> lock(mutex);
 		if(!pending)
 		{
+			std::lock_guard<std::mutex> lock(mutex);
+			if(pending) return;
+
 			thread.pause();
 			if(safe)
 			{
@@ -164,7 +202,6 @@ public:
 
 	void resume()
 	{
-		std::lock_guard<std::mutex> lock(mutex);
 		if(!pending)
 		{
 			reset.restore_no_context();

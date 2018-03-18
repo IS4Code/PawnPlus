@@ -42,8 +42,12 @@ native task:task_ticks(ticks);
 native task:task_ms(interval);
 native task_await(task:task);
 native task_yield({_,Float,StringTags}:value);
-native thread_detach(bool:natives_protect=true);
+
+/* Threads */
+
+native thread_detach(bool:auto_sync);
 native thread_attach();
+native thread_sync();
 
 /* Strings */
 

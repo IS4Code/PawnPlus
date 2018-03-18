@@ -136,11 +136,11 @@ namespace Natives
 		return 0;
 	}
 
-	// native thread_detach(bool:natives_protect=true);
+	// native thread_detach(bool:auto_sync);
 	static cell AMX_NATIVE_CALL thread_detach(AMX *amx, cell *params)
 	{
 		auto &ctx = Context::Get(amx);
-		ctx.natives_protect = static_cast<bool>(params[1]);
+		ctx.auto_sync = static_cast<bool>(params[1]);
 		ctx.pause_reason = PauseReason::Detach;
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return 1;
@@ -150,7 +150,14 @@ namespace Natives
 	static cell AMX_NATIVE_CALL thread_attach(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return 1;
+		return -1;
+	}
+
+	// native thread_sync();
+	static cell AMX_NATIVE_CALL thread_sync(AMX *amx, cell *params)
+	{
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return -2;
 	}
 }
 
@@ -167,6 +174,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_yield),
 	AMX_DECLARE_NATIVE(thread_detach),
 	AMX_DECLARE_NATIVE(thread_attach),
+	AMX_DECLARE_NATIVE(thread_sync),
 };
 
 int RegisterTasksNatives(AMX *amx)
