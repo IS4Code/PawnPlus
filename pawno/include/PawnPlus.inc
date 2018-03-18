@@ -48,7 +48,14 @@ native task_yield({_,Float,StringTags}:value);
 native thread_detach(bool:auto_sync);
 native thread_attach();
 native thread_sync();
-#define threaded(%0) for(new _@pp_thread_running=thread_detach(%0)|1;_@pp_thread_running;_@pp_thread_running=thread_attach()&0)
+#define threaded(%0) for(new PP@ts:_@pp_thread_running=PP@ts:(thread_detach(%0)|1);_@pp_thread_running;_@pp_thread_running=PP@ts:(thread_attach()&0))
+stock operator~(PP@ts:arr[], count)
+{
+    for(new i = 0; i < count; i++)
+    {
+        if(arr[i]) thread_attach();
+    }
+}
 
 /* Strings */
 
