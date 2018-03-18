@@ -30,7 +30,7 @@ int AMXAPI amx_ExecOrig(AMX *amx, cell *retval, int index)
 {
 	if(subhook_is_installed(amx_Exec_h))
 	{
-		return static_cast<decltype(&amx_Exec)>(subhook_get_trampoline(amx_Exec_h))(amx, retval, index);
+		return reinterpret_cast<decltype(&amx_Exec)>(subhook_get_trampoline(amx_Exec_h))(amx, retval, index);
 	}else{
 		return amx_Exec(amx, retval, index);
 	}
@@ -40,7 +40,7 @@ int AMXAPI amx_FindPublicOrig(AMX *amx, const char *funcname, int *index)
 {
 	if(subhook_is_installed(amx_FindPublic_h))
 	{
-		int ret = static_cast<decltype(&amx_FindPublicOrig)>(subhook_get_trampoline(amx_FindPublic_h))(amx, funcname, index);
+		int ret = reinterpret_cast<decltype(&amx_FindPublicOrig)>(subhook_get_trampoline(amx_FindPublic_h))(amx, funcname, index);
 		return ret;
 	}else{
 		return amx_FindPublic(amx, funcname, index);
@@ -96,7 +96,7 @@ namespace Hooks
 
 	int AMXAPI amx_GetAddr(AMX *amx, cell amx_addr, cell **phys_addr)
 	{
-		int ret = static_cast<decltype(&amx_GetAddr)>(subhook_get_trampoline(amx_GetAddr_h))(amx, amx_addr, phys_addr);
+		int ret = reinterpret_cast<decltype(&amx_GetAddr)>(subhook_get_trampoline(amx_GetAddr_h))(amx, amx_addr, phys_addr);
 
 		if(ret == AMX_ERR_MEMACCESS)
 		{
@@ -146,7 +146,7 @@ namespace Hooks
 			return AMX_ERR_NONE;
 		}
 
-		return static_cast<decltype(&amx_StrLen)>(subhook_get_trampoline(amx_StrLen_h))(cstring, length);
+		return reinterpret_cast<decltype(&amx_StrLen)>(subhook_get_trampoline(amx_StrLen_h))(cstring, length);
 	}
 
 	int AMXAPI amx_FindPublic(AMX *amx, const char *funcname, int *index)
