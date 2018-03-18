@@ -24,6 +24,7 @@ class thread_state
 	std::condition_variable resume_sync;
 	volatile bool pending = false;
 	volatile bool attach = false;
+	volatile bool done = false;
 
 	static AMXAPI int new_callback(AMX *amx, cell index, cell *result, cell *params)
 	{
@@ -81,8 +82,19 @@ public:
 		this->safe = safe;
 	}
 
-	void sync()
+	bool sync()
 	{
+		if(done) return false;
+
+		if(attach)
+		{
+			attach = false;
+			done = true;
+			reset.restore_no_context();
+			cell retval;
+			amx_Exec(amx, &retval, AMX_EXEC_CONT);
+			return true;
+		}
 		if(pending)
 		{
 			pending = false;
@@ -103,13 +115,7 @@ public:
 			std::lock_guard<std::mutex> lock(mutex);
 			resume_sync.notify_one();
 		}
-		if(attach)
-		{
-			attach = false;
-			reset.restore_no_context();
-			cell retval;
-			amx_Exec(amx, &retval, AMX_EXEC_CONT);
-		}
+		return false;
 	}
 
 	void start()
@@ -121,22 +127,18 @@ public:
 		}
 	}
 
-	void join()
+	bool join()
 	{
-		if(started && !pending)
+		if(started && !pending && !attach && !done)
 		{
 			thread.join();
-			auto bounds = running_threads.equal_range(amx);
-			for(auto it = bounds.first; it != bounds.second; it++)
+			if(!attach)
 			{
-				if(it->second == this)
-				{
-					running_threads.erase(it);
-					break;
-				}
+				delete this;
+				return true;
 			}
-			delete this;
 		}
+		return false;
 	}
 
 	void pause()
@@ -207,9 +209,15 @@ namespace Threads
 	void JoinThreads(AMX *amx)
 	{
 		auto bounds = running_threads.equal_range(amx);
-		for(auto it = bounds.first; it != bounds.second; it++)
+		auto it = bounds.first;
+		while(it != bounds.second)
 		{
-			it->second->join();
+			if(it->second->join())
+			{
+				it = running_threads.erase(it);
+			}else{
+				it++;
+			}
 		}
 	}
 
@@ -223,9 +231,15 @@ namespace Threads
 
 	void SyncThreads()
 	{
-		for(auto &thread : running_threads)
+		auto it = running_threads.begin();
+		while(it != running_threads.end())
 		{
-			thread.second->sync();
+			if(it->second->sync())
+			{
+				it = running_threads.erase(it);
+			}else{
+				it++;
+			}
 		}
 	}
 }
