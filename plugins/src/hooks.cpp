@@ -94,6 +94,10 @@ namespace Hooks
 			}
 		}
 
+		//printf("STK %d, STP %d, HEA %d, HLW %d, FRM %d, CIP %d",
+		//	amx->stk, amx->stp, amx->hea, amx->hlw, amx->frm, amx->cip);
+
+		Threads::PauseThreads(amx);
 		Context::Push(amx);
 		int ret = amx_ExecOrig(amx, retval, index);
 		if(ret == AMX_ERR_SLEEP)
@@ -113,12 +117,13 @@ namespace Hooks
 				case PauseReason::Detach:
 				{
 					if(retval != nullptr) *retval = ctx.result;
-					Threads::DetachThread(amx, ctx.natives_protect);
 					amx->error = ret = AMX_ERR_NONE;
+					Threads::DetachThread(amx, ctx.natives_protect);
 				}
 			}
 		}
 		Context::Pop(amx);
+		Threads::ResumeThreads(amx);
 		return ret;
 	}
 

@@ -8,6 +8,7 @@ namespace Threads
 	void DetachThread(AMX *amx, bool safe);
 	void PauseThreads(AMX *amx);
 	void ResumeThreads(AMX *amx);
+	void StartThreads();
 	void SyncThreads();
 }
 

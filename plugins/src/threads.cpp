@@ -20,6 +20,7 @@ class thread_state
 	AMX *amx;
 	bool safe;
 	std::tuple<int, cell, cell*, cell*> pending_callback;
+	bool started = false;
 	std::condition_variable resume_sync;
 	volatile bool pending = false;
 	volatile bool attach = false;
@@ -46,7 +47,7 @@ class thread_state
 	void run()
 	{
 		{
-			std::lock_guard<std::mutex> lock(mutex);
+			std::unique_lock<std::mutex> lock(mutex);
 			reset.restore_no_context();
 			if(safe)
 			{
@@ -114,7 +115,11 @@ public:
 
 	void start()
 	{
-		thread.start();
+		if(!started)
+		{
+			started = true;
+			thread.start();
+		}
 	}
 
 	void pause()
@@ -127,7 +132,14 @@ public:
 			{
 				amx->callback = orig_callback;
 			}
+			// might as well store paramcount
 			reset = AMX_RESET(amx);
+			amx->stk = amx->stp;
+			amx->hea = amx->hlw;
+			amx->cip = 0;
+			amx->paramcount = 0;
+			amx->error = 0;
+			amx->frm = 0;
 		}
 	}
 
@@ -155,7 +167,6 @@ namespace Threads
 	{
 		auto &state = *running_threads.emplace(amx, new thread_state(amx))->second;
 		state.set_safe(safe);
-		state.start();
 	}
 
 	void PauseThreads(AMX *amx)
@@ -173,6 +184,14 @@ namespace Threads
 		for(auto it = bounds.first; it != bounds.second; it++)
 		{
 			it->second->resume();
+		}
+	}
+
+	void StartThreads()
+	{
+		for(auto &thread : running_threads)
+		{
+			thread.second->start();
 		}
 	}
 
