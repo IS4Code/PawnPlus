@@ -10,37 +10,33 @@ namespace Natives
 	// native task:wait_ticks(ticks);
 	static cell AMX_NATIVE_CALL wait_ticks(AMX *amx, cell *params)
 	{
-		if(params[1] == 0) return -1;
-		else if(params[1] < 0)
+		if(params[1] == 0) return 0;
+		auto &ctx = Context::Get(amx);
+		ctx.pause_reason = PauseReason::Await;
+		if(params[1] < 0)
 		{
-			auto &task = TaskPool::CreateNew();
-			Context::Get(amx).awaiting_task = task.Id();
-			amx_RaiseError(amx, AMX_ERR_SLEEP);
-			return task.Id();
+			ctx.awaiting_task = TaskPool::CreateNew().Id();
 		}else{
-			auto &task = TaskPool::CreateTickTask(params[1]);
-			Context::Get(amx).awaiting_task = task.Id();
-			amx_RaiseError(amx, AMX_ERR_SLEEP);
-			return task.Id();
+			ctx.awaiting_task = TaskPool::CreateTickTask(params[1]).Id();
 		}
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return 0;
 	}
 
 	// native task:wait_ms(interval);
 	static cell AMX_NATIVE_CALL wait_ms(AMX *amx, cell *params)
 	{
-		if(params[1] == 0) return -1;
-		else if(params[1] < 0)
+		if(params[1] == 0) return 0;
+		auto &ctx = Context::Get(amx);
+		ctx.pause_reason = PauseReason::Await;
+		if(params[1] < 0)
 		{
-			auto &task = TaskPool::CreateNew();
-			Context::Get(amx).awaiting_task = task.Id();
-			amx_RaiseError(amx, AMX_ERR_SLEEP);
-			return task.Id();
+			ctx.awaiting_task = TaskPool::CreateNew().Id();
 		}else{
-			auto &task = TaskPool::CreateTimerTask(params[1]);
-			Context::Get(amx).awaiting_task = task.Id();
-			amx_RaiseError(amx, AMX_ERR_SLEEP);
-			return task.Id();
+			ctx.awaiting_task = TaskPool::CreateTimerTask(params[1]).Id();
 		}
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return 0;
 	}
 
 	// native task:task_new();
@@ -111,13 +107,18 @@ namespace Natives
 	{
 		task_id id = static_cast<task_id>(params[1]);
 		auto task = TaskPool::Get(id);
-		if(task != nullptr && !task->Completed())
+		if(task != nullptr)
 		{
-			auto &ctx = Context::Get(amx);
-			ctx.pause_reason = PauseReason::Await;
-			ctx.awaiting_task = id;
-			amx_RaiseError(amx, AMX_ERR_SLEEP);
-			return 1;
+			if(!task->Completed())
+			{
+				auto &ctx = Context::Get(amx);
+				ctx.pause_reason = PauseReason::Await;
+				ctx.awaiting_task = id;
+				amx_RaiseError(amx, AMX_ERR_SLEEP);
+				return 0;
+			}else{
+				return task->Result();
+			}
 		}
 		return 0;
 	}

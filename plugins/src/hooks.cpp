@@ -26,42 +26,11 @@ subhook_t amx_FindPublic_h;
 
 bool hook_ref_args = false;
 
-std::unordered_map<AMX*, AMX_CALLBACK> originalCallbacks;
-
-int AMXAPI amx_CustomCallback(AMX *amx, cell index, cell *result, cell *params)
-{
-	auto it = originalCallbacks.find(amx);
-	if(it != originalCallbacks.end())
-	{
-		subhook_install(amx_Exec_h);
-		amx->callback = it->second;
-		originalCallbacks.erase(it);
-		return amx->callback(amx, index, result, params);
-	}else{
-		logprintf("[PP] callback hook cannot be restored");
-		return amx_RaiseError(amx, AMX_ERR_CALLBACK);
-	}
-}
-
 int AMXAPI amx_ExecOrig(AMX *amx, cell *retval, int index)
 {
 	if(subhook_is_installed(amx_Exec_h))
 	{
-		originalCallbacks[amx] = amx->callback;
-		amx->callback = amx_CustomCallback;
-
-		subhook_remove(amx_Exec_h);
-		int ret = amx_Exec(amx, retval, index);
-		subhook_install(amx_Exec_h);
-
-		auto it = originalCallbacks.find(amx);
-		if(it != originalCallbacks.end())
-		{
-			amx->callback = it->second;
-			originalCallbacks.erase(it);
-		}
-
-		return ret;
+		return static_cast<decltype(&amx_Exec)>(subhook_get_trampoline(amx_Exec_h))(amx, retval, index);
 	}else{
 		return amx_Exec(amx, retval, index);
 	}
@@ -71,9 +40,7 @@ int AMXAPI amx_FindPublicOrig(AMX *amx, const char *funcname, int *index)
 {
 	if(subhook_is_installed(amx_FindPublic_h))
 	{
-		subhook_remove(amx_FindPublic_h);
-		int ret = ::amx_FindPublic(amx, funcname, index);
-		subhook_install(amx_FindPublic_h);
+		int ret = static_cast<decltype(&amx_FindPublicOrig)>(subhook_get_trampoline(amx_FindPublic_h))(amx, funcname, index);
 		return ret;
 	}else{
 		return amx_FindPublic(amx, funcname, index);
@@ -115,12 +82,14 @@ namespace Hooks
 						amx->error = ret = AMX_ERR_NONE;
 					}
 				}
+				break;
 				case PauseReason::Detach:
 				{
 					if(retval != nullptr) *retval = ctx.result;
 					amx->error = ret = AMX_ERR_NONE;
 					Threads::DetachThread(amx, ctx.natives_protect);
 				}
+				break;
 			}
 		}
 		Context::Pop(amx);
@@ -130,9 +99,7 @@ namespace Hooks
 
 	int AMXAPI amx_GetAddr(AMX *amx, cell amx_addr, cell **phys_addr)
 	{
-		subhook_remove(amx_GetAddr_h);
-		int ret = ::amx_GetAddr(amx, amx_addr, phys_addr);
-		subhook_install(amx_GetAddr_h);
+		int ret = static_cast<decltype(&amx_GetAddr)>(subhook_get_trampoline(amx_GetAddr_h))(amx, amx_addr, phys_addr);
 
 		if(ret == AMX_ERR_MEMACCESS)
 		{
@@ -182,10 +149,7 @@ namespace Hooks
 			return AMX_ERR_NONE;
 		}
 
-		subhook_remove(amx_StrLen_h);
-		int ret = ::amx_StrLen(cstring, length);
-		subhook_install(amx_StrLen_h);
-		return ret;
+		return static_cast<decltype(&amx_StrLen)>(subhook_get_trampoline(amx_StrLen_h))(cstring, length);
 	}
 
 	int AMXAPI amx_FindPublic(AMX *amx, const char *funcname, int *index)
