@@ -33,8 +33,8 @@ native pawn_unregister_callback(callback:id);
 
 /* Tasks and async */
 
-native task:wait_ticks(ticks);
-native task:wait_ms(interval);
+native wait_ticks(ticks);
+native wait_ms(interval);
 native task:task_new();
 native task_set_result(task:task, {_,Float,StringTags}:result);
 native task_get_result(task:task);
