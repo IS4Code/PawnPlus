@@ -86,7 +86,10 @@ class thread_state
 						join_sync.notify_all();
 						return;
 					case -2:
-						new_callback(amx, sync_index, nullptr, nullptr);
+						if(!safe)
+						{
+							new_callback(amx, sync_index, nullptr, nullptr);
+						}
 						break;
 				}
 			}
