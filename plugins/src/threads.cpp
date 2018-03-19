@@ -39,10 +39,7 @@ class thread_state
 		{
 			std::unique_lock<std::mutex> lock(self.mutex);
 			self.reset = AMX_RESET(amx);
-			if(self.safe)
-			{
-				amx->callback = self.orig_callback;
-			}
+			amx->callback = self.orig_callback;
 			self.pending_callback = std::make_tuple(0, index, result, params);
 			self.pending = true;
 			self.join_sync.notify_all();
@@ -51,6 +48,8 @@ class thread_state
 			if(self.safe)
 			{
 				amx->callback = &new_callback;
+			}else{
+				amx->callback = &amx_Callback;
 			}
 			return std::get<0>(self.pending_callback);
 		}
@@ -61,9 +60,12 @@ class thread_state
 		{
 			std::unique_lock<std::mutex> lock(mutex);
 			reset.restore_no_context();
+			orig_callback = amx->callback;
 			if(safe)
 			{
 				amx->callback = &new_callback;
+			}else{
+				amx->callback = &amx_Callback;
 			}
 		}
 
@@ -71,26 +73,27 @@ class thread_state
 		while(true)
 		{
 			int ret = amx_ExecOrig(amx, &retval, AMX_EXEC_CONT);
-			amx->error = 0;
 			if(ret == AMX_ERR_SLEEP)
 			{
 				switch(amx->pri)
 				{
 					case -1:
-						if(safe)
-						{
-							amx->callback = orig_callback;
-						}
+						amx->callback = orig_callback;
+						amx->error = 0;
 						reset = AMX_RESET(amx);
 						attach = true;
 						join_sync.notify_all();
 						return;
 					case -2:
+						amx->error = 0;
 						if(!safe)
 						{
 							new_callback(amx, sync_index, nullptr, nullptr);
 						}
 						break;
+					default:
+						amx->callback = orig_callback;
+						return;
 				}
 			}
 		}
@@ -129,10 +132,7 @@ public:
 			pending = false;
 
 			reset.restore_no_context();
-			if(safe)
-			{
-				amx->callback = orig_callback;
-			}
+			amx->callback = orig_callback;
 			cell &result = std::get<0>(pending_callback);
 			cell index = std::get<1>(pending_callback);
 			if(index != sync_index)
@@ -141,11 +141,13 @@ public:
 			}else{
 				result = 1;
 			}
-			
+
+			orig_callback = amx->callback;
 			if(safe)
 			{
-				orig_callback = amx->callback;
 				amx->callback = &new_callback;
+			}else{
+				amx->callback = &amx_Callback;
 			}
 			reset = AMX_RESET(amx);
 
@@ -188,10 +190,7 @@ public:
 			if(pending) return;
 
 			thread.pause();
-			if(safe)
-			{
-				amx->callback = orig_callback;
-			}
+			amx->callback = orig_callback;
 			// might as well store paramcount
 			reset = AMX_RESET(amx);
 			amx->stk = amx->stp;
@@ -208,10 +207,12 @@ public:
 		if(!pending)
 		{
 			reset.restore_no_context();
+			orig_callback = amx->callback;
 			if(safe)
 			{
-				orig_callback = amx->callback;
 				amx->callback = &new_callback;
+			}else{
+				amx->callback = &amx_Callback;
 			}
 			thread.resume();
 		}
