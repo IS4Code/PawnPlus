@@ -47,51 +47,72 @@ int AMXAPI amx_FindPublicOrig(AMX *amx, const char *funcname, int *index)
 	}
 }
 
+int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_RESET *reset)
+{
+	if(index <= -3)
+	{
+		auto name = Events::Invoke(-3 - index, amx, retval);
+		if(name != nullptr)
+		{
+			int err = amx_FindPublicOrig(amx, name, &index);
+			if(err) return err;
+		}
+	}
+
+	//Threads::PauseThreads(amx);
+	Threads::JoinThreads(amx);
+
+	AMX_RESET *old = nullptr;
+	if(restore && Context::IsPresent(amx))
+	{
+		old = new AMX_RESET(amx);
+	}
+
+	Context::Push(amx);
+	if(reset != nullptr)
+	{
+		reset->restore();
+	}
+	int ret = amx_ExecOrig(amx, retval, index);
+	if(ret == AMX_ERR_SLEEP)
+	{
+		auto &ctx = Context::Get(amx);
+		switch(ctx.pause_reason)
+		{
+			case PauseReason::Await:
+			{
+				if(ctx.awaiting_task != -1)
+				{
+					TaskPool::Get(ctx.awaiting_task)->Register(AMX_RESET(amx));
+					if(retval != nullptr) *retval = ctx.result;
+					amx->error = ret = AMX_ERR_NONE;
+				}
+			}
+			break;
+			case PauseReason::Detach:
+			{
+				if(retval != nullptr) *retval = ctx.result;
+				amx->error = ret = AMX_ERR_NONE;
+				Threads::DetachThread(amx, ctx.auto_sync);
+			}
+			break;
+		}
+	}
+	Context::Pop(amx);
+	if(old != nullptr)
+	{
+		old->restore();
+		delete old;
+	}
+	//Threads::ResumeThreads(amx);
+	return ret;
+}
+
 namespace Hooks
 {
 	int AMXAPI amx_Exec(AMX *amx, cell *retval, int index)
 	{
-		if(index <= -3)
-		{
-			auto name = Events::Invoke(-3 - index, amx, retval);
-			if(name != nullptr)
-			{
-				int err = amx_FindPublicOrig(amx, name, &index);
-				if(err) return err;
-			}
-		}
-
-		//Threads::PauseThreads(amx);
-		Threads::JoinThreads(amx);
-		Context::Push(amx);
-		int ret = amx_ExecOrig(amx, retval, index);
-		if(ret == AMX_ERR_SLEEP)
-		{
-			auto &ctx = Context::Get(amx);
-			switch(ctx.pause_reason)
-			{
-				case PauseReason::Await:
-				{
-					if(ctx.awaiting_task != -1)
-					{
-						TaskPool::Get(ctx.awaiting_task)->Register(AMX_RESET(amx));
-						if(retval != nullptr) *retval = ctx.result;
-						amx->error = ret = AMX_ERR_NONE;
-					}
-				}
-				break;
-				case PauseReason::Detach:
-				{
-					if(retval != nullptr) *retval = ctx.result;
-					amx->error = ret = AMX_ERR_NONE;
-					Threads::DetachThread(amx, ctx.auto_sync);
-				}
-				break;
-			}
-		}
-		Context::Pop(amx);
-		//Threads::ResumeThreads(amx);
-		return ret;
+		return amx_ExecContext(amx, retval, index, false, nullptr);
 	}
 
 	int AMXAPI amx_GetAddr(AMX *amx, cell amx_addr, cell **phys_addr)

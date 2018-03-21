@@ -6,13 +6,12 @@
 #include <memory>
 #include "sdk/amx/amx.h"
 
-class AMX_RESET
+struct AMX_RESET
 {
 	cell cip, frm, pri, alt, hea, reset_hea, stk, reset_stk;
 	std::unique_ptr<unsigned char[]> heap, stack;
 	AMX_CONTEXT context;
 
-public:
 	AMX* amx;
 
 	AMX_RESET() = default;

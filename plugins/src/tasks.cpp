@@ -40,36 +40,8 @@ void Task::SetCompleted(cell result)
 
 		cell retval;
 
-		AMX_RESET *old = nullptr;
-		if(Context::IsPresent(amx))
-		{
-			old = new AMX_RESET(amx);
-		}
-
-		Context::Push(amx);
-		reset.restore();
-		amx->pri = result;
-		int ret = amx_ExecOrig(amx, &retval, AMX_EXEC_CONT);
-		if(ret == AMX_ERR_SLEEP)
-		{
-			auto &ctx = Context::Get(amx);
-			if(ctx.awaiting_task != -1)
-			{
-				Task *task = TaskPool::Get(ctx.awaiting_task);
-				if(task != nullptr)
-				{
-					task->Register(AMX_RESET(amx));
-					amx->error = ret = AMX_ERR_NONE;
-				}
-			}
-		}
-		Context::Pop(amx);
-
-		if(old != nullptr)
-		{
-			old->restore();
-			delete old;
-		}
+		reset.pri = result;
+		amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
 	}
 	waiting.clear();
 }
