@@ -55,6 +55,9 @@
     <ClCompile Include="src\threads.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives\nthread.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

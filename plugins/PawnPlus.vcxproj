@@ -135,6 +135,7 @@
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\events.cpp" />
     <ClCompile Include="src\hooks.cpp" />
+    <ClCompile Include="src\natives\nthread.cpp" />
     <ClCompile Include="src\natives\pp.cpp" />
     <ClCompile Include="src\natives\pawn.cpp" />
     <ClCompile Include="src\natives\str.cpp" />
