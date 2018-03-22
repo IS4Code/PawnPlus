@@ -59,8 +59,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 		}
 	}
 
-	//Threads::PauseThreads(amx);
-	Threads::JoinThreads(amx);
+	Threads::PauseThreads(amx);
+	//Threads::JoinThreads(amx);
 
 	AMX_RESET *old = nullptr;
 	if(restore && Context::IsPresent(amx))
@@ -104,7 +104,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 		old->restore();
 		delete old;
 	}
-	//Threads::ResumeThreads(amx);
+	Threads::ResumeThreads(amx);
 	return ret;
 }
 

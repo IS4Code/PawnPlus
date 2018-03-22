@@ -27,6 +27,7 @@ class thread_state
 	volatile bool pending = false;
 	volatile bool attach = false;
 	volatile bool done = false;
+	bool paused = false;
 
 	static constexpr cell sync_index = std::numeric_limits<cell>::min();
 
@@ -67,6 +68,8 @@ class thread_state
 			}else{
 				amx->callback = &amx_Callback;
 			}
+			started = true;
+			join_sync.notify_all();
 		}
 
 		cell retval;
@@ -130,14 +133,17 @@ public:
 		if(pending)
 		{
 			pending = false;
-
 			reset.restore_no_context();
 			amx->callback = orig_callback;
 			cell &result = std::get<0>(pending_callback);
 			cell index = std::get<1>(pending_callback);
 			if(index != sync_index)
 			{
+				// In auto-sync mode, we don't want to patch the code
+				cell sysreq_d = amx->sysreq_d;
+				amx->sysreq_d = 0;
 				result = amx->callback(amx, index, std::get<2>(pending_callback), std::get<3>(pending_callback));
+				amx->sysreq_d = sysreq_d;
 			}else{
 				result = 1;
 			}
@@ -161,14 +167,15 @@ public:
 	{
 		if(!started)
 		{
-			started = true;
+			std::unique_lock<std::mutex> lock(mutex);
 			thread.start();
+			join_sync.wait(lock);
 		}
 	}
 
 	bool join()
 	{
-		if(started && !done)
+		if(started && !paused && !done)
 		{
 			std::unique_lock<std::mutex> lock(mutex);
 			if(pending || attach || done) return false;
@@ -184,7 +191,7 @@ public:
 
 	void pause()
 	{
-		if(!pending)
+		if(started && !pending)
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			if(pending) return;
@@ -199,12 +206,13 @@ public:
 			amx->paramcount = 0;
 			amx->error = 0;
 			amx->frm = 0;
+			paused = true;
 		}
 	}
 
 	void resume()
 	{
-		if(!pending)
+		if(paused)
 		{
 			reset.restore_no_context();
 			orig_callback = amx->callback;
@@ -214,6 +222,7 @@ public:
 			}else{
 				amx->callback = &amx_Callback;
 			}
+			paused = false;
 			thread.resume();
 		}
 	}
