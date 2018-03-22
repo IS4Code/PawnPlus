@@ -60,7 +60,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 	}
 
 	Threads::PauseThreads(amx);
-	//Threads::JoinThreads(amx);
+	Threads::JoinThreads(amx);
 
 	AMX_RESET *old = nullptr;
 	if(restore && Context::IsPresent(amx))
@@ -93,7 +93,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 			{
 				if(retval != nullptr) *retval = ctx.result;
 				amx->error = ret = AMX_ERR_NONE;
-				Threads::DetachThread(amx, ctx.auto_sync);
+				Threads::DetachThread(amx, static_cast<Threads::SyncFlags>(ctx.sync_flags));
 			}
 			break;
 		}

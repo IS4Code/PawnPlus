@@ -19,7 +19,7 @@ class thread_state
 	aux::thread thread;
 	AMX_CALLBACK orig_callback;
 	AMX *amx;
-	bool safe;
+	Threads::SyncFlags flags;
 	std::tuple<int, cell, cell*, cell*> pending_callback;
 	bool started = false;
 	std::condition_variable resume_sync;
@@ -46,7 +46,7 @@ class thread_state
 			self.join_sync.notify_all();
 			self.resume_sync.wait(lock);
 			self.reset.restore_no_context();
-			if(self.safe)
+			if((self.flags & Threads::SyncFlags::SyncAuto) == Threads::SyncFlags::SyncAuto)
 			{
 				amx->callback = &new_callback;
 			}else{
@@ -62,7 +62,7 @@ class thread_state
 			std::unique_lock<std::mutex> lock(mutex);
 			reset.restore_no_context();
 			orig_callback = amx->callback;
-			if(safe)
+			if((flags & Threads::SyncFlags::SyncAuto) == Threads::SyncFlags::SyncAuto)
 			{
 				amx->callback = &new_callback;
 			}else{
@@ -89,7 +89,7 @@ class thread_state
 						return;
 					case -2:
 						amx->error = 0;
-						if(!safe)
+						if((flags & Threads::SyncFlags::SyncAuto) != Threads::SyncFlags::SyncAuto)
 						{
 							new_callback(amx, sync_index, nullptr, nullptr);
 						}
@@ -112,9 +112,9 @@ public:
 	thread_state(const thread_state&) = delete;
 	thread_state &operator=(const thread_state&) = delete;
 
-	void set_safe(bool safe)
+	void set_flags(Threads::SyncFlags flags)
 	{
-		this->safe = safe;
+		this->flags = flags;
 	}
 
 	bool sync()
@@ -149,7 +149,7 @@ public:
 			}
 
 			orig_callback = amx->callback;
-			if(safe)
+			if((flags & Threads::SyncFlags::SyncAuto) == Threads::SyncFlags::SyncAuto)
 			{
 				amx->callback = &new_callback;
 			}else{
@@ -191,7 +191,7 @@ public:
 
 	void pause()
 	{
-		if(started && !pending)
+		if(started && !pending && (flags & Threads::SyncFlags::SyncInterrupt) == Threads::SyncFlags::SyncInterrupt)
 		{
 			std::lock_guard<std::mutex> lock(mutex);
 			if(pending) return;
@@ -216,7 +216,7 @@ public:
 		{
 			reset.restore_no_context();
 			orig_callback = amx->callback;
-			if(safe)
+			if((flags & Threads::SyncFlags::SyncAuto) == Threads::SyncFlags::SyncAuto)
 			{
 				amx->callback = &new_callback;
 			}else{
@@ -232,10 +232,10 @@ std::unordered_multimap<AMX*, thread_state*> running_threads;
 
 namespace Threads
 {
-	void DetachThread(AMX *amx, bool safe)
+	void DetachThread(AMX *amx, SyncFlags flags)
 	{
 		auto &state = *running_threads.emplace(amx, new thread_state(amx))->second;
-		state.set_safe(safe);
+		state.set_flags(flags);
 	}
 
 	void PauseThreads(AMX *amx)

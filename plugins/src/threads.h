@@ -5,7 +5,22 @@
 
 namespace Threads
 {
-	void DetachThread(AMX *amx, bool safe);
+	enum class SyncFlags : cell
+	{
+		SyncExplicit = 0,
+		SyncAuto = 1,
+		SyncInterrupt = 2
+	};
+	constexpr SyncFlags operator|(SyncFlags lhs, SyncFlags rhs)
+	{
+		return (SyncFlags)((cell)lhs | (cell)rhs);
+	}
+	constexpr SyncFlags operator&(SyncFlags lhs, SyncFlags rhs)
+	{
+		return (SyncFlags)((cell)lhs & (cell)rhs);
+	}
+
+	void DetachThread(AMX *amx, SyncFlags flags);
 	void PauseThreads(AMX *amx);
 	void ResumeThreads(AMX *amx);
 	void JoinThreads(AMX *amx);

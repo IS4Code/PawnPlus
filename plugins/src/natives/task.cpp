@@ -136,11 +136,11 @@ namespace Natives
 		return 0;
 	}
 
-	// native thread_detach(bool:auto_sync);
+	// native thread_detach(sync_flags:flags);
 	static cell AMX_NATIVE_CALL thread_detach(AMX *amx, cell *params)
 	{
 		auto &ctx = Context::Get(amx);
-		ctx.auto_sync = static_cast<bool>(params[1]);
+		ctx.sync_flags = params[1];
 		ctx.pause_reason = PauseReason::Detach;
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return 1;
