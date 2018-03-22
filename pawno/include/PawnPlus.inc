@@ -55,6 +55,9 @@ enum sync_flags
 native thread_detach(sync_flags:flags);
 native thread_attach();
 native thread_sync();
+native thread_sleep(ms);
+native thread_id(id[], size=sizeof id);
+native String:thread_id_s();
 #if !defined PP_NO_ALIASES
 #define threaded(%0) for(new PP@ts:_@pp_thread_running=PP@ts:(thread_detach(%0)|1);_@pp_thread_running;_@pp_thread_running=PP@ts:(thread_attach()&0))
 stock operator~(PP@ts:arr[], count)
