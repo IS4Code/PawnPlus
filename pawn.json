@@ -1,0 +1,18 @@
+{
+    "user": "IllidanS4",
+    "repo": "PawnPlus",
+    "include_path": "pawno/include",
+    "dependencies": ["sampctl/samp-stdlib"],
+    "resources": [
+        {
+            "name": "PawnPlus.dll",
+            "platform": "windows",
+            "archive": false
+        },
+        {
+            "name": "PawnPlus.so",
+            "platform": "linux",
+            "archive": false
+        }
+    ]
+}
