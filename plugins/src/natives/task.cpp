@@ -11,32 +11,26 @@ namespace Natives
 	static cell AMX_NATIVE_CALL wait_ticks(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
-		auto &ctx = Context::Get(amx);
-		ctx.pause_reason = PauseReason::Await;
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		if(params[1] < 0)
 		{
-			ctx.awaiting_task = TaskPool::CreateNew().Id();
+			return SleepReturnWaitInf;
 		}else{
-			ctx.awaiting_task = TaskPool::CreateTickTask(params[1]).Id();
+			return SleepReturnWaitTicks | (SleepReturnValueMask & params[1]);
 		}
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return 0;
 	}
 
 	// native task:wait_ms(interval);
 	static cell AMX_NATIVE_CALL wait_ms(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
-		auto &ctx = Context::Get(amx);
-		ctx.pause_reason = PauseReason::Await;
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		if(params[1] < 0)
 		{
-			ctx.awaiting_task = TaskPool::CreateNew().Id();
+			return SleepReturnWaitInf;
 		}else{
-			ctx.awaiting_task = TaskPool::CreateTimerTask(params[1]).Id();
+			return SleepReturnWaitMs | (SleepReturnValueMask & params[1]);
 		}
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return 0;
 	}
 
 	// native task:task_new();
@@ -111,11 +105,8 @@ namespace Natives
 		{
 			if(!task->Completed())
 			{
-				auto &ctx = Context::Get(amx);
-				ctx.pause_reason = PauseReason::Await;
-				ctx.awaiting_task = id;
 				amx_RaiseError(amx, AMX_ERR_SLEEP);
-				return 0;
+				return SleepReturnAwait | (id & SleepReturnValueMask);
 			}else{
 				return task->Result();
 			}

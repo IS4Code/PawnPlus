@@ -9,25 +9,22 @@ namespace Natives
 	// native thread_detach(sync_flags:flags);
 	static cell AMX_NATIVE_CALL thread_detach(AMX *amx, cell *params)
 	{
-		auto &ctx = Context::Get(amx);
-		ctx.sync_flags = params[1];
-		ctx.pause_reason = PauseReason::Detach;
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return 1;
+		return SleepReturnDetach | (SleepReturnValueMask & params[1]);
 	}
 
 	// native thread_attach();
 	static cell AMX_NATIVE_CALL thread_attach(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return -1;
+		return SleepReturnAttach;
 	}
 
 	// native thread_sync();
 	static cell AMX_NATIVE_CALL thread_sync(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return -2;
+		return SleepReturnSync;
 	}
 
 	// native thread_sleep(ms);

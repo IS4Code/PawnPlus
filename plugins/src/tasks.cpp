@@ -11,6 +11,8 @@ extern logprintf_t logprintf;
 std::vector<Task> pool;
 std::vector<std::pair<ucell, task_id>> tickTasks;
 std::vector<std::pair<std::chrono::system_clock::time_point, task_id>> timerTasks;
+std::vector<std::pair<ucell, AMX_RESET>> tickResets;
+std::vector<std::pair<std::chrono::system_clock::time_point, AMX_RESET>> timerResets;
 
 Task &TaskPool::CreateNew()
 {
@@ -76,14 +78,25 @@ Task &TaskPool::CreateTimerTask(cell interval)
 	return task;
 }
 
+void TaskPool::RegisterTicks(cell ticks, AMX_RESET &&reset)
+{
+	tickResets.push_back(std::make_pair(ticks, std::move(reset)));
+}
+
+void TaskPool::RegisterTimer(cell interval, AMX_RESET &&reset)
+{
+	auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
+	timerResets.push_back(std::make_pair(time, std::move(reset)));
+}
+
 void TaskPool::OnTick()
 {
 	{
 		auto it = tickTasks.begin();
-		while (it != tickTasks.end())
+		while(it != tickTasks.end())
 		{
 			it->first--;
-			if (it->first == 0)
+			if(it->first == 0)
 			{
 				auto id = it->second;
 				tickTasks.erase(it);
@@ -94,18 +107,59 @@ void TaskPool::OnTick()
 			}
 		}
 	}
-
 	{
-		auto now = std::chrono::system_clock::now();
-		auto it = timerTasks.begin();
-		while (it != timerTasks.end())
+		auto it = tickResets.begin();
+		while(it != tickResets.end())
 		{
-			if (now >= it->first)
+			it->first--;
+			if(it->first == 0)
+			{
+				AMX_RESET reset = std::move(it->second);
+				tickResets.erase(it);
+				AMX *amx = reset.amx;
+				if(!Context::IsValid(amx)) continue;
+
+				cell retval;
+				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+
+				it = tickResets.begin();
+			} else {
+				it++;
+			}
+		}
+	}
+
+	auto now = std::chrono::system_clock::now();
+	{
+		auto it = timerTasks.begin();
+		while(it != timerTasks.end())
+		{
+			if(now >= it->first)
 			{
 				auto id = it->second;
 				timerTasks.erase(it);
 				Get(id)->SetCompleted(id);
 				it = timerTasks.begin();
+			} else {
+				it++;
+			}
+		}
+	}
+	{
+		auto it = timerResets.begin();
+		while(it != timerResets.end())
+		{
+			if(now >= it->first)
+			{
+				AMX_RESET reset = std::move(it->second);
+				timerResets.erase(it);
+				AMX *amx = reset.amx;
+				if(!Context::IsValid(amx)) continue;
+
+				cell retval;
+				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+
+				it = timerResets.begin();
 			} else {
 				it++;
 			}

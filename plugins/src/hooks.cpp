@@ -73,30 +73,75 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 	{
 		reset->restore();
 	}
-	int ret = amx_ExecOrig(amx, retval, index);
-	if(ret == AMX_ERR_SLEEP)
+	int ret;
+	while(true)
 	{
-		auto &ctx = Context::Get(amx);
-		switch(ctx.pause_reason)
+		ret = amx_ExecOrig(amx, retval, index);
+		if(ret == AMX_ERR_SLEEP)
 		{
-			case PauseReason::Await:
+			index = AMX_EXEC_CONT;
+
+			auto &ctx = Context::Get(amx);
+			switch(amx->pri & SleepReturnTypeMask)
 			{
-				if(ctx.awaiting_task != -1)
+				case SleepReturnAwait:
 				{
-					TaskPool::Get(ctx.awaiting_task)->Register(AMX_RESET(amx));
-					if(retval != nullptr) *retval = ctx.result;
+					task_id task = SleepReturnValueMask & amx->pri;
+					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
+					if(retval != nullptr) *retval = ctx.result;
+					TaskPool::Get(task)->Register(AMX_RESET(amx));
 				}
+				break;
+				case SleepReturnWaitTicks:
+				{
+					cell ticks = SleepReturnValueMask & amx->pri;
+					amx->pri = 0;
+					amx->error = ret = AMX_ERR_NONE;
+					if(retval != nullptr) *retval = ctx.result;
+					TaskPool::RegisterTicks(ticks, AMX_RESET(amx));
+				}
+				break;
+				case SleepReturnWaitMs:
+				{
+					cell interval = SleepReturnValueMask & amx->pri;
+					amx->pri = 0;
+					amx->error = ret = AMX_ERR_NONE;
+					if(retval != nullptr) *retval = ctx.result;
+					TaskPool::RegisterTimer(interval, AMX_RESET(amx));
+				}
+				break;
+				case SleepReturnWaitInf:
+				{
+					amx->pri = 0;
+					amx->error = ret = AMX_ERR_NONE;
+					if(retval != nullptr) *retval = ctx.result;
+				}
+				break;
+				case SleepReturnDetach:
+				{
+					auto flags = static_cast<Threads::SyncFlags>(SleepReturnValueMask & amx->pri);
+					amx->pri = 0;
+					amx->error = ret = AMX_ERR_NONE;
+					if(retval != nullptr) *retval = ctx.result;
+					Threads::DetachThread(amx, flags);
+				}
+				break;
+				case SleepReturnAttach:
+				{
+					logprintf("[PP] thread_attach was called in a non-threaded code.");
+					continue;
+				}
+				break;
+				case SleepReturnSync:
+				{
+					logprintf("[PP] thread_sync was called in a non-threaded code.");
+					continue;
+				}
+				break;
 			}
-			break;
-			case PauseReason::Detach:
-			{
-				if(retval != nullptr) *retval = ctx.result;
-				amx->error = ret = AMX_ERR_NONE;
-				Threads::DetachThread(amx, static_cast<Threads::SyncFlags>(ctx.sync_flags));
-			}
-			break;
 		}
+		break;
 	}
 	Context::Pop(amx);
 	if(old != nullptr)

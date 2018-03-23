@@ -11,6 +11,7 @@
 
 class thread_state;
 extern std::unordered_multimap<AMX*, thread_state*> running_threads;
+thread_local thread_state *my_instance;
 
 class thread_state
 {
@@ -31,33 +32,33 @@ class thread_state
 
 	static constexpr cell sync_index = std::numeric_limits<cell>::min();
 
+	int auto_callback(AMX *amx, cell index, cell *result, cell *params)
+	{
+		std::unique_lock<std::mutex> lock(mutex);
+		reset = AMX_RESET(amx);
+		amx->callback = orig_callback;
+		pending_callback = std::make_tuple(0, index, result, params);
+		pending = true;
+		join_sync.notify_all();
+		resume_sync.wait(lock);
+		reset.restore_no_context();
+		if((flags & Threads::SyncFlags::SyncAuto) == Threads::SyncFlags::SyncAuto)
+		{
+			amx->callback = &new_callback;
+		} else {
+			amx->callback = &amx_Callback;
+		}
+		return std::get<0>(pending_callback);
+	}
+
 	static AMXAPI int new_callback(AMX *amx, cell index, cell *result, cell *params)
 	{
-		// how do I identify myself from within the AMX?
-		// well I can copy code to produce instances of this function for each instance,
-		// and since subhook already does pretty undefined behaviour, why not
-		auto &self = *running_threads.find(amx)->second; //race condition
-		{
-			std::unique_lock<std::mutex> lock(self.mutex);
-			self.reset = AMX_RESET(amx);
-			amx->callback = self.orig_callback;
-			self.pending_callback = std::make_tuple(0, index, result, params);
-			self.pending = true;
-			self.join_sync.notify_all();
-			self.resume_sync.wait(lock);
-			self.reset.restore_no_context();
-			if((self.flags & Threads::SyncFlags::SyncAuto) == Threads::SyncFlags::SyncAuto)
-			{
-				amx->callback = &new_callback;
-			}else{
-				amx->callback = &amx_Callback;
-			}
-			return std::get<0>(self.pending_callback);
-		}
+		return my_instance->auto_callback(amx, index, result, params);
 	}
 
 	void run()
 	{
+		my_instance = this;
 		{
 			std::unique_lock<std::mutex> lock(mutex);
 			reset.restore_no_context();
@@ -78,21 +79,27 @@ class thread_state
 			int ret = amx_ExecOrig(amx, &retval, AMX_EXEC_CONT);
 			if(ret == AMX_ERR_SLEEP)
 			{
-				switch(amx->pri)
+				switch(amx->pri & SleepReturnTypeMask)
 				{
-					case -1:
+					case SleepReturnAttach:
 						amx->callback = orig_callback;
+						amx->pri = 0;
 						amx->error = 0;
 						reset = AMX_RESET(amx);
 						attach = true;
 						join_sync.notify_all();
 						return;
-					case -2:
+					case SleepReturnSync:
+						amx->pri = 0;
 						amx->error = 0;
 						if((flags & Threads::SyncFlags::SyncAuto) != Threads::SyncFlags::SyncAuto)
 						{
-							new_callback(amx, sync_index, nullptr, nullptr);
+							auto_callback(amx, sync_index, nullptr, nullptr);
 						}
+						break;
+					case SleepReturnDetach:
+						amx->pri = 0;
+						set_flags(static_cast<Threads::SyncFlags>(SleepReturnValueMask & amx->pri));
 						break;
 					default:
 						amx->callback = orig_callback;
