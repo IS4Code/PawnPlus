@@ -4,11 +4,12 @@
 #include "sdk/amx/amx.h"
 #include <utility>
 #include <chrono>
+#include <vector>
 
 typedef void(*logprintf_t)(char* format, ...);
 extern logprintf_t logprintf;
 
-std::vector<Task> pool;
+std::vector<std::unique_ptr<Task>> pool;
 std::vector<std::pair<ucell, task_id>> tickTasks;
 std::vector<std::pair<std::chrono::system_clock::time_point, task_id>> timerTasks;
 std::vector<std::pair<ucell, AMX_RESET>> tickResets;
@@ -17,15 +18,15 @@ std::vector<std::pair<std::chrono::system_clock::time_point, AMX_RESET>> timerRe
 Task &TaskPool::CreateNew()
 {
 	size_t id = pool.size();
-	pool.emplace_back(id);
-	return pool[id];
+	pool.push_back(std::make_unique<Task>(id));
+	return *pool[id];
 }
 
 Task *TaskPool::Get(task_id id)
 {
 	if(0 <= id && id < pool.size())
 	{
-		return &pool[id];
+		return pool[id].get();
 	}else{
 		return nullptr;
 	}
@@ -35,8 +36,9 @@ void Task::SetCompleted(cell result)
 {
 	this->completed = true;
 	this->result = result;
-	for (auto &reset : waiting)
+	while(waiting.size() > 0)
 	{
+		auto &reset = waiting.front();
 		AMX *amx = reset.amx;
 		if(!Context::IsValid(amx)) continue;
 
@@ -44,22 +46,22 @@ void Task::SetCompleted(cell result)
 
 		reset.pri = result;
 		amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+		waiting.pop();
 	}
-	waiting.clear();
 }
 
 void Task::Register(AMX_RESET &&reset)
 {
-	waiting.push_back(std::move(reset));
+	waiting.push(std::move(reset));
 }
 
 Task &TaskPool::CreateTickTask(cell ticks)
 {
 	Task &task = CreateNew();
-	if (ticks == 0)
+	if(ticks == 0)
 	{
 		task.SetCompleted(task.Id());
-	} else {
+	}else{
 		tickTasks.push_back(std::make_pair(ticks, task.Id()));
 	}
 	return task;
@@ -68,10 +70,10 @@ Task &TaskPool::CreateTickTask(cell ticks)
 Task &TaskPool::CreateTimerTask(cell interval)
 {
 	Task &task = CreateNew();
-	if (interval <= 0)
+	if(interval <= 0)
 	{
 		task.SetCompleted(task.Id());
-	} else {
+	}else{
 		auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
 		timerTasks.push_back(std::make_pair(time, task.Id()));
 	}
@@ -102,7 +104,7 @@ void TaskPool::OnTick()
 				tickTasks.erase(it);
 				Get(id)->SetCompleted(id);
 				it = tickTasks.begin();
-			} else {
+			}else{
 				it++;
 			}
 		}
@@ -123,7 +125,7 @@ void TaskPool::OnTick()
 				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
 
 				it = tickResets.begin();
-			} else {
+			}else{
 				it++;
 			}
 		}
@@ -140,7 +142,7 @@ void TaskPool::OnTick()
 				timerTasks.erase(it);
 				Get(id)->SetCompleted(id);
 				it = timerTasks.begin();
-			} else {
+			}else{
 				it++;
 			}
 		}
@@ -160,7 +162,7 @@ void TaskPool::OnTick()
 				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
 
 				it = timerResets.begin();
-			} else {
+			}else{
 				it++;
 			}
 		}

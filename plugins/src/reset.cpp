@@ -59,8 +59,22 @@ AMX_RESET::AMX_RESET(AMX_RESET &&obj) : context(obj.context), amx(obj.amx), cip(
 
 }
 
+AMX_RESET::AMX_RESET(const AMX_RESET &obj) : context(obj.context), amx(obj.amx), cip(obj.cip), frm(obj.frm), pri(obj.pri), alt(obj.alt), hea(obj.hea), reset_hea(obj.reset_hea), stk(obj.stk), reset_stk(obj.reset_stk)
+{
+	auto amxhdr = (AMX_HEADER*)amx->base;
+	size_t heap_size = hea - (amxhdr->hea - amxhdr->dat);
+	heap = std::make_unique<unsigned char[]>(heap_size);
+	std::memcpy(heap.get(), obj.heap.get(), heap_size);
+
+	size_t stack_size = amxhdr->stp - amxhdr->dat - stk;
+	stack = std::make_unique<unsigned char[]>(stack_size);
+	std::memcpy(stack.get(), obj.stack.get(), stack_size);
+}
+
 AMX_RESET &AMX_RESET::operator=(AMX_RESET &&obj)
 {
+	if(this == &obj) return *this;
+
 	context = obj.context;
 	amx = obj.amx;
 	cip = obj.cip, frm = obj.frm, pri = obj.pri, alt = obj.alt;
@@ -68,5 +82,26 @@ AMX_RESET &AMX_RESET::operator=(AMX_RESET &&obj)
 	hea = obj.hea, reset_hea = obj.reset_hea;
 	heap = std::move(obj.heap);
 	stack = std::move(obj.stack);
+	return *this;
+}
+
+AMX_RESET &AMX_RESET::operator=(const AMX_RESET &obj)
+{
+	if(this == &obj) return *this;
+
+	context = obj.context;
+	amx = obj.amx;
+	cip = obj.cip, frm = obj.frm, pri = obj.pri, alt = obj.alt;
+	stk = obj.stk, reset_stk = obj.reset_stk;
+	hea = obj.hea, reset_hea = obj.reset_hea;
+
+	auto amxhdr = (AMX_HEADER*)amx->base;
+	size_t heap_size = hea - (amxhdr->hea - amxhdr->dat);
+	heap = std::make_unique<unsigned char[]>(heap_size);
+	std::memcpy(heap.get(), obj.heap.get(), heap_size);
+
+	size_t stack_size = amxhdr->stp - amxhdr->dat - stk;
+	stack = std::make_unique<unsigned char[]>(stack_size);
+	std::memcpy(stack.get(), obj.stack.get(), stack_size);
 	return *this;
 }

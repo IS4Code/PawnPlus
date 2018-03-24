@@ -1,8 +1,7 @@
 #ifndef TASKS_H_INCLUDED
 #define TASKS_H_INCLUDED
 
-#include <vector>
-#include <unordered_set>
+#include <queue>
 
 #include "sdk/amx/amx.h"
 
@@ -16,7 +15,7 @@ class Task
 	const task_id id;
 	cell result = 0;
 	bool completed = false;
-	std::vector<AMX_RESET> waiting;
+	std::queue<AMX_RESET> waiting;
 public:
 	Task(task_id id) : id(id)
 	{
