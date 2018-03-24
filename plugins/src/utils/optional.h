@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <type_traits>
 #include <exception>
+#include <stdexcept>
 
 namespace aux
 {

@@ -1,6 +1,7 @@
 #include "tasks.h"
 #include "hooks.h"
 
+#include "fixes/linux.h"
 #include "sdk/amx/amx.h"
 #include <utility>
 #include <chrono>
