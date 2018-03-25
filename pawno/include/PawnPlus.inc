@@ -53,6 +53,8 @@ native str_setc(StringTag:str, pos, value);
 native str_cmp(StringTag:str1, StringTag:str2);
 native bool:str_empty(StringTag:str);
 native bool:str_equal(StringTag:str1, StringTag:str2);
+native str_findc(StringTag:str, value, offset=0);
+native str_find(StringTag:str, StringTag:value, offset=0);
 
 native String:str_int(val);
 native String:str_float(Float:val);
