@@ -68,26 +68,56 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 	}
 }
 
-cell_string *strings::create(const cell *addr, bool temp, size_t length, bool truncate, bool fixnulls)
+cell_string *strings::create(const cell *addr, bool temp, size_t length, bool packed, bool truncate, bool fixnulls)
 {
-	cell_string *str = pool.add(cell_string(addr, length), temp);
-	if(truncate)
+	if(addr == nullptr || length == 0)
 	{
-		for(size_t i = 0; i < length; i++)
-		{
-			cell &c = (*str)[i];
-			c &= 0xFF;
-			if(fixnulls && c == 0) c = 0x00FFFF00;
-		}
-	}else if(fixnulls)
-	{
-		for(size_t i = 0; i < length; i++)
-		{
-			cell &c = (*str)[i];
-			if(c == 0) c = 0x00FFFF00;
-		}
+		return pool.add(temp);
 	}
-	return str;
+	if(packed && (addr[0] & 0xFF000000))
+	{
+		cell last = addr[length - 1];
+		size_t rem = 0;
+		if(last & 0xFF) rem = 4;
+		else if(last & 0xFF00) rem = 3;
+		else if(last & 0xFF0000) rem = 2;
+		else if(last & 0xFF000000) rem = 1;
+
+		length = (length - 1) * 4 + rem;
+
+		cell_string *str = pool.add(cell_string(length, '\0'), temp);
+		size_t pos = 0;
+		do{
+			size_t ipos = pos / 4 * 4 + 3 - pos % 4;
+			cell c = reinterpret_cast<const char*>(addr)[ipos];
+			if(fixnulls)
+			{
+				if(c == 0) c = 0x00FFFF00;
+			}
+			(*str)[pos] = c;
+			pos++;
+		}while(pos < length);
+		return str;
+	}else{
+		cell_string *str = pool.add(cell_string(addr, length), temp);
+		if(truncate)
+		{
+			for(size_t i = 0; i < length; i++)
+			{
+				cell &c = (*str)[i];
+				c &= 0xFF;
+				if(fixnulls && c == 0) c = 0x00FFFF00;
+			}
+		}else if(fixnulls)
+		{
+			for(size_t i = 0; i < length; i++)
+			{
+				cell &c = (*str)[i];
+				if(c == 0) c = 0x00FFFF00;
+			}
+		}
+		return str;
+	}
 }
 
 cell_string convert(const std::string &str)

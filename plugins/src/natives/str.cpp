@@ -4,7 +4,7 @@
 
 namespace Natives
 {
-	// native String:str_new(const str[], bool:wide = true);
+	// native String:str_new(const str[], str_create_mode:mode=str_preserve);
 	static cell AMX_NATIVE_CALL str_new(AMX *amx, cell *params)
 	{
 		cell *addr;
@@ -14,13 +14,25 @@ namespace Natives
 		return reinterpret_cast<cell>(str);
 	}
 
-	// native String:str_new_arr(const arr[], size=sizeof(arr), bool:wide=true);
+	// native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=str_preserve);
 	static cell AMX_NATIVE_CALL str_new_arr(AMX *amx, cell *params)
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
+		int flags = params[3];
+		auto str = strings::create(addr, true, static_cast<size_t>(params[2]), false, flags & 1, flags & 2);
+		return reinterpret_cast<cell>(str);
+	}
+
+	// native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
+	static cell AMX_NATIVE_CALL str_new_static(AMX *amx, cell *params)
+	{
+		cell *addr;
+		amx_GetAddr(amx, params[1], &addr);
 		int flags = params[2];
-		auto str = strings::create(addr, true, static_cast<size_t>(params[2]), flags & 1, flags & 2);
+		cell size = (addr[0] & 0xFF000000) ? params[3] : params[3] - 1;
+		if(size < 0) size = 0;
+		auto str = strings::create(addr, true, static_cast<size_t>(size), true, flags & 1, flags & 2);
 		return reinterpret_cast<cell>(str);
 	}
 
@@ -61,13 +73,10 @@ namespace Natives
 		return params[1];
 	}
 
-	// native bool:str_free(&StringTag:str);
-	static cell AMX_NATIVE_CALL str_free(AMX *amx, cell *params)
+	// native bool:str_delete(StringTag:str);
+	static cell AMX_NATIVE_CALL str_delete(AMX *amx, cell *params)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
-		bool ok = strings::pool.free(reinterpret_cast<strings::cell_string*>(*addr));
-		*addr = 0;
+		bool ok = strings::pool.free(reinterpret_cast<strings::cell_string*>(params[1]));
 		return static_cast<cell>(ok);
 	}
 
@@ -374,11 +383,12 @@ static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(str_new),
 	AMX_DECLARE_NATIVE(str_new_arr),
+	AMX_DECLARE_NATIVE(str_new_static),
 	AMX_DECLARE_NATIVE(str_new_buf),
 	AMX_DECLARE_NATIVE(str_addr),
 	AMX_DECLARE_NATIVE(str_buf_addr),
 	AMX_DECLARE_NATIVE(str_to_global),
-	AMX_DECLARE_NATIVE(str_free),
+	AMX_DECLARE_NATIVE(str_delete),
 	AMX_DECLARE_NATIVE(str_is_valid),
 
 	AMX_DECLARE_NATIVE(str_len),

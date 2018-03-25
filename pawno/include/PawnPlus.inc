@@ -37,16 +37,14 @@ enum str_create_mode
 
 native String:str_new(const str[], str_create_mode:mode=str_preserve);
 native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=str_preserve);
+native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
 native String:str_new_buf(size);
 native AmxString:str_addr(StringTag:str);
 native AmxStringBuffer:str_buf_addr(StringTag:str);
 native GlobalString:str_to_global(StringTag:str);
 native String:str_to_local(StringTag:str);
-native bool:str_free(&StringTag:str);
+native bool:str_delete(StringTag:str);
 native bool:str_is_valid(StringTag:str);
-/*
-native String:str_new_nulls(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
-*/
 
 native str_len(StringTag:str);
 native str_get(StringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
@@ -78,7 +76,7 @@ native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,F
 
 #if !defined PP_NO_ALIASES
 
-#define @ str_new
+#define @ str_new_static
 #if defined PP_MORE_ALIASES
 #define @@ str_val
 #endif
@@ -159,11 +157,6 @@ stock String:str_val({_,StringTags,Float}:val, tag=tagof(val))
     }else{
         return String:STRING_NULL;
     }
-}
-
-stock String:str_new_nulls(const str[], str_create_mode:mode=str_preserve, size=sizeof(str))
-{
-    return str_new_arr(str, size-1, mode);
 }
 
 #define PP_PROHIBIT_UNARY_OPERATORS(%0) \
