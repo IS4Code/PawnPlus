@@ -1,85 +1,42 @@
 /** PawnPlus v0.3 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
-/* Definitions */
 
-#if !defined PP_NO_ALIASES
-#define await%9\32;%0; task_await(%0);
-#define yield%9\32;%0; task_yield(%0);
-#endif
+/*                 */
+/*  Configuration  */
+/*                 */
+
+native pp_hook_strlen(bool:hook);
+native pp_hook_check_ref_args(bool:hook);
+
+
+/*                 */
+/*      Pawn       */
+/*                 */
+
+native pawn_call_native(const function[], const format[], {_,AmxString,Float}:...);
+native callback:pawn_register_callback(const callback[], const handler[], const additional_format[], {_,Float}:...);
+native pawn_unregister_callback(callback:id);
+
+
+/*                 */
+/*     Strings     */
+/*                 */
 
 #define StringTags String,GlobalString
 #define StringTag {StringTags}
 #define STRING_NULL (GlobalString:0)
 #define INVALID_CHAR (0xFFFFFF00)
 
-#if !defined PP_NO_ALIASES
-#define @ str_new
-#if defined PP_MORE_ALIASES
-#define @@ str_val
-#endif
-#endif
-
-/* Configuration */
-
-native pp_hook_strlen(bool:hook);
-native pp_hook_check_ref_args(bool:hook);
-
-/* Pawn */
-
-native pawn_call_native(const function[], const format[], {_,AmxString,Float}:...);
-native callback:pawn_register_callback(const callback[], const handler[], const additional_format[], {_,Float}:...);
-native pawn_unregister_callback(callback:id);
-
-/* Tasks and async */
-
-native wait_ticks(ticks);
-native wait_ms(interval);
-native task:task_new();
-native task_set_result(task:task, {_,Float,StringTags}:result);
-native task_get_result(task:task);
-native task:task_ticks(ticks);
-native task:task_ms(interval);
-native task_await(task:task);
-native task_yield({_,Float,StringTags}:value);
-
-/* Threads */
-
-enum sync_flags
-{
-    sync_explicit = 0,
-    sync_auto = 1,
-    sync_interrupt = 2
-}
-
-native thread_detach(sync_flags:flags);
-native thread_attach();
-native thread_sync();
-native thread_sleep(ms);
-native thread_id(id[], size=sizeof id);
-native String:thread_id_s();
-#if !defined PP_NO_ALIASES
-#define threaded(%0) for(new PP@ts:_@pp_thread_running=PP@ts:(thread_detach(%0)|1);_@pp_thread_running;_@pp_thread_running=PP@ts:(thread_attach()&0))
-stock operator~(PP@ts:arr[], count)
-{
-    for(new i = 0; i < count; i++)
-    {
-        if(arr[i]) thread_attach();
-    }
-}
-#endif
-
-/* Strings */
-
-enum
+enum str_create_mode
 {
     str_preserve = 0,
     str_truncate = 1,
     str_no_nulls = 2
 }
 
-native String:str_new(const str[], mode=str_preserve);
-native String:str_new_arr(const arr[], size=sizeof(arr), mode=str_preserve);
+native String:str_new(const str[], str_create_mode:mode=str_preserve);
+native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=str_preserve);
 native String:str_new_buf(size);
 native AmxString:str_addr(StringTag:str);
 native AmxStringBuffer:str_buf_addr(StringTag:str);
@@ -88,7 +45,7 @@ native String:str_to_local(StringTag:str);
 native bool:str_free(&StringTag:str);
 native bool:str_is_valid(StringTag:str);
 /*
-native String:str_new_nulls(const str[], mode=str_preserve, size=sizeof(str));
+native String:str_new_nulls(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
 */
 
 native str_len(StringTag:str);
@@ -119,6 +76,74 @@ native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
 native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
 native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,Float,_}:...);
 
+#if !defined PP_NO_ALIASES
+
+#define @ str_new
+#if defined PP_MORE_ALIASES
+#define @@ str_val
+#endif
+
+#endif
+
+
+/*                 */
+/* Tasks and async */
+/*                 */
+
+native wait_ticks(ticks);
+native wait_ms(interval);
+native task:task_new();
+native task_set_result(task:task, {_,Float,StringTags}:result);
+native task_get_result(task:task);
+native task:task_ticks(ticks);
+native task:task_ms(interval);
+native task_await(task:task);
+native task_yield({_,Float,StringTags}:value);
+
+#if !defined PP_NO_ALIASES
+
+#define await%9\32;%0; task_await(%0);
+#define yield%9\32;%0; task_yield(%0);
+
+#endif
+
+
+/*                 */
+/*     Threads     */
+/*                 */
+
+enum sync_flags
+{
+    sync_explicit = 0,
+    sync_auto = 1,
+    sync_interrupt = 2
+}
+
+native thread_detach(sync_flags:flags);
+native thread_attach();
+native thread_sync();
+native thread_sleep(ms);
+native thread_id(id[], size=sizeof id);
+native String:thread_id_s();
+
+#if !defined PP_NO_ALIASES
+
+#define threaded(%0) for(new PP@ts:_@pp_thread_running=PP@ts:(thread_detach(%0)|1);_@pp_thread_running;_@pp_thread_running=PP@ts:(thread_attach()&0))
+stock operator~(PP@ts:arr[], count)
+{
+    for(new i = 0; i < count; i++)
+    {
+        if(arr[i]) thread_attach();
+    }
+}
+
+#endif
+
+
+/*                 */
+/*  Operators etc. */
+/*                 */
+
 stock String:str_val({_,StringTags,Float}:val, tag=tagof(val))
 {
     static tag_string = tagof(String:), tag_global_string = tagof(GlobalString:), tag_float = tagof(Float:), tag_int = tagof(_:);
@@ -136,7 +161,7 @@ stock String:str_val({_,StringTags,Float}:val, tag=tagof(val))
     }
 }
 
-stock String:str_new_nulls(const str[], mode=str_preserve, size=sizeof(str))
+stock String:str_new_nulls(const str[], str_create_mode:mode=str_preserve, size=sizeof(str))
 {
     return str_new_arr(str, size-1, mode);
 }
@@ -201,7 +226,9 @@ native bool:operator==(GlobalString:arg1, GlobalString:arg2) = str_equal;
 native String:operator%(String:arg1, String:arg2) = str_cat;
 native String:operator%(GlobalString:arg1, String:arg2) = str_cat;
 native String:operator%(GlobalString:arg1, GlobalString:arg2) = str_cat;
+
 #if !defined PP_NO_AUTO_STRINGS
+
 native String:operator=(arg) = str_int;
 native String:operator=(Float:arg) = str_float;
 stock GlobalString:operator=(arg) return str_to_global(str_int(arg));
@@ -214,4 +241,5 @@ stock String:operator%(String:arg1, Float:arg2) return str_cat(arg1, str_float(a
 stock String:operator%(GlobalString:arg1, Float:arg2) return str_cat(arg1, str_float(arg2));
 stock String:operator%(Float:arg1, String:arg2) return str_cat(str_float(arg1), arg2);
 stock String:operator%(Float:arg1, GlobalString:arg2) return str_cat(str_float(arg1), arg2);
+
 #endif
