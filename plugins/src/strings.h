@@ -1,7 +1,7 @@
 #ifndef STRINGS_H_INCLUDED
 #define STRINGS_H_INCLUDED
 
-#include "object_pool.h"
+#include "utils/object_pool.h"
 #include "sdk/amx/amx.h"
 #include <string>
 

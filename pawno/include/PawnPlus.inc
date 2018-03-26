@@ -87,6 +87,31 @@ native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,F
 
 
 /*                 */
+/*      Lists      */
+/*                 */
+
+#if defined PP_LIST_TAGS
+#define ListItemTag {_,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags,PP_LIST_TAGS}
+#else
+#define ListItemTag {_,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags}
+#endif
+
+native List:list_new();
+native list_delete(List:list);
+native list_size(List:list);
+native List:list_add(List:list, ListItemTag:value, tag_id=tagof(value));
+native List:list_add_arr(List:list, const ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
+native list_get(List:list, index);
+native list_get_arr(List:list, index, ListItemTag:value[], size=sizeof(value));
+native bool:list_get_checked(List:list, index, &ListItemTag:value, tag_id=tagof(value));
+native list_get_arr_checked(List:list, index, ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
+native List:list_set(List:list, index, ListItemTag:value, offset, tag_id=tagof(value));
+native List:list_set_arr(List:list, index, const ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
+native list_tagof(List:list, index);
+native list_sizeof(List:list, index);
+
+
+/*                 */
 /* Tasks and async */
 /*                 */
 

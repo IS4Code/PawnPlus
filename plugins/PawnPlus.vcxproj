@@ -53,7 +53,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>bin\win32\Debug\</OutDir>
+    <OutDir>D:\Program Files\Rockstar Games\GTA San Andreas\Samp server\0.3.7\plugins\</OutDir>
     <IntDir>obj\win32\Debug\</IntDir>
     <TargetName>PawnPlus</TargetName>
     <TargetExt>.dll</TargetExt>
@@ -107,7 +107,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <PreprocessorDefinitions>HAVE_STDINT_H;_CRT_SECURE_NO_WARNINGS;SAMPGDK_AMALGAMATION;SUBHOOK_IMPLEMENTATION;_WINSOCK_DEPRECATED_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>include;lib;src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <ProgramDataBaseFileName>$(OutDir)PawnPlus.pdb</ProgramDataBaseFileName>
       <Optimization>Disabled</Optimization>
       <StructMemberAlignment>1Byte</StructMemberAlignment>
@@ -123,7 +123,7 @@
       <ImportLibrary>bin\win32\Debug\PawnPlus.lib</ImportLibrary>
       <ModuleDefinitionFile>PawnPlus.def</ModuleDefinitionFile>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <OutputFile>$(ProjectDir)bin\win32\Debug\PawnPlus.dll</OutputFile>
+      <OutputFile>D:\Program Files\Rockstar Games\GTA San Andreas\Samp server\0.3.7\plugins\PawnPlus.dll</OutputFile>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;Ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
@@ -135,16 +135,18 @@
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\events.cpp" />
     <ClCompile Include="src\hooks.cpp" />
+    <ClCompile Include="src\natives\list.cpp" />
     <ClCompile Include="src\natives\nthread.cpp" />
     <ClCompile Include="src\natives\pp.cpp" />
     <ClCompile Include="src\natives\pawn.cpp" />
     <ClCompile Include="src\natives\str.cpp" />
     <ClCompile Include="src\natives\task.cpp" />
-    <ClCompile Include="src\object_pool.cpp" />
     <ClCompile Include="src\reset.cpp" />
     <ClCompile Include="src\strings.cpp" />
     <ClCompile Include="src\tasks.cpp" />
     <ClCompile Include="src\threads.cpp" />
+    <ClCompile Include="src\utils\dyn_object.cpp" />
+    <ClCompile Include="src\utils\object_pool.cpp" />
     <ClCompile Include="src\utils\thread.cpp" />
     <ClCompile Include="src\utils\thread_posix.cpp" />
     <ClCompile Include="src\utils\thread_win.cpp" />
@@ -172,11 +174,12 @@
     <ClInclude Include="src\fixes\linux.h" />
     <ClInclude Include="src\hooks.h" />
     <ClInclude Include="src\natives.h" />
-    <ClInclude Include="src\object_pool.h" />
     <ClInclude Include="src\reset.h" />
     <ClInclude Include="src\strings.h" />
     <ClInclude Include="src\tasks.h" />
     <ClInclude Include="src\threads.h" />
+    <ClInclude Include="src\utils\dyn_object.h" />
+    <ClInclude Include="src\utils\object_pool.h" />
     <ClInclude Include="src\utils\optional.h" />
     <ClInclude Include="src\utils\thread.h" />
   </ItemGroup>

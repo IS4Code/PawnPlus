@@ -37,9 +37,6 @@
     <ClCompile Include="src\events.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\object_pool.cpp">
-      <Filter>src\utils</Filter>
-    </ClCompile>
     <ClCompile Include="src\reset.cpp">
       <Filter>src\utils</Filter>
     </ClCompile>
@@ -56,6 +53,15 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\natives\nthread.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\dyn_object.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utils\object_pool.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\natives\list.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
   </ItemGroup>
@@ -122,9 +128,6 @@
     <ClInclude Include="src\fixes\linux.h">
       <Filter>src\fixes</Filter>
     </ClInclude>
-    <ClInclude Include="src\object_pool.h">
-      <Filter>src\utils</Filter>
-    </ClInclude>
     <ClInclude Include="src\reset.h">
       <Filter>src\utils</Filter>
     </ClInclude>
@@ -136,6 +139,12 @@
     </ClInclude>
     <ClInclude Include="src\threads.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\dyn_object.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\object_pool.h">
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
