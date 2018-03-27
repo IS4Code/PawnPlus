@@ -49,9 +49,13 @@ bool dyn_object::check_tag(AMX *amx, cell tag_id)
 	for(int i = 0; i < num; i++)
 	{
 		cell tag_id2;
-		if(!amx_GetTag(amx, i, tagname, &tag_id2))
+		if(!amx_GetTag(amx, i, tagname, &tag_id2) && tag_name == tagname)
 		{
-			if(tag_name == tagname && (tag_id == tag_id2 || (tag_id == 0 && ((tag_id2 & 0x40000000) == 0))))
+			if(
+				tag_id == tag_id2 ||
+				(tag_id == 0 && ((tag_id2 & 0x40000000) == 0)) ||
+				(tag_name == "GlobalString" && find_tag(amx, tag_id) == "String")
+			)
 			{
 				return true;
 			}
