@@ -99,8 +99,10 @@ native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,F
 native List:list_new();
 native list_delete(List:list);
 native list_size(List:list);
+native list_clear(List:list);
 native List:list_add(List:list, ListItemTag:value, tag_id=tagof(value));
 native List:list_add_arr(List:list, const ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
+native bool:list_remove(List:list, index);
 native list_get(List:list, index);
 native list_get_arr(List:list, index, ListItemTag:value[], size=sizeof(value));
 native bool:list_get_checked(List:list, index, &ListItemTag:value, tag_id=tagof(value));

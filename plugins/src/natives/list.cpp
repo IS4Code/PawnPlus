@@ -27,6 +27,14 @@ namespace Natives
 		return static_cast<cell>(ptr->size());
 	}
 
+	// native list_size(List:list);
+	static cell AMX_NATIVE_CALL list_clear(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
+		ptr->clear();
+		return 0;
+	}
+
 	// native List:list_add(List:list, ListItemTag:value, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_add(AMX *amx, cell *params)
 	{
@@ -43,6 +51,16 @@ namespace Natives
 		amx_GetAddr(amx, params[2], &addr);
 		ptr->push_back(dyn_object(amx, addr, static_cast<size_t>(params[3]), params[4]));
 		return static_cast<cell>(ptr->size() - 1);
+	}
+
+	// native bool:list_remove(List:list, index);
+	static cell AMX_NATIVE_CALL list_remove(AMX *amx, cell *params)
+	{
+		if(params[2] < 0) return 0;
+		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
+		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
+		ptr->erase(ptr->begin() + params[1]);
+		return 1;
 	}
 
 	// native list_get(List:list, index);
@@ -199,8 +217,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_new),
 	AMX_DECLARE_NATIVE(list_delete),
 	AMX_DECLARE_NATIVE(list_size),
+	AMX_DECLARE_NATIVE(list_clear),
 	AMX_DECLARE_NATIVE(list_add),
 	AMX_DECLARE_NATIVE(list_add_arr),
+	AMX_DECLARE_NATIVE(list_remove),
 	AMX_DECLARE_NATIVE(list_get),
 	AMX_DECLARE_NATIVE(list_get_arr),
 	AMX_DECLARE_NATIVE(list_get_checked),
