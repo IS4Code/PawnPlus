@@ -38,7 +38,7 @@ namespace Natives
 		return 1;
 	}
 
-	// native List:list_add(List:list, ListItemTag:value, tag_id=tagof(value));
+	// native List:list_add(List:list, AnyTag:value, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_add(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
@@ -46,7 +46,7 @@ namespace Natives
 		return static_cast<cell>(ptr->size() - 1);
 	}
 
-	// native List:list_add_arr(List:list, const ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native List:list_add_arr(List:list, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_add_arr(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
@@ -84,7 +84,7 @@ namespace Natives
 		}
 	}
 
-	// native list_get_arr(List:list, index, ListItemTag:value[], size=sizeof(value));
+	// native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
 	static cell AMX_NATIVE_CALL list_get_arr(AMX *amx, cell *params)
 	{
 		if(params[2] < 0 || params[4] <= 0) return 0;
@@ -125,7 +125,7 @@ namespace Natives
 		}
 	}
 
-	// native bool:list_get_checked(List:list, index, &ListItemTag:value, tag_id=tagof(value));
+	// native bool:list_get_checked(List:list, index, &AnyTag:value, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_get_checked(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
@@ -147,7 +147,7 @@ namespace Natives
 		}
 	}
 
-	// native list_get_arr_checked(List:list, index, ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native list_get_arr_checked(List:list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_get_arr_checked(AMX *amx, cell *params)
 	{
 		if(params[2] < 0 || params[4] <= 0) return 0;
@@ -171,7 +171,7 @@ namespace Natives
 		}
 	}
 
-	// native bool:list_get_arr_elem_checked(List:list, index, offset, &ListItemTag:value, tag_id=tagof(value));
+	// native bool:list_get_arr_elem_checked(List:list, index, offset, &AnyTag:value, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_get_arr_elem_checked(AMX *amx, cell *params)
 	{
 		if(params[2] < 0 || params[3] < 0) return 0;
@@ -196,7 +196,7 @@ namespace Natives
 		}
 	}
 
-	// native list_set(List:list, index, ListItemTag:value, tag_id=tagof(value));
+	// native list_set(List:list, index, AnyTag:value, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_set(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
@@ -207,7 +207,7 @@ namespace Natives
 		return 1;
 	}
 
-	// native list_set_arr(List:list, index, const ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_set_arr(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
@@ -220,7 +220,7 @@ namespace Natives
 		return 1;
 	}
 
-	// native list_set_arr_elem(List:list, index, offset, ListItemTag:value);
+	// native list_set_arr_elem(List:list, index, offset, AnyTag:value);
 	static cell AMX_NATIVE_CALL list_set_arr_elem(AMX *amx, cell *params)
 	{
 		if(params[2] < 0 || params[3] < 0) return 0;
@@ -241,7 +241,7 @@ namespace Natives
 		}
 	}
 
-	// native bool:list_set_arr_elem_checked(List:list, index, offset, ListItemTag:value, tag_id=tagof(value));
+	// native bool:list_set_arr_elem_checked(List:list, index, offset, AnyTag:value, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_set_arr_elem_checked(AMX *amx, cell *params)
 	{
 		if(params[2] < 0 || params[3] < 0) return 0;

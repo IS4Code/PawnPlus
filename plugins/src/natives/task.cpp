@@ -39,7 +39,7 @@ namespace Natives
 		return TaskPool::CreateNew().Id();
 	}
 
-	// native task_set_result(task:task, {_,Float}:result);
+	// native task_set_result(task:task, AnyTag:result);
 	static cell AMX_NATIVE_CALL task_set_result(AMX *amx, cell *params)
 	{
 		auto task = TaskPool::Get(params[1]);
@@ -114,7 +114,7 @@ namespace Natives
 		return 0;
 	}
 
-	// native task_yield({_,Float}:value);
+	// native task_yield(AnyTag:value);
 	static cell AMX_NATIVE_CALL task_yield(AMX *amx, cell *params)
 	{
 		auto &ctx = Context::Get(amx);

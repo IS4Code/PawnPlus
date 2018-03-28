@@ -9,6 +9,13 @@
 native pp_hook_strlen(bool:hook);
 native pp_hook_check_ref_args(bool:hook);
 
+#if defined PP_ADDITIONAL_TAGS
+#define AnyTags _,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags,PP_ADDITIONAL_TAGS
+#else
+#define AnyTags _,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags
+#endif
+#define AnyTag {AnyTags}
+
 
 /*                 */
 /*      Pawn       */
@@ -90,29 +97,23 @@ native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,F
 /*      Lists      */
 /*                 */
 
-#if defined PP_LIST_TAGS
-#define ListItemTag {_,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags,PP_LIST_TAGS}
-#else
-#define ListItemTag {_,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags}
-#endif
-
 native List:list_new();
 native list_delete(List:list);
 native list_size(List:list);
 native list_clear(List:list);
-native list_add(List:list, ListItemTag:value, tag_id=tagof(value));
-native list_add_arr(List:list, const ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
+native list_add(List:list, AnyTag:value, tag_id=tagof(value));
+native list_add_arr(List:list, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 native bool:list_remove(List:list, index);
 native list_get(List:list, index);
-native list_get_arr(List:list, index, ListItemTag:value[], size=sizeof(value));
+native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
 native list_get_arr_elem(List:list, index, offset);
-native bool:list_get_checked(List:list, index, &ListItemTag:value, tag_id=tagof(value));
-native list_get_arr_checked(List:list, index, ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
-native bool:list_get_arr_elem_checked(List:list, index, offset, &ListItemTag:value, tag_id=tagof(value));
-native list_set(List:list, index, ListItemTag:value, offset, tag_id=tagof(value));
-native list_set_arr(List:list, index, const ListItemTag:value[], size=sizeof(value), tag_id=tagof(value));
-native list_set_arr_elem(List:list, index, offset, ListItemTag:value);
-native bool:list_set_arr_elem_checked(List:list, index, offset, ListItemTag:value, tag_id=tagof(value));
+native bool:list_get_checked(List:list, index, &AnyTag:value, tag_id=tagof(value));
+native list_get_arr_checked(List:list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native bool:list_get_arr_elem_checked(List:list, index, offset, &AnyTag:value, tag_id=tagof(value));
+native list_set(List:list, index, AnyTag:value, offset, tag_id=tagof(value));
+native list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native list_set_arr_elem(List:list, index, offset, AnyTag:value);
+native bool:list_set_arr_elem_checked(List:list, index, offset, AnyTag:value, tag_id=tagof(value));
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);
 
@@ -124,12 +125,12 @@ native list_sizeof(List:list, index);
 native wait_ticks(ticks);
 native wait_ms(interval);
 native task:task_new();
-native task_set_result(task:task, {_,Float,StringTags}:result);
+native task_set_result(task:task, AnyTag:result);
 native task_get_result(task:task);
 native task:task_ticks(ticks);
 native task:task_ms(interval);
 native task_await(task:task);
-native task_yield({_,Float,StringTags}:value);
+native task_yield(AnyTag:value);
 
 #if !defined PP_NO_ALIASES
 
