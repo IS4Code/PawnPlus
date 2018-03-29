@@ -12,6 +12,29 @@ dyn_object::dyn_object(AMX *amx, cell *arr, size_t size, cell tag_id) : is_array
 	std::memcpy(array_value.get(), arr, size * sizeof(cell));
 }
 
+dyn_object::dyn_object(const dyn_object &obj) : is_array(obj.is_array), tag_name(obj.tag_name)
+{
+	if(is_array)
+	{
+		array_size = obj.array_size;
+		array_value = std::make_unique<cell[]>(array_size);
+		std::memcpy(array_value.get(), obj.array_value.get(), array_size * sizeof(cell));
+	}else{
+		cell_value = obj.cell_value;
+	}
+}
+
+dyn_object::dyn_object(dyn_object &&obj) : is_array(obj.is_array), tag_name(std::move(obj.tag_name))
+{
+	if(is_array)
+	{
+		array_size = obj.array_size;
+		array_value = std::move(obj.array_value);
+	}else{
+		cell_value = obj.cell_value;
+	}
+}
+
 std::string dyn_object::find_tag(AMX *amx, cell tag_id)
 {
 	tag_id &= 0x7FFFFFFF;
@@ -137,4 +160,45 @@ size_t dyn_object::get_size()
 	}else{
 		return 1;
 	}
+}
+
+cell &dyn_object::operator[](size_t index)
+{
+	if(is_array)
+	{
+		return array_value[index];
+	}else{
+		return (&cell_value)[index];
+	}
+}
+
+dyn_object &dyn_object::operator=(const dyn_object &obj)
+{
+	if(this == &obj) return *this;
+	is_array = obj.is_array;
+	tag_name = obj.tag_name;
+	if(is_array)
+	{
+		array_size = obj.array_size;
+		array_value = std::make_unique<cell[]>(array_size);
+		std::memcpy(array_value.get(), obj.array_value.get(), array_size * sizeof(cell));
+	}else{
+		cell_value = obj.cell_value;
+	}
+	return *this;
+}
+
+dyn_object &dyn_object::operator=(dyn_object &&obj)
+{
+	if(this == &obj) return *this;
+	is_array = obj.is_array;
+	tag_name = std::move(obj.tag_name);
+	if(is_array)
+	{
+		array_size = obj.array_size;
+		array_value = std::move(obj.array_value);
+	}else{
+		cell_value = obj.cell_value;
+	}
+	return *this;
 }
