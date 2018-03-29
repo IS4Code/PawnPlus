@@ -76,12 +76,9 @@ namespace Natives
 		if(ptr == nullptr) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
-		if(obj.is_array)
-		{
-			return obj.array_value[0];
-		} else {
-			return obj.cell_value;
-		}
+		cell result;
+		if(obj.get_cell(0, result)) return result;
+		return 0;
 	}
 
 	// native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
@@ -94,16 +91,7 @@ namespace Natives
 		auto &obj = (*ptr)[params[2]];
 		cell *addr;
 		amx_GetAddr(amx, params[3], &addr);
-		if(obj.is_array)
-		{
-			size_t size = static_cast<size_t>(params[4]);
-			if(size > obj.array_size) size = obj.array_size;
-			std::memcpy(addr, obj.array_value.get(), size * sizeof(cell));
-			return static_cast<cell>(size);
-		} else {
-			*addr = obj.cell_value;
-			return 1;
-		}
+		return obj.get_array(0, addr, static_cast<size_t>(params[4]));
 	}
 
 	// native list_get_arr_elem(List:list, index, offset);
@@ -114,15 +102,9 @@ namespace Natives
 		if(ptr == nullptr) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
-		if(obj.is_array)
-		{
-			size_t index = static_cast<size_t>(params[3]);
-			if(index >= obj.array_size) return 0;
-			return obj.array_value[index];
-		}else{
-			if(params[3] > 0) return 0;
-			return obj.cell_value;
-		}
+		cell result;
+		if(obj.get_cell(params[3], result)) return result;
+		return 0;
 	}
 
 	// native bool:list_get_checked(List:list, index, &AnyTag:value, tag_id=tagof(value));
@@ -137,14 +119,8 @@ namespace Natives
 		if(!obj.check_tag(amx, tag_id)) return 0;
 		cell *addr;
 		amx_GetAddr(amx, params[3], &addr);
-		if(obj.is_array)
-		{
-			*addr = obj.array_value[0];
-			return 1;
-		}else{
-			*addr = obj.cell_value;
-			return 1;
-		}
+		if(obj.get_cell(params[3], *addr)) return 1;
+		return 0;
 	}
 
 	// native list_get_arr_checked(List:list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
@@ -159,16 +135,7 @@ namespace Natives
 		if(!obj.check_tag(amx, tag_id)) return 0;
 		cell *addr;
 		amx_GetAddr(amx, params[3], &addr);
-		if(obj.is_array)
-		{
-			size_t size = static_cast<size_t>(params[4]);
-			if(size > obj.array_size) size = obj.array_size;
-			std::memcpy(addr, obj.array_value.get(), size * sizeof(cell));
-			return static_cast<cell>(size);
-		}else{
-			*addr = obj.cell_value;
-			return 1;
-		}
+		return obj.get_array(0, addr, params[4]);
 	}
 
 	// native bool:list_get_arr_elem_checked(List:list, index, offset, &AnyTag:value, tag_id=tagof(value));
@@ -183,17 +150,8 @@ namespace Natives
 		if(!obj.check_tag(amx, tag_id)) return 0;
 		cell *addr;
 		amx_GetAddr(amx, params[4], &addr);
-		if(obj.is_array)
-		{
-			size_t index = static_cast<size_t>(params[3]);
-			if(index >= obj.array_size) return 0;
-			*addr = obj.array_value[index];
-			return 1;
-		}else{
-			if(params[3] > 0) return 0;
-			*addr = obj.cell_value;
-			return 1;
-		}
+		if(obj.get_cell(params[3], *addr)) return 1;
+		return 0;
 	}
 
 	// native list_set(List:list, index, AnyTag:value, tag_id=tagof(value));
@@ -228,17 +186,7 @@ namespace Natives
 		if(ptr == nullptr) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
-		if(obj.is_array)
-		{
-			size_t index = static_cast<size_t>(params[3]);
-			if(index >= obj.array_size) return 0;
-			obj.array_value[index] = params[4];
-			return 1;
-		} else {
-			if(params[3] > 0) return 0;
-			obj.cell_value = params[4];
-			return 1;
-		}
+		return obj.set_cell(params[3], params[4]);
 	}
 
 	// native bool:list_set_arr_elem_checked(List:list, index, offset, AnyTag:value, tag_id=tagof(value));
@@ -251,17 +199,7 @@ namespace Natives
 		auto &obj = (*ptr)[params[2]];
 		cell tag_id = params[5];
 		if(!obj.check_tag(amx, tag_id)) return 0;
-		if(obj.is_array)
-		{
-			size_t index = static_cast<size_t>(params[3]);
-			if(index >= obj.array_size) return 0;
-			obj.array_value[index] = params[4];
-			return 1;
-		}else{
-			if(params[3] > 0) return 0;
-			obj.cell_value = params[4];
-			return 1;
-		}
+		return obj.set_cell(params[3], params[4]);
 	}
 
 	// native list_tagof(List:list, index);
@@ -272,27 +210,7 @@ namespace Natives
 		if(ptr == nullptr) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
-
-		if(obj.tag_name.empty()) return 0x80000000;
-
-		int len;
-		amx_NameLength(amx, &len);
-		char *tagname = static_cast<char*>(alloca(len));
-
-		int num;
-		amx_NumTags(amx, &num);
-		for(int i = 0; i < num; i++)
-		{
-			cell tag_id;
-			if(!amx_GetTag(amx, i, tagname, &tag_id))
-			{
-				if(obj.tag_name == tagname)
-				{
-					return tag_id | 0x80000000;
-				}
-			}
-		}
-		return 0;
+		return obj.get_tag(amx);
 	}
 
 	// native list_sizeof(List:list, index);
@@ -303,13 +221,7 @@ namespace Natives
 		if(ptr == nullptr) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
-
-		if(obj.is_array)
-		{
-			return obj.array_size;
-		}else{
-			return 1;
-		}
+		return obj.get_size();
 	}
 }
 

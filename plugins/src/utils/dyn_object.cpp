@@ -18,7 +18,7 @@ std::string dyn_object::find_tag(AMX *amx, cell tag_id)
 
 	int len;
 	amx_NameLength(amx, &len);
-	char *tagname = static_cast<char*>(alloca(len));
+	char *tagname = static_cast<char*>(alloca(len+1));
 
 	int num;
 	amx_NumTags(amx, &num);
@@ -42,7 +42,7 @@ bool dyn_object::check_tag(AMX *amx, cell tag_id)
 
 	int len;
 	amx_NameLength(amx, &len);
-	char *tagname = static_cast<char*>(alloca(len));
+	char *tagname = static_cast<char*>(alloca(len+1));
 
 	int num;
 	amx_NumTags(amx, &num);
@@ -62,4 +62,79 @@ bool dyn_object::check_tag(AMX *amx, cell tag_id)
 		}
 	}
 	return false;
+}
+
+bool dyn_object::get_cell(size_t index, cell &value)
+{
+	if(is_array)
+	{
+		if(index >= array_size) return false;
+		value = array_value[index];
+		return true;
+	} else {
+		if(index > 0) return false;
+		value = cell_value;
+		return true;
+	}
+}
+
+size_t dyn_object::get_array(size_t index, cell *arr, size_t maxsize)
+{
+	if(is_array)
+	{
+		if(maxsize > array_size) maxsize = array_size;
+		std::memcpy(arr, array_value.get(), maxsize * sizeof(cell));
+		return maxsize;
+	}else{
+		*arr = cell_value;
+		return 1;
+	}
+}
+
+bool dyn_object::set_cell(size_t index, cell value)
+{
+	if(is_array)
+	{
+		if(index >= array_size) return false;
+		array_value[index] = value;
+		return true;
+	}else{
+		if(index > 0) return false;
+		cell_value = value;
+		return true;
+	}
+}
+
+cell dyn_object::get_tag(AMX *amx)
+{
+	if(tag_name.empty()) return 0x80000000;
+
+	int len;
+	amx_NameLength(amx, &len);
+	char *tagname = static_cast<char*>(alloca(len+1));
+
+	int num;
+	amx_NumTags(amx, &num);
+	for(int i = 0; i < num; i++)
+	{
+		cell tag_id;
+		if(!amx_GetTag(amx, i, tagname, &tag_id))
+		{
+			if(tag_name == tagname)
+			{
+				return tag_id | 0x80000000;
+			}
+		}
+	}
+	return 0;
+}
+
+size_t dyn_object::get_size()
+{
+	if(is_array)
+	{
+		return array_size;
+	}else{
+		return 1;
+	}
 }

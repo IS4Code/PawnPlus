@@ -6,7 +6,7 @@
 #include <string>
 #include <cstring>
 
-struct dyn_object
+class dyn_object
 {
 	bool is_array;
 	union{
@@ -17,9 +17,15 @@ struct dyn_object
 	std::string tag_name;
 	std::string find_tag(AMX *amx, cell tag_id);
 
+public:
 	dyn_object(AMX *amx, cell value, cell tag_id);
 	dyn_object(AMX *amx, cell *arr, size_t size, cell tag_id);
 	bool check_tag(AMX *amx, cell tag_id);
+	bool get_cell(size_t index, cell &value);
+	size_t get_array(size_t index, cell *arr, size_t maxsize);
+	bool set_cell(size_t index, cell value);
+	cell get_tag(AMX *amx);
+	size_t get_size();
 };
 
 #endif
