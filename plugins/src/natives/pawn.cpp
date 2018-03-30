@@ -86,18 +86,18 @@ namespace Natives
 
 			cell result;
 			int ret = amx->callback(amx, index, &result, reinterpret_cast<cell*>(data + amx->stk));
-			amx->stk = reset_stk;
-			amx_Release(amx, reset_hea);
 			if(ret == AMX_ERR_NONE)
 			{
 				for(auto &pair : storage)
 				{
 					pair.first->load(amx, pair.second);
 				}
-
-				return result;
+			}else{
+				result = -2;
 			}
-			return -2;
+			amx->stk = reset_stk;
+			amx_Release(amx, reset_hea);
+			return result;
 		}
 		return -1;
 	}
@@ -168,18 +168,17 @@ namespace Natives
 
 			cell result;
 			int ret = amx_Exec(amx, &result, index);
-			amx_Release(amx, reset_hea);
 			if(ret == AMX_ERR_NONE)
 			{
 				for(auto &pair : storage)
 				{
-					printf("addr: %d\n", pair.second);
 					pair.first->load(amx, pair.second);
 				}
-
-				return result;
+			}else{
+				result = -2;
 			}
-			return -2;
+			amx_Release(amx, reset_hea);
+			return result;
 		}
 		return -1;
 	}
