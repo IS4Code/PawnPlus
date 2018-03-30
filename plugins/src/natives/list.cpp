@@ -25,7 +25,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_size(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(ptr == nullptr) return -1;
 		return static_cast<cell>(ptr->size());
 	}
 
@@ -38,33 +38,63 @@ namespace Natives
 		return 1;
 	}
 
-	// native List:list_add(List:list, AnyTag:value, index=-1, tag_id=tagof(value));
+	// native list_add(List:list, AnyTag:value, index=-1, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_add(AMX *amx, cell *params)
 	{
+		if(params[3] < -1) return -1;
 		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
+		if(ptr == nullptr) return -1;
 		if(params[3] == -1)
 		{
 			ptr->push_back(dyn_object(amx, params[2], params[4]));
 			return static_cast<cell>(ptr->size() - 1);
+		}else if(static_cast<ucell>(params[3]) > ptr->size())
+		{
+			return -1;
 		}else{
 			ptr->insert(ptr->begin() + params[3], dyn_object(amx, params[2], params[4]));
 			return params[3];
 		}
 	}
 
-	// native List:list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), tag_id=tagof(value));
+	// native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_add_arr(AMX *amx, cell *params)
 	{
+		if(params[3] < -1) return -1;
 		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(ptr == nullptr) return -1;
 		cell *addr;
 		amx_GetAddr(amx, params[2], &addr);
 		if(params[3] == -1)
 		{
 			ptr->push_back(dyn_object(amx, addr, static_cast<size_t>(params[4]), params[5]));
 			return static_cast<cell>(ptr->size() - 1);
+		}else if(static_cast<ucell>(params[3]) > ptr->size())
+		{
+			return -1;
 		}else{
 			ptr->insert(ptr->begin() + params[3], dyn_object(amx, addr, static_cast<size_t>(params[4]), params[5]));
+			return params[3];
+		}
+	}
+
+	// native list_add_str(List:list, const value[], index=-1);
+	static cell AMX_NATIVE_CALL list_add_str(AMX *amx, cell *params)
+	{
+		if(params[3] < -1) return -1;
+		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell *addr;
+		amx_GetAddr(amx, params[2], &addr);
+		if(params[3] == -1)
+		{
+			ptr->push_back(dyn_object(amx, addr));
+			return static_cast<cell>(ptr->size() - 1);
+		}else if(static_cast<ucell>(params[3]) > ptr->size())
+		{
+			return -1;
+		}else{
+			ptr->insert(ptr->begin() + params[3], dyn_object(amx, addr));
 			return params[3];
 		}
 	}
@@ -72,14 +102,18 @@ namespace Natives
 	// native list_add_list(List:list, List:range, index=-1);
 	static cell AMX_NATIVE_CALL list_add_list(AMX *amx, cell *params)
 	{
+		if(params[3] < -1) return -1;
 		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
 		auto ptr2 = reinterpret_cast<std::vector<dyn_object>*>(params[2]);
-		if(ptr == nullptr || ptr2 == nullptr) return 0;
+		if(ptr == nullptr || ptr2 == nullptr) return -1;
 		if(params[3] == -1)
 		{
 			size_t index = ptr->size();
 			ptr->insert(ptr->end(), ptr2->begin(), ptr2->end());
 			return static_cast<cell>(index);
+		}else if(static_cast<ucell>(params[3]) > ptr->size())
+		{
+			return -1;
 		}else{
 			ptr->insert(ptr->begin() + params[3], ptr2->begin(), ptr2->end());
 			return params[3];
@@ -178,6 +212,19 @@ namespace Natives
 		return 1;
 	}
 
+	// native list_set_str(List:list, index, const value[]);
+	static cell AMX_NATIVE_CALL list_set_str(AMX *amx, cell *params)
+	{
+		if(params[2] < 0) return 0;
+		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
+		if(ptr == nullptr) return 0;
+		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
+		cell *addr;
+		amx_GetAddr(amx, params[3], &addr);
+		(*ptr)[params[2]] = dyn_object(amx, addr);
+		return 1;
+	}
+
 	// native list_set_arr_elem(List:list, index, offset, AnyTag:value);
 	static cell AMX_NATIVE_CALL list_set_cell(AMX *amx, cell *params)
 	{
@@ -233,6 +280,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_clear),
 	AMX_DECLARE_NATIVE(list_add),
 	AMX_DECLARE_NATIVE(list_add_arr),
+	AMX_DECLARE_NATIVE(list_add_str),
 	AMX_DECLARE_NATIVE(list_add_list),
 	AMX_DECLARE_NATIVE(list_remove),
 	AMX_DECLARE_NATIVE(list_get),
@@ -241,6 +289,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_get_arr_checked),
 	AMX_DECLARE_NATIVE(list_set),
 	AMX_DECLARE_NATIVE(list_set_arr),
+	AMX_DECLARE_NATIVE(list_set_str),
 	AMX_DECLARE_NATIVE(list_set_cell),
 	AMX_DECLARE_NATIVE(list_set_cell_checked),
 	AMX_DECLARE_NATIVE(list_tagof),

@@ -22,8 +22,8 @@ native pp_hook_check_ref_args(bool:hook);
 /*      Pawn       */
 /*                 */
 
-native pawn_call_native(const function[], const format[], {_,AmxString,Float}:...);
-native pawn_call_public(const function[], const format[], {_,AmxString,Float}:...);
+native pawn_call_native(const function[], const format[], AnyTag:...);
+native pawn_call_public(const function[], const format[], AnyTag:...);
 native callback:pawn_register_callback(const callback[], const handler[], const additional_format[], {_,Float}:...);
 native pawn_unregister_callback(callback:id);
 
@@ -100,20 +100,22 @@ native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,F
 /*                 */
 
 native List:list_new();
-native list_delete(List:list);
+native bool:list_delete(List:list);
 native list_size(List:list);
-native list_clear(List:list);
+native bool:list_clear(List:list);
 native list_add(List:list, AnyTag:value, index=-1, tag_id=tagof(value));
 native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), tag_id=tagof(value));
+native list_add_str(List:list, const value[], index=-1);
 native list_add_list(List:list, List:range, index=-1);
 native bool:list_remove(List:list, index);
 native list_get(List:list, index, offset=0);
 native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
 native bool:list_get_checked(List:list, index, &AnyTag:value, offset=0, tag_id=tagof(value));
 native list_get_arr_checked(List:list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-native list_set(List:list, index, AnyTag:value, offset, tag_id=tagof(value));
-native list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-native list_set_cell(List:list, index, offset, AnyTag:value);
+native bool:list_set(List:list, index, AnyTag:value, tag_id=tagof(value));
+native bool:list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native bool:list_set_str(List:list, index, const value[]);
+native bool:list_set_cell(List:list, index, offset, AnyTag:value);
 native bool:list_set_cell_checked(List:list, index, offset, AnyTag:value, tag_id=tagof(value));
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);

@@ -55,6 +55,30 @@ namespace Natives
 					case 's':
 					case '*':
 						break;
+					case 'L':
+					{
+						amx_GetAddr(amx, param, &addr);
+						auto ptr = reinterpret_cast<std::vector<dyn_object>*>(*addr);
+						for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+						{
+							amx->stk -= sizeof(cell);
+							cell addr = it->store(amx);
+							storage[&*it] = addr;
+							*reinterpret_cast<cell*>(data + amx->stk) = addr;
+							count++;
+						}
+						cell fmt_value;
+						amx_Allot(amx, ptr->size() + 1, &fmt_value, &addr);
+						for(auto it = ptr->begin(); it != ptr->end(); it++)
+						{
+							*(addr++) = it->get_specifier();
+						}
+						*addr = 0;
+						amx->stk -= sizeof(cell);
+						*reinterpret_cast<cell*>(data + amx->stk) = fmt_value;
+						count++;
+					}
+					continue;
 					case 'l':
 					{
 						amx_GetAddr(amx, param, &addr);
@@ -142,6 +166,26 @@ namespace Natives
 					case '*':
 					{
 						amx_Push(amx, param);
+					}
+					break;
+					case 'L':
+					{
+						amx_GetAddr(amx, param, &addr);
+						auto ptr = reinterpret_cast<std::vector<dyn_object>*>(*addr);
+						for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+						{
+							cell addr = it->store(amx);
+							storage[&*it] = addr;
+							amx_Push(amx, it->store(amx));
+						}
+						cell fmt_value;
+						amx_Allot(amx, ptr->size() + 1, &fmt_value, &addr);
+						for(auto it = ptr->begin(); it != ptr->end(); it++)
+						{
+							*(addr++) = it->get_specifier();
+						}
+						*addr = 0;
+						amx_Push(amx, fmt_value);
 					}
 					break;
 					case 'l':

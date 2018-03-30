@@ -12,6 +12,30 @@ dyn_object::dyn_object(AMX *amx, cell *arr, size_t size, cell tag_id) : is_array
 	std::memcpy(array_value.get(), arr, size * sizeof(cell));
 }
 
+dyn_object::dyn_object(AMX *amx, cell *str) : is_array(true), tag_name("char")
+{
+	if(str == nullptr || !str[0])
+	{
+		array_size = 1;
+		array_value = std::make_unique<cell[]>(1);
+		array_value[0] = 0;
+		return;
+	}
+	int len;
+	amx_StrLen(str, &len);
+	size_t size;
+	if(str[0] & 0xFF000000)
+	{
+		size = 1 + ((len - 1) / sizeof(cell));
+	}else{
+		size = len;
+	}
+	array_size = size + 1;
+	array_value = std::make_unique<cell[]>(array_size);
+	std::memcpy(array_value.get(), str, size * sizeof(cell));
+	array_value[size] = 0;
+}
+
 dyn_object::dyn_object(const dyn_object &obj) : is_array(obj.is_array), tag_name(obj.tag_name)
 {
 	if(is_array)
@@ -183,6 +207,18 @@ size_t dyn_object::get_size() const
 	}else{
 		return 1;
 	}
+}
+
+char dyn_object::get_specifier() const
+{
+	if(is_array)
+	{
+		if(tag_name == "char") return 's';
+		if(array_size > 1) return 'a';
+	}
+	if(tag_name == "Float") return 'f';
+	if(tag_name == "String" || tag_name == "GlobalString") return 'S';
+	return 'i';
 }
 
 cell &dyn_object::operator[](size_t index)
