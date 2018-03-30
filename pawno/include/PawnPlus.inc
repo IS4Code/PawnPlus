@@ -1,4 +1,4 @@
-/** PawnPlus v0.3 by IllidanS4 **/
+/** PawnPlus v0.4 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 
@@ -9,10 +9,11 @@
 native pp_hook_strlen(bool:hook);
 native pp_hook_check_ref_args(bool:hook);
 
+#define PP_ALL_TAGS _,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags,List
 #if defined PP_ADDITIONAL_TAGS
-#define AnyTags _,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags,PP_ADDITIONAL_TAGS
+#define AnyTags PP_ALL_TAGS,PP_ADDITIONAL_TAGS
 #else
-#define AnyTags _,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags
+#define AnyTags PP_ALL_TAGS
 #endif
 #define AnyTag {AnyTags}
 
@@ -22,6 +23,7 @@ native pp_hook_check_ref_args(bool:hook);
 /*                 */
 
 native pawn_call_native(const function[], const format[], {_,AmxString,Float}:...);
+native pawn_call_public(const function[], const format[], {_,AmxString,Float}:...);
 native callback:pawn_register_callback(const callback[], const handler[], const additional_format[], {_,Float}:...);
 native pawn_unregister_callback(callback:id);
 

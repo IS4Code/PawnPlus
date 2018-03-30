@@ -1,8 +1,10 @@
 #include "../natives.h"
 #include "../hooks.h"
 #include "../events.h"
+#include "../utils/dyn_object.h"
 #include <memory>
-#include <string.h>
+#include <cstring>
+#include <unordered_map>
 
 typedef void(*logprintf_t)(char* format, ...);
 extern logprintf_t logprintf;
@@ -20,7 +22,7 @@ namespace Natives
 
 		if(fname == nullptr) return -1;
 
-		int numargs = format == nullptr ? 0 : strlen(format);
+		int numargs = format == nullptr ? 0 : std::strlen(format);
 
 		if(params[0] < (2 + numargs) * static_cast<int>(sizeof(cell)))
 		{
@@ -32,25 +34,149 @@ namespace Natives
 		int index;
 		if(amx_FindNative(amx, fname, &index) == AMX_ERR_NONE)
 		{
-			params[2] = numargs * PAWN_CELL_SIZE;
-			for(int i = 0; i < numargs; i++)
+			cell reset_stk = amx->stk;
+			unsigned char *data = amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat;
+
+			cell reset_hea, *tmp2;
+			amx_Allot(amx, 0, &reset_hea, &tmp2);
+
+			cell count = 0;
+
+			std::unordered_map<dyn_object*, cell> storage;
+
+			for(int i = numargs - 1; i >= 0; i--)
 			{
+				cell param = params[3 + i];
+				cell *addr;
+
 				switch(format[i])
 				{
 					case 'a':
 					case 's':
 					case '*':
 						break;
+					case 'l':
+					{
+						amx_GetAddr(amx, param, &addr);
+						auto ptr = reinterpret_cast<std::vector<dyn_object>*>(*addr);
+						for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+						{
+							amx->stk -= sizeof(cell);
+							cell addr = it->store(amx);
+							storage[&*it] = addr;
+							*reinterpret_cast<cell*>(data + amx->stk) = addr;
+							count++;
+						}
+					}
+					continue;
 					default:
-						cell *addr;
-						amx_GetAddr(amx, params[3 + i], &addr);
-						params[3 + i] = *addr;
-						break;
+					{
+						amx_GetAddr(amx, param, &addr);
+						param = *addr;
+					}
+					break;
+				}
+				amx->stk -= sizeof(cell);
+				*reinterpret_cast<cell*>(data + amx->stk) = param;
+				count++;
+			}
+
+			amx->stk -= sizeof(cell);
+			*reinterpret_cast<cell*>(data + amx->stk) = count * sizeof(cell);
+
+			cell result;
+			int ret = amx->callback(amx, index, &result, reinterpret_cast<cell*>(data + amx->stk));
+			amx->stk = reset_stk;
+			amx_Release(amx, reset_hea);
+			if(ret == AMX_ERR_NONE)
+			{
+				for(auto &pair : storage)
+				{
+					pair.first->load(amx, pair.second);
+				}
+
+				return result;
+			}
+			return -2;
+		}
+		return -1;
+	}
+
+	// native pawn_call_public(const function[], const format[], {_,AmxString,Float}:...);
+	static cell AMX_NATIVE_CALL pawn_call_public(AMX *amx, cell *params)
+	{
+		char *fname;
+		amx_StrParam(amx, params[1], fname);
+
+		char *format;
+		amx_StrParam(amx, params[2], format);
+
+		if(fname == nullptr) return -1;
+
+		int numargs = format == nullptr ? 0 : std::strlen(format);
+
+		if(params[0] < (2 + numargs) * static_cast<int>(sizeof(cell)))
+		{
+			logprintf("[PP] pawn_call_public: not enough arguments");
+			amx_RaiseError(amx, AMX_ERR_NATIVE);
+			return 0;
+		}
+
+		int index;
+		if(amx_FindPublic(amx, fname, &index) == AMX_ERR_NONE)
+		{
+			cell reset_hea, *tmp2;
+			amx_Allot(amx, 0, &reset_hea, &tmp2);
+
+			std::unordered_map<dyn_object*, cell> storage;
+
+			for(int i = numargs - 1; i >= 0; i--)
+			{
+				cell param = params[3 + i];
+				cell *addr;
+
+				switch(format[i])
+				{
+					case 'a':
+					case 's':
+					case '*':
+					{
+						amx_Push(amx, param);
+					}
+					break;
+					case 'l':
+					{
+						amx_GetAddr(amx, param, &addr);
+						auto ptr = reinterpret_cast<std::vector<dyn_object>*>(*addr);
+						for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+						{
+							cell addr = it->store(amx);
+							storage[&*it] = addr;
+							amx_Push(amx, it->store(amx));
+						}
+					}
+					break;
+					default:
+					{
+						amx_GetAddr(amx, param, &addr);
+						param = *addr;
+						amx_Push(amx, param);
+					}
+					break;
 				}
 			}
+
 			cell result;
-			if(amx->callback(amx, index, &result, params + 2) == AMX_ERR_NONE)
+			int ret = amx_Exec(amx, &result, index);
+			amx_Release(amx, reset_hea);
+			if(ret == AMX_ERR_NONE)
 			{
+				for(auto &pair : storage)
+				{
+					printf("addr: %d\n", pair.second);
+					pair.first->load(amx, pair.second);
+				}
+
 				return result;
 			}
 			return -2;
@@ -92,6 +218,7 @@ namespace Natives
 static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(pawn_call_native),
+	AMX_DECLARE_NATIVE(pawn_call_public),
 	AMX_DECLARE_NATIVE(pawn_register_callback),
 	AMX_DECLARE_NATIVE(pawn_unregister_callback),
 };

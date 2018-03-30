@@ -35,7 +35,7 @@ dyn_object::dyn_object(dyn_object &&obj) : is_array(obj.is_array), tag_name(std:
 	}
 }
 
-std::string dyn_object::find_tag(AMX *amx, cell tag_id)
+std::string dyn_object::find_tag(AMX *amx, cell tag_id) const
 {
 	tag_id &= 0x7FFFFFFF;
 
@@ -59,7 +59,7 @@ std::string dyn_object::find_tag(AMX *amx, cell tag_id)
 	return std::string();
 }
 
-bool dyn_object::check_tag(AMX *amx, cell tag_id)
+bool dyn_object::check_tag(AMX *amx, cell tag_id) const
 {
 	tag_id &= 0x7FFFFFFF;
 
@@ -87,7 +87,7 @@ bool dyn_object::check_tag(AMX *amx, cell tag_id)
 	return false;
 }
 
-bool dyn_object::get_cell(size_t index, cell &value)
+bool dyn_object::get_cell(size_t index, cell &value) const
 {
 	if(is_array)
 	{
@@ -101,7 +101,7 @@ bool dyn_object::get_cell(size_t index, cell &value)
 	}
 }
 
-size_t dyn_object::get_array(size_t index, cell *arr, size_t maxsize)
+size_t dyn_object::get_array(size_t index, cell *arr, size_t maxsize) const
 {
 	if(is_array)
 	{
@@ -128,7 +128,7 @@ bool dyn_object::set_cell(size_t index, cell value)
 	}
 }
 
-cell dyn_object::get_tag(AMX *amx)
+cell dyn_object::get_tag(AMX *amx) const
 {
 	if(tag_name.empty()) return 0x80000000;
 
@@ -152,7 +152,30 @@ cell dyn_object::get_tag(AMX *amx)
 	return 0;
 }
 
-size_t dyn_object::get_size()
+cell dyn_object::store(AMX *amx) const
+{
+	if(is_array)
+	{
+		cell amx_addr, *addr;
+		amx_Allot(amx, array_size, &amx_addr, &addr);
+		std::memcpy(addr, array_value.get(), array_size * sizeof(cell));
+		return amx_addr;
+	}else{
+		return cell_value;
+	}
+}
+
+void dyn_object::load(AMX *amx, cell amx_addr)
+{
+	if(is_array)
+	{
+		cell *addr;
+		amx_GetAddr(amx, amx_addr, &addr);
+		std::memcpy(array_value.get(), addr, array_size * sizeof(cell));
+	}
+}
+
+size_t dyn_object::get_size() const
 {
 	if(is_array)
 	{
