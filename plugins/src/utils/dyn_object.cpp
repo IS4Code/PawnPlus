@@ -92,6 +92,13 @@ bool dyn_object::check_tag(AMX *amx, cell tag_id) const
 {
 	tag_id &= 0x7FFFFFFF;
 
+	if(tag_id == 0) //weak tags
+	{
+		if(tag_name.empty()) return true;
+		char c = tag_name[0];
+		if(c < 'A' || c > 'Z') return true;
+	}
+
 	int len;
 	amx_NameLength(amx, &len);
 	char *tagname = static_cast<char*>(alloca(len+1));
@@ -224,6 +231,32 @@ char dyn_object::get_specifier() const
 	if(tag_name == "Float") return 'f';
 	if(tag_name == "String" || tag_name == "GlobalString") return 'S';
 	return 'i';
+}
+
+template <class T>
+inline void hash_combine(size_t& seed, const T& v)
+{
+	std::hash<T> hasher;
+	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+size_t dyn_object::get_hash() const
+{
+	std::hash<cell> hasher;
+
+	size_t hash = 0;
+	if(is_array)
+	{
+		for(size_t i = 0; i < array_size; i++)
+		{
+			hash_combine(hash, array_value[i]);
+		}
+	}else{
+		hash = hasher(cell_value);
+	}
+
+	hash_combine(hash, tag_name);
+	return hash;
 }
 
 cell &dyn_object::operator[](size_t index)

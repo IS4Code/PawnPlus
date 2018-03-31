@@ -11,6 +11,7 @@ int RegisterStringsNatives(AMX *amx);
 int RegisterTasksNatives(AMX *amx);
 int RegisterThreadNatives(AMX *amx);
 int RegisterListNatives(AMX *amx);
+int RegisterMapNatives(AMX *amx);
 
 inline int RegisterNatives(AMX *amx)
 {
@@ -20,6 +21,7 @@ inline int RegisterNatives(AMX *amx)
 	RegisterTasksNatives(amx);
 	RegisterThreadNatives(amx);
 	RegisterListNatives(amx);
+	RegisterMapNatives(amx);
 	return AMX_ERR_NONE;
 }
 

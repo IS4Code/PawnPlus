@@ -64,6 +64,9 @@
     <ClCompile Include="src\natives\list.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives\map.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

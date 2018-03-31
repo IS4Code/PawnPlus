@@ -122,6 +122,31 @@ native list_sizeof(List:list, index);
 
 
 /*                 */
+/*       Maps      */
+/*                 */
+
+native Map:map_new();
+native map_delete(Map:map);
+native map_size(Map:map);
+native bool:map_add(Map:map, AnyTag:key, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
+native map_add_arr(Map:map, AnyTag:key, const AnyTag:value[], size=sizeof(value), key_tag_id=tagof(key), value_tag_id=tagof(value));
+native map_add_str(Map:map, AnyTag:key, const value[], key_tag_id=tagof(key));
+native map_add_map(Map:map, Map:other, bool:overwrite);
+native bool:map_remove(Map:map, AnyTag:key, key_tag_id=tagof(key));
+native map_get(Map:map, AnyTag:key, offset=0, key_tag_id=tagof(key));
+native map_get_arr(Map:map, AnyTag:key, AnyTag:value[], size=sizeof(value), key_tag_id=tagof(key));
+native bool:map_get_checked(Map:map, AnyTag:key, &AnyTag:value, offset=0, key_tag_id=tagof(key), value_tag_id=tagof(value));
+native map_get_arr_checked(Map:map, AnyTag:key, AnyTag:value[], size=sizeof(value), key_tag_id=tagof(key), value_tag_id=tagof(value));
+native map_set(Map:map, AnyTag:key, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
+native map_set_arr(Map:map, AnyTag:key, const AnyTag:value[], size=sizeof(value), key_tag_id=tagof(key), value_tag_id=tagof(value));
+native map_set_str(Map:map, AnyTag:key, const value[], key_tag_id=tagof(key));
+native map_set_cell(Map:map, AnyTag:key, offset, AnyTag:value, key_tag_id=tagof(key));
+native bool:map_set_cell_checked(Map:map, AnyTag:key, offset, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
+native map_tagof(Map:map, AnyTag:key, key_tag_id=tagof(key));
+native map_sizeof(Map:map, index);
+
+
+/*                 */
 /* Tasks and async */
 /*                 */
 

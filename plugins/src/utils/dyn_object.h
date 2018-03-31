@@ -33,11 +33,21 @@ public:
 	void load(AMX *amx, cell amx_addr);
 	size_t get_size() const;
 	char get_specifier() const;
+	size_t get_hash() const;
 	cell &operator[](size_t index);
 	const cell &operator[](size_t index) const;
 	friend bool operator==(const dyn_object &a, const dyn_object &b);
 	dyn_object &operator=(const dyn_object &obj);
 	dyn_object &operator=(dyn_object &&obj);
+};
+
+template<>
+struct std::hash<dyn_object>
+{
+	size_t operator()(const dyn_object &obj) const
+	{
+		return obj.get_hash();
+	}
 };
 
 #endif
