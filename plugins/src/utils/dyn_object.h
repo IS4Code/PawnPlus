@@ -18,6 +18,7 @@ class dyn_object
 	std::string find_tag(AMX *amx, cell tag_id) const;
 
 public:
+	dyn_object();
 	dyn_object(AMX *amx, cell value, cell tag_id);
 	dyn_object(AMX *amx, cell *arr, size_t size, cell tag_id);
 	dyn_object(AMX *amx, cell *str);
@@ -33,6 +34,8 @@ public:
 	size_t get_size() const;
 	char get_specifier() const;
 	cell &operator[](size_t index);
+	const cell &operator[](size_t index) const;
+	friend bool operator==(const dyn_object &a, const dyn_object &b);
 	dyn_object &operator=(const dyn_object &obj);
 	dyn_object &operator=(dyn_object &&obj);
 };

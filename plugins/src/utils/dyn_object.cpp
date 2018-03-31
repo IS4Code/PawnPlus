@@ -1,6 +1,11 @@
 #include "dyn_object.h"
 #include "../fixes/linux.h"
 
+dyn_object::dyn_object() : is_array(true), array_size(0), array_value(nullptr)
+{
+
+}
+
 dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : is_array(false), cell_value(value), tag_name(find_tag(amx, tag_id))
 {
 
@@ -226,8 +231,30 @@ cell &dyn_object::operator[](size_t index)
 	if(is_array)
 	{
 		return array_value[index];
-	}else{
+	} else {
 		return (&cell_value)[index];
+	}
+}
+
+const cell &dyn_object::operator[](size_t index) const
+{
+	if(is_array)
+	{
+		return array_value[index];
+	} else {
+		return (&cell_value)[index];
+	}
+}
+
+bool operator==(const dyn_object &a, const dyn_object &b)
+{
+	if(a.is_array != b.is_array || a.tag_name != b.tag_name) return false;
+	if(a.is_array)
+	{
+		if(a.array_size != b.array_size) return false;
+		return !std::memcmp(a.array_value.get(), b.array_value.get(), a.array_size * sizeof(cell));
+	}else{
+		return a.cell_value == b.cell_value;
 	}
 }
 

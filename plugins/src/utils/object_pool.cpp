@@ -1,4 +1,5 @@
 #include "object_pool.h"
+#include "dyn_object.h"
 #include <string>
 #include <algorithm>
 
@@ -168,3 +169,4 @@ auto object_pool<ObjType>::find_in_list(const_object_ptr obj, const list_type &l
 }
 
 template class object_pool<std::basic_string<cell>>;
+template class object_pool<dyn_object>;
