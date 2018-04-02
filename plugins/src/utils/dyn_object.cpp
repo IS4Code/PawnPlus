@@ -11,7 +11,7 @@ dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : is_array(false), cel
 
 }
 
-dyn_object::dyn_object(AMX *amx, cell *arr, size_t size, cell tag_id) : is_array(true), array_size(size), tag_name(find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, cell *arr, cell size, cell tag_id) : is_array(true), array_size(size), tag_name(find_tag(amx, tag_id))
 {
 	array_value = std::make_unique<cell[]>(size);
 	std::memcpy(array_value.get(), arr, size * sizeof(cell));
@@ -123,8 +123,9 @@ bool dyn_object::check_tag(AMX *amx, cell tag_id) const
 	return false;
 }
 
-bool dyn_object::get_cell(size_t index, cell &value) const
+bool dyn_object::get_cell(cell index, cell &value) const
 {
+	if(index < 0) return false;
 	if(is_array)
 	{
 		if(index >= array_size) return false;
@@ -137,8 +138,9 @@ bool dyn_object::get_cell(size_t index, cell &value) const
 	}
 }
 
-size_t dyn_object::get_array(size_t index, cell *arr, size_t maxsize) const
+cell dyn_object::get_array(cell index, cell *arr, cell maxsize) const
 {
+	if(index < 0) return 0;
 	if(is_array)
 	{
 		if(maxsize > array_size) maxsize = array_size;
@@ -150,8 +152,9 @@ size_t dyn_object::get_array(size_t index, cell *arr, size_t maxsize) const
 	}
 }
 
-bool dyn_object::set_cell(size_t index, cell value)
+bool dyn_object::set_cell(cell index, cell value)
 {
+	if(index < 0) return false;
 	if(is_array)
 	{
 		if(index >= array_size) return false;
@@ -211,7 +214,7 @@ void dyn_object::load(AMX *amx, cell amx_addr)
 	}
 }
 
-size_t dyn_object::get_size() const
+cell dyn_object::get_size() const
 {
 	if(is_array)
 	{
@@ -247,7 +250,7 @@ size_t dyn_object::get_hash() const
 	size_t hash = 0;
 	if(is_array)
 	{
-		for(size_t i = 0; i < array_size; i++)
+		for(cell i = 0; i < array_size; i++)
 		{
 			hash_combine(hash, array_value[i]);
 		}
@@ -259,7 +262,7 @@ size_t dyn_object::get_hash() const
 	return hash;
 }
 
-cell &dyn_object::operator[](size_t index)
+cell &dyn_object::operator[](cell index)
 {
 	if(is_array)
 	{
@@ -269,7 +272,7 @@ cell &dyn_object::operator[](size_t index)
 	}
 }
 
-const cell &dyn_object::operator[](size_t index) const
+const cell &dyn_object::operator[](cell index) const
 {
 	if(is_array)
 	{

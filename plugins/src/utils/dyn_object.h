@@ -11,7 +11,7 @@ class dyn_object
 	bool is_array;
 	union{
 		cell cell_value;
-		size_t array_size;
+		cell array_size;
 	};
 	std::unique_ptr<cell[]> array_value;
 	std::string tag_name;
@@ -20,22 +20,22 @@ class dyn_object
 public:
 	dyn_object();
 	dyn_object(AMX *amx, cell value, cell tag_id);
-	dyn_object(AMX *amx, cell *arr, size_t size, cell tag_id);
+	dyn_object(AMX *amx, cell *arr, cell size, cell tag_id);
 	dyn_object(AMX *amx, cell *str);
 	dyn_object(const dyn_object &obj);
 	dyn_object(dyn_object &&obj);
 	bool check_tag(AMX *amx, cell tag_id) const;
-	bool get_cell(size_t index, cell &value) const;
-	size_t get_array(size_t index, cell *arr, size_t maxsize) const;
-	bool set_cell(size_t index, cell value);
+	bool get_cell(cell index, cell &value) const;
+	cell get_array(cell index, cell *arr, cell maxsize) const;
+	bool set_cell(cell index, cell value);
 	cell get_tag(AMX *amx) const;
 	cell store(AMX *amx) const;
 	void load(AMX *amx, cell amx_addr);
-	size_t get_size() const;
+	cell get_size() const;
 	char get_specifier() const;
 	size_t get_hash() const;
-	cell &operator[](size_t index);
-	const cell &operator[](size_t index) const;
+	cell &operator[](cell index);
+	const cell &operator[](cell index) const;
 	friend bool operator==(const dyn_object &a, const dyn_object &b);
 	dyn_object &operator=(const dyn_object &obj);
 	dyn_object &operator=(dyn_object &&obj);

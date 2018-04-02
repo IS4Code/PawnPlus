@@ -68,13 +68,13 @@ namespace Natives
 		amx_GetAddr(amx, params[2], &addr);
 		if(params[3] == -1)
 		{
-			ptr->push_back(dyn_object(amx, addr, static_cast<size_t>(params[4]), params[5]));
+			ptr->push_back(dyn_object(amx, addr, params[4], params[5]));
 			return static_cast<cell>(ptr->size() - 1);
 		}else if(static_cast<ucell>(params[3]) > ptr->size())
 		{
 			return -1;
 		}else{
-			ptr->insert(ptr->begin() + params[3], dyn_object(amx, addr, static_cast<size_t>(params[4]), params[5]));
+			ptr->insert(ptr->begin() + params[3], dyn_object(amx, addr, params[4], params[5]));
 			return params[3];
 		}
 	}
@@ -155,7 +155,7 @@ namespace Natives
 		auto &obj = (*ptr)[params[2]];
 		cell *addr;
 		amx_GetAddr(amx, params[3], &addr);
-		return obj.get_array(0, addr, static_cast<size_t>(params[4]));
+		return obj.get_array(0, addr, params[4]);
 	}
 
 	// native bool:list_get_checked(List:list, index, &AnyTag:value, offset=0, tag_id=tagof(value));
@@ -209,7 +209,7 @@ namespace Natives
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		cell *addr;
 		amx_GetAddr(amx, params[3], &addr);
-		(*ptr)[params[2]] = dyn_object(amx, addr, static_cast<size_t>(params[4]), params[5]);
+		(*ptr)[params[2]] = dyn_object(amx, addr, params[4], params[5]);
 		return 1;
 	}
 
