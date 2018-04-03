@@ -19,4 +19,49 @@ namespace variants
 	}
 }
 
+dyn_object dyn_func(AMX *amx, cell value, cell tag_id);
+dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell tag_id);
+dyn_object dyn_func_str(AMX *amx, cell amx_addr);
+dyn_object dyn_func_var(AMX *amx, cell ptr);
+
+cell dyn_func(AMX *amx, const dyn_object &obj, cell offset);
+cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offset, cell tag_id);
+cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size);
+cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size, cell tag_id);
+cell dyn_func_var(AMX *amx, const dyn_object &obj);
+
+template <size_t... Indices>
+class dyn_factory
+{
+	//VS hacks
+	template <class Type = dyn_object(&)(AMX*, decltype(static_cast<cell>(Indices))...)>
+	using ftype_template = Type;
+	static typename ftype_template<> fobj;
+public:
+	using type = decltype(fobj);
+};
+
+template <>
+struct dyn_factory<>
+{
+	using type = dyn_object(&)(AMX*);
+};
+
+template <size_t... Indices>
+class dyn_result
+{
+	//VS hacks
+	template <class Type = cell(&)(AMX*, const dyn_object &obj, decltype(static_cast<cell>(Indices))...)>
+	using ftype_template = Type;
+	static typename ftype_template<> fobj;
+public:
+	using type = decltype(fobj);
+};
+
+template <>
+struct dyn_result<>
+{
+	using type = cell(&)(AMX*, const dyn_object &obj);
+};
+
 #endif

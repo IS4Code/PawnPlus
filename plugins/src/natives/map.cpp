@@ -4,6 +4,115 @@
 
 typedef std::unordered_map<dyn_object, dyn_object> map_t;
 
+template <size_t... KeyIndices>
+class key_at
+{
+	using key_ftype = typename dyn_factory<KeyIndices...>::type;
+
+public:
+	template <size_t... ValueIndices>
+	class value_at
+	{
+		using value_ftype = typename dyn_factory<ValueIndices...>::type;
+		using result_ftype = typename dyn_result<ValueIndices...>::type;
+
+	public:
+		// native bool:map_add(Map:map, key, value, ...);
+		template <typename key_ftype KeyFactory, typename value_ftype ValueFactory>
+		static cell AMX_NATIVE_CALL map_add(AMX *amx, cell *params)
+		{
+			auto ptr = reinterpret_cast<map_t*>(params[1]);
+			if(ptr == nullptr) return -1;
+			auto ret = ptr->insert(std::make_pair(KeyFactory(amx, params[KeyIndices]...), ValueFactory(amx, params[ValueIndices]...)));
+			return static_cast<cell>(ret.second);
+		}
+
+		// native bool:map_set(Map:map, key, value, ...);
+		template <typename key_ftype KeyFactory, typename value_ftype ValueFactory>
+		static cell AMX_NATIVE_CALL map_set(AMX *amx, cell *params)
+		{
+			auto ptr = reinterpret_cast<map_t*>(params[1]);
+			if(ptr == nullptr) return 0;
+			(*ptr)[KeyFactory(amx, params[KeyIndices]...)] = ValueFactory(amx, params[ValueIndices]...);
+			return 1;
+		}
+
+		// native map_get(Map:map, key, ...);
+		template <typename key_ftype KeyFactory, typename result_ftype ValueFactory>
+		static cell AMX_NATIVE_CALL map_get(AMX *amx, cell *params)
+		{
+			auto ptr = reinterpret_cast<map_t*>(params[1]);
+			if(ptr == nullptr) return 0;
+			auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
+			if(it != ptr->end())
+			{
+				return ValueFactory(amx, it->second, params[ValueIndices]...);
+			}
+			return 0;
+		}
+	};
+
+	// native bool:map_remove(Map:map, key, ...);
+	template <typename key_ftype KeyFactory>
+	static cell AMX_NATIVE_CALL map_remove(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		auto it = ptr->find(KeyFactory(amx, KeyIndices...));
+		if(it != ptr->end())
+		{
+			ptr->erase(it);
+			return 1;
+		}
+		return 0;
+	}
+
+	// native bool:map_set_cell(Map:map, key, offset, AnyTag:value, ...);
+	template <typename key_ftype KeyFactory, size_t TagIndex = 0>
+	static cell AMX_NATIVE_CALL map_set_cell(AMX *amx, cell *params)
+	{
+		if(params[3] < 0) return 0;
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
+		if(it != ptr->end())
+		{
+			auto &obj = it->second;
+			if(TagIndex && !obj.check_tag(amx, params[TagIndex])) return 0;
+			return obj.set_cell(params[3], params[4]);
+		}
+		return 0;
+	}
+
+	// native map_tagof(Map:map, key, ...);
+	template <typename key_ftype KeyFactory>
+	static cell AMX_NATIVE_CALL map_tagof(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
+		if(it != ptr->end())
+		{
+			return it->second.get_tag(amx);
+		}
+		return 0;
+	}
+
+	// native map_sizeof(Map:map, key, ...);
+	template <typename key_ftype KeyFactory>
+	static cell AMX_NATIVE_CALL map_sizeof(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
+		if(it != ptr->end())
+		{
+			return it->second.get_size();
+		}
+		return 0;
+	}
+};
+
 namespace Natives
 {
 	// native Map:map_new();
@@ -42,177 +151,97 @@ namespace Natives
 	// native bool:map_add(Map:map, AnyTag:key, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_add(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, params[2], params[4]), dyn_object(amx, params[3], params[5])));
-		return static_cast<cell>(ret.second);
+		return key_at<2, 4>::value_at<3, 5>::map_add<dyn_func, dyn_func>(amx, params);
 	}
 
 	// native bool:map_add_arr(Map:map, AnyTag:key, const AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_add_arr(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, params[2], params[5]), dyn_object(amx, addr, params[4], params[6])));
-		return static_cast<cell>(ret.second);
+		return key_at<2, 5>::value_at<3, 4, 6>::map_add<dyn_func, dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_add_str(Map:map, AnyTag:key, const value[], key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_add_str(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, params[2], params[4]), dyn_object(amx, addr)));
-		return static_cast<cell>(ret.second);
+		return key_at<2, 4>::value_at<3>::map_add<dyn_func, dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_add_var(Map:map, AnyTag:key, VariantTag:value, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_add_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, params[2], params[4]), variants::get(params[3])));
-		return static_cast<cell>(ret.second);
+		return key_at<2, 4>::value_at<3>::map_add<dyn_func, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_arr_add(Map:map, const AnyTag:key[], AnyTag:value, key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_arr_add(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, key_addr, params[4], params[5]), dyn_object(amx, params[3], params[6])));
-		return static_cast<cell>(ret.second);
+		return key_at<2, 4, 5>::value_at<3, 6>::map_add<dyn_func_arr, dyn_func>(amx, params);
 	}
 
 	// native bool:map_arr_add_arr(Map:map, const AnyTag:key[], const AnyTag:value[], key_size=sizeof(key), value_size=sizeof(value), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_arr_add_arr(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, key_addr, params[4], params[6]), dyn_object(amx, addr, params[5], params[7])));
-		return static_cast<cell>(ret.second);
+		return key_at<2, 4, 6>::value_at<3, 5, 7>::map_add<dyn_func_arr, dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_arr_add_str(Map:map, const AnyTag:key[], const value[], key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_add_str(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, key_addr, params[4], params[5]), dyn_object(amx, addr)));
-		return static_cast<cell>(ret.second);
+		return key_at<2, 4, 5>::value_at<3>::map_add<dyn_func_arr, dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_arr_add_var(Map:map, const AnyTag:key[], VariantTag:value, key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_add_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, key_addr, params[4], params[5]), variants::get(params[3])));
-		return static_cast<cell>(ret.second);
+		return key_at<2, 4, 5>::value_at<3>::map_add<dyn_func_arr, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_str_add(Map:map, const key[], AnyTag:value, value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_str_add(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, key_addr), dyn_object(amx, params[3], params[4])));
-		return static_cast<cell>(ret.second);
+		return key_at<2>::value_at<3, 4>::map_add<dyn_func_str, dyn_func>(amx, params);
 	}
 
 	// native bool:map_str_add_arr(Map:map, const key[], const AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_str_add_arr(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, key_addr), dyn_object(amx, addr, params[4], params[5])));
-		return static_cast<cell>(ret.second);
+		return key_at<2>::value_at<3, 4, 5>::map_add<dyn_func_str, dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_str_add_str(Map:map, const key[], const value[]);
 	static cell AMX_NATIVE_CALL map_str_add_str(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, key_addr), dyn_object(amx, addr)));
-		return static_cast<cell>(ret.second);
+		return key_at<2>::value_at<3>::map_add<dyn_func_str, dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_str_add_var(Map:map, const key[], VariantTag:value);
 	static cell AMX_NATIVE_CALL map_str_add_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto ret = ptr->insert(std::make_pair(dyn_object(amx, key_addr), variants::get(params[3])));
-		return static_cast<cell>(ret.second);
+		return key_at<2>::value_at<3>::map_add<dyn_func_str, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_var_add(Map:map, VariantTag:key, AnyTag:value, value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_var_add(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		auto ret = ptr->insert(std::make_pair(variants::get(params[2]), dyn_object(amx, params[3], params[4])));
-		return static_cast<cell>(ret.second);
+		return key_at<2>::value_at<3, 4>::map_add<dyn_func_var, dyn_func>(amx, params);
 	}
 
 	// native bool:map_var_add_arr(Map:map, VariantTag:key, const AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_var_add_arr(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		auto ret = ptr->insert(std::make_pair(variants::get(params[2]), dyn_object(amx, addr, params[4], params[5])));
-		return static_cast<cell>(ret.second);
+		return key_at<2>::value_at<3, 4, 5>::map_add<dyn_func_var, dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_var_add_str(Map:map, VariantTag:key, const value[]);
 	static cell AMX_NATIVE_CALL map_var_add_str(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		auto ret = ptr->insert(std::make_pair(variants::get(params[2]), dyn_object(amx, addr)));
-		return static_cast<cell>(ret.second);
+		return key_at<2>::value_at<3>::map_add<dyn_func_var, dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_str_add_var(Map:map, VariantTag:key, VariantTag:value);
 	static cell AMX_NATIVE_CALL map_var_add_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
-		auto ret = ptr->insert(std::make_pair(variants::get(params[2]), variants::get(params[3])));
-		return static_cast<cell>(ret.second);
+		return key_at<2>::value_at<3>::map_add<dyn_func_var, dyn_func_var>(amx, params);
 	}
 
 	// native map_add_map(Map:map, Map:other, bool:overwrite);
@@ -236,857 +265,337 @@ namespace Natives
 	// native bool:map_remove(Map:map, AnyTag:key, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_remove(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[3]));
-		if(it != ptr->end())
-		{
-			ptr->erase(it);
-			return 1;
-		}
-		return 0;
+		return key_at<2, 3>::map_remove<dyn_func>(amx, params);
 	}
 
 	// native bool:map_arr_remove(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_remove(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[3], params[4]));
-		if(it != ptr->end())
-		{
-			ptr->erase(it);
-			return 1;
-		}
-		return 0;
+		return key_at<2, 3, 4>::map_remove<dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_str_remove(Map:map, const key[]);
 	static cell AMX_NATIVE_CALL map_str_remove(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			ptr->erase(it);
-			return 1;
-		}
-		return 0;
+		return key_at<2>::map_remove<dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_str_remove(Map:map, VariantTag:key);
 	static cell AMX_NATIVE_CALL map_var_remove(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[1]));
-		if(it != ptr->end())
-		{
-			ptr->erase(it);
-			return 1;
-		}
-		return 0;
+		return key_at<2>::map_remove<dyn_func_var>(amx, params);
 	}
 
 	// native map_get(Map:map, AnyTag:key, offset=0, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_get(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[4]));
-		if(it != ptr->end())
-		{
-			cell result;
-			if(it->second.get_cell(params[3], result))
-			{
-				return result;
-			}
-		}
-		return 0;
+		return key_at<2, 4>::value_at<3>::map_get<dyn_func, dyn_func>(amx, params);
 	}
 
 	// native map_get_arr(Map:map, AnyTag:key, AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_get_arr(AMX *amx, cell *params)
 	{
-		if(params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[5]));
-		if(it != ptr->end())
-		{
-			cell *addr;
-			amx_GetAddr(amx, params[3], &addr);
-			return it->second.get_array(addr, params[4]);
-		}
-		return 0;
+		return key_at<2, 5>::value_at<3, 4>::map_get<dyn_func, dyn_func_arr>(amx, params);
 	}
 
 	// native Variant:map_get_var(Map:map, AnyTag:key, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_get_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[3]));
-		if(it != ptr->end())
-		{
-			return variants::create(it->second);
-		}
-		return 0;
+		return key_at<2, 3>::value_at<>::map_get<dyn_func, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_get_checked(Map:map, AnyTag:key, &AnyTag:value, offset=0, key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_get_checked(AMX *amx, cell *params)
 	{
-		if(params[4] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[5]));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(obj.check_tag(amx, params[6]))
-			{
-				cell *addr;
-				amx_GetAddr(amx, params[3], &addr);
-				if(obj.get_cell(params[4], *addr))
-				{
-					return 1;
-				}
-			}
-		}
-		return 0;
+		return key_at<2, 5>::value_at<3, 4, 6>::map_get<dyn_func, dyn_func>(amx, params);
 	}
 
 	// native map_get_arr_checked(Map:map, AnyTag:key, AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_get_arr_checked(AMX *amx, cell *params)
 	{
-		if(params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[5]));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(obj.check_tag(amx, params[6]))
-			{
-				cell *addr;
-				amx_GetAddr(amx, params[3], &addr);
-				return obj.get_array(addr, params[4]);
-			}
-		}
-		return 0;
+		return key_at<2, 5>::value_at<3, 4, 6>::map_get<dyn_func, dyn_func_arr>(amx, params);
 	}
 
 	// native map_arr_get(Map:map, const AnyTag:key[], offset=0, key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_get(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[4], params[5]));
-		if(it != ptr->end())
-		{
-			cell result;
-			if(it->second.get_cell(params[3], result))
-			{
-				return result;
-			}
-		}
-		return 0;
+		return key_at<2, 4, 5>::value_at<3>::map_get<dyn_func_arr, dyn_func>(amx, params);
 	}
 
 	// native map_arr_get_arr(Map:map, const AnyTag:key[], AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_get_arr(AMX *amx, cell *params)
 	{
-		if(params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[5], params[6]));
-		if(it != ptr->end())
-		{
-			cell *addr;
-			amx_GetAddr(amx, params[3], &addr);
-			return it->second.get_array(addr, params[4]);
-		}
-		return 0;
+		return key_at<2, 5, 6>::value_at<3, 4>::map_get<dyn_func_arr, dyn_func_arr>(amx, params);
 	}
 
 	// native Variant:map_arr_get_var(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_get_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[3], params[4]));
-		if(it != ptr->end())
-		{
-			return variants::create(it->second);
-		}
-		return 0;
+		return key_at<2, 3, 4>::value_at<>::map_get<dyn_func_arr, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_arr_get_checked(Map:map, const AnyTag:key[], &AnyTag:value, offset=0, key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_arr_get_checked(AMX *amx, cell *params)
 	{
-		if(params[4] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[5], params[6]));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(obj.check_tag(amx, params[7]))
-			{
-				cell *addr;
-				amx_GetAddr(amx, params[3], &addr);
-				if(obj.get_cell(params[4], *addr))
-				{
-					return 1;
-				}
-			}
-		}
-		return 0;
+		return key_at<2, 5, 6>::value_at<3, 4, 7>::map_get<dyn_func_arr, dyn_func>(amx, params);
 	}
 
 	// native map_arr_get_arr_checked(Map:map, const AnyTag:key[], AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_arr_get_arr_checked(AMX *amx, cell *params)
 	{
-		if(params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[5], params[6]));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(obj.check_tag(amx, params[4]))
-			{
-				cell *addr;
-				amx_GetAddr(amx, params[3], &addr);
-				return obj.get_array(addr, params[4]);
-			}
-		}
-		return 0;
+		return key_at<2, 5, 6>::value_at<3, 4, 7>::map_get<dyn_func_arr, dyn_func_arr>(amx, params);
 	}
 
 	// native map_str_get(Map:map, const key[], offset=0);
 	static cell AMX_NATIVE_CALL map_str_get(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			cell result;
-			if(it->second.get_cell(params[3], result))
-			{
-				return result;
-			}
-		}
-		return 0;
+		return key_at<2>::value_at<3>::map_get<dyn_func_str, dyn_func>(amx, params);
 	}
 
 	// native map_str_get_arr(Map:map, const key[], AnyTag:value[], value_size=sizeof(value));
 	static cell AMX_NATIVE_CALL map_str_get_arr(AMX *amx, cell *params)
 	{
-		if(params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			cell *addr;
-			amx_GetAddr(amx, params[3], &addr);
-			return it->second.get_array(addr, params[4]);
-		}
-		return 0;
+		return key_at<2>::value_at<3, 4>::map_get<dyn_func_str, dyn_func_arr>(amx, params);
 	}
 
 	// native Variant:map_str_get_var(Map:map, const key[]);
 	static cell AMX_NATIVE_CALL map_str_get_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			return variants::create(it->second);
-		}
-		return 0;
+		return key_at<2>::value_at<>::map_get<dyn_func_str, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_str_get_checked(Map:map, const key[], &AnyTag:value, offset=0, value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_str_get_checked(AMX *amx, cell *params)
 	{
-		if(params[4] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(obj.check_tag(amx, params[5]))
-			{
-				cell *addr;
-				amx_GetAddr(amx, params[3], &addr);
-				if(obj.get_cell(params[4], *addr))
-				{
-					return 1;
-				}
-			}
-		}
-		return 0;
+		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_str, dyn_func>(amx, params);
 	}
 
 	// native map_str_get_arr_checked(Map:map, const key[], AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_str_get_arr_checked(AMX *amx, cell *params)
 	{
-		if(params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(obj.check_tag(amx, params[5]))
-			{
-				cell *addr;
-				amx_GetAddr(amx, params[3], &addr);
-				return obj.get_array(addr, params[4]);
-			}
-		}
-		return 0;
+		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_str, dyn_func_arr>(amx, params);
 	}
 
 	// native map_var_get(Map:map, VariantTag:key, offset=0);
 	static cell AMX_NATIVE_CALL map_var_get(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[2]));
-		if(it != ptr->end())
-		{
-			cell result;
-			if(it->second.get_cell(params[3], result))
-			{
-				return result;
-			}
-		}
-		return 0;
+		return key_at<2>::value_at<3>::map_get<dyn_func_var, dyn_func>(amx, params);
 	}
 
 	// native map_var_get_arr(Map:map, VariantTag:key, AnyTag:value[], value_size=sizeof(value));
 	static cell AMX_NATIVE_CALL map_var_get_arr(AMX *amx, cell *params)
 	{
-		if(params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[2]));
-		if(it != ptr->end())
-		{
-			cell *addr;
-			amx_GetAddr(amx, params[3], &addr);
-			return it->second.get_array(addr, params[4]);
-		}
-		return 0;
+		return key_at<2>::value_at<3, 4>::map_get<dyn_func_var, dyn_func_arr>(amx, params);
 	}
 
 	// native Variant:map_var_get_var(Map:map, VariantTag:key);
 	static cell AMX_NATIVE_CALL map_var_get_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[2]));
-		if(it != ptr->end())
-		{
-			return variants::create(it->second);
-		}
-		return 0;
+		return key_at<2>::value_at<>::map_get<dyn_func_var, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_var_get_checked(Map:map, VariantTag:key, &AnyTag:value, offset=0, value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_var_get_checked(AMX *amx, cell *params)
 	{
-		if(params[4] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[2]));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(obj.check_tag(amx, params[5]))
-			{
-				cell *addr;
-				amx_GetAddr(amx, params[3], &addr);
-				if(obj.get_cell(params[4], *addr))
-				{
-					return 1;
-				}
-			}
-		}
-		return 0;
+		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_var, dyn_func>(amx, params);
 	}
 
 	// native map_var_get_arr_checked(Map:map, VariantTag:key, AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_var_get_arr_checked(AMX *amx, cell *params)
 	{
-		if(params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[2]));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(obj.check_tag(amx, params[5]))
-			{
-				cell *addr;
-				amx_GetAddr(amx, params[3], &addr);
-				return obj.get_array(addr, params[4]);
-			}
-		}
-		return 0;
+		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_var, dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_set(Map:map, AnyTag:key, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_set(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		(*ptr)[dyn_object(amx, params[2], params[4])] = dyn_object(amx, params[3], params[5]);
-		return 1;
+		return key_at<2, 4>::value_at<3, 5>::map_set<dyn_func, dyn_func>(amx, params);
 	}
 
 	// native bool:map_set_arr(Map:map, AnyTag:key, const AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_set_arr(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		(*ptr)[dyn_object(amx, params[2], params[5])] = dyn_object(amx, addr, params[4], params[6]);
-		return 1;
+		return key_at<2, 5>::value_at<3, 4, 6>::map_set<dyn_func, dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_set_str(Map:map, AnyTag:key, const value[], key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_set_str(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		(*ptr)[dyn_object(amx, params[2], params[4])] = dyn_object(amx, addr);
-		return 1;
+		return key_at<2, 4>::value_at<3>::map_set<dyn_func, dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_set_var(Map:map, AnyTag:key, VariantTag:value, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_set_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		(*ptr)[dyn_object(amx, params[2], params[4])] = variants::get(params[3]);
-		return 1;
+		return key_at<2, 4>::value_at<3>::map_set<dyn_func, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_set_cell(Map:map, AnyTag:key, offset, AnyTag:value, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_set_cell(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[5]));
-		if(it != ptr->end())
-		{
-			return it->second.set_cell(params[3], params[4]);
-		}
-		return 0;
+		return key_at<2, 5>::map_set_cell<dyn_func>(amx, params);
 	}
 
 	// native bool:map_set_cell_checked(Map:map, AnyTag:key, offset, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_set_cell_checked(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[5]));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(!obj.check_tag(amx, params[6])) return 0;
-			return obj.set_cell(params[3], params[4]);
-		}
-		return 0;
+		return key_at<2, 5>::map_set_cell<dyn_func, 6>(amx, params);
 	}
 
 	// native bool:map_arr_set(Map:map, const AnyTag:key[], AnyTag:value, key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_arr_set(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		(*ptr)[dyn_object(amx, key_addr, params[4], params[5])] = dyn_object(amx, params[3], params[6]);
-		return 1;
+		return key_at<2, 4, 5>::value_at<3, 6>::map_set<dyn_func_arr, dyn_func>(amx, params);
 	}
 
 	// native bool:map_arr_set_arr(Map:map, const AnyTag:key[], const AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_arr_set_arr(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		(*ptr)[dyn_object(amx, key_addr, params[5], params[6])] = dyn_object(amx, addr, params[4], params[7]);
-		return 1;
+		return key_at<2, 5, 6>::value_at<3, 4, 7>::map_set<dyn_func_arr, dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_arr_set_str(Map:map, const AnyTag:key[], const value[], key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_set_str(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		(*ptr)[dyn_object(amx, key_addr, params[4], params[5])] = dyn_object(amx, addr);
-		return 1;
+		return key_at<2, 4, 5>::value_at<3>::map_set<dyn_func_arr, dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_arr_set_var(Map:map, const AnyTag:key[], VariantTags:value, key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_set_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		(*ptr)[dyn_object(amx, key_addr, params[4], params[5])] = variants::get(params[3]);
-		return 1;
+		return key_at<2, 4, 5>::value_at<3>::map_set<dyn_func_arr, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_arr_set_cell(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_set_cell(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[5], params[6]));
-		if(it != ptr->end())
-		{
-			return it->second.set_cell(params[3], params[4]);
-		}
-		return 0;
+		return key_at<2, 5, 6>::map_set_cell<dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_arr_set_cell_checked(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_arr_set_cell_checked(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[5], params[6]));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(!obj.check_tag(amx, params[7])) return 0;
-			return obj.set_cell(params[3], params[4]);
-		}
-		return 0;
+		return key_at<2, 5, 6>::map_set_cell<dyn_func_arr, 7>(amx, params);
 	}
 
 	// native bool:map_str_set(Map:map, const key[], AnyTag:value, value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_str_set(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		(*ptr)[dyn_object(amx, key_addr)] = dyn_object(amx, params[3], params[4]);
-		return 1;
+		return key_at<2>::value_at<3, 4>::map_set<dyn_func_str, dyn_func>(amx, params);
 	}
 
 	// native bool:map_str_set_arr(Map:map, const key[], const AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_str_set_arr(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		(*ptr)[dyn_object(amx, key_addr)] = dyn_object(amx, addr, params[4], params[5]);
-		return 1;
+		return key_at<2>::value_at<3, 4, 5>::map_set<dyn_func_str, dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_str_set_str(Map:map, const key[], const value[]);
 	static cell AMX_NATIVE_CALL map_str_set_str(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		(*ptr)[dyn_object(amx, key_addr)] = dyn_object(amx, addr);
-		return 1;
+		return key_at<2>::value_at<3>::map_set<dyn_func_str, dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_str_set_var(Map:map, const key[], VariantTag:value);
 	static cell AMX_NATIVE_CALL map_str_set_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		(*ptr)[dyn_object(amx, key_addr)] = variants::get(params[3]);
-		return 1;
+		return key_at<2>::value_at<3>::map_set<dyn_func_str, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_str_set_cell(Map:map, const key[], offset, AnyTag:value);
 	static cell AMX_NATIVE_CALL map_str_set_cell(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			return it->second.set_cell(params[3], params[4]);
-		}
-		return 0;
+		return key_at<2>::map_set_cell<dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_str_set_cell_checked(Map:map, const key[], offset, AnyTag:value, value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_str_set_cell_checked(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(!obj.check_tag(amx, params[5])) return 0;
-			return obj.set_cell(params[3], params[4]);
-		}
-		return 0;
+		return key_at<2>::map_set_cell<dyn_func_str, 5>(amx, params);
 	}
 
 	// native bool:map_var_set(Map:map, VariantTag:key, AnyTag:value, value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_var_set(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		(*ptr)[variants::get(params[2])] = dyn_object(amx, params[3], params[4]);
-		return 1;
+		return key_at<2>::value_at<3, 4>::map_set<dyn_func_var, dyn_func>(amx, params);
 	}
 
 	// native bool:map_var_set_arr(Map:map, VariantTag:key, const AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_var_set_arr(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		(*ptr)[variants::get(params[2])] = dyn_object(amx, addr, params[4], params[5]);
-		return 1;
+		return key_at<2>::value_at<3, 4, 5>::map_set<dyn_func_var, dyn_func_arr>(amx, params);
 	}
 
 	// native bool:map_var_set_str(Map:map, VariantTag:key, const value[]);
 	static cell AMX_NATIVE_CALL map_var_set_str(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		(*ptr)[variants::get(params[2])] = dyn_object(amx, addr);
-		return 1;
+		return key_at<2>::value_at<3>::map_set<dyn_func_var, dyn_func_str>(amx, params);
 	}
 
 	// native bool:map_var_set_var(Map:map, VariantTag:key, VariantTag:value);
 	static cell AMX_NATIVE_CALL map_var_set_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		(*ptr)[variants::get(params[2])] = variants::get(params[3]);
-		return 1;
+		return key_at<2>::value_at<3>::map_set<dyn_func_var, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_var_set_cell(Map:map, VariantTag:key, offset, AnyTag:value);
 	static cell AMX_NATIVE_CALL map_var_set_cell(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[2]));
-		if(it != ptr->end())
-		{
-			return it->second.set_cell(params[3], params[4]);
-		}
-		return 0;
+		return key_at<2>::map_set_cell<dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_var_set_cell_checked(Map:map, VariantTag:key, offset, AnyTag:value, value_tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL map_var_set_cell_checked(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[2]));
-		if(it != ptr->end())
-		{
-			auto &obj = it->second;
-			if(!obj.check_tag(amx, params[5])) return 0;
-			return obj.set_cell(params[3], params[4]);
-		}
-		return 0;
+		return key_at<2>::map_set_cell<dyn_func_var, 5>(amx, params);
 	}
 
 	// native map_tagof(Map:map, AnyTag:key, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_tagof(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[3]));
-		if(it != ptr->end())
-		{
-			return it->second.get_tag(amx);
-		}
-		return 0;
+		return key_at<2, 3>::map_tagof<dyn_func>(amx, params);
 	}
 
 	// native map_sizeof(Map:map, AnyTag:key, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_sizeof(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(dyn_object(amx, params[2], params[3]));
-		if(it != ptr->end())
-		{
-			return it->second.get_size();
-		}
-		return 0;
+		return key_at<2, 3>::map_sizeof<dyn_func>(amx, params);
 	}
 
 	// native map_arr_tagof(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_tagof(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[3], params[4]));
-		if(it != ptr->end())
-		{
-			return it->second.get_tag(amx);
-		}
-		return 0;
+		return key_at<2, 3, 4>::map_tagof<dyn_func_arr>(amx, params);
 	}
 
 	// native map_arr_sizeof(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_arr_sizeof(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr, params[3], params[4]));
-		if(it != ptr->end())
-		{
-			return it->second.get_size();
-		}
-		return 0;
+		return key_at<2, 3, 4>::map_sizeof<dyn_func_arr>(amx, params);
 	}
 
 	// native map_str_tagof(Map:map, const key[]);
 	static cell AMX_NATIVE_CALL map_str_tagof(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			return it->second.get_tag(amx);
-		}
-		return 0;
+		return key_at<2>::map_tagof<dyn_func_str>(amx, params);
 	}
 
 	// native map_str_sizeof(Map:map, const key[]);
 	static cell AMX_NATIVE_CALL map_str_sizeof(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		cell *key_addr;
-		amx_GetAddr(amx, params[2], &key_addr);
-		auto it = ptr->find(dyn_object(amx, key_addr));
-		if(it != ptr->end())
-		{
-			return it->second.get_size();
-		}
-		return 0;
+		return key_at<2>::map_sizeof<dyn_func_str>(amx, params);
 	}
 
 	// native map_var_tagof(Map:map, VariantTag:key);
 	static cell AMX_NATIVE_CALL map_var_tagof(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[2]));
-		if(it != ptr->end())
-		{
-			return it->second.get_tag(amx);
-		}
-		return 0;
+		return key_at<2>::map_tagof<dyn_func_var>(amx, params);
 	}
 
 	// native map_var_sizeof(Map:map, VariantTag:key);
 	static cell AMX_NATIVE_CALL map_var_sizeof(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		auto it = ptr->find(variants::get(params[2]));
-		if(it != ptr->end())
-		{
-			return it->second.get_size();
-		}
-		return 0;
+		return key_at<2>::map_sizeof<dyn_func_var>(amx, params);
 	}
 }
 
