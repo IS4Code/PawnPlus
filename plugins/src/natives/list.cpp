@@ -1,5 +1,5 @@
 #include "../natives.h"
-#include "../utils/dyn_object.h"
+#include "../variants.h"
 #include <vector>
 
 typedef std::vector<dyn_object> list_t;
@@ -91,11 +91,30 @@ namespace Natives
 		{
 			ptr->push_back(dyn_object(amx, addr));
 			return static_cast<cell>(ptr->size() - 1);
-		}else if(static_cast<ucell>(params[3]) > ptr->size())
+		} else if(static_cast<ucell>(params[3]) > ptr->size())
 		{
 			return -1;
-		}else{
+		} else {
 			ptr->insert(ptr->begin() + params[3], dyn_object(amx, addr));
+			return params[3];
+		}
+	}
+
+	// native list_add_var(List:list, VariantTag:value, index=-1);
+	static cell AMX_NATIVE_CALL list_add_var(AMX *amx, cell *params)
+	{
+		if(params[3] < -1) return -1;
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		if(params[3] == -1)
+		{
+			ptr->push_back(variants::get(params[2]));
+			return static_cast<cell>(ptr->size() - 1);
+		} else if(static_cast<ucell>(params[3]) > ptr->size())
+		{
+			return -1;
+		} else {
+			ptr->insert(ptr->begin() + params[3], variants::get(params[2]));
 			return params[3];
 		}
 	}
@@ -155,7 +174,19 @@ namespace Natives
 		auto &obj = (*ptr)[params[2]];
 		cell *addr;
 		amx_GetAddr(amx, params[3], &addr);
-		return obj.get_array(0, addr, params[4]);
+		return obj.get_array(addr, params[4]);
+	}
+
+	// native Variant:list_get_var(List:list, index);
+	static cell AMX_NATIVE_CALL list_get_var(AMX *amx, cell *params)
+	{
+		if(params[2] < 0) return 0;
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
+		auto &obj = (*ptr)[params[2]];
+		if(obj.empty()) return 0;
+		return variants::create(obj);
 	}
 
 	// native bool:list_get_checked(List:list, index, &AnyTag:value, offset=0, tag_id=tagof(value));
@@ -186,7 +217,7 @@ namespace Natives
 		if(!obj.check_tag(amx, tag_id)) return 0;
 		cell *addr;
 		amx_GetAddr(amx, params[3], &addr);
-		return obj.get_array(0, addr, params[4]);
+		return obj.get_array(addr, params[4]);
 	}
 
 	// native list_set(List:list, index, AnyTag:value, tag_id=tagof(value));
@@ -223,6 +254,17 @@ namespace Natives
 		cell *addr;
 		amx_GetAddr(amx, params[3], &addr);
 		(*ptr)[params[2]] = dyn_object(amx, addr);
+		return 1;
+	}
+
+	// native list_set_var(List:list, index, VariantTag:value);
+	static cell AMX_NATIVE_CALL list_set_var(AMX *amx, cell *params)
+	{
+		if(params[2] < 0) return 0;
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
+		(*ptr)[params[2]] = variants::get(params[2]);
 		return 1;
 	}
 
@@ -282,15 +324,18 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_add),
 	AMX_DECLARE_NATIVE(list_add_arr),
 	AMX_DECLARE_NATIVE(list_add_str),
+	AMX_DECLARE_NATIVE(list_add_var),
 	AMX_DECLARE_NATIVE(list_add_list),
 	AMX_DECLARE_NATIVE(list_remove),
 	AMX_DECLARE_NATIVE(list_get),
 	AMX_DECLARE_NATIVE(list_get_arr),
+	AMX_DECLARE_NATIVE(list_get_var),
 	AMX_DECLARE_NATIVE(list_get_checked),
 	AMX_DECLARE_NATIVE(list_get_arr_checked),
 	AMX_DECLARE_NATIVE(list_set),
 	AMX_DECLARE_NATIVE(list_set_arr),
 	AMX_DECLARE_NATIVE(list_set_str),
+	AMX_DECLARE_NATIVE(list_set_var),
 	AMX_DECLARE_NATIVE(list_set_cell),
 	AMX_DECLARE_NATIVE(list_set_cell_checked),
 	AMX_DECLARE_NATIVE(list_tagof),

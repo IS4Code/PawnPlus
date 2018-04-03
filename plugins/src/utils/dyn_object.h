@@ -26,7 +26,7 @@ public:
 	dyn_object(dyn_object &&obj);
 	bool check_tag(AMX *amx, cell tag_id) const;
 	bool get_cell(cell index, cell &value) const;
-	cell get_array(cell index, cell *arr, cell maxsize) const;
+	cell get_array(cell *arr, cell maxsize) const;
 	bool set_cell(cell index, cell value);
 	cell get_tag(AMX *amx) const;
 	cell store(AMX *amx) const;
@@ -34,6 +34,7 @@ public:
 	cell get_size() const;
 	char get_specifier() const;
 	size_t get_hash() const;
+	bool empty() const;
 	cell &operator[](cell index);
 	const cell &operator[](cell index) const;
 	friend bool operator==(const dyn_object &a, const dyn_object &b);

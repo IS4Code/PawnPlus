@@ -142,6 +142,7 @@
     <ClCompile Include="src\natives\pawn.cpp" />
     <ClCompile Include="src\natives\str.cpp" />
     <ClCompile Include="src\natives\task.cpp" />
+    <ClCompile Include="src\natives\variant.cpp" />
     <ClCompile Include="src\reset.cpp" />
     <ClCompile Include="src\strings.cpp" />
     <ClCompile Include="src\tasks.cpp" />
@@ -151,6 +152,7 @@
     <ClCompile Include="src\utils\thread.cpp" />
     <ClCompile Include="src\utils\thread_posix.cpp" />
     <ClCompile Include="src\utils\thread_win.cpp" />
+    <ClCompile Include="src\variants.cpp" />
     <ClInclude Include="lib\subhook\subhook_linux.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExcludedFromBuild>
@@ -183,6 +185,7 @@
     <ClInclude Include="src\utils\object_pool.h" />
     <ClInclude Include="src\utils\optional.h" />
     <ClInclude Include="src\utils\thread.h" />
+    <ClInclude Include="src\variants.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />

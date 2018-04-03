@@ -138,9 +138,8 @@ bool dyn_object::get_cell(cell index, cell &value) const
 	}
 }
 
-cell dyn_object::get_array(cell index, cell *arr, cell maxsize) const
+cell dyn_object::get_array(cell *arr, cell maxsize) const
 {
-	if(index < 0) return 0;
 	if(is_array)
 	{
 		if(maxsize > array_size) maxsize = array_size;
@@ -160,11 +159,8 @@ bool dyn_object::set_cell(cell index, cell value)
 		if(index >= array_size) return false;
 		array_value[index] = value;
 		return true;
-	}else{
-		if(index > 0) return false;
-		cell_value = value;
-		return true;
 	}
+	return false;
 }
 
 cell dyn_object::get_tag(AMX *amx) const
@@ -260,6 +256,11 @@ size_t dyn_object::get_hash() const
 
 	hash_combine(hash, tag_name);
 	return hash;
+}
+
+bool dyn_object::empty() const
+{
+	return is_array ? array_size == 0 : false;
 }
 
 cell &dyn_object::operator[](cell index)

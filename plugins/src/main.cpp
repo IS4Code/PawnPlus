@@ -2,6 +2,7 @@
 #include "tasks.h"
 #include "threads.h"
 #include "strings.h"
+#include "variants.h"
 #include "hooks.h"
 #include "natives.h"
 #include "context.h"
@@ -28,6 +29,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 	Context::RegisterGroundCallback(
 		[](AMX *amx){
 			strings::pool.clear_tmp();
+			variants::pool.clear_tmp();
 			Threads::StartThreads();
 		}
 	);

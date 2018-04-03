@@ -67,6 +67,12 @@
     <ClCompile Include="src\natives\map.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives\variant.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
+    <ClCompile Include="src\variants.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -148,6 +154,9 @@
     </ClInclude>
     <ClInclude Include="src\utils\object_pool.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\variants.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
