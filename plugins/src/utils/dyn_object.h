@@ -42,13 +42,16 @@ public:
 	dyn_object &operator=(dyn_object &&obj);
 };
 
-template<>
-struct std::hash<dyn_object>
+namespace std
 {
-	size_t operator()(const dyn_object &obj) const
+	template<>
+	struct hash<dyn_object>
 	{
-		return obj.get_hash();
-	}
-};
+		size_t operator()(const dyn_object &obj) const
+		{
+			return obj.get_hash();
+		}
+	};
+}
 
 #endif
