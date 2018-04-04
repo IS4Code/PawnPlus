@@ -22,6 +22,7 @@ public:
 	dyn_object(AMX *amx, cell value, cell tag_id);
 	dyn_object(AMX *amx, cell *arr, cell size, cell tag_id);
 	dyn_object(AMX *amx, cell *str);
+	dyn_object(cell value, const char *tag);
 	dyn_object(const dyn_object &obj);
 	dyn_object(dyn_object &&obj);
 	bool check_tag(AMX *amx, cell tag_id) const;
@@ -33,11 +34,18 @@ public:
 	void load(AMX *amx, cell amx_addr);
 	cell get_size() const;
 	char get_specifier() const;
+	size_t tag_hash() const;
 	size_t get_hash() const;
 	bool empty() const;
+	bool tag_check(const dyn_object &obj) const;
 	cell &operator[](cell index);
 	const cell &operator[](cell index) const;
 	friend bool operator==(const dyn_object &a, const dyn_object &b);
+	dyn_object operator+(const dyn_object &obj) const;
+	dyn_object operator-(const dyn_object &obj) const;
+	dyn_object operator*(const dyn_object &obj) const;
+	dyn_object operator/(const dyn_object &obj) const;
+	dyn_object operator%(const dyn_object &obj) const;
 	dyn_object &operator=(const dyn_object &obj);
 	dyn_object &operator=(dyn_object &&obj);
 };

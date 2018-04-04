@@ -140,6 +140,59 @@ namespace Natives
 		if(var == nullptr) return 0;
 		return var->get_size();
 	}
+
+	// native bool:var_equal(VariantTag:var1, VariantTag:var2);
+	static cell AMX_NATIVE_CALL var_equal(AMX *amx, cell *params)
+	{
+		auto var1 = reinterpret_cast<dyn_object*>(params[1]);
+		auto var2 = reinterpret_cast<dyn_object*>(params[2]);
+		if(var1 == nullptr || var1->empty()) return var2 == nullptr || var2->empty();
+		if(var2 == nullptr) return 0;
+		return *var1 == *var2;
+	}
+
+	// native Variant:var_op(VariantTag:var1, VariantTag:var2);
+	template <dyn_object (dyn_object::*op)(const dyn_object&) const>
+	static cell AMX_NATIVE_CALL var_op(AMX *amx, cell *params)
+	{
+		auto var1 = reinterpret_cast<dyn_object*>(params[1]);
+		if(var1 == nullptr) return 0;
+		auto var2 = reinterpret_cast<dyn_object*>(params[2]);
+		if(var2 == nullptr) return 0;
+		auto var = (var1->*op)(*var2);
+		if(var.empty()) return 0;
+		return variants::create(std::move(var));
+	}
+
+	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	static cell AMX_NATIVE_CALL var_add(AMX *amx, cell *params)
+	{
+		return var_op<&dyn_object::operator+>(amx, params);
+	}
+
+	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	static cell AMX_NATIVE_CALL var_sub(AMX *amx, cell *params)
+	{
+		return var_op<&dyn_object::operator- >(amx, params);
+	}
+
+	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	static cell AMX_NATIVE_CALL var_mul(AMX *amx, cell *params)
+	{
+		return var_op<&dyn_object::operator*>(amx, params);
+	}
+
+	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	static cell AMX_NATIVE_CALL var_div(AMX *amx, cell *params)
+	{
+		return var_op<&dyn_object::operator/>(amx, params);
+	}
+
+	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	static cell AMX_NATIVE_CALL var_mod(AMX *amx, cell *params)
+	{
+		return var_op<&dyn_object::operator%>(amx, params);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -163,6 +216,12 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(var_tagof),
 	AMX_DECLARE_NATIVE(var_sizeof),
+	AMX_DECLARE_NATIVE(var_equal),
+	AMX_DECLARE_NATIVE(var_add),
+	AMX_DECLARE_NATIVE(var_sub),
+	AMX_DECLARE_NATIVE(var_mul),
+	AMX_DECLARE_NATIVE(var_div),
+	AMX_DECLARE_NATIVE(var_mod),
 };
 
 int RegisterVariantNatives(AMX *amx)

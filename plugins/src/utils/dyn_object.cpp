@@ -1,5 +1,6 @@
 #include "dyn_object.h"
 #include "../fixes/linux.h"
+#include <cmath>
 
 dyn_object::dyn_object() : is_array(true), array_size(0), array_value(nullptr)
 {
@@ -39,6 +40,11 @@ dyn_object::dyn_object(AMX *amx, cell *str) : is_array(true), tag_name("char")
 	array_value = std::make_unique<cell[]>(array_size);
 	std::memcpy(array_value.get(), str, size * sizeof(cell));
 	array_value[size] = 0;
+}
+
+dyn_object::dyn_object(cell value, const char *tag) : is_array(false), cell_value(value), tag_name(tag)
+{
+
 }
 
 dyn_object::dyn_object(const dyn_object &obj) : is_array(obj.is_array), tag_name(obj.tag_name)
@@ -113,7 +119,8 @@ bool dyn_object::check_tag(AMX *amx, cell tag_id) const
 			if(
 				tag_id == tag_id2 ||
 				(tag_id == 0 && (tag_id2 & 0x40000000) == 0) ||
-				(tag_name == "GlobalString" && find_tag(amx, tag_id) == "String")
+				(tag_name == "GlobalString" && find_tag(amx, tag_id) == "String") ||
+				(tag_name == "GlobalVariant" && find_tag(amx, tag_id) == "Variant")
 			)
 			{
 				return true;
@@ -236,7 +243,20 @@ template <class T>
 inline void hash_combine(size_t& seed, const T& v)
 {
 	std::hash<T> hasher;
-	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+	hash_combine(seed, hasher(v));
+}
+
+inline void hash_combine(size_t& seed, size_t h)
+{
+	seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+size_t dyn_object::tag_hash() const
+{
+	std::hash<std::string> hasher;
+	if(tag_name == "GlobalString") return hasher("String");
+	if(tag_name == "GlobalVariant") return hasher("Variant");
+	return hasher(tag_name);
 }
 
 size_t dyn_object::get_hash() const
@@ -254,13 +274,23 @@ size_t dyn_object::get_hash() const
 		hash = hasher(cell_value);
 	}
 
-	hash_combine(hash, tag_name);
+	hash_combine(hash, tag_hash());
 	return hash;
 }
 
 bool dyn_object::empty() const
 {
 	return is_array ? array_size == 0 : false;
+}
+
+bool dyn_object::tag_check(const dyn_object &obj) const
+{
+	if(tag_name == obj.tag_name) return true;
+	return
+		(tag_name == "GlobalString" && obj.tag_name == "String") ||
+		(tag_name == "String" && obj.tag_name == "GlobalString") ||
+		(tag_name == "GlobalVariant" && obj.tag_name == "Variant") ||
+		(tag_name == "Variant" && obj.tag_name == "GlobalVariant");
 }
 
 cell &dyn_object::operator[](cell index)
@@ -285,7 +315,7 @@ const cell &dyn_object::operator[](cell index) const
 
 bool operator==(const dyn_object &a, const dyn_object &b)
 {
-	if(a.is_array != b.is_array || a.tag_name != b.tag_name) return false;
+	if(a.is_array != b.is_array || !a.tag_check(b)) return a.empty() && b.empty();
 	if(a.is_array)
 	{
 		if(a.array_size != b.array_size) return false;
@@ -293,6 +323,86 @@ bool operator==(const dyn_object &a, const dyn_object &b)
 	}else{
 		return a.cell_value == b.cell_value;
 	}
+}
+
+dyn_object dyn_object::operator+(const dyn_object &obj) const
+{
+	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
+	if(tag_name.empty())
+	{
+		cell result = cell_value + obj.cell_value;
+		return dyn_object(result, "");
+	}
+	if(tag_name == "Float")
+	{
+		float result = amx_ctof(cell_value) + amx_ctof(obj.cell_value);
+		return dyn_object(amx_ftoc(result), "Float");
+	}
+	return dyn_object();
+}
+
+dyn_object dyn_object::operator-(const dyn_object &obj) const
+{
+	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
+	if(tag_name.empty())
+	{
+		cell result = cell_value - obj.cell_value;
+		return dyn_object(result, "");
+	}
+	if(tag_name == "Float")
+	{
+		float result = amx_ctof(cell_value) - amx_ctof(obj.cell_value);
+		return dyn_object(amx_ftoc(result), "Float");
+	}
+	return dyn_object();
+}
+
+dyn_object dyn_object::operator*(const dyn_object &obj) const
+{
+	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
+	if(tag_name.empty())
+	{
+		cell result = cell_value * obj.cell_value;
+		return dyn_object(result, "");
+	}
+	if(tag_name == "Float")
+	{
+		float result = amx_ctof(cell_value) * amx_ctof(obj.cell_value);
+		return dyn_object(amx_ftoc(result), "Float");
+	}
+	return dyn_object();
+}
+
+dyn_object dyn_object::operator/(const dyn_object &obj) const
+{
+	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
+	if(tag_name.empty())
+	{
+		cell result = cell_value / obj.cell_value;
+		return dyn_object(result, "");
+	}
+	if(tag_name == "Float")
+	{
+		float result = amx_ctof(cell_value) / amx_ctof(obj.cell_value);
+		return dyn_object(amx_ftoc(result), "Float");
+	}
+	return dyn_object();
+}
+
+dyn_object dyn_object::operator%(const dyn_object &obj) const
+{
+	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
+	if(tag_name.empty())
+	{
+		cell result = cell_value % obj.cell_value;
+		return dyn_object(result, "");
+	}
+	if(tag_name == "Float")
+	{
+		float result = std::fmod(amx_ctof(cell_value), amx_ctof(obj.cell_value));
+		return dyn_object(amx_ftoc(result), "Float");
+	}
+	return dyn_object();
 }
 
 dyn_object &dyn_object::operator=(const dyn_object &obj)

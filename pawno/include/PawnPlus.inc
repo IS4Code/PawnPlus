@@ -9,7 +9,7 @@
 native pp_hook_strlen(bool:hook);
 native pp_hook_check_ref_args(bool:hook);
 
-#define PP_ALL_TAGS _,bool,Float,File,Fixed,Text,PlayerText,Text3D,PlayerText3D,DB,DBResult,StringTags,List
+#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map
 #if defined PP_ADDITIONAL_TAGS
 #define AnyTags PP_ALL_TAGS,PP_ADDITIONAL_TAGS
 #else
@@ -122,9 +122,12 @@ native bool:var_set_cell_checked(VariantTag:var, offset, AnyTag:value, tag_id=ta
 
 native var_tagof(VariantTag:var);
 native var_sizeof(VariantTag:var);
-
-native GlobalVariant:operator=(Variant:arg) = var_to_global;
-stock Variant:operator=(GlobalVariant:arg) return Variant:arg;
+native bool:var_equal(VariantTag:var1, VariantTag:var2);
+native Variant:var_add(VariantTag:var1, VariantTag:var2);
+native Variant:var_sub(VariantTag:var1, VariantTag:var2);
+native Variant:var_mul(VariantTag:var1, VariantTag:var2);
+native Variant:var_div(VariantTag:var1, VariantTag:var2);
+native Variant:var_mod(VariantTag:var1, VariantTag:var2);
 
 
 /*                 */
@@ -400,3 +403,24 @@ stock String:operator%(Float:arg1, String:arg2) return str_cat(str_float(arg1), 
 stock String:operator%(Float:arg1, GlobalString:arg2) return str_cat(str_float(arg1), arg2);
 
 #endif
+
+#define PP_VARIANT_OP(%0,%1) \
+    native Variant:operator%0(Variant:arg1, Variant:arg2) = %1; \
+    native Variant:operator%0(Variant:arg1, GlobalVariant:arg2) = %1; \
+    native Variant:operator%0(GlobalVariant:arg1, Variant:arg2) = %1; \
+    native Variant:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1
+
+PP_VARIANT_OP(+, var_add);
+PP_VARIANT_OP(-, var_sub);
+PP_VARIANT_OP(*, var_mul);
+PP_VARIANT_OP(/, var_div);
+PP_VARIANT_OP(%, var_mod);
+
+#undef PP_VARIANT_OP
+    
+native GlobalVariant:operator=(Variant:arg) = var_to_global;
+stock Variant:operator=(GlobalVariant:arg) return Variant:arg;
+native bool:operator==(Variant:arg1, Variant:arg2) = var_equal;
+native bool:operator==(Variant:arg1, GlobalVariant:arg2) = var_equal;
+native bool:operator==(GlobalVariant:arg1, Variant:arg2) = var_equal;
+native bool:operator==(GlobalVariant:arg1, GlobalVariant:arg2) = var_equal;
