@@ -51,6 +51,8 @@ public:
 	dyn_object &operator=(dyn_object &&obj);
 
 private:
+	template <template <class T> class OpType, class TagType>
+	dyn_object operator_func_tagged(const dyn_object &obj) const;
 	template <template <class T> class OpType>
 	dyn_object operator_func(const dyn_object &obj) const;
 };

@@ -1,6 +1,8 @@
 #include "dyn_object.h"
+#include "object_pool.h"
 #include "../fixes/linux.h"
 #include <cmath>
+#include "../strings.h"
 
 dyn_object::dyn_object() : is_array(true), array_size(0), array_value(nullptr)
 {
@@ -339,7 +341,66 @@ struct op_add
 {
 	T operator()(T a, T b)
 	{
+		return {};
+	}
+};
+template <>
+struct op_add<cell>
+{
+	cell operator()(cell a, cell b)
+	{
 		return a + b;
+	}
+};
+template <>
+struct op_add<float>
+{
+	float operator()(float a, float b)
+	{
+		return a + b;
+	}
+};
+template <>
+struct op_add<strings::cell_string*>
+{
+	strings::cell_string *operator()(strings::cell_string *a, strings::cell_string *b)
+	{
+		if(a == nullptr && b == nullptr)
+		{
+			return strings::pool.add(true);
+		}
+		if(a == nullptr)
+		{
+			auto str = *b;
+			return strings::pool.add(std::move(str), true);
+		}
+		if(b == nullptr)
+		{
+			auto str = *a;
+			return strings::pool.add(std::move(str), true);
+		}
+		auto str = *a + *b;
+		return strings::pool.add(std::move(str), true);
+	}
+};
+
+namespace variants
+{
+	extern object_pool<dyn_object> pool;
+}
+
+template <>
+struct op_add<dyn_object*>
+{
+	dyn_object *operator()(dyn_object *a, dyn_object *b)
+	{
+		if(a == nullptr || b == nullptr)
+		{
+			return nullptr;
+		}
+		auto var = *a + *b;
+		if(var.empty()) return nullptr;
+		return variants::pool.add(std::move(var), true);
 	}
 };
 template <class T>
@@ -347,7 +408,37 @@ struct op_sub
 {
 	T operator()(T a, T b)
 	{
+		return {};
+	}
+};
+template <>
+struct op_sub<cell>
+{
+	cell operator()(cell a, cell b)
+	{
 		return a - b;
+	}
+};
+template <>
+struct op_sub<float>
+{
+	float operator()(float a, float b)
+	{
+		return a - b;
+	}
+};
+template <>
+struct op_sub<dyn_object*>
+{
+	dyn_object *operator()(dyn_object *a, dyn_object *b)
+	{
+		if(a == nullptr || b == nullptr)
+		{
+			return nullptr;
+		}
+		auto var = *a - *b;
+		if(var.empty()) return nullptr;
+		return variants::pool.add(std::move(var), true);
 	}
 };
 template <class T>
@@ -355,7 +446,37 @@ struct op_mul
 {
 	T operator()(T a, T b)
 	{
+		return {};
+	}
+};
+template <>
+struct op_mul<cell>
+{
+	cell operator()(cell a, cell b)
+	{
 		return a * b;
+	}
+};
+template <>
+struct op_mul<float>
+{
+	float operator()(float a, float b)
+	{
+		return a * b;
+	}
+};
+template <>
+struct op_mul<dyn_object*>
+{
+	dyn_object *operator()(dyn_object *a, dyn_object *b)
+	{
+		if(a == nullptr || b == nullptr)
+		{
+			return nullptr;
+		}
+		auto var = *a * *b;
+		if(var.empty()) return nullptr;
+		return variants::pool.add(std::move(var), true);
 	}
 };
 template <class T>
@@ -363,13 +484,53 @@ struct op_div
 {
 	T operator()(T a, T b)
 	{
+		return {};
+	}
+};
+template <>
+struct op_div<cell>
+{
+	cell operator()(cell a, cell b)
+	{
 		return a / b;
 	}
 };
+template <>
+struct op_div<float>
+{
+	float operator()(float a, float b)
+	{
+		return a / b;
+	}
+};
+template <>
+struct op_div<dyn_object*>
+{
+	dyn_object *operator()(dyn_object *a, dyn_object *b)
+	{
+		if(a == nullptr || b == nullptr)
+		{
+			return nullptr;
+		}
+		auto var = *a / *b;
+		if(var.empty()) return nullptr;
+		return variants::pool.add(std::move(var), true);
+	}
+};
+
 template <class T>
 struct op_mod
 {
 	T operator()(T a, T b)
+	{
+		return {};
+	}
+};
+
+template <>
+struct op_mod<cell>
+{
+	cell operator()(cell a, cell b)
 	{
 		return a % b;
 	}
@@ -382,49 +543,165 @@ struct op_mod<float>
 		return std::fmod(a, b);
 	}
 };
+template <>
+struct op_mod<strings::cell_string*>
+{
+	strings::cell_string *operator()(strings::cell_string *a, strings::cell_string *b)
+	{
+		if(a == nullptr && b == nullptr)
+		{
+			return strings::pool.add(true);
+		}
+		if(a == nullptr)
+		{
+			auto str = *b;
+			return strings::pool.add(std::move(str), true);
+		}
+		if(b == nullptr)
+		{
+			auto str = *a;
+			return strings::pool.add(std::move(str), true);
+		}
+		auto str = *a + *b;
+		return strings::pool.add(std::move(str), true);
+	}
+};
+template <>
+struct op_mod<dyn_object*>
+{
+	dyn_object *operator()(dyn_object *a, dyn_object *b)
+	{
+		if(a == nullptr || b == nullptr)
+		{
+			return nullptr;
+		}
+		auto var = *a % *b;
+		if(var.empty()) return nullptr;
+		return variants::pool.add(std::move(var), true);
+	}
+};
+
+template <class TagType>
+struct tag_info;
+
+template <>
+struct tag_info<cell>
+{
+	static constexpr const char *tag_name = "";
+
+	static cell conv_to(cell v)
+	{
+		return v;
+	}
+
+	static cell conv_from(cell v)
+	{
+		return v;
+	}
+};
+
+template <>
+struct tag_info<float>
+{
+	static constexpr const char *tag_name = "Float";
+
+	static float conv_to(cell v)
+	{
+		return amx_ctof(v);
+	}
+
+	static cell conv_from(float v)
+	{
+		return amx_ftoc(v);
+	}
+};
+
+template <>
+struct tag_info<strings::cell_string*>
+{
+	static constexpr const char *tag_name = "String";
+
+	static strings::cell_string *conv_to(cell v)
+	{
+		return reinterpret_cast<strings::cell_string*>(v);
+	}
+
+	static cell conv_from(strings::cell_string *v)
+	{
+		return reinterpret_cast<cell>(v);
+	}
+};
+
+template <>
+struct tag_info<dyn_object*>
+{
+	static constexpr const char *tag_name = "Variant";
+
+	static dyn_object *conv_to(cell v)
+	{
+		return reinterpret_cast<dyn_object*>(v);
+	}
+
+	static cell conv_from(dyn_object *v)
+	{
+		return reinterpret_cast<cell>(v);
+	}
+};
+
+template <template <class T> class OpType, class TagType>
+dyn_object dyn_object::operator_func_tagged(const dyn_object &obj) const
+{
+	typedef tag_info<TagType> tag;
+	if(is_array && obj.is_array)
+	{
+		if(array_size != obj.array_size) return dyn_object();
+
+		dyn_object result{nullptr, array_size, tag::tag_name};
+		OpType<TagType> op;
+		for(cell i = 0; i < array_size; i++)
+		{
+			TagType val = op(tag::conv_to(array_value[i]), tag::conv_to(obj.array_value[i]));
+			result.array_value[i] = tag::conv_from(val);
+		}
+		return result;
+	}else if(is_array)
+	{
+		dyn_object result{nullptr, array_size, tag::tag_name};
+		OpType<TagType> op;
+		TagType sval = tag::conv_to(obj.cell_value);
+		for(cell i = 0; i < array_size; i++)
+		{
+			TagType val = op(tag::conv_to(array_value[i]), sval);
+			result.array_value[i] = tag::conv_from(val);
+		}
+		return result;
+	}else if(obj.is_array)
+	{
+		dyn_object result{nullptr, obj.array_size, tag::tag_name};
+		OpType<TagType> op;
+		TagType sval = tag::conv_to(cell_value);
+		for(cell i = 0; i < obj.array_size; i++)
+		{
+			TagType val = op(sval, tag::conv_to(obj.array_value[i]));
+			result.array_value[i] = tag::conv_from(val);
+		}
+		return result;
+	}else{
+		OpType<TagType> op;
+		TagType val = op(tag::conv_to(cell_value), tag::conv_to(obj.cell_value));
+		return dyn_object(tag::conv_from(val), tag::tag_name);
+	}
+	return dyn_object();
+}
 
 template <template <class T> class OpType>
 dyn_object dyn_object::operator_func(const dyn_object &obj) const
 {
-	if(is_array != obj.is_array || (is_array && array_size != obj.array_size) || !tag_check(obj)) return dyn_object();
-	if(!is_array)
-	{
-		if(tag_name.empty())
-		{
-			OpType<cell> op;
-			cell val = op(cell_value, obj.cell_value);
-			return dyn_object(val, "");
-		}
-		if(tag_name == "Float")
-		{
-			OpType<float> op;
-			float val = op(amx_ctof(cell_value), amx_ctof(obj.cell_value));
-			return dyn_object(amx_ftoc(val), "Float");
-		}
-	}else{
-		if(tag_name.empty())
-		{
-			dyn_object result{nullptr, array_size, ""};
-			OpType<cell> op;
-			for(cell i = 0; i < array_size; i++)
-			{
-				cell val = op(array_value[i], obj.array_value[i]);
-				result.array_value[i] = val;
-			}
-			return result;
-		}
-		if(tag_name == "Float")
-		{
-			dyn_object result{nullptr, array_size, "Float"};
-			OpType<float> op;
-			for(cell i = 0; i < array_size; i++)
-			{
-				float val = op(amx_ctof(array_value[i]), amx_ctof(obj.array_value[i]));
-				result.array_value[i] = amx_ftoc(val);
-			}
-			return result;
-		}
-	}
+	if(!tag_check(obj)) return dyn_object();
+	if(tag_name.empty()) return operator_func_tagged<OpType, cell>(obj);
+	if(tag_name == "Float") return operator_func_tagged<OpType, float>(obj);
+	if(tag_name == "String" || tag_name == "GlobalString") return operator_func_tagged<OpType, strings::cell_string*>(obj);
+	if(tag_name == "Variant" || tag_name == "GlobalVariant") return operator_func_tagged<OpType, dyn_object*>(obj);
 	return dyn_object();
 }
 
