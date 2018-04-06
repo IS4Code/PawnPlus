@@ -47,6 +47,15 @@ dyn_object::dyn_object(cell value, const char *tag) : is_array(false), cell_valu
 
 }
 
+dyn_object::dyn_object(cell *arr, cell size, const char *tag) : is_array(true), array_size(size), tag_name(tag)
+{
+	array_value = std::make_unique<cell[]>(size);
+	if(arr != nullptr)
+	{
+		std::memcpy(array_value.get(), arr, size * sizeof(cell));
+	}
+}
+
 dyn_object::dyn_object(const dyn_object &obj) : is_array(obj.is_array), tag_name(obj.tag_name)
 {
 	if(is_array)
@@ -325,84 +334,123 @@ bool operator==(const dyn_object &a, const dyn_object &b)
 	}
 }
 
-dyn_object dyn_object::operator+(const dyn_object &obj) const
+template <class T>
+struct op_add
 {
-	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
-	if(tag_name.empty())
+	T operator()(T a, T b)
 	{
-		cell result = cell_value + obj.cell_value;
-		return dyn_object(result, "");
+		return a + b;
 	}
-	if(tag_name == "Float")
+};
+template <class T>
+struct op_sub
+{
+	T operator()(T a, T b)
 	{
-		float result = amx_ctof(cell_value) + amx_ctof(obj.cell_value);
-		return dyn_object(amx_ftoc(result), "Float");
+		return a - b;
+	}
+};
+template <class T>
+struct op_mul
+{
+	T operator()(T a, T b)
+	{
+		return a * b;
+	}
+};
+template <class T>
+struct op_div
+{
+	T operator()(T a, T b)
+	{
+		return a / b;
+	}
+};
+template <class T>
+struct op_mod
+{
+	T operator()(T a, T b)
+	{
+		return a % b;
+	}
+};
+template <>
+struct op_mod<float>
+{
+	float operator()(float a, float b)
+	{
+		return std::fmod(a, b);
+	}
+};
+
+template <template <class T> class OpType>
+dyn_object dyn_object::operator_func(const dyn_object &obj) const
+{
+	if(is_array != obj.is_array || (is_array && array_size != obj.array_size) || !tag_check(obj)) return dyn_object();
+	if(!is_array)
+	{
+		if(tag_name.empty())
+		{
+			OpType<cell> op;
+			cell val = op(cell_value, obj.cell_value);
+			return dyn_object(val, "");
+		}
+		if(tag_name == "Float")
+		{
+			OpType<float> op;
+			float val = op(amx_ctof(cell_value), amx_ctof(obj.cell_value));
+			return dyn_object(amx_ftoc(val), "Float");
+		}
+	}else{
+		if(tag_name.empty())
+		{
+			dyn_object result{nullptr, array_size, ""};
+			OpType<cell> op;
+			for(cell i = 0; i < array_size; i++)
+			{
+				cell val = op(array_value[i], obj.array_value[i]);
+				result.array_value[i] = val;
+			}
+			return result;
+		}
+		if(tag_name == "Float")
+		{
+			dyn_object result{nullptr, array_size, "Float"};
+			OpType<float> op;
+			for(cell i = 0; i < array_size; i++)
+			{
+				float val = op(amx_ctof(array_value[i]), amx_ctof(obj.array_value[i]));
+				result.array_value[i] = amx_ftoc(val);
+			}
+			return result;
+		}
 	}
 	return dyn_object();
+}
+
+dyn_object dyn_object::operator+(const dyn_object &obj) const
+{
+	return operator_func<op_add>(obj);
 }
 
 dyn_object dyn_object::operator-(const dyn_object &obj) const
 {
-	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
-	if(tag_name.empty())
-	{
-		cell result = cell_value - obj.cell_value;
-		return dyn_object(result, "");
-	}
-	if(tag_name == "Float")
-	{
-		float result = amx_ctof(cell_value) - amx_ctof(obj.cell_value);
-		return dyn_object(amx_ftoc(result), "Float");
-	}
-	return dyn_object();
+	return operator_func<op_sub>(obj);
 }
 
 dyn_object dyn_object::operator*(const dyn_object &obj) const
 {
-	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
-	if(tag_name.empty())
-	{
-		cell result = cell_value * obj.cell_value;
-		return dyn_object(result, "");
-	}
-	if(tag_name == "Float")
-	{
-		float result = amx_ctof(cell_value) * amx_ctof(obj.cell_value);
-		return dyn_object(amx_ftoc(result), "Float");
-	}
-	return dyn_object();
+	return operator_func<op_mul>(obj);
 }
 
 dyn_object dyn_object::operator/(const dyn_object &obj) const
 {
-	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
-	if(tag_name.empty())
-	{
-		cell result = cell_value / obj.cell_value;
-		return dyn_object(result, "");
-	}
-	if(tag_name == "Float")
-	{
-		float result = amx_ctof(cell_value) / amx_ctof(obj.cell_value);
-		return dyn_object(amx_ftoc(result), "Float");
-	}
-	return dyn_object();
+	return operator_func<op_div>(obj);
 }
 
 dyn_object dyn_object::operator%(const dyn_object &obj) const
 {
-	if(is_array || obj.is_array || !tag_check(obj)) return dyn_object();
-	if(tag_name.empty())
-	{
-		cell result = cell_value % obj.cell_value;
-		return dyn_object(result, "");
-	}
-	if(tag_name == "Float")
-	{
-		float result = std::fmod(amx_ctof(cell_value), amx_ctof(obj.cell_value));
-		return dyn_object(amx_ftoc(result), "Float");
-	}
-	return dyn_object();
+	return operator_func<op_mod>(obj);
 }
 
 dyn_object &dyn_object::operator=(const dyn_object &obj)

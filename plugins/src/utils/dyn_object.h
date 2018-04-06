@@ -23,6 +23,7 @@ public:
 	dyn_object(AMX *amx, cell *arr, cell size, cell tag_id);
 	dyn_object(AMX *amx, cell *str);
 	dyn_object(cell value, const char *tag);
+	dyn_object(cell *arr, cell size, const char *tag);
 	dyn_object(const dyn_object &obj);
 	dyn_object(dyn_object &&obj);
 	bool check_tag(AMX *amx, cell tag_id) const;
@@ -48,6 +49,10 @@ public:
 	dyn_object operator%(const dyn_object &obj) const;
 	dyn_object &operator=(const dyn_object &obj);
 	dyn_object &operator=(dyn_object &&obj);
+
+private:
+	template <template <class T> class OpType>
+	dyn_object operator_func(const dyn_object &obj) const;
 };
 
 namespace std
