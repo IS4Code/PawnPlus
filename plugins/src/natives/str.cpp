@@ -91,6 +91,10 @@ namespace Natives
 	// native String:str_cat(StringTag:str1, StringTag:str2);
 	static cell AMX_NATIVE_CALL str_cat(AMX *amx, cell *params)
 	{
+		if(params[1] == 0 && params[2] == 0)
+		{
+			return reinterpret_cast<cell>(strings::pool.add(true));
+		}
 		if(params[1] == 0)
 		{
 			auto str = *reinterpret_cast<strings::cell_string*>(params[2]);
