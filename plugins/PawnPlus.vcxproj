@@ -148,6 +148,7 @@
     <ClCompile Include="src\tasks.cpp" />
     <ClCompile Include="src\threads.cpp" />
     <ClCompile Include="src\utils\dyn_object.cpp" />
+    <ClCompile Include="src\utils\dyn_op.cpp" />
     <ClCompile Include="src\utils\object_pool.cpp" />
     <ClCompile Include="src\utils\thread.cpp" />
     <ClCompile Include="src\utils\thread_posix.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="src\tasks.h" />
     <ClInclude Include="src\threads.h" />
     <ClInclude Include="src\utils\dyn_object.h" />
+    <ClInclude Include="src\utils\dyn_op.h" />
     <ClInclude Include="src\utils\object_pool.h" />
     <ClInclude Include="src\utils\optional.h" />
     <ClInclude Include="src\utils\thread.h" />

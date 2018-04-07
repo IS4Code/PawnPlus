@@ -17,6 +17,10 @@ native pp_hook_check_ref_args(bool:hook);
 #endif
 #define AnyTag {AnyTags}
 
+#define StringTags String,GlobalString
+#define StringTag {StringTags}
+#define VariantTags Variant,GlobalVariant
+#define VariantTag {VariantTags}
 
 /*                 */
 /*      Pawn       */
@@ -32,8 +36,6 @@ native pawn_unregister_callback(callback:id);
 /*     Strings     */
 /*                 */
 
-#define StringTags String,GlobalString
-#define StringTag {StringTags}
 #define STRING_NULL (GlobalString:0)
 #define INVALID_CHAR (0xFFFFFF00)
 
@@ -65,14 +67,11 @@ native bool:str_equal(StringTag:str1, StringTag:str2);
 native str_findc(StringTag:str, value, offset=0);
 native str_find(StringTag:str, StringTag:value, offset=0);
 
-native String:str_int(val);
-native String:str_float(Float:val);
 native String:str_cat(StringTag:str1, StringTag:str2);
 native String:str_sub(StringTag:str, start=0, end=cellmax);
 native String:str_clone(StringTag:str);
-/*
-native String:str_val({_,StringTags,Float}:val, tag=tagof(val));
-*/
+native String:str_val({_,bool,Float,VariantTags,StringTags}:value, tag_id=tagof(value));
+native String:str_val_arr({_,bool,Float,VariantTags,StringTags}:value[], size=sizeof(value), tag_id=tagof(value));
 
 native String:str_set(StringTag:target, StringTag:other);
 native String:str_append(StringTag:target, StringTag:other);
@@ -99,8 +98,6 @@ native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,F
 /*     Variant     */
 /*                 */
 
-#define VariantTags Variant,GlobalVariant
-#define VariantTag {VariantTags}
 #define VAR_NULL (GlobalVariant:0)
 
 native Variant:var_new(AnyTag:value, tag_id=tagof(value));
@@ -308,23 +305,6 @@ stock operator~(PP@ts:arr[], count)
 /*                 */
 /*  Operators etc. */
 /*                 */
-
-stock String:str_val({_,StringTags,Float}:val, tag=tagof(val))
-{
-    static tag_string = tagof(String:), tag_global_string = tagof(GlobalString:), tag_float = tagof(Float:), tag_int = tagof(_:);
-    if(tag == tag_float)
-    {
-        return str_float(Float:val);
-    }else if(tag == 0 || tag == tag_int)
-    {
-        return str_int(_:val);
-    }else if(tag == tag_string || tag == tag_global_string)
-    {
-        return str_clone(String:val);
-    }else{
-        return String:STRING_NULL;
-    }
-}
 
 #define PP_PROHIBIT_UNARY_OPERATORS(%0) \
     forward operator-(%0:arg); \

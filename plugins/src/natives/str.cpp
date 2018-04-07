@@ -1,5 +1,6 @@
 #include "../natives.h"
 #include "../strings.h"
+#include "../utils/dyn_object.h"
 #include <cstring>
 
 namespace Natives
@@ -110,16 +111,20 @@ namespace Natives
 		return reinterpret_cast<cell>(strings::pool.add(std::move(str), true));
 	}
 
-	// native String:str_int(val);
-	static cell AMX_NATIVE_CALL str_int(AMX *amx, cell *params)
+	// native String:str_val({_,bool,Float,VariantTags,StringTags}:val, tag=tagof(value));
+	static cell AMX_NATIVE_CALL str_val(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(strings::create(std::to_string(static_cast<int>(params[1])), true));
+		dyn_object obj{amx, params[1], params[2]};
+		return reinterpret_cast<cell>(strings::pool.add(obj.to_string(), true));
 	}
 
-	// native String:str_float(Float:val);
-	static cell AMX_NATIVE_CALL str_float(AMX *amx, cell *params)
+	// native String:str_val_arr({_,bool,Float,VariantTags,StringTags}:value[], size=sizeof(value), tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL str_val_arr(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(strings::create(std::to_string(amx_ctof(params[1])), true));
+		cell *addr;
+		amx_GetAddr(amx, params[1], &addr);
+		dyn_object obj{amx, addr, params[2], params[3]};
+		return reinterpret_cast<cell>(strings::pool.add(obj.to_string(), true));
 	}
 
 	// native str_len(StringTag:str);
@@ -429,11 +434,11 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_findc),
 	AMX_DECLARE_NATIVE(str_find),
 
-	AMX_DECLARE_NATIVE(str_int),
-	AMX_DECLARE_NATIVE(str_float),
 	AMX_DECLARE_NATIVE(str_cat),
 	AMX_DECLARE_NATIVE(str_sub),
 	AMX_DECLARE_NATIVE(str_clone),
+	AMX_DECLARE_NATIVE(str_val),
+	AMX_DECLARE_NATIVE(str_val_arr),
 
 	AMX_DECLARE_NATIVE(str_set),
 	AMX_DECLARE_NATIVE(str_append),

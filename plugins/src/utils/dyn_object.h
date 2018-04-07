@@ -42,6 +42,7 @@ public:
 	cell &operator[](cell index);
 	const cell &operator[](cell index) const;
 	friend bool operator==(const dyn_object &a, const dyn_object &b);
+	std::basic_string<cell> to_string() const;
 	dyn_object operator+(const dyn_object &obj) const;
 	dyn_object operator-(const dyn_object &obj) const;
 	dyn_object operator*(const dyn_object &obj) const;
@@ -55,6 +56,12 @@ private:
 	dyn_object operator_func_tagged(const dyn_object &obj) const;
 	template <template <class T> class OpType>
 	dyn_object operator_func(const dyn_object &obj) const;
+	template <template <class T> class OpType, class TagType>
+	dyn_object operator_func_tagged() const;
+	template <template <class T> class OpType>
+	dyn_object operator_func() const;
+	template <class TagType>
+	std::basic_string<cell> to_string_tagged() const;
 };
 
 namespace std

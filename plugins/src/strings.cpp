@@ -120,7 +120,7 @@ cell_string *strings::create(const cell *addr, bool temp, size_t length, bool pa
 	}
 }
 
-cell_string convert(const std::string &str)
+cell_string strings::convert(const std::string &str)
 {
 	size_t len = str.size();
 	cell_string cstr(len, '\0');

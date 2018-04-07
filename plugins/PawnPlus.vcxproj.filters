@@ -73,6 +73,9 @@
     <ClCompile Include="src\variants.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\dyn_op.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -157,6 +160,9 @@
     </ClInclude>
     <ClInclude Include="src\variants.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\dyn_op.h">
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
