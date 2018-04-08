@@ -433,7 +433,7 @@ cell_string dyn_object::to_string_tagged() const
 	cell_string str;
 	if(is_array)
 	{
-		str.append({'['});
+		str.append({'{'});
 		for(cell i = 0; i < array_size; i++)
 		{
 			if(i > 0)
@@ -442,7 +442,7 @@ cell_string dyn_object::to_string_tagged() const
 			}
 			str.append(op(tag_info<TagType>::conv_to(array_value[i])));
 		}
-		str.append({']'});
+		str.append({'}'});
 	}else{
 		str.append(op(tag_info<TagType>::conv_to(cell_value)));
 	}
@@ -456,7 +456,11 @@ cell_string dyn_object::to_string() const
 	if(tag_info<float>::check_tag(tag_name)) return to_string_tagged<float>();
 	if(tag_info<cell_string*>::check_tag(tag_name)) return to_string_tagged<cell_string*>();
 	if(tag_info<dyn_object*>::check_tag(tag_name)) return to_string_tagged<dyn_object*>();
-	return strings::convert(tag_name);
+	cell_string str;
+	str.append(strings::convert(tag_name));
+	str.append({':'});
+	str.append(to_string_tagged<cell>());
+	return str;
 }
 
 dyn_object dyn_object::operator+(const dyn_object &obj) const

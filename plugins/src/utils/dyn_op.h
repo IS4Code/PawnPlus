@@ -175,7 +175,7 @@ struct op_strval<cell>
 template <>
 struct op_strval<bool>
 {
-	strings::cell_string operator()(bool obj) const;
+	strings::cell_string operator()(cell obj) const;
 };
 
 template <>
@@ -227,19 +227,19 @@ struct tag_info<bool>
 	static constexpr const char *tag_name = "bool";
 	static constexpr const char format_spec = 'i';
 
-	static bool check_tag(const std::string &tag)
+	static cell check_tag(const std::string &tag)
 	{
 		return tag == tag_name;
 	}
 
-	static bool conv_to(cell v)
+	static cell conv_to(cell v)
 	{
-		return !!v;
+		return v;
 	}
 
-	static cell conv_from(bool v)
+	static cell conv_from(cell v)
 	{
-		return v ? 1 : 0;
+		return v;
 	}
 };
 

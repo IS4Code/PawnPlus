@@ -150,9 +150,17 @@ strings::cell_string op_strval<cell>::operator()(cell obj) const
 	return strings::convert(std::to_string(obj));
 }
 
-strings::cell_string op_strval<bool>::operator()(bool obj) const
+strings::cell_string op_strval<bool>::operator()(cell obj) const
 {
-	return strings::convert(obj ? "true" : "false");
+	if(obj == 0)
+	{
+		return strings::convert("false");
+	}else if(obj == 1)
+	{
+		return strings::convert("true");
+	}else{
+		return strings::convert("bool:"+std::to_string(obj));
+	}
 }
 
 strings::cell_string op_strval<float>::operator()(float obj) const
@@ -168,8 +176,8 @@ strings::cell_string op_strval<strings::cell_string*>::operator()(strings::cell_
 strings::cell_string op_strval<dyn_object*>::operator()(dyn_object *obj) const
 {
 	strings::cell_string str;
-	str.append({'{'});
+	str.append({'('});
 	str.append(obj->to_string());
-	str.append({'}'});
+	str.append({')'});
 	return str;
 }

@@ -111,14 +111,14 @@ namespace Natives
 		return reinterpret_cast<cell>(strings::pool.add(std::move(str), true));
 	}
 
-	// native String:str_val({_,bool,Float,VariantTags,StringTags}:val, tag=tagof(value));
+	// native String:str_val(AnyTag:val, tag=tagof(value));
 	static cell AMX_NATIVE_CALL str_val(AMX *amx, cell *params)
 	{
 		dyn_object obj{amx, params[1], params[2]};
 		return reinterpret_cast<cell>(strings::pool.add(obj.to_string(), true));
 	}
 
-	// native String:str_val_arr({_,bool,Float,VariantTags,StringTags}:value[], size=sizeof(value), tag_id=tagof(value));
+	// native String:str_val_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL str_val_arr(AMX *amx, cell *params)
 	{
 		cell *addr;

@@ -70,8 +70,8 @@ native str_find(StringTag:str, StringTag:value, offset=0);
 native String:str_cat(StringTag:str1, StringTag:str2);
 native String:str_sub(StringTag:str, start=0, end=cellmax);
 native String:str_clone(StringTag:str);
-native String:str_val({_,bool,Float,VariantTags,StringTags}:value, tag_id=tagof(value));
-native String:str_val_arr({_,bool,Float,VariantTags,StringTags}:value[], size=sizeof(value), tag_id=tagof(value));
+native String:str_val(AnyTag:value, tag_id=tagof(value));
+native String:str_val_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 
 native String:str_set(StringTag:target, StringTag:other);
 native String:str_append(StringTag:target, StringTag:other);
