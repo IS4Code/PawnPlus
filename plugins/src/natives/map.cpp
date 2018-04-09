@@ -1,6 +1,7 @@
 #include "../natives.h"
 #include "../variants.h"
 #include <unordered_map>
+#include <iterator>
 
 typedef std::unordered_map<dyn_object, dyn_object> map_t;
 
@@ -108,6 +109,43 @@ public:
 		if(it != ptr->end())
 		{
 			return it->second.get_size();
+		}
+		return 0;
+	}
+};
+
+template <size_t... ValueIndices>
+class value_at
+{
+	using result_ftype = typename dyn_result<ValueIndices...>::type;
+
+public:
+	// native map_key_at(Map:map, index, ...);
+	template <typename result_ftype ValueFactory>
+	static cell AMX_NATIVE_CALL map_key_at(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		auto it = ptr->begin();
+		std::advance(it, params[2]);
+		if(it != ptr->end())
+		{
+			return ValueFactory(amx, it->first, params[ValueIndices]...);
+		}
+		return 0;
+	}
+
+	// native map_value_at(Map:map, index, ...);
+	template <typename result_ftype ValueFactory>
+	static cell AMX_NATIVE_CALL map_value_at(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		auto it = ptr->begin();
+		std::advance(it, params[2]);
+		if(it != ptr->end())
+		{
+			return ValueFactory(amx, it->second, params[ValueIndices]...);
 		}
 		return 0;
 	}
@@ -550,6 +588,66 @@ namespace Natives
 		return key_at<2>::map_set_cell<dyn_func_var, 5>(amx, params);
 	}
 
+	// native map_key_at(Map:map, index, offset=0);
+	static cell AMX_NATIVE_CALL map_key_at(AMX *amx, cell *params)
+	{
+		return value_at<3>::map_key_at<dyn_func>(amx, params);
+	}
+
+	// native map_arr_key_at(Map:map, index, AnyTag:key[], key_size=sizeof(key));
+	static cell AMX_NATIVE_CALL map_arr_key_at(AMX *amx, cell *params)
+	{
+		return value_at<3, 4>::map_key_at<dyn_func_arr>(amx, params);
+	}
+
+	// native Variant:map_var_key_at(Map:map, index);
+	static cell AMX_NATIVE_CALL map_var_key_at(AMX *amx, cell *params)
+	{
+		return value_at<>::map_key_at<dyn_func_var>(amx, params);
+	}
+
+	// native bool:map_key_at_checked(Map:map, index, &AnyTag:key, offset=0, key_tag_id=tagof(key));
+	static cell AMX_NATIVE_CALL map_key_at_checked(AMX *amx, cell *params)
+	{
+		return value_at<3, 4, 5>::map_key_at<dyn_func>(amx, params);
+	}
+
+	// native map_arr_key_at_checked(Map:map, index, AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
+	static cell AMX_NATIVE_CALL map_arr_key_at_checked(AMX *amx, cell *params)
+	{
+		return value_at<3, 4, 5>::map_key_at<dyn_func_arr>(amx, params);
+	}
+
+	// native map_value_at(Map:map, index, offset=0);
+	static cell AMX_NATIVE_CALL map_value_at(AMX *amx, cell *params)
+	{
+		return value_at<3>::map_value_at<dyn_func>(amx, params);
+	}
+
+	// native map_arr_value_at(Map:map, index, AnyTag:value[], value_size=sizeof(value));
+	static cell AMX_NATIVE_CALL map_arr_value_at(AMX *amx, cell *params)
+	{
+		return value_at<3, 4>::map_value_at<dyn_func_arr>(amx, params);
+	}
+
+	// native Variant:map_var_value_at(Map:map, index);
+	static cell AMX_NATIVE_CALL map_var_value_at(AMX *amx, cell *params)
+	{
+		return value_at<>::map_value_at<dyn_func_var>(amx, params);
+	}
+
+	// native bool:map_value_at_checked(Map:map, index, &AnyTag:value, offset=0, value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_value_at_checked(AMX *amx, cell *params)
+	{
+		return value_at<3, 4, 5>::map_value_at<dyn_func>(amx, params);
+	}
+
+	// native map_arr_value_at_checked(Map:map, index, AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_arr_value_at_checked(AMX *amx, cell *params)
+	{
+		return value_at<3, 4, 5>::map_value_at<dyn_func_arr>(amx, params);
+	}
+
 	// native map_tagof(Map:map, AnyTag:key, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_tagof(AMX *amx, cell *params)
 	{
@@ -670,6 +768,16 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_var_set_var),
 	AMX_DECLARE_NATIVE(map_var_set_cell),
 	AMX_DECLARE_NATIVE(map_var_set_cell_checked),
+	AMX_DECLARE_NATIVE(map_key_at),
+	AMX_DECLARE_NATIVE(map_arr_key_at),
+	AMX_DECLARE_NATIVE(map_var_key_at),
+	AMX_DECLARE_NATIVE(map_key_at_checked),
+	AMX_DECLARE_NATIVE(map_arr_key_at_checked),
+	AMX_DECLARE_NATIVE(map_value_at),
+	AMX_DECLARE_NATIVE(map_arr_value_at),
+	AMX_DECLARE_NATIVE(map_var_value_at),
+	AMX_DECLARE_NATIVE(map_value_at_checked),
+	AMX_DECLARE_NATIVE(map_arr_value_at_checked),
 	AMX_DECLARE_NATIVE(map_tagof),
 	AMX_DECLARE_NATIVE(map_sizeof),
 	AMX_DECLARE_NATIVE(map_arr_tagof),

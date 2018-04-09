@@ -238,6 +238,18 @@ native bool:map_var_set_var(Map:map, VariantTag:key, VariantTag:value);
 native bool:map_var_set_cell(Map:map, VariantTag:key, offset, AnyTag:value);
 native bool:map_var_set_cell_checked(Map:map, VariantTag:key, offset, AnyTag:value, value_tag_id=tagof(value));
 
+native map_key_at(Map:map, index, offset=0);
+native map_arr_key_at(Map:map, index, AnyTag:key[], key_size=sizeof(key));
+native Variant:map_var_key_at(Map:map, index);
+native bool:map_key_at_checked(Map:map, index, &AnyTag:key, offset=0, key_tag_id=tagof(key));
+native map_arr_key_at_checked(Map:map, index, AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
+
+native map_value_at(Map:map, index, offset=0);
+native map_arr_value_at(Map:map, index, AnyTag:value[], value_size=sizeof(value));
+native Variant:map_var_value_at(Map:map, index);
+native bool:map_value_at_checked(Map:map, index, &AnyTag:value, offset=0, value_tag_id=tagof(value));
+native map_arr_value_at_checked(Map:map, index, AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(value));
+
 native map_tagof(Map:map, AnyTag:key, key_tag_id=tagof(key));
 native map_sizeof(Map:map, AnyTag:key, key_tag_id=tagof(key));
 native map_arr_tagof(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
