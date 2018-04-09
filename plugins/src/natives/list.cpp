@@ -7,11 +7,12 @@ typedef std::vector<dyn_object> list_t;
 template <size_t... Indices>
 class value_at
 {
-	using ftype = typename dyn_factory<Indices...>::type;
+	using value_ftype = typename dyn_factory<Indices...>::type;
+	using result_ftype = typename dyn_result<Indices...>::type;
 
 public:
 	// native list_add(List:list, value, index=-1, ...);
-	template <typename ftype Factory>
+	template <typename value_ftype Factory>
 	static cell AMX_NATIVE_CALL list_add(AMX *amx, cell *params)
 	{
 		if(params[3] < -1) return -1;
@@ -31,7 +32,7 @@ public:
 	}
 
 	// native list_set(List:list, index, value);
-	template <typename ftype Factory>
+	template <typename value_ftype Factory>
 	static cell AMX_NATIVE_CALL list_set(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
@@ -41,7 +42,31 @@ public:
 		(*ptr)[params[2]] = Factory(amx, params[Indices]...);
 		return 1;
 	}
+
+	// native list_get(List:list, index, ...);
+	template <typename result_ftype Factory>
+	static cell AMX_NATIVE_CALL list_get(AMX *amx, cell *params)
+	{
+		if(params[2] < 0) return 0;
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
+		return Factory(amx, (*ptr)[params[2]], params[Indices]...);
+	}
 };
+
+// native list_set_cell(List:list, index, offset, AnyTag:value, ...);
+template <size_t TagIndex = 0>
+static cell AMX_NATIVE_CALL list_set_cell(AMX *amx, cell *params)
+{
+	if(params[2] < 0 || params[3] < 0) return 0;
+	auto ptr = reinterpret_cast<list_t*>(params[1]);
+	if(ptr == nullptr) return 0;
+	if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
+	auto &obj = (*ptr)[params[2]];
+	if(TagIndex && !obj.check_tag(amx, params[TagIndex])) return 0;
+	return obj.set_cell(params[3], params[4]);
+}
 
 namespace Natives
 {
@@ -137,70 +162,31 @@ namespace Natives
 	// native list_get(List:list, index, offset=0);
 	static cell AMX_NATIVE_CALL list_get(AMX *amx, cell *params)
 	{
-		if(params[2] < 0 || params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
-		auto &obj = (*ptr)[params[2]];
-		cell result;
-		if(obj.get_cell(params[3], result)) return result;
-		return 0;
+		return value_at<3>::list_get<dyn_func>(amx, params);
 	}
 
 	// native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
 	static cell AMX_NATIVE_CALL list_get_arr(AMX *amx, cell *params)
 	{
-		if(params[2] < 0 || params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
-		auto &obj = (*ptr)[params[2]];
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		return obj.get_array(addr, params[4]);
+		return value_at<3, 4>::list_get<dyn_func_arr>(amx, params);
 	}
 
 	// native Variant:list_get_var(List:list, index);
 	static cell AMX_NATIVE_CALL list_get_var(AMX *amx, cell *params)
 	{
-		if(params[2] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
-		auto &obj = (*ptr)[params[2]];
-		if(obj.empty()) return 0;
-		return variants::create(obj);
+		return value_at<>::list_get<dyn_func_var>(amx, params);
 	}
 
 	// native bool:list_get_checked(List:list, index, &AnyTag:value, offset=0, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_get_checked(AMX *amx, cell *params)
 	{
-		if(params[2] < 0 || params[4] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
-		auto &obj = (*ptr)[params[2]];
-		cell tag_id = params[5];
-		if(!obj.check_tag(amx, tag_id)) return 0;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		if(obj.get_cell(params[4], *addr)) return 1;
-		return 0;
+		return value_at<3, 4, 5>::list_get<dyn_func>(amx, params);
 	}
 
 	// native list_get_arr_checked(List:list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_get_arr_checked(AMX *amx, cell *params)
 	{
-		if(params[2] < 0 || params[4] <= 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
-		auto &obj = (*ptr)[params[2]];
-		cell tag_id = params[5];
-		if(!obj.check_tag(amx, tag_id)) return 0;
-		cell *addr;
-		amx_GetAddr(amx, params[3], &addr);
-		return obj.get_array(addr, params[4]);
+		return value_at<3, 4, 5>::list_get<dyn_func_arr>(amx, params);
 	}
 
 	// native list_set(List:list, index, AnyTag:value, tag_id=tagof(value));
@@ -230,25 +216,13 @@ namespace Natives
 	// native list_set_cell(List:list, index, offset, AnyTag:value);
 	static cell AMX_NATIVE_CALL list_set_cell(AMX *amx, cell *params)
 	{
-		if(params[2] < 0 || params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
-		auto &obj = (*ptr)[params[2]];
-		return obj.set_cell(params[3], params[4]);
+		return ::list_set_cell(amx, params);
 	}
 
 	// native bool:list_set_cell_checked(List:list, index, offset, AnyTag:value, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL list_set_cell_checked(AMX *amx, cell *params)
 	{
-		if(params[2] < 0 || params[3] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
-		auto &obj = (*ptr)[params[2]];
-		cell tag_id = params[5];
-		if(!obj.check_tag(amx, tag_id)) return 0;
-		return obj.set_cell(params[3], params[4]);
+		return ::list_set_cell<5>(amx, params);
 	}
 
 	// native list_tagof(List:list, index);
