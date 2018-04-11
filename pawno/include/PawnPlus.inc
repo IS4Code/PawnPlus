@@ -11,6 +11,8 @@ native pp_hook_check_ref_args(bool:hook);
 
 #define GlobalString String@Global
 #define GlobalVariant Variant@Global
+#define List<%0> List@%0
+#define Map<%0,%1> Map@%0@%1
 
 #define StringTags String,GlobalString
 #define StringTag {StringTags}
@@ -163,6 +165,52 @@ native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, tag_id=ta
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);
 
+#define list_new<%0> list_new@%0
+#define list_delete<%0> list_delete@%0
+#define list_size<%0> list_size@%0
+#define list_clear<%0> list_clear@%0
+
+#define list_add<%0> list_add@%0
+#define list_add_arr<%0> list_add_arr@%0
+#define list_add_list<%0> list_add_list@%0
+
+#define list_remove<%0> list_remove@%0
+
+#define list_get<%0> list_get@%0
+#define list_get_arr<%0> list_get_arr@%0
+
+#define list_set<%0> list_set@%0
+#define list_set_arr<%0> list_set_arr@%0
+#define list_set_cell<%0> list_set_cell@%0
+
+#define list_sizeof<%0> list_sizeof@%0
+
+#define @define_List<%0> \
+stock const Void:List<%0>; \
+ \
+native List<%0>:list_new<%0>() = list_new; \
+native bool:list_delete<%0>(List<%0>:list) = list_delete; \
+native list_size<%0>(List<%0>:list) = list_size; \
+native bool:list_clear<%0>(List<%0>:list) = list_clear; \
+ \
+native list_add<%0>(List<%0>:list, %0:value, index=-1, tag_id=(tagof(%0:))) = list_add; \
+native list_add_arr<%0>(List<%0>:list, const %0:value[], index=-1, size=sizeof(value), tag_id=(tagof(%0:))) = list_add_arr; \
+native list_add_list<%0>(List<%0>:list, List<%0>:range, index=-1) = list_add_list; \
+ \
+native bool:list_remove<%0>(List<%0>:list, index) = list_remove; \
+ \
+native %0:list_get<%0>(List<%0>:list, index, offset=0) = list_get; \
+native list_get_arr<%0>(List<%0>:list, index, %0:value[], size=sizeof(value)) = list_get_arr; \
+ \
+native bool:list_set<%0>(List<%0>:list, index, %0:value, tag_id=(tagof(%0:))) = list_set; \
+native bool:list_set_arr<%0>(List<%0>:list, index, const %0:value[], size=sizeof(value), tag_id=(tagof(%0:))) = list_set_arr; \
+native bool:list_set_cell<%0>(List<%0>:list, index, offset, %0:value) = list_set_cell; \
+ \
+native list_sizeof<%0>(List<%0>:list, index) = list_sizeof; \
+ \
+forward List:operator=(List<%0>:obj); \
+forward List<%0>:operator=(List:obj)
+
 
 /*                 */
 /*       Maps      */
@@ -188,7 +236,7 @@ native bool:map_var_add(Map:map, VariantTag:key, AnyTag:value, value_tag_id=tago
 native bool:map_var_add_arr(Map:map, VariantTag:key, const AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
 native bool:map_var_add_str(Map:map, VariantTag:key, const value[]);
 native bool:map_var_add_var(Map:map, VariantTag:key, VariantTag:value);
-native map_str_add_map(Map:map, Map:other, bool:overwrite);
+native map_add_map(Map:map, Map:other, bool:overwrite);
 
 native bool:map_remove(Map:map, AnyTag:key, key_tag_id=tagof(key));
 native bool:map_arr_remove(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
@@ -262,6 +310,79 @@ native map_str_sizeof(Map:map, const key[]);
 native map_var_tagof(Map:map, VariantTag:key);
 native map_var_sizeof(Map:map, VariantTag:key);
 
+#define map_new<%0,%1> map_new@%0@%1
+#define map_delete<%0,%1> map_delete@%0@%1
+#define map_size<%0,%1> map_size@%0@%1
+
+#define map_add<%0,%1> map_add@%0@%1
+#define map_add_arr<%0,%1> map_add_arr@%0@%1
+#define map_arr_add<%0,%1> map_arr_add@%0@%1
+#define map_arr_add_arr<%0,%1> map_arr_add_arr@%0@%1
+#define map_add_map<%0,%1> map_add_map@%0@%1
+
+#define map_remove<%0,%1> map_remove@%0@%1
+#define map_arr_remove<%0,%1> map_arr_remove@%0@%1
+
+#define map_get<%0,%1> map_get@%0@%1
+#define map_get_arr<%0,%1> map_get_arr@%0@%1
+#define map_arr_get<%0,%1> map_arr_get@%0@%1
+#define map_arr_get_arr<%0,%1> map_arr_get_arr@%0@%1
+
+#define map_set<%0,%1> map_set@%0@%1
+#define map_set_arr<%0,%1> map_set_arr@%0@%1
+#define map_set_cell<%0,%1> map_set_cell@%0@%1
+#define map_arr_set<%0,%1> map_arr_set@%0@%1
+#define map_arr_set_arr<%0,%1> map_arr_set_arr@%0@%1
+#define map_arr_set_cell<%0,%1> map_arr_set_cell@%0@%1
+
+#define map_key_at<%0,%1> map_key_at@%0@%1
+#define map_arr_key_at<%0,%1> map_arr_key_at@%0@%1
+
+#define map_value_at<%0,%1> map_value_at@%0@%1
+#define map_arr_value_at<%0,%1> map_arr_value_at@%0@%1
+
+#define map_sizeof<%0,%1> map_sizeof@%0@%1
+#define map_arr_sizeof<%0,%1> map_arr_sizeof@%0@%1
+
+#define @define_Map<%0,%1> \
+stock const Void:Map<%0,%1>; \
+ \
+native Map<%0,%1>:map_new<%0,%1>() = map_new; \
+native map_delete<%0,%1>(Map<%0,%1>:map) = map_delete; \
+native map_size<%0,%1>(Map<%0,%1>:map) = map_size; \
+ \
+native bool:map_add<%0,%1>(Map<%0,%1>:map, %0:key, %1:value, key_tag_id=(tagof(%0:)), value_tag_id=(tagof(%1:))) = map_add; \
+native bool:map_add_arr<%0,%1>(Map<%0,%1>:map, %0:key, const %1:value[], value_size=sizeof(value), key_tag_id=(tagof(%0:)), value_tag_id=(tagof(%1:))) = map_add_arr; \
+native bool:map_arr_add<%0,%1>(Map<%0,%1>:map, const %0:key[], %1:value, key_size=sizeof(key), key_tag_id=(tagof(%0:)), value_tag_id=(tagof(%1:))) = map_arr_add; \
+native bool:map_arr_add_arr<%0,%1>(Map<%0,%1>:map, const %0:key[], const %1:value[], key_size=sizeof(key), value_size=sizeof(value), key_tag_id=(tagof(%0:)), value_tag_id=(tagof(%1:))) = map_arr_add_arr; \
+native map_add_map<%0,%1>(Map<%0,%1>:map, Map<%0,%1>:other, bool:overwrite); \
+ \
+native bool:map_remove<%0,%1>(Map<%0,%1>:map, %0:key, key_tag_id=(tagof(%0:))) = map_remove; \
+native bool:map_arr_remove<%0,%1>(Map<%0,%1>:map, const %0:key[], key_size=sizeof(key), key_tag_id=(tagof(%0:))) = map_arr_remove; \
+ \
+native map_get<%0,%1>(Map<%0,%1>:map, %0:key, offset=0, key_tag_id=(tagof(%0:))) = map_get; \
+native map_get_arr<%0,%1>(Map<%0,%1>:map, %0:key, %1:value[], value_size=sizeof(value), key_tag_id=(tagof(%0:))) = map_get_arr; \
+native map_arr_get<%0,%1>(Map<%0,%1>:map, const %0:key[], offset=0, key_size=sizeof(key), key_tag_id=(tagof(%0:))) = map_arr_get; \
+native map_arr_get_arr<%0,%1>(Map<%0,%1>:map, const %0:key[], %1:value[], value_size=sizeof(value), key_size=sizeof(key), key_tag_id=(tagof(%0:))) = map_arr_get_arr; \
+ \
+native bool:map_set<%0,%1>(Map<%0,%1>:map, %0:key, %1:value, key_tag_id=(tagof(%0:)), value_tag_id=(tagof(%1:))) = map_set; \
+native bool:map_set_arr<%0,%1>(Map<%0,%1>:map, %0:key, const %1:value[], value_size=sizeof(value), key_tag_id=(tagof(%0:)), value_tag_id=(tagof(%1:))) = map_set_arr; \
+native bool:map_set_cell<%0,%1>(Map<%0,%1>:map, %0:key, offset, %1:value, key_tag_id=(tagof(%0:))) = map_set_cell; \
+native bool:map_arr_set<%0,%1>(Map<%0,%1>:map, const %0:key[], %1:value, key_size=sizeof(key), key_tag_id=(tagof(%0:)), value_tag_id=(tagof(%1:))) = map_arr_set; \
+native bool:map_arr_set_arr<%0,%1>(Map<%0,%1>:map, const %0:key[], const %1:value[], value_size=sizeof(value), key_size=sizeof(key), key_tag_id=(tagof(%0:)), value_tag_id=(tagof(%1:))) = map_arr_set_arr; \
+native bool:map_arr_set_cell<%0,%1>(Map<%0,%1>:map, const %0:key[], offset, %1:value, key_size=sizeof(key), key_tag_id=(tagof(%0:))) = map_arr_set_cell; \
+ \
+native map_key_at<%0,%1>(Map<%0,%1>:map, index, offset=0) = map_key_at; \
+native map_arr_key_at<%0,%1>(Map<%0,%1>:map, index, %0:key[], key_size=sizeof(key)) = map_arr_key_at; \
+ \
+native map_value_at<%0,%1>(Map<%0,%1>:map, index, offset=0) = map_value_at; \
+native map_arr_value_at<%0,%1>(Map<%0,%1>:map, index, %1:value[], value_size=sizeof(value)) = map_arr_value_at; \
+ \
+native map_sizeof<%0,%1>(Map<%0,%1>:map, %0:key, key_tag_id=(tagof(%0:))) = map_sizeof; \
+native map_arr_sizeof<%0,%1>(Map<%0,%1>:map, const %0:key[], key_size=sizeof(key), key_tag_id=(tagof(%0:))) = map_arr_sizeof; \
+ \
+forward Map:operator=(Map<%0,%1>:obj); \
+forward Map<%0,%1>:operator=(Map:obj)
 
 /*                 */
 /*    Iterators    */
