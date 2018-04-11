@@ -168,14 +168,14 @@ namespace Natives
 		return value_at<>::iter_get<dyn_func_var>(amx, params);
 	}
 
-	// native bool:iter_get_checked(ListIterator:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_checked(AMX *amx, cell *params)
+	// native bool:iter_get_safe(ListIterator:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL iter_get_safe(AMX *amx, cell *params)
 	{
 		return value_at<2, 3, 4>::iter_get<dyn_func>(amx, params);
 	}
 
-	// native iter_get_arr_checked(ListIterator:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_arr_checked(AMX *amx, cell *params)
+	// native iter_get_arr_safe(ListIterator:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL iter_get_arr_safe(AMX *amx, cell *params)
 	{
 		return value_at<2, 3, 4>::iter_get<dyn_func_arr>(amx, params);
 	}
@@ -210,8 +210,8 @@ namespace Natives
 		return ::iter_set_cell(amx, params);
 	}
 
-	// native bool:iter_set_cell_checked(ListIterator:iter, offset, AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_set_cell_checked(AMX *amx, cell *params)
+	// native bool:iter_set_cell_safe(ListIterator:iter, offset, AnyTag:value, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL iter_set_cell_safe(AMX *amx, cell *params)
 	{
 		return ::iter_set_cell<4>(amx, params);
 	}
@@ -234,14 +234,14 @@ namespace Natives
 		return value_at<>::iter_get_key<dyn_func_var>(amx, params);
 	}
 
-	// native bool:iter_get_key_checked(MapIterator:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_key_checked(AMX *amx, cell *params)
+	// native bool:iter_get_key_safe(MapIterator:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL iter_get_key_safe(AMX *amx, cell *params)
 	{
 		return value_at<2, 3, 4>::iter_get_key<dyn_func>(amx, params);
 	}
 
-	// native iter_get_key_arr_checked(MapIterator:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_key_arr_checked(AMX *amx, cell *params)
+	// native iter_get_key_arr_safe(MapIterator:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL iter_get_key_arr_safe(AMX *amx, cell *params)
 	{
 		return value_at<2, 3, 4>::iter_get_key<dyn_func_arr>(amx, params);
 	}
@@ -264,14 +264,14 @@ namespace Natives
 		return value_at<>::iter_get_value<dyn_func_var>(amx, params);
 	}
 
-	// native bool:iter_get_value_checked(MapIterator:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_value_checked(AMX *amx, cell *params)
+	// native bool:iter_get_value_safe(MapIterator:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL iter_get_value_safe(AMX *amx, cell *params)
 	{
 		return value_at<2, 3, 4>::iter_get_value<dyn_func>(amx, params);
 	}
 
-	// native iter_get_value_arr_checked(MapIterator:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_value_arr_checked(AMX *amx, cell *params)
+	// native iter_get_value_arr_safe(MapIterator:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL iter_get_value_arr_safe(AMX *amx, cell *params)
 	{
 		return value_at<2, 3, 4>::iter_get_value<dyn_func_arr>(amx, params);
 	}
@@ -306,8 +306,8 @@ namespace Natives
 		return ::iter_set_value_cell(amx, params);
 	}
 
-	// native bool:iter_set_value_cell_checked(MapIterator:iter, offset, AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_set_value_cell_checked(AMX *amx, cell *params)
+	// native bool:iter_set_value_cell_safe(MapIterator:iter, offset, AnyTag:value, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL iter_set_value_cell_safe(AMX *amx, cell *params)
 	{
 		return ::iter_set_value_cell<4>(amx, params);
 	}
@@ -325,30 +325,30 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_get),
 	AMX_DECLARE_NATIVE(iter_get_arr),
 	AMX_DECLARE_NATIVE(iter_get_var),
-	AMX_DECLARE_NATIVE(iter_get_checked),
-	AMX_DECLARE_NATIVE(iter_get_arr_checked),
+	AMX_DECLARE_NATIVE(iter_get_safe),
+	AMX_DECLARE_NATIVE(iter_get_arr_safe),
 	AMX_DECLARE_NATIVE(iter_set),
 	AMX_DECLARE_NATIVE(iter_set_arr),
 	AMX_DECLARE_NATIVE(iter_set_str),
 	AMX_DECLARE_NATIVE(iter_set_var),
 	AMX_DECLARE_NATIVE(iter_set_cell),
-	AMX_DECLARE_NATIVE(iter_set_cell_checked),
+	AMX_DECLARE_NATIVE(iter_set_cell_safe),
 	AMX_DECLARE_NATIVE(iter_get_key),
 	AMX_DECLARE_NATIVE(iter_get_key_arr),
 	AMX_DECLARE_NATIVE(iter_get_key_var),
-	AMX_DECLARE_NATIVE(iter_get_key_checked),
-	AMX_DECLARE_NATIVE(iter_get_key_arr_checked),
+	AMX_DECLARE_NATIVE(iter_get_key_safe),
+	AMX_DECLARE_NATIVE(iter_get_key_arr_safe),
 	AMX_DECLARE_NATIVE(iter_get_value),
 	AMX_DECLARE_NATIVE(iter_get_value_arr),
 	AMX_DECLARE_NATIVE(iter_get_value_var),
-	AMX_DECLARE_NATIVE(iter_get_value_checked),
-	AMX_DECLARE_NATIVE(iter_get_value_arr_checked),
+	AMX_DECLARE_NATIVE(iter_get_value_safe),
+	AMX_DECLARE_NATIVE(iter_get_value_arr_safe),
 	AMX_DECLARE_NATIVE(iter_set_value),
 	AMX_DECLARE_NATIVE(iter_set_value_arr),
 	AMX_DECLARE_NATIVE(iter_set_value_str),
 	AMX_DECLARE_NATIVE(iter_set_value_var),
 	AMX_DECLARE_NATIVE(iter_set_value_cell),
-	AMX_DECLARE_NATIVE(iter_set_value_cell_checked),
+	AMX_DECLARE_NATIVE(iter_set_value_cell_safe),
 };
 
 int RegisterIterNatives(AMX *amx)

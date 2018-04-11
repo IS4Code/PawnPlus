@@ -342,14 +342,14 @@ namespace Natives
 		return key_at<2, 3>::value_at<>::map_get<dyn_func, dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_get_checked(Map:map, AnyTag:key, &AnyTag:value, offset=0, key_tag_id=tagof(key), value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_get_checked(AMX *amx, cell *params)
+	// native bool:map_get_safe(Map:map, AnyTag:key, &AnyTag:value, offset=0, key_tag_id=tagof(key), value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_get_safe(AMX *amx, cell *params)
 	{
 		return key_at<2, 5>::value_at<3, 4, 6>::map_get<dyn_func, dyn_func>(amx, params);
 	}
 
-	// native map_get_arr_checked(Map:map, AnyTag:key, AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(key), value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_get_arr_checked(AMX *amx, cell *params)
+	// native map_get_arr_safe(Map:map, AnyTag:key, AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(key), value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_get_arr_safe(AMX *amx, cell *params)
 	{
 		return key_at<2, 5>::value_at<3, 4, 6>::map_get<dyn_func, dyn_func_arr>(amx, params);
 	}
@@ -372,14 +372,14 @@ namespace Natives
 		return key_at<2, 3, 4>::value_at<>::map_get<dyn_func_arr, dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_arr_get_checked(Map:map, const AnyTag:key[], &AnyTag:value, offset=0, key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_arr_get_checked(AMX *amx, cell *params)
+	// native bool:map_arr_get_safe(Map:map, const AnyTag:key[], &AnyTag:value, offset=0, key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_arr_get_safe(AMX *amx, cell *params)
 	{
 		return key_at<2, 5, 6>::value_at<3, 4, 7>::map_get<dyn_func_arr, dyn_func>(amx, params);
 	}
 
-	// native map_arr_get_arr_checked(Map:map, const AnyTag:key[], AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_arr_get_arr_checked(AMX *amx, cell *params)
+	// native map_arr_get_arr_safe(Map:map, const AnyTag:key[], AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_arr_get_arr_safe(AMX *amx, cell *params)
 	{
 		return key_at<2, 5, 6>::value_at<3, 4, 7>::map_get<dyn_func_arr, dyn_func_arr>(amx, params);
 	}
@@ -402,14 +402,14 @@ namespace Natives
 		return key_at<2>::value_at<>::map_get<dyn_func_str, dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_str_get_checked(Map:map, const key[], &AnyTag:value, offset=0, value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_str_get_checked(AMX *amx, cell *params)
+	// native bool:map_str_get_safe(Map:map, const key[], &AnyTag:value, offset=0, value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_str_get_safe(AMX *amx, cell *params)
 	{
 		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_str, dyn_func>(amx, params);
 	}
 
-	// native map_str_get_arr_checked(Map:map, const key[], AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_str_get_arr_checked(AMX *amx, cell *params)
+	// native map_str_get_arr_safe(Map:map, const key[], AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_str_get_arr_safe(AMX *amx, cell *params)
 	{
 		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_str, dyn_func_arr>(amx, params);
 	}
@@ -432,14 +432,14 @@ namespace Natives
 		return key_at<2>::value_at<>::map_get<dyn_func_var, dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_var_get_checked(Map:map, VariantTag:key, &AnyTag:value, offset=0, value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_var_get_checked(AMX *amx, cell *params)
+	// native bool:map_var_get_safe(Map:map, VariantTag:key, &AnyTag:value, offset=0, value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_var_get_safe(AMX *amx, cell *params)
 	{
 		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_var, dyn_func>(amx, params);
 	}
 
-	// native map_var_get_arr_checked(Map:map, VariantTag:key, AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_var_get_arr_checked(AMX *amx, cell *params)
+	// native map_var_get_arr_safe(Map:map, VariantTag:key, AnyTag:value[], value_size=sizeof(value), value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_var_get_arr_safe(AMX *amx, cell *params)
 	{
 		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_var, dyn_func_arr>(amx, params);
 	}
@@ -474,8 +474,8 @@ namespace Natives
 		return key_at<2, 5>::map_set_cell<dyn_func>(amx, params);
 	}
 
-	// native bool:map_set_cell_checked(Map:map, AnyTag:key, offset, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_set_cell_checked(AMX *amx, cell *params)
+	// native bool:map_set_cell_safe(Map:map, AnyTag:key, offset, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_set_cell_safe(AMX *amx, cell *params)
 	{
 		return key_at<2, 5>::map_set_cell<dyn_func, 6>(amx, params);
 	}
@@ -510,8 +510,8 @@ namespace Natives
 		return key_at<2, 5, 6>::map_set_cell<dyn_func_arr>(amx, params);
 	}
 
-	// native bool:map_arr_set_cell_checked(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_arr_set_cell_checked(AMX *amx, cell *params)
+	// native bool:map_arr_set_cell_safe(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), key_tag_id=tagof(key), value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_arr_set_cell_safe(AMX *amx, cell *params)
 	{
 		return key_at<2, 5, 6>::map_set_cell<dyn_func_arr, 7>(amx, params);
 	}
@@ -546,8 +546,8 @@ namespace Natives
 		return key_at<2>::map_set_cell<dyn_func_str>(amx, params);
 	}
 
-	// native bool:map_str_set_cell_checked(Map:map, const key[], offset, AnyTag:value, value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_str_set_cell_checked(AMX *amx, cell *params)
+	// native bool:map_str_set_cell_safe(Map:map, const key[], offset, AnyTag:value, value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_str_set_cell_safe(AMX *amx, cell *params)
 	{
 		return key_at<2>::map_set_cell<dyn_func_str, 5>(amx, params);
 	}
@@ -582,8 +582,8 @@ namespace Natives
 		return key_at<2>::map_set_cell<dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_var_set_cell_checked(Map:map, VariantTag:key, offset, AnyTag:value, value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_var_set_cell_checked(AMX *amx, cell *params)
+	// native bool:map_var_set_cell_safe(Map:map, VariantTag:key, offset, AnyTag:value, value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_var_set_cell_safe(AMX *amx, cell *params)
 	{
 		return key_at<2>::map_set_cell<dyn_func_var, 5>(amx, params);
 	}
@@ -606,14 +606,14 @@ namespace Natives
 		return value_at<>::map_key_at<dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_key_at_checked(Map:map, index, &AnyTag:key, offset=0, key_tag_id=tagof(key));
-	static cell AMX_NATIVE_CALL map_key_at_checked(AMX *amx, cell *params)
+	// native bool:map_key_at_safe(Map:map, index, &AnyTag:key, offset=0, key_tag_id=tagof(key));
+	static cell AMX_NATIVE_CALL map_key_at_safe(AMX *amx, cell *params)
 	{
 		return value_at<3, 4, 5>::map_key_at<dyn_func>(amx, params);
 	}
 
-	// native map_arr_key_at_checked(Map:map, index, AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
-	static cell AMX_NATIVE_CALL map_arr_key_at_checked(AMX *amx, cell *params)
+	// native map_arr_key_at_safe(Map:map, index, AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
+	static cell AMX_NATIVE_CALL map_arr_key_at_safe(AMX *amx, cell *params)
 	{
 		return value_at<3, 4, 5>::map_key_at<dyn_func_arr>(amx, params);
 	}
@@ -636,14 +636,14 @@ namespace Natives
 		return value_at<>::map_value_at<dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_value_at_checked(Map:map, index, &AnyTag:value, offset=0, value_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_value_at_checked(AMX *amx, cell *params)
+	// native bool:map_value_at_safe(Map:map, index, &AnyTag:value, offset=0, value_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_value_at_safe(AMX *amx, cell *params)
 	{
 		return value_at<3, 4, 5>::map_value_at<dyn_func>(amx, params);
 	}
 
-	// native map_arr_value_at_checked(Map:map, index, AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL map_arr_value_at_checked(AMX *amx, cell *params)
+	// native map_arr_value_at_safe(Map:map, index, AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL map_arr_value_at_safe(AMX *amx, cell *params)
 	{
 		return value_at<3, 4, 5>::map_value_at<dyn_func_arr>(amx, params);
 	}
@@ -727,57 +727,57 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_get),
 	AMX_DECLARE_NATIVE(map_get_arr),
 	AMX_DECLARE_NATIVE(map_get_var),
-	AMX_DECLARE_NATIVE(map_get_checked),
-	AMX_DECLARE_NATIVE(map_get_arr_checked),
+	AMX_DECLARE_NATIVE(map_get_safe),
+	AMX_DECLARE_NATIVE(map_get_arr_safe),
 	AMX_DECLARE_NATIVE(map_arr_get),
 	AMX_DECLARE_NATIVE(map_arr_get_arr),
 	AMX_DECLARE_NATIVE(map_arr_get_var),
-	AMX_DECLARE_NATIVE(map_arr_get_checked),
-	AMX_DECLARE_NATIVE(map_arr_get_arr_checked),
+	AMX_DECLARE_NATIVE(map_arr_get_safe),
+	AMX_DECLARE_NATIVE(map_arr_get_arr_safe),
 	AMX_DECLARE_NATIVE(map_str_get),
 	AMX_DECLARE_NATIVE(map_str_get_arr),
 	AMX_DECLARE_NATIVE(map_str_get_var),
-	AMX_DECLARE_NATIVE(map_str_get_checked),
-	AMX_DECLARE_NATIVE(map_str_get_arr_checked),
+	AMX_DECLARE_NATIVE(map_str_get_safe),
+	AMX_DECLARE_NATIVE(map_str_get_arr_safe),
 	AMX_DECLARE_NATIVE(map_var_get),
 	AMX_DECLARE_NATIVE(map_var_get_arr),
 	AMX_DECLARE_NATIVE(map_var_get_var),
-	AMX_DECLARE_NATIVE(map_var_get_checked),
-	AMX_DECLARE_NATIVE(map_var_get_arr_checked),
+	AMX_DECLARE_NATIVE(map_var_get_safe),
+	AMX_DECLARE_NATIVE(map_var_get_arr_safe),
 	AMX_DECLARE_NATIVE(map_set),
 	AMX_DECLARE_NATIVE(map_set_arr),
 	AMX_DECLARE_NATIVE(map_set_str),
 	AMX_DECLARE_NATIVE(map_set_var),
 	AMX_DECLARE_NATIVE(map_set_cell),
-	AMX_DECLARE_NATIVE(map_set_cell_checked),
+	AMX_DECLARE_NATIVE(map_set_cell_safe),
 	AMX_DECLARE_NATIVE(map_arr_set),
 	AMX_DECLARE_NATIVE(map_arr_set_arr),
 	AMX_DECLARE_NATIVE(map_arr_set_str),
 	AMX_DECLARE_NATIVE(map_arr_set_var),
 	AMX_DECLARE_NATIVE(map_arr_set_cell),
-	AMX_DECLARE_NATIVE(map_arr_set_cell_checked),
+	AMX_DECLARE_NATIVE(map_arr_set_cell_safe),
 	AMX_DECLARE_NATIVE(map_str_set),
 	AMX_DECLARE_NATIVE(map_str_set_arr),
 	AMX_DECLARE_NATIVE(map_str_set_str),
 	AMX_DECLARE_NATIVE(map_str_set_var),
 	AMX_DECLARE_NATIVE(map_str_set_cell),
-	AMX_DECLARE_NATIVE(map_str_set_cell_checked),
+	AMX_DECLARE_NATIVE(map_str_set_cell_safe),
 	AMX_DECLARE_NATIVE(map_var_set),
 	AMX_DECLARE_NATIVE(map_var_set_arr),
 	AMX_DECLARE_NATIVE(map_var_set_str),
 	AMX_DECLARE_NATIVE(map_var_set_var),
 	AMX_DECLARE_NATIVE(map_var_set_cell),
-	AMX_DECLARE_NATIVE(map_var_set_cell_checked),
+	AMX_DECLARE_NATIVE(map_var_set_cell_safe),
 	AMX_DECLARE_NATIVE(map_key_at),
 	AMX_DECLARE_NATIVE(map_arr_key_at),
 	AMX_DECLARE_NATIVE(map_var_key_at),
-	AMX_DECLARE_NATIVE(map_key_at_checked),
-	AMX_DECLARE_NATIVE(map_arr_key_at_checked),
+	AMX_DECLARE_NATIVE(map_key_at_safe),
+	AMX_DECLARE_NATIVE(map_arr_key_at_safe),
 	AMX_DECLARE_NATIVE(map_value_at),
 	AMX_DECLARE_NATIVE(map_arr_value_at),
 	AMX_DECLARE_NATIVE(map_var_value_at),
-	AMX_DECLARE_NATIVE(map_value_at_checked),
-	AMX_DECLARE_NATIVE(map_arr_value_at_checked),
+	AMX_DECLARE_NATIVE(map_value_at_safe),
+	AMX_DECLARE_NATIVE(map_arr_value_at_safe),
 	AMX_DECLARE_NATIVE(map_tagof),
 	AMX_DECLARE_NATIVE(map_sizeof),
 	AMX_DECLARE_NATIVE(map_arr_tagof),

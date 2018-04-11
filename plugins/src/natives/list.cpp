@@ -177,14 +177,14 @@ namespace Natives
 		return value_at<>::list_get<dyn_func_var>(amx, params);
 	}
 
-	// native bool:list_get_checked(List:list, index, &AnyTag:value, offset=0, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL list_get_checked(AMX *amx, cell *params)
+	// native bool:list_get_safe(List:list, index, &AnyTag:value, offset=0, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL list_get_safe(AMX *amx, cell *params)
 	{
 		return value_at<3, 4, 5>::list_get<dyn_func>(amx, params);
 	}
 
-	// native list_get_arr_checked(List:list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL list_get_arr_checked(AMX *amx, cell *params)
+	// native list_get_arr_safe(List:list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL list_get_arr_safe(AMX *amx, cell *params)
 	{
 		return value_at<3, 4, 5>::list_get<dyn_func_arr>(amx, params);
 	}
@@ -219,8 +219,8 @@ namespace Natives
 		return ::list_set_cell(amx, params);
 	}
 
-	// native bool:list_set_cell_checked(List:list, index, offset, AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL list_set_cell_checked(AMX *amx, cell *params)
+	// native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL list_set_cell_safe(AMX *amx, cell *params)
 	{
 		return ::list_set_cell<5>(amx, params);
 	}
@@ -263,14 +263,14 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_get),
 	AMX_DECLARE_NATIVE(list_get_arr),
 	AMX_DECLARE_NATIVE(list_get_var),
-	AMX_DECLARE_NATIVE(list_get_checked),
-	AMX_DECLARE_NATIVE(list_get_arr_checked),
+	AMX_DECLARE_NATIVE(list_get_safe),
+	AMX_DECLARE_NATIVE(list_get_arr_safe),
 	AMX_DECLARE_NATIVE(list_set),
 	AMX_DECLARE_NATIVE(list_set_arr),
 	AMX_DECLARE_NATIVE(list_set_str),
 	AMX_DECLARE_NATIVE(list_set_var),
 	AMX_DECLARE_NATIVE(list_set_cell),
-	AMX_DECLARE_NATIVE(list_set_cell_checked),
+	AMX_DECLARE_NATIVE(list_set_cell_safe),
 	AMX_DECLARE_NATIVE(list_tagof),
 	AMX_DECLARE_NATIVE(list_sizeof),
 };

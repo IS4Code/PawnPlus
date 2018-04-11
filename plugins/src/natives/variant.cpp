@@ -96,14 +96,14 @@ namespace Natives
 		return value_at<2, 3>::var_get<dyn_func_arr>(amx, params);
 	}
 
-	// native bool:var_get_checked(VariantTag:var, &AnyTag:value, offset=0, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL var_get_checked(AMX *amx, cell *params)
+	// native bool:var_get_safe(VariantTag:var, &AnyTag:value, offset=0, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL var_get_safe(AMX *amx, cell *params)
 	{
 		return value_at<2, 3, 4>::var_get<dyn_func>(amx, params);
 	}
 
-	// native var_get_arr_checked(VariantTag:var, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL var_get_arr_checked(AMX *amx, cell *params)
+	// native var_get_arr_safe(VariantTag:var, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL var_get_arr_safe(AMX *amx, cell *params)
 	{
 		return value_at<2, 3, 4>::var_get<dyn_func_arr>(amx, params);
 	}
@@ -116,8 +116,8 @@ namespace Natives
 		return var->set_cell(params[2], params[3]);
 	}
 
-	// native bool:var_set_cell_checked(VariantTag:var, offset, AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL var_set_cell_checked(AMX *amx, cell *params)
+	// native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL var_set_cell_safe(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
 		if(var == nullptr) return 0;
@@ -208,11 +208,11 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(var_get),
 	AMX_DECLARE_NATIVE(var_get_arr),
-	AMX_DECLARE_NATIVE(var_get_checked),
-	AMX_DECLARE_NATIVE(var_get_arr_checked),
+	AMX_DECLARE_NATIVE(var_get_safe),
+	AMX_DECLARE_NATIVE(var_get_arr_safe),
 
 	AMX_DECLARE_NATIVE(var_set_cell),
-	AMX_DECLARE_NATIVE(var_set_cell_checked),
+	AMX_DECLARE_NATIVE(var_set_cell_safe),
 
 	AMX_DECLARE_NATIVE(var_tagof),
 	AMX_DECLARE_NATIVE(var_sizeof),
