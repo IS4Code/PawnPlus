@@ -432,7 +432,7 @@ bool dyn_object::to_string_tagged<char[]>(cell_string &str) const
 cell_string dyn_object::to_string() const
 {
 	cell_string str;
-	bool ok = to_string_tagged<cell>(str) || to_string_tagged<bool>(str) || to_string_tagged<float>(str) || to_string_tagged<char[]>(str) || to_string_tagged<cell_string*>(str) || to_string_tagged<dyn_object*>(str);
+	bool ok = to_string_tagged<cell>(str) || to_string_tagged<bool>(str) || to_string_tagged<float>(str) || to_string_tagged<char[]>(str) || to_string_tagged<char>(str) || to_string_tagged<cell_string*>(str) || to_string_tagged<dyn_object*>(str);
 	if(ok) return str;
 	op_strval<cell> op;
 	str.append(strings::convert(tag->name));

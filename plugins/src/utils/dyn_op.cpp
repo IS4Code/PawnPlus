@@ -163,6 +163,11 @@ strings::cell_string op_strval<bool>::operator()(cell obj) const
 	}
 }
 
+strings::cell_string op_strval<char>::operator()(cell obj) const
+{
+	return strings::cell_string(1, obj);
+}
+
 strings::cell_string op_strval<float>::operator()(float obj) const
 {
 	return strings::convert(std::to_string(obj));

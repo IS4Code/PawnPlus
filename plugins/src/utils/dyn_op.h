@@ -180,6 +180,12 @@ struct op_strval<bool>
 };
 
 template <>
+struct op_strval<char>
+{
+	strings::cell_string operator()(cell obj) const;
+};
+
+template <>
 struct op_strval<float>
 {
 	strings::cell_string operator()(float obj) const;
