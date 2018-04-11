@@ -16,9 +16,9 @@ struct is_simple
 template <class Type>
 constexpr const bool is_simple_v = is_simple<Type>::value;
 
-static_assert(is_simple_v<std::vector<dyn_object>::iterator>, "Vector is not simple.");
-static_assert(is_simple_v<std::unordered_map<dyn_object, dyn_object>::iterator>, "Map is not simple.");
-static_assert(is_simple_v<std::unordered_set<dyn_object>::iterator>, "Set is not simple.");
+//static_assert(is_simple_v<std::vector<dyn_object>::iterator>, "Vector is not simple.");
+//static_assert(is_simple_v<std::unordered_map<dyn_object, dyn_object>::iterator>, "Map is not simple.");
+//static_assert(is_simple_v<std::unordered_set<dyn_object>::iterator>, "Set is not simple.");
 //static_assert(is_simple_v<std::deque<dyn_object, dyn_object>::iterator>, "Deque is not simple.");
 
 template <size_t... Indices>

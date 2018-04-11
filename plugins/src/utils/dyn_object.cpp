@@ -10,18 +10,18 @@ dyn_object::dyn_object() : is_array(true), array_size(0), array_value(nullptr)
 
 }
 
-dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : is_array(false), cell_value(value), tag_name(find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : is_array(false), cell_value(value), tag(tags::find_tag(amx, tag_id))
 {
 
 }
 
-dyn_object::dyn_object(AMX *amx, cell *arr, cell size, cell tag_id) : is_array(true), array_size(size), tag_name(find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, cell *arr, cell size, cell tag_id) : is_array(true), array_size(size), tag(tags::find_tag(amx, tag_id))
 {
 	array_value = std::make_unique<cell[]>(size);
 	std::memcpy(array_value.get(), arr, size * sizeof(cell));
 }
 
-dyn_object::dyn_object(AMX *amx, cell *str) : is_array(true), tag_name("char")
+dyn_object::dyn_object(AMX *amx, cell *str) : is_array(true), tag(tags::find_tag(tags::tag_char))
 {
 	if(str == nullptr || !str[0])
 	{
@@ -45,12 +45,12 @@ dyn_object::dyn_object(AMX *amx, cell *str) : is_array(true), tag_name("char")
 	array_value[size] = 0;
 }
 
-dyn_object::dyn_object(cell value, const char *tag) : is_array(false), cell_value(value), tag_name(tag)
+dyn_object::dyn_object(cell value, tag_ptr tag) : is_array(false), cell_value(value), tag(tag)
 {
 
 }
 
-dyn_object::dyn_object(cell *arr, cell size, const char *tag) : is_array(true), array_size(size), tag_name(tag)
+dyn_object::dyn_object(cell *arr, cell size, tag_ptr tag) : is_array(true), array_size(size), tag(tag)
 {
 	array_value = std::make_unique<cell[]>(size);
 	if(arr != nullptr)
@@ -59,7 +59,7 @@ dyn_object::dyn_object(cell *arr, cell size, const char *tag) : is_array(true), 
 	}
 }
 
-dyn_object::dyn_object(const dyn_object &obj) : is_array(obj.is_array), tag_name(obj.tag_name)
+dyn_object::dyn_object(const dyn_object &obj) : is_array(obj.is_array), tag(obj.tag)
 {
 	if(is_array)
 	{
@@ -71,7 +71,7 @@ dyn_object::dyn_object(const dyn_object &obj) : is_array(obj.is_array), tag_name
 	}
 }
 
-dyn_object::dyn_object(dyn_object &&obj) : is_array(obj.is_array), tag_name(std::move(obj.tag_name))
+dyn_object::dyn_object(dyn_object &&obj) : is_array(obj.is_array), tag(obj.tag)
 {
 	if(is_array)
 	{
@@ -108,38 +108,12 @@ std::string dyn_object::find_tag(AMX *amx, cell tag_id) const
 
 bool dyn_object::check_tag(AMX *amx, cell tag_id) const
 {
-	tag_id &= 0x7FFFFFFF;
-
-	if(tag_id == 0) //weak tags
+	tag_ptr test_tag = tags::find_tag(amx, tag_id);
+	if(test_tag->uid == tags::tag_cell)
 	{
-		if(tag_name.empty()) return true;
-		char c = tag_name[0];
-		if(c < 'A' || c > 'Z') return true;
+		if(!tag->strong()) return true;
 	}
-
-	int len;
-	amx_NameLength(amx, &len);
-	char *tagname = static_cast<char*>(alloca(len+1));
-
-	int num;
-	amx_NumTags(amx, &num);
-	for(int i = 0; i < num; i++)
-	{
-		cell tag_id2;
-		if(!amx_GetTag(amx, i, tagname, &tag_id2) && tag_name == tagname)
-		{
-			if(
-				tag_id == tag_id2 ||
-				(tag_id == 0 && (tag_id2 & 0x40000000) == 0) ||
-				(tag_name == "GlobalString" && find_tag(amx, tag_id) == "String") ||
-				(tag_name == "GlobalVariant" && find_tag(amx, tag_id) == "Variant")
-			)
-			{
-				return true;
-			}
-		}
-	}
-	return false;
+	return tag->inherits_from(test_tag);
 }
 
 bool dyn_object::get_cell(cell index, cell &value) const
@@ -184,7 +158,7 @@ bool dyn_object::set_cell(cell index, cell value)
 
 cell dyn_object::get_tag(AMX *amx) const
 {
-	if(tag_name.empty()) return 0x80000000;
+	if(tag->uid == tags::tag_cell) return 0x80000000;
 
 	int len;
 	amx_NameLength(amx, &len);
@@ -197,7 +171,7 @@ cell dyn_object::get_tag(AMX *amx) const
 		cell tag_id;
 		if(!amx_GetTag(amx, i, tagname, &tag_id))
 		{
-			if(tag_name == tagname)
+			if(tag->name == tagname)
 			{
 				return tag_id | 0x80000000;
 			}
@@ -239,37 +213,35 @@ cell dyn_object::get_size() const
 	}
 }
 
-char dyn_object::get_specifier() const
+template <class TagType>
+bool dyn_object::get_specifier_tagged(char &result) const
 {
+	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
 	if(is_array)
 	{
-		if(tag_name == "char") return 's';
-		if(array_size > 1) return 'a';
+		result = tag_traits<TagType[]>::format_spec;
+	}else{
+		result = tag_traits<TagType>::format_spec;
 	}
-	if(tag_name == "Float") return 'f';
-	if(tag_name == "String" || tag_name == "GlobalString") return 'S';
-	if(tag_name == "Variant" || tag_name == "GlobalVariant") return 'V';
-	return 'i';
+	return true;
+}
+
+char dyn_object::get_specifier() const
+{
+	char result = tag_traits<cell>::format_spec;
+	bool ok = get_specifier_tagged<cell>(result) || get_specifier_tagged<char>(result) || get_specifier_tagged<float>(result) || get_specifier_tagged<cell_string*>(result) || get_specifier_tagged<dyn_object*>(result);
+	if(!ok && is_array)
+	{
+		return tag_traits<cell[]>::format_spec;
+	}
+	return result;
 }
 
 template <class T>
 inline void hash_combine(size_t& seed, const T& v)
 {
 	std::hash<T> hasher;
-	hash_combine(seed, hasher(v));
-}
-
-inline void hash_combine(size_t& seed, size_t h)
-{
-	seed ^= h + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-}
-
-size_t dyn_object::tag_hash() const
-{
-	std::hash<std::string> hasher;
-	if(tag_name == "GlobalString") return hasher("String");
-	if(tag_name == "GlobalVariant") return hasher("Variant");
-	return hasher(tag_name);
+	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 size_t dyn_object::get_hash() const
@@ -287,7 +259,7 @@ size_t dyn_object::get_hash() const
 		hash = hasher(cell_value);
 	}
 
-	hash_combine(hash, tag_hash());
+	hash_combine(hash, tag->find_top_base());
 	return hash;
 }
 
@@ -298,10 +270,7 @@ bool dyn_object::empty() const
 
 bool dyn_object::tag_check(const dyn_object &obj) const
 {
-	if(tag_name == obj.tag_name) return true;
-	return
-		(tag_info<cell_string*>::check_tag(tag_name) && tag_info<cell_string*>::check_tag(obj.tag_name)) ||
-		(tag_info<dyn_object*>::check_tag(tag_name) && tag_info<dyn_object*>::check_tag(obj.tag_name));
+	return tag->same_base(obj.tag);
 }
 
 cell &dyn_object::operator[](cell index)
@@ -309,7 +278,7 @@ cell &dyn_object::operator[](cell index)
 	if(is_array)
 	{
 		return array_value[index];
-	} else {
+	}else{
 		return (&cell_value)[index];
 	}
 }
@@ -319,7 +288,7 @@ const cell &dyn_object::operator[](cell index) const
 	if(is_array)
 	{
 		return array_value[index];
-	} else {
+	}else{
 		return (&cell_value)[index];
 	}
 }
@@ -337,24 +306,25 @@ bool operator==(const dyn_object &a, const dyn_object &b)
 }
 
 template <template <class T> class OpType, class TagType>
-dyn_object dyn_object::operator_func_tagged(const dyn_object &obj) const
+bool dyn_object::operator_func_tagged(const dyn_object &obj, dyn_object &result) const
 {
-	typedef tag_info<TagType> tag;
+	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
+	typedef tag_traits<TagType> tag;
+
 	if(is_array && obj.is_array)
 	{
-		if(array_size != obj.array_size) return dyn_object();
+		if(array_size != obj.array_size) return true;
 
-		dyn_object result{nullptr, array_size, tag::tag_name};
+		result = {nullptr, array_size, tags::find_tag(tag::tag_uid)};
 		OpType<TagType> op;
 		for(cell i = 0; i < array_size; i++)
 		{
 			TagType val = op(tag::conv_to(array_value[i]), tag::conv_to(obj.array_value[i]));
 			result.array_value[i] = tag::conv_from(val);
 		}
-		return result;
 	}else if(is_array)
 	{
-		dyn_object result{nullptr, array_size, tag::tag_name};
+		result = {nullptr, array_size, tags::find_tag(tag::tag_uid)};
 		OpType<TagType> op;
 		TagType sval = tag::conv_to(obj.cell_value);
 		for(cell i = 0; i < array_size; i++)
@@ -362,10 +332,9 @@ dyn_object dyn_object::operator_func_tagged(const dyn_object &obj) const
 			TagType val = op(tag::conv_to(array_value[i]), sval);
 			result.array_value[i] = tag::conv_from(val);
 		}
-		return result;
 	}else if(obj.is_array)
 	{
-		dyn_object result{nullptr, obj.array_size, tag::tag_name};
+		result = {nullptr, obj.array_size, tags::find_tag(tag::tag_uid)};
 		OpType<TagType> op;
 		TagType sval = tag::conv_to(cell_value);
 		for(cell i = 0; i < obj.array_size; i++)
@@ -373,64 +342,61 @@ dyn_object dyn_object::operator_func_tagged(const dyn_object &obj) const
 			TagType val = op(sval, tag::conv_to(obj.array_value[i]));
 			result.array_value[i] = tag::conv_from(val);
 		}
-		return result;
 	}else{
 		OpType<TagType> op;
 		TagType val = op(tag::conv_to(cell_value), tag::conv_to(obj.cell_value));
-		return dyn_object(tag::conv_from(val), tag::tag_name);
+		result = {tag::conv_from(val), tags::find_tag(tag::tag_uid)};
 	}
-	return dyn_object();
+	return true;
 }
 
 template <template <class T> class OpType>
 dyn_object dyn_object::operator_func(const dyn_object &obj) const
 {
 	if(!tag_check(obj)) return dyn_object();
-	if(tag_info<cell>::check_tag(tag_name)) return operator_func_tagged<OpType, cell>(obj);
-	if(tag_info<float>::check_tag(tag_name)) return operator_func_tagged<OpType, float>(obj);
-	if(tag_info<cell_string*>::check_tag(tag_name)) return operator_func_tagged<OpType, cell_string*>(obj);
-	if(tag_info<dyn_object*>::check_tag(tag_name)) return operator_func_tagged<OpType, dyn_object*>(obj);
-	return dyn_object();
+	dyn_object result;
+	operator_func_tagged<OpType, cell>(obj, result) || operator_func_tagged<OpType, float>(obj, result) || operator_func_tagged<OpType, cell_string*>(obj, result) || operator_func_tagged<OpType, dyn_object*>(obj, result);
+	return result;
 }
 
 template <template <class T> class OpType, class TagType>
-dyn_object dyn_object::operator_func_tagged() const
+bool dyn_object::operator_func_tagged(dyn_object &result) const
 {
-	typedef tag_info<TagType> tag;
+	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
+	typedef tag_traits<TagType> tag;
+
 	if(is_array)
 	{
-		dyn_object result{nullptr, array_size, tag::tag_name};
+		result = {nullptr, array_size, tag::tag_name};
 		OpType<TagType> op;
 		for(cell i = 0; i < array_size; i++)
 		{
 			TagType val = op(tag::conv_to(array_value[i]));
 			result.array_value[i] = tag::conv_from(val);
 		}
-		return result;
 	}else{
 		OpType<TagType> op;
 		TagType val = op(tag::conv_to(cell_value));
-		return dyn_object(tag::conv_from(val), tag::tag_name);
+		result = {tag::conv_from(val), tag::tag_name};
 	}
-	return dyn_object();
+	return true;
 }
 
 template <template <class T> class OpType>
 dyn_object dyn_object::operator_func() const
 {
-	if(tag_info<cell>::check_tag(tag_name)) return operator_func_tagged<OpType, cell>();
-	if(tag_info<float>::check_tag(tag_name)) return operator_func_tagged<OpType, float>();
-	if(tag_info<cell_string*>::check_tag(tag_name)) return operator_func_tagged<OpType, cell_string*>();
-	if(tag_info<dyn_object*>::check_tag(tag_name)) return operator_func_tagged<OpType, dyn_object*>();
-	return dyn_object();
+	dyn_object result;
+	operator_func_tagged<OpType, cell>(result) || operator_func_tagged<OpType, float>(result) || operator_func_tagged<OpType, cell_string*>(result) || operator_func_tagged<OpType, dyn_object*>(result);
+	return result;
 }
 
 template <class TagType>
-cell_string dyn_object::to_string_tagged() const
+bool dyn_object::to_string_tagged(cell_string &str) const
 {
+	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
 	op_strval<TagType> op;
 
-	cell_string str;
+	str = {};
 	if(is_array)
 	{
 		str.append({'{'});
@@ -440,38 +406,52 @@ cell_string dyn_object::to_string_tagged() const
 			{
 				str.append({',', ' '});
 			}
-			str.append(op(tag_info<TagType>::conv_to(array_value[i])));
+			str.append(op(tag_traits<TagType>::conv_to(array_value[i])));
 		}
 		str.append({'}'});
 	}else{
-		str.append(op(tag_info<TagType>::conv_to(cell_value)));
+		str.append(op(tag_traits<TagType>::conv_to(cell_value)));
 	}
-	return str;
+	return true;
 }
 
-
 template <>
-cell_string dyn_object::to_string_tagged<char[]>() const
+bool dyn_object::to_string_tagged<char[]>(cell_string &str) const
 {
+	if(!tag->inherits_from(tag_traits<char[]>::tag_uid)) return false;
+
 	if(is_array)
 	{
-		return cell_string(array_value.get());
+		str = cell_string(array_value.get());
+	}else{
+		str = cell_string(1, cell_value);
 	}
-	return cell_string();
+	return true;
 }
 
 cell_string dyn_object::to_string() const
 {
-	if(tag_info<cell>::check_tag(tag_name)) return to_string_tagged<cell>();
-	if(tag_info<bool>::check_tag(tag_name)) return to_string_tagged<bool>();
-	if(tag_info<float>::check_tag(tag_name)) return to_string_tagged<float>();
-	if(tag_info<char[]>::check_tag(tag_name)) return to_string_tagged<char[]>();
-	if(tag_info<cell_string*>::check_tag(tag_name)) return to_string_tagged<cell_string*>();
-	if(tag_info<dyn_object*>::check_tag(tag_name)) return to_string_tagged<dyn_object*>();
 	cell_string str;
-	str.append(strings::convert(tag_name));
+	bool ok = to_string_tagged<cell>(str) || to_string_tagged<bool>(str) || to_string_tagged<float>(str) || to_string_tagged<char[]>(str) || to_string_tagged<cell_string*>(str) || to_string_tagged<dyn_object*>(str);
+	if(ok) return str;
+	op_strval<cell> op;
+	str.append(strings::convert(tag->name));
 	str.append({':'});
-	str.append(to_string_tagged<cell>());
+	if(is_array)
+	{
+		str.append({'{'});
+		for(cell i = 0; i < array_size; i++)
+		{
+			if(i > 0)
+			{
+				str.append({',', ' '});
+			}
+			str.append(op(tag_traits<cell>::conv_to(array_value[i])));
+		}
+		str.append({'}'});
+	}else{
+		str.append(op(tag_traits<cell>::conv_to(cell_value)));
+	}
 	return str;
 }
 
@@ -504,7 +484,7 @@ dyn_object &dyn_object::operator=(const dyn_object &obj)
 {
 	if(this == &obj) return *this;
 	is_array = obj.is_array;
-	tag_name = obj.tag_name;
+	tag = obj.tag;
 	if(is_array)
 	{
 		array_size = obj.array_size;
@@ -520,7 +500,7 @@ dyn_object &dyn_object::operator=(dyn_object &&obj)
 {
 	if(this == &obj) return *this;
 	is_array = obj.is_array;
-	tag_name = std::move(obj.tag_name);
+	tag = obj.tag;
 	if(is_array)
 	{
 		array_size = obj.array_size;

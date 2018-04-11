@@ -9,6 +9,14 @@
 native pp_hook_strlen(bool:hook);
 native pp_hook_check_ref_args(bool:hook);
 
+#define GlobalString String@Global
+#define GlobalVariant Variant@Global
+
+#define StringTags String,GlobalString
+#define StringTag {StringTags}
+#define VariantTags Variant,GlobalVariant
+#define VariantTag {VariantTags}
+
 #define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map
 #if defined PP_ADDITIONAL_TAGS
 #define AnyTags PP_ALL_TAGS,PP_ADDITIONAL_TAGS
@@ -16,11 +24,6 @@ native pp_hook_check_ref_args(bool:hook);
 #define AnyTags PP_ALL_TAGS
 #endif
 #define AnyTag {AnyTags}
-
-#define StringTags String,GlobalString
-#define StringTag {StringTags}
-#define VariantTags Variant,GlobalVariant
-#define VariantTag {VariantTags}
 
 /*                 */
 /*      Pawn       */

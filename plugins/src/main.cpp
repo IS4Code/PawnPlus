@@ -6,6 +6,7 @@
 #include "hooks.h"
 #include "natives.h"
 #include "context.h"
+#include "tags.h"
 
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
@@ -49,6 +50,7 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) 
 {
 	Context::Init(amx);
+	tags::load(amx);
 	RegisterNatives(amx);
 	return AMX_ERR_NONE;
 }
@@ -56,6 +58,7 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx)
 PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx) 
 {
 	Context::Remove(amx);
+	tags::unload(amx);
 	return AMX_ERR_NONE;
 }
 

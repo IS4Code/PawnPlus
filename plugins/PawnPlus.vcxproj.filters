@@ -79,6 +79,9 @@
     <ClCompile Include="src\natives\iter.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="src\tags.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -166,6 +169,9 @@
     </ClInclude>
     <ClInclude Include="src\utils\dyn_op.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tags.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

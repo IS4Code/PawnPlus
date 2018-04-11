@@ -4,6 +4,7 @@
 #include "dyn_object.h"
 #include "../variants.h"
 #include "../strings.h"
+#include "../tags.h"
 #include "sdk/amx/amx.h"
 #include <string>
 
@@ -197,18 +198,48 @@ struct op_strval<dyn_object*>
 };
 
 template <class TagType>
-struct tag_info;
+struct tag_traits;
 
 template <>
-struct tag_info<cell>
+struct tag_traits<cell>
 {
-	static constexpr const char *tag_name = "";
+	static constexpr const cell tag_uid = tags::tag_cell;
 	static constexpr const char format_spec = 'i';
 
-	static bool check_tag(const std::string &tag)
+	static cell conv_to(cell v)
 	{
-		return tag == tag_name;
+		return v;
 	}
+
+	static cell conv_from(cell v)
+	{
+		return v;
+	}
+};
+
+template <class TagType>
+struct tag_traits<TagType[]>
+{
+	static constexpr const cell tag_uid = tag_traits<TagType>::tag_uid;
+	static constexpr const char format_spec = 'a';
+
+	static auto conv_to(cell v)
+	{
+		return tag_traits<TagType>::conv_to(v);
+	}
+
+	template <class Type>
+	static cell conv_from(Type v)
+	{
+		return tag_traits<TagType>::conv_from(v);
+	}
+};
+
+template <>
+struct tag_traits<bool>
+{
+	static constexpr const cell tag_uid = tags::tag_bool;
+	static constexpr const char format_spec = 'i';
 
 	static cell conv_to(cell v)
 	{
@@ -222,15 +253,27 @@ struct tag_info<cell>
 };
 
 template <>
-struct tag_info<char[]>
+struct tag_traits<char[]>
 {
-	static constexpr const char *tag_name = "char";
+	static constexpr const cell tag_uid = tags::tag_char;
 	static constexpr const char format_spec = 's';
 
-	static bool check_tag(const std::string &tag)
+	static cell conv_to(cell v)
 	{
-		return tag == tag_name;
+		return v;
 	}
+
+	static cell conv_from(cell v)
+	{
+		return v;
+	}
+};
+
+template <>
+struct tag_traits<char>
+{
+	static constexpr const cell tag_uid = tags::tag_char;
+	static constexpr const char format_spec = 'c';
 
 	static cell conv_to(cell v)
 	{
@@ -244,37 +287,10 @@ struct tag_info<char[]>
 };
 
 template <>
-struct tag_info<bool>
+struct tag_traits<float>
 {
-	static constexpr const char *tag_name = "bool";
-	static constexpr const char format_spec = 'i';
-
-	static cell check_tag(const std::string &tag)
-	{
-		return tag == tag_name;
-	}
-
-	static cell conv_to(cell v)
-	{
-		return v;
-	}
-
-	static cell conv_from(cell v)
-	{
-		return v;
-	}
-};
-
-template <>
-struct tag_info<float>
-{
-	static constexpr const char *tag_name = "Float";
+	static constexpr const cell tag_uid = tags::tag_float;
 	static constexpr const char format_spec = 'f';
-
-	static bool check_tag(const std::string &tag)
-	{
-		return tag == tag_name;
-	}
 
 	static float conv_to(cell v)
 	{
@@ -288,15 +304,10 @@ struct tag_info<float>
 };
 
 template <>
-struct tag_info<strings::cell_string*>
+struct tag_traits<strings::cell_string*>
 {
-	static constexpr const char *tag_name = "String";
+	static constexpr const cell tag_uid = tags::tag_string;
 	static constexpr const char format_spec = 'S';
-
-	static bool check_tag(const std::string &tag)
-	{
-		return tag == tag_name || tag == "GlobalString";
-	}
 
 	static strings::cell_string *conv_to(cell v)
 	{
@@ -310,15 +321,10 @@ struct tag_info<strings::cell_string*>
 };
 
 template <>
-struct tag_info<dyn_object*>
+struct tag_traits<dyn_object*>
 {
-	static constexpr const char *tag_name = "Variant";
+	static constexpr const cell tag_uid = tags::tag_variant;
 	static constexpr const char format_spec = 'V';
-
-	static bool check_tag(const std::string &tag)
-	{
-		return tag == tag_name || tag == "GlobalVariant";
-	}
 
 	static dyn_object *conv_to(cell v)
 	{

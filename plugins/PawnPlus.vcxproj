@@ -146,6 +146,7 @@
     <ClCompile Include="src\natives\variant.cpp" />
     <ClCompile Include="src\reset.cpp" />
     <ClCompile Include="src\strings.cpp" />
+    <ClCompile Include="src\tags.cpp" />
     <ClCompile Include="src\tasks.cpp" />
     <ClCompile Include="src\threads.cpp" />
     <ClCompile Include="src\utils\dyn_object.cpp" />
@@ -181,6 +182,7 @@
     <ClInclude Include="src\natives.h" />
     <ClInclude Include="src\reset.h" />
     <ClInclude Include="src\strings.h" />
+    <ClInclude Include="src\tags.h" />
     <ClInclude Include="src\tasks.h" />
     <ClInclude Include="src\threads.h" />
     <ClInclude Include="src\utils\dyn_object.h" />
