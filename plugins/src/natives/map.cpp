@@ -67,7 +67,7 @@ public:
 		}
 		return 0;
 	}
-
+	
 	// native bool:map_set_cell(Map:map, key, offset, AnyTag:value, ...);
 	template <typename key_ftype KeyFactory, size_t TagIndex = 0>
 	static cell AMX_NATIVE_CALL map_set_cell(AMX *amx, cell *params)

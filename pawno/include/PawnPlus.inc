@@ -146,7 +146,7 @@ native bool:list_remove(List:list, index);
 
 native list_get(List:list, index, offset=0);
 native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
-native list_get_var(List:list, index);
+native Variant:list_get_var(List:list, index);
 native bool:list_get_checked(List:list, index, &AnyTag:value, offset=0, tag_id=tagof(value));
 native list_get_arr_checked(List:list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 
@@ -258,6 +258,54 @@ native map_str_tagof(Map:map, const key[]);
 native map_str_sizeof(Map:map, const key[]);
 native map_var_tagof(Map:map, VariantTag:key);
 native map_var_sizeof(Map:map, VariantTag:key);
+
+
+/*                 */
+/*    Iterators    */
+/*                 */
+
+native ListIterator:iter_list(List:list);
+native ListIterator:iter_next_list(ListIterator:iter);
+native bool:iter_valid_list(List:list, ListIterator:iter);
+
+native iter_get(ListIterator:iter, offset=0);
+native iter_get_arr(ListIterator:iter, AnyTag:value[], size=sizeof(value));
+native Variant:iter_get_var(ListIterator:iter);
+native bool:iter_get_checked(ListIterator:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+native iter_get_arr_checked(ListIterator:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+
+native bool:iter_set(ListIterator:iter, AnyTag:value, tag_id=tagof(value));
+native bool:iter_set_arr(ListIterator:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native bool:iter_set_str(ListIterator:iter, const value[]);
+native bool:iter_set_var(ListIterator:iter, VariantTag:value);
+native bool:iter_set_cell(ListIterator:iter, offset, AnyTag:value);
+native bool:iter_set_cell_checked(ListIterator:iter, offset, AnyTag:value, tag_id=tagof(value));
+
+native MapIterator:iter_map(Map:map);
+native MapIterator:iter_next_map(MapIterator:iter);
+native bool:iter_valid_map(Map:map, MapIterator:iter);
+
+native iter_get_key(MapIterator:iter, offset=0);
+native iter_get_key_arr(MapIterator:iter, AnyTag:value[], size=sizeof(value));
+native Variant:iter_get_key_var(MapIterator:iter);
+native bool:iter_get_key_checked(MapIterator:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+native iter_get_key_arr_checked(MapIterator:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+
+native iter_get_value(MapIterator:iter, offset=0);
+native iter_get_value_arr(MapIterator:iter, AnyTag:value[], size=sizeof(value));
+native Variant:iter_get_value_var(MapIterator:iter);
+native bool:iter_get_value_checked(MapIterator:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+native iter_get_value_arr_checked(MapIterator:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+
+native bool:iter_set_value(MapIterator:iter, AnyTag:value, tag_id=tagof(value));
+native bool:iter_set_value_arr(MapIterator:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native bool:iter_set_value_str(MapIterator:iter, const value[]);
+native bool:iter_set_value_var(MapIterator:iter, VariantTag:value);
+native bool:iter_set_value_cell(MapIterator:iter, offset, AnyTag:value);
+native bool:iter_set_value_cell_checked(MapIterator:iter, offset, AnyTag:value, tag_id=tagof(value));
+
+native ListIterator:operator++(ListIterator:iter) = iter_next_list;
+native MapIterator:operator++(MapIterator:iter) = iter_next_map;
 
 
 /*                 */

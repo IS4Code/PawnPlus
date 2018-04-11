@@ -76,6 +76,9 @@
     <ClCompile Include="src\utils\dyn_op.cpp">
       <Filter>src\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives\iter.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

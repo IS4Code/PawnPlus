@@ -13,6 +13,7 @@ int RegisterThreadNatives(AMX *amx);
 int RegisterVariantNatives(AMX *amx);
 int RegisterListNatives(AMX *amx);
 int RegisterMapNatives(AMX *amx);
+int RegisterIterNatives(AMX *amx);
 
 inline int RegisterNatives(AMX *amx)
 {
@@ -24,6 +25,7 @@ inline int RegisterNatives(AMX *amx)
 	RegisterVariantNatives(amx);
 	RegisterListNatives(amx);
 	RegisterMapNatives(amx);
+	RegisterIterNatives(amx);
 	return AMX_ERR_NONE;
 }
 
