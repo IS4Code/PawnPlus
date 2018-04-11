@@ -449,11 +449,23 @@ cell_string dyn_object::to_string_tagged() const
 	return str;
 }
 
+
+template <>
+cell_string dyn_object::to_string_tagged<char[]>() const
+{
+	if(is_array)
+	{
+		return cell_string(array_value.get());
+	}
+	return cell_string();
+}
+
 cell_string dyn_object::to_string() const
 {
 	if(tag_info<cell>::check_tag(tag_name)) return to_string_tagged<cell>();
 	if(tag_info<bool>::check_tag(tag_name)) return to_string_tagged<bool>();
 	if(tag_info<float>::check_tag(tag_name)) return to_string_tagged<float>();
+	if(tag_info<char[]>::check_tag(tag_name)) return to_string_tagged<char[]>();
 	if(tag_info<cell_string*>::check_tag(tag_name)) return to_string_tagged<cell_string*>();
 	if(tag_info<dyn_object*>::check_tag(tag_name)) return to_string_tagged<dyn_object*>();
 	cell_string str;

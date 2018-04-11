@@ -222,6 +222,28 @@ struct tag_info<cell>
 };
 
 template <>
+struct tag_info<char[]>
+{
+	static constexpr const char *tag_name = "char";
+	static constexpr const char format_spec = 's';
+
+	static bool check_tag(const std::string &tag)
+	{
+		return tag == tag_name;
+	}
+
+	static cell conv_to(cell v)
+	{
+		return v;
+	}
+
+	static cell conv_from(cell v)
+	{
+		return v;
+	}
+};
+
+template <>
 struct tag_info<bool>
 {
 	static constexpr const char *tag_name = "bool";
