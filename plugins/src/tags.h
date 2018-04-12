@@ -25,12 +25,18 @@ struct tag_info
 
 namespace tags
 {
-	constexpr const cell tag_cell = 0;
-	constexpr const cell tag_bool = 1;
-	constexpr const cell tag_char = 2;
-	constexpr const cell tag_float = 3;
-	constexpr const cell tag_string = 4;
-	constexpr const cell tag_variant = 5;
+	constexpr const cell tag_unknown = 0;
+	constexpr const cell tag_cell = 1;
+	constexpr const cell tag_bool = 2;
+	constexpr const cell tag_char = 3;
+	constexpr const cell tag_float = 4;
+	constexpr const cell tag_string = 5;
+	constexpr const cell tag_variant = 6;
+	constexpr const cell tag_list = 7;
+	constexpr const cell tag_map = 8;
+	constexpr const cell tag_list_iterator = 9;
+	constexpr const cell tag_map_iterator = 10;
+	constexpr const cell tag_ref = 11;
 
 	void load(AMX *amx);
 	void unload(AMX *amx);
