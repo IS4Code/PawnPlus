@@ -3,7 +3,7 @@
 #include "../utils/dyn_object.h"
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
+//#include <unordered_set>
 //#include <deque>
 #include <type_traits>
 
@@ -16,10 +16,12 @@ struct is_simple
 template <class Type>
 constexpr const bool is_simple_v = is_simple<Type>::value;
 
-//static_assert(is_simple_v<std::vector<dyn_object>::iterator>, "Vector is not simple.");
-//static_assert(is_simple_v<std::unordered_map<dyn_object, dyn_object>::iterator>, "Map is not simple.");
+// Iterators fit inside a single cell, but not in debug in VC++.
+#ifndef _DEBUG
+static_assert(is_simple_v<std::vector<dyn_object>::iterator>, "Vector is not simple.");
+static_assert(is_simple_v<std::unordered_map<dyn_object, dyn_object>::iterator>, "Map is not simple.");
 //static_assert(is_simple_v<std::unordered_set<dyn_object>::iterator>, "Set is not simple.");
-//static_assert(is_simple_v<std::deque<dyn_object, dyn_object>::iterator>, "Deque is not simple.");
+#endif
 
 template <size_t... Indices>
 class value_at
@@ -98,24 +100,24 @@ static cell AMX_NATIVE_CALL iter_set_value_cell(AMX *amx, cell *params)
 
 namespace Natives
 {
-	// native ListIterator:iter_list(List:list);
-	static cell AMX_NATIVE_CALL iter_list(AMX *amx, cell *params)
+	// native ListIterator:list_iter(List:list);
+	static cell AMX_NATIVE_CALL list_iter(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
 		auto iter = reinterpret_cast<std::vector<dyn_object>*>(params[1])->begin();
 		return reinterpret_cast<cell&>(iter);
 	}
 
-	// native MapIterator:iter_map(Map:map);
-	static cell AMX_NATIVE_CALL iter_map(AMX *amx, cell *params)
+	// native MapIterator:map_iter(Map:map);
+	static cell AMX_NATIVE_CALL map_iter(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
 		auto iter = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>*>(params[1])->begin();
 		return reinterpret_cast<cell&>(iter);
 	}
 
-	// native bool:iter_valid_list(List:list, ListIterator:iter);
-	static cell AMX_NATIVE_CALL iter_valid_list(AMX *amx, cell *params)
+	// native bool:list_valid(List:list, ListIterator:iter);
+	static cell AMX_NATIVE_CALL list_valid(AMX *amx, cell *params)
 	{
 		if(params[1] == 0 || params[2] == 0) return 0;
 		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
@@ -123,8 +125,8 @@ namespace Natives
 		return iter != ptr->end();
 	}
 
-	// native bool:iter_valid_map(Map:map, MapIterator:iter);
-	static cell AMX_NATIVE_CALL iter_valid_map(AMX *amx, cell *params)
+	// native bool:map_valid(Map:map, MapIterator:iter);
+	static cell AMX_NATIVE_CALL map_valid(AMX *amx, cell *params)
 	{
 		if(params[1] == 0 || params[2] == 0) return 0;
 		auto ptr = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>*>(params[1]);
@@ -132,8 +134,8 @@ namespace Natives
 		return iter != ptr->end();
 	}
 
-	// native ListIterator:iter_next_list(ListIterator:iter);
-	static cell AMX_NATIVE_CALL iter_next_list(AMX *amx, cell *params)
+	// native ListIterator:list_next(ListIterator:iter);
+	static cell AMX_NATIVE_CALL list_next(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
 		auto &iter = reinterpret_cast<std::vector<dyn_object>::iterator&>(params[1]);
@@ -141,8 +143,8 @@ namespace Natives
 		return reinterpret_cast<cell&>(iter);
 	}
 
-	// native MapIterator:iter_next_map(MapIterator:iter);
-	static cell AMX_NATIVE_CALL iter_next_map(AMX *amx, cell *params)
+	// native MapIterator:map_next(MapIterator:iter);
+	static cell AMX_NATIVE_CALL map_next(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
 		auto &iter = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>::iterator&>(params[1]);
@@ -315,13 +317,12 @@ namespace Natives
 
 static AMX_NATIVE_INFO native_list[] =
 {
-	AMX_DECLARE_NATIVE(iter_list),
-	AMX_DECLARE_NATIVE(iter_map),
-	AMX_DECLARE_NATIVE(iter_next_list),
-	AMX_DECLARE_NATIVE(iter_next_map),
-	AMX_DECLARE_NATIVE(iter_valid_list),
-	AMX_DECLARE_NATIVE(iter_valid_map),
-	AMX_DECLARE_NATIVE(iter_map),
+	AMX_DECLARE_NATIVE(list_iter),
+	AMX_DECLARE_NATIVE(map_iter),
+	AMX_DECLARE_NATIVE(list_next),
+	AMX_DECLARE_NATIVE(map_next),
+	AMX_DECLARE_NATIVE(list_valid),
+	AMX_DECLARE_NATIVE(map_valid),
 	AMX_DECLARE_NATIVE(iter_get),
 	AMX_DECLARE_NATIVE(iter_get_arr),
 	AMX_DECLARE_NATIVE(iter_get_var),
@@ -353,5 +354,9 @@ static AMX_NATIVE_INFO native_list[] =
 
 int RegisterIterNatives(AMX *amx)
 {
+#ifdef _DEBUG
+	return 0;
+#else
 	return amx_Register(amx, native_list, sizeof(native_list) / sizeof(*native_list));
+#endif
 }
