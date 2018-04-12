@@ -16,49 +16,11 @@ struct tag_info
 
 	}
 
-	bool strong() const
-	{
-		if(name.size() == 0) return false;
-		char c = name[0];
-		return c >= 'A' && c <= 'Z';
-	}
-
-	bool inherits_from(cell parent) const
-	{
-		tag_ptr test = this;
-		while(test != nullptr)
-		{
-			if(test->uid == parent) return true;
-			test = test->base;
-		}
-		return false;
-	}
-
-	bool inherits_from(tag_ptr parent) const
-	{
-		tag_ptr test = this;
-		while(test != nullptr)
-		{
-			if(test == parent) return true;
-			test = test->base;
-		}
-		return false;
-	}
-
-	tag_ptr find_top_base() const
-	{
-		tag_ptr test = this;
-		while(test->base != nullptr)
-		{
-			test = test->base;
-		}
-		return test;
-	}
-
-	bool same_base(tag_ptr tag) const
-	{
-		return find_top_base() == tag->find_top_base();
-	}
+	bool strong() const;
+	bool inherits_from(cell parent) const;
+	bool inherits_from(tag_ptr parent) const;
+	tag_ptr find_top_base() const;
+	bool same_base(tag_ptr tag) const;
 };
 
 namespace tags
