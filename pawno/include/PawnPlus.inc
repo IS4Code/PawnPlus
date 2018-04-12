@@ -228,27 +228,27 @@ native List<%0>:list_new<%0>()=list_new;\
 native bool:list_delete<%0>(List<%0>:l)=list_delete;\
 native list_size<%0>(List<%0>:l)=list_size;\
 native bool:list_clear<%0>(List<%0>:l)=list_clear;\
-native list_add<%0>(List<%0>:l,%0:v,i=-1,tag_id=(tagof(%0:)))=list_add;\
-native list_add_arr<%0>(List<%0>:l,const %0:v[],i=-1,size=sizeof(v),tag_id=(tagof(%0:)))=list_add_arr;\
-native list_add_list<%0>(List<%0>:l,List<%0>:range,i=-1)=list_add_list;\
+native list_add<%0>(List<%0>:l,%0:v,i=-1,t=(tagof(%0:)))=list_add;\
+native list_add_arr<%0>(List<%0>:l,const %0:v[],i=-1,s=sizeof(v),t=(tagof(%0:)))=list_add_arr;\
+native list_add_list<%0>(List<%0>:l,List<%0>:l2,i=-1)=list_add_list;\
 native bool:list_remove<%0>(List<%0>:l,i)=list_remove;\
 native %0:list_get<%0>(List<%0>:l,i,o=0)=list_get;\
-native list_get_arr<%0>(List<%0>:l,i,%0:v[],size=sizeof(v))=list_get_arr;\
-native bool:list_set<%0>(List<%0>:l,i,%0:v,tag_id=(tagof(%0:)))=list_set;\
-native bool:list_set_arr<%0>(List<%0>:l,i,const %0:v[],size=sizeof(v),tag_id=(tagof(%0:)))=list_set_arr;\
+native list_get_arr<%0>(List<%0>:l,i,%0:v[],s=sizeof(v))=list_get_arr;\
+native bool:list_set<%0>(List<%0>:l,i,%0:v,t=(tagof(%0:)))=list_set;\
+native bool:list_set_arr<%0>(List<%0>:l,i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=list_set_arr;\
 native bool:list_set_cell<%0>(List<%0>:l,i,o,%0:v)=list_set_cell;\
 native list_sizeof<%0>(List<%0>:l,i)=list_sizeof;\
-forward List:operator=(List<%0>:arg);\
-forward List<%0>:operator=(List:arg);\
+forward List:operator=(List<%0>:l);\
+forward List<%0>:operator=(List:l);\
 native ListIterator<%0>:list_iter<%0>(List<%0>:l)=list_iter;\
-native ListIterator<%0>:list_next<%0>(ListIterator<%0>:li)=list_next;\
-native bool:list_valid<%0>(List<%0>:l,ListIterator<%0>:li)=list_valid;\
-native iter_get<%0>(ListIterator<%0>:li,o=0)=iter_get;\
-native iter_get_arr<%0>(ListIterator<%0>:li,%0:v[],size=sizeof(v))=iter_get_arr;\
-native bool:iter_set<%0>(ListIterator<%0>:li,%0:v,tag_id=(tagof(%0:)))=iter_set;\
-native bool:iter_set_arr<%0>(ListIterator<%0>:li,const %0:v[],size=sizeof(v),tag_id=(tagof(%0:)))=iter_set_arr;\
-native bool:iter_set_cell<%0>(ListIterator<%0>:li,o,%0:v)=iter_set_cell;\
-native ListIterator<%0>:operator++(ListIterator<%0>:li)=list_next
+native ListIterator<%0>:list_next<%0>(ListIterator<%0>:i)=list_next;\
+native bool:list_valid<%0>(List<%0>:l,ListIterator<%0>:i)=list_valid;\
+native iter_get<%0>(ListIterator<%0>:i,o=0)=iter_get;\
+native iter_get_arr<%0>(ListIterator<%0>:i,%0:v[],s=sizeof(v))=iter_get_arr;\
+native bool:iter_set<%0>(ListIterator<%0>:i,%0:v,t=(tagof(%0:)))=iter_set;\
+native bool:iter_set_arr<%0>(ListIterator<%0>:i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=iter_set_arr;\
+native bool:iter_set_cell<%0>(ListIterator<%0>:i,o,%0:v)=iter_set_cell;\
+native ListIterator<%0>:operator++(ListIterator<%0>:i)=list_next
 
 
 /*                 */
@@ -431,7 +431,7 @@ native bool:map_add<%0,%1>(Map<%0,%1>:m,%0:k,%1:v,kt=(tagof(%0:)),vt=(tagof(%1:)
 native bool:map_add_arr<%0,%1>(Map<%0,%1>:m,%0:k,const %1:v[],vs=sizeof(v),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_add_arr;\
 native bool:map_arr_add<%0,%1>(Map<%0,%1>:m,const %0:k[],%1:v,ks=sizeof(k),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_arr_add;\
 native bool:map_arr_add_arr<%0,%1>(Map<%0,%1>:m,const %0:k[],const %1:v[],ks=sizeof(k),vs=sizeof(v),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_arr_add_arr;\
-native map_add_map<%0,%1>(Map<%0,%1>:m,Map<%0,%1>:other,bool:overwrite);\
+native map_add_map<%0,%1>(Map<%0,%1>:m,Map<%0,%1>:m2,bool:ow);\
 native bool:map_remove<%0,%1>(Map<%0,%1>:m,%0:k,kt=(tagof(%0:)))=map_remove;\
 native bool:map_arr_remove<%0,%1>(Map<%0,%1>:m,const %0:k[],ks=sizeof(k),kt=(tagof(%0:)))=map_arr_remove;\
 native map_get<%0,%1>(Map<%0,%1>:m,%0:k,o=0,kt=(tagof(%0:)))=map_get;\
@@ -450,19 +450,19 @@ native map_value_at<%0,%1>(Map<%0,%1>:m,i,o=0)=map_value_at;\
 native map_arr_value_at<%0,%1>(Map<%0,%1>:m,i,%1:v[],vs=sizeof(v))=map_arr_value_at;\
 native map_sizeof<%0,%1>(Map<%0,%1>:m,%0:k,kt=(tagof(%0:)))=map_sizeof;\
 native map_arr_sizeof<%0,%1>(Map<%0,%1>:m,const %0:k[],ks=sizeof(k),kt=(tagof(%0:)))=map_arr_sizeof;\
-forward Map:operator=(Map<%0,%1>:arg);\
-forward Map<%0,%1>:operator=(Map:arg);\
+forward Map:operator=(Map<%0,%1>:m);\
+forward Map<%0,%1>:operator=(Map:m);\
 native MapIterator<%0,%1>:map_iter<%0,%1>(Map<%0,%1>:m)=map_iter;\
-native MapIterator<%0,%1>:map_next<%0,%1>(MapIterator<%0,%1>:mi)=map_next;\
-native bool:map_valid<%0,%1>(Map<%0,%1>:m,MapIterator<%0,%1>:iter)=map_valid;\
-native %0:iter_get_key<%0,%1>(MapIterator<%0,%1>:mi,o=0)=iter_get_key;\
-native iter_get_key_arr<%0,%1>(MapIterator<%0,%1>:mi,%0:v[],size=sizeof(v))=iter_get_key_arr;\
-native %1:iter_get_value<%0,%1>(MapIterator<%0,%1>:mi,o=0)=iter_get_value;\
-native iter_get_value_arr<%0,%1>(MapIterator<%0,%1>:mi,%1:v[],size=sizeof(v))=iter_get_value_arr;\
-native bool:iter_set_value<%0,%1>(MapIterator<%0,%1>:mi,%1:v,vt=(tagof(%1:)))=iter_set_value;\
-native bool:iter_set_value_arr<%0,%1>(MapIterator<%0,%1>:mi,const %1:v[],size=sizeof(v),vt=(tagof(%1:)))=iter_set_value_arr;\
-native bool:iter_set_value_cell<%0,%1>(MapIterator<%0,%1>:mi,o,%1:v)=iter_set_value_cell;\
-native MapIterator<%0,%1>:operator++(MapIterator<%0,%1>:mi)=map_next
+native MapIterator<%0,%1>:map_next<%0,%1>(MapIterator<%0,%1>:i)=map_next;\
+native bool:map_valid<%0,%1>(Map<%0,%1>:m,MapIterator<%0,%1>:i)=map_valid;\
+native %0:iter_get_key<%0,%1>(MapIterator<%0,%1>:i,o=0)=iter_get_key;\
+native iter_get_key_arr<%0,%1>(MapIterator<%0,%1>:i,%0:v[],size=sizeof(v))=iter_get_key_arr;\
+native %1:iter_get_value<%0,%1>(MapIterator<%0,%1>:i,o=0)=iter_get_value;\
+native iter_get_value_arr<%0,%1>(MapIterator<%0,%1>:i,%1:v[],size=sizeof(v))=iter_get_value_arr;\
+native bool:iter_set_value<%0,%1>(MapIterator<%0,%1>:i,%1:v,vt=(tagof(%1:)))=iter_set_value;\
+native bool:iter_set_value_arr<%0,%1>(MapIterator<%0,%1>:i,const %1:v[],size=sizeof(v),vt=(tagof(%1:)))=iter_set_value_arr;\
+native bool:iter_set_value_cell<%0,%1>(MapIterator<%0,%1>:i,o,%1:v)=iter_set_value_cell;\
+native MapIterator<%0,%1>:operator++(MapIterator<%0,%1>:i)=map_next
 
 /*                 */
 /* Tasks and async */
