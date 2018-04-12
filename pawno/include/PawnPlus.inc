@@ -546,6 +546,10 @@ native bool:operator==(String:arg1, String:arg2) = str_equal;
 native bool:operator==(String:arg1, GlobalString:arg2) = str_equal;
 native bool:operator==(GlobalString:arg1, String:arg2) = str_equal;
 native bool:operator==(GlobalString:arg1, GlobalString:arg2) = str_equal;
+stock bool:operator!=(String:arg1, String:arg2) return !(arg1 == arg2);
+stock bool:operator!=(String:arg1, GlobalString:arg2) return !(arg1 == arg2);
+stock bool:operator!=(GlobalString:arg1, String:arg2) return !(arg1 == arg2);
+stock bool:operator!=(GlobalString:arg1, GlobalString:arg2) return !(arg1 == arg2);
 
 native String:operator%(String:arg1, String:arg2) = str_cat;
 native String:operator%(GlobalString:arg1, String:arg2) = str_cat;
@@ -588,3 +592,7 @@ native bool:operator==(Variant:arg1, Variant:arg2) = var_equal;
 native bool:operator==(Variant:arg1, GlobalVariant:arg2) = var_equal;
 native bool:operator==(GlobalVariant:arg1, Variant:arg2) = var_equal;
 native bool:operator==(GlobalVariant:arg1, GlobalVariant:arg2) = var_equal;
+stock bool:operator!=(Variant:arg1, Variant:arg2) return !(arg1 == arg2);
+stock bool:operator!=(Variant:arg1, GlobalVariant:arg2) return !(arg1 == arg2);
+stock bool:operator!=(GlobalVariant:arg1, Variant:arg2) return !(arg1 == arg2);
+stock bool:operator!=(GlobalVariant:arg1, GlobalVariant:arg2) return !(arg1 == arg2);
