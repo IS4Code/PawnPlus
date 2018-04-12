@@ -4,6 +4,7 @@ object_pool<dyn_object> variants::pool;
 
 cell variants::create(dyn_object &&obj)
 {
+	if(obj.empty()) return 0;
 	return reinterpret_cast<cell>(pool.add(std::move(obj), true));
 }
 
