@@ -1,13 +1,9 @@
 /** PawnPlus v0.4 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
-
 /*                 */
-/*  Configuration  */
+/*      Setup      */
 /*                 */
-
-native pp_hook_strlen(bool:hook);
-native pp_hook_check_ref_args(bool:hook);
 
 #define GlobalString String@Global
 #define GlobalVariant Variant@Global
@@ -15,19 +11,28 @@ native pp_hook_check_ref_args(bool:hook);
 #define Map<%0,%1> Map@%0@%1
 #define ListIterator<%0> ListIterator@%0
 #define MapIterator<%0,%1> MapIterator@%0@%1
+#define Ref<%0> Ref@%0
 
 #define StringTags String,GlobalString
 #define StringTag {StringTags}
 #define VariantTags Variant,GlobalVariant
 #define VariantTag {VariantTags}
 
-#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map
+#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map,Ref<String>,Ref<GlobalString>,Ref<Variant>,Ref<GlobalVariant>
 #if defined PP_ADDITIONAL_TAGS
 #define AnyTags PP_ALL_TAGS,PP_ADDITIONAL_TAGS
 #else
 #define AnyTags PP_ALL_TAGS
 #endif
 #define AnyTag {AnyTags}
+
+
+/*                 */
+/*  Configuration  */
+/*                 */
+
+native pp_hook_strlen(bool:hook);
+native pp_hook_check_ref_args(bool:hook);
 
 /*                 */
 /*      Pawn       */
@@ -233,8 +238,8 @@ native bool:list_set<%0>(List<%0>:l,i,%0:v,tag_id=(tagof(%0:)))=list_set;\
 native bool:list_set_arr<%0>(List<%0>:l,i,const %0:v[],size=sizeof(v),tag_id=(tagof(%0:)))=list_set_arr;\
 native bool:list_set_cell<%0>(List<%0>:l,i,o,%0:v)=list_set_cell;\
 native list_sizeof<%0>(List<%0>:l,i)=list_sizeof;\
-forward List:operator=(List<%0>:obj);\
-forward List<%0>:operator=(List:obj);\
+forward List:operator=(List<%0>:arg);\
+forward List<%0>:operator=(List:arg);\
 native ListIterator<%0>:list_iter<%0>(List<%0>:l)=list_iter;\
 native ListIterator<%0>:list_next<%0>(ListIterator<%0>:li)=list_next;\
 native bool:list_valid<%0>(List<%0>:l,ListIterator<%0>:li)=list_valid;\
@@ -445,8 +450,8 @@ native map_value_at<%0,%1>(Map<%0,%1>:m,i,o=0)=map_value_at;\
 native map_arr_value_at<%0,%1>(Map<%0,%1>:m,i,%1:v[],vs=sizeof(v))=map_arr_value_at;\
 native map_sizeof<%0,%1>(Map<%0,%1>:m,%0:k,kt=(tagof(%0:)))=map_sizeof;\
 native map_arr_sizeof<%0,%1>(Map<%0,%1>:m,const %0:k[],ks=sizeof(k),kt=(tagof(%0:)))=map_arr_sizeof;\
-forward Map:operator=(Map<%0,%1>:obj);\
-forward Map<%0,%1>:operator=(Map:obj);\
+forward Map:operator=(Map<%0,%1>:arg);\
+forward Map<%0,%1>:operator=(Map:arg);\
 native MapIterator<%0,%1>:map_iter<%0,%1>(Map<%0,%1>:m)=map_iter;\
 native MapIterator<%0,%1>:map_next<%0,%1>(MapIterator<%0,%1>:mi)=map_next;\
 native bool:map_valid<%0,%1>(Map<%0,%1>:m,MapIterator<%0,%1>:iter)=map_valid;\
@@ -623,3 +628,12 @@ stock bool:operator!=(Variant:arg1, Variant:arg2) return !(arg1 == arg2);
 stock bool:operator!=(Variant:arg1, GlobalVariant:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalVariant:arg1, Variant:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalVariant:arg1, GlobalVariant:arg2) return !(arg1 == arg2);
+
+stock String:operator=(Ref<String>:arg) return String:arg;
+stock GlobalString:operator=(Ref<GlobalString>:arg) return GlobalString:arg;
+stock Variant:operator=(Ref<Variant>:arg) return Variant:arg;
+stock GlobalVariant:operator=(Ref<GlobalVariant>:arg) return GlobalVariant:arg;
+stock Ref<String>:operator=(String:arg) return Ref<String>:arg;
+stock Ref<GlobalString>:operator=(GlobalString:arg) return Ref<GlobalString>:arg;
+stock Ref<Variant>:operator=(Variant:arg) return Ref<Variant>:arg;
+stock Ref<GlobalVariant>:operator=(GlobalVariant:arg) return Ref<GlobalVariant>:arg;

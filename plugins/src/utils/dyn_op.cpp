@@ -182,7 +182,10 @@ strings::cell_string op_strval<dyn_object*>::operator()(dyn_object *obj) const
 {
 	strings::cell_string str;
 	str.append({'('});
-	str.append(obj->to_string());
+	if(obj != nullptr)
+	{
+		str.append(obj->to_string());
+	}
 	str.append({')'});
 	return str;
 }

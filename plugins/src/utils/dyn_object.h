@@ -42,6 +42,7 @@ public:
 	cell &operator[](cell index);
 	const cell &operator[](cell index) const;
 	friend bool operator==(const dyn_object &a, const dyn_object &b);
+	friend bool operator!=(const dyn_object &a, const dyn_object &b);
 	std::basic_string<cell> to_string() const;
 	dyn_object operator+(const dyn_object &obj) const;
 	dyn_object operator-(const dyn_object &obj) const;
@@ -54,6 +55,10 @@ public:
 private:
 	template <class TagType>
 	bool get_specifier_tagged(char &result) const;
+	template <class TagType>
+	bool get_hash_tagged(size_t &result) const;
+	template <class TagType>
+	bool operator_eq_tagged(const dyn_object &obj, bool &result) const;
 	template <template <class T> class OpType, class TagType>
 	bool operator_func_tagged(const dyn_object &obj, dyn_object &result) const;
 	template <template <class T> class OpType>

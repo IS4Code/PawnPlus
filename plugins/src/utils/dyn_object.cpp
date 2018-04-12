@@ -2,6 +2,7 @@
 #include "dyn_op.h"
 #include "../fixes/linux.h"
 #include <cmath>
+#include <type_traits>
 
 using cell_string = strings::cell_string;
 
@@ -244,11 +245,36 @@ inline void hash_combine(size_t& seed, const T& v)
 	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
+template <class TagType>
+bool dyn_object::get_hash_tagged(size_t &result) const
+{
+	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
+	typedef tag_traits<TagType> tag;
+	std::hash<typename std::remove_pointer<TagType>::type> hasher;
+
+	if(is_array)
+	{
+		result = 0;
+		for(cell i = 0; i < array_size; i++)
+		{
+			hash_combine(result, *tag_traits<TagType>::conv_to(array_value[i]));
+		}
+	}else{
+		result = hasher(*tag_traits<TagType>::conv_to(cell_value));
+	}
+
+	hash_combine(result, tag::tag_uid);
+	return true;
+}
+
 size_t dyn_object::get_hash() const
 {
-	std::hash<cell> hasher;
-
 	size_t hash = 0;
+	if(empty()) return 0;
+	bool ok = get_hash_tagged<cell_string*>(hash) || get_hash_tagged<dyn_object*>(hash);
+	if(ok) return hash;
+
+	std::hash<cell> hasher;
 	if(is_array)
 	{
 		for(cell i = 0; i < array_size; i++)
@@ -293,16 +319,48 @@ const cell &dyn_object::operator[](cell index) const
 	}
 }
 
+template <class TagType>
+bool dyn_object::operator_eq_tagged(const dyn_object &obj, bool &result) const
+{
+	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
+	typedef tag_traits<TagType> tag;
+
+	if(is_array)
+	{
+		result = true;
+		for(cell i = 0; i < array_size; i++)
+		{
+			if(*tag::conv_to(array_value[i]) != *tag::conv_to(obj.array_value[i]))
+			{
+				result = false;
+				break;
+			}
+		}
+	}else{
+		result = *tag::conv_to(cell_value) == *tag::conv_to(obj.cell_value);
+	}
+	return true;
+}
+
 bool operator==(const dyn_object &a, const dyn_object &b)
 {
 	if(a.is_array != b.is_array || !a.tag_check(b)) return a.empty() && b.empty();
 	if(a.is_array)
 	{
 		if(a.array_size != b.array_size) return false;
-		return !std::memcmp(a.array_value.get(), b.array_value.get(), a.array_size * sizeof(cell));
-	}else{
-		return a.cell_value == b.cell_value;
+		if(!std::memcmp(a.array_value.get(), b.array_value.get(), a.array_size * sizeof(cell))) return true;
+	} else {
+		if(a.cell_value == b.cell_value) return true;
 	}
+	bool result = false;
+	a.operator_eq_tagged<cell_string*>(b, result) || a.operator_eq_tagged<dyn_object*>(b, result);
+	return result;
+}
+
+bool operator!=(const dyn_object &a, const dyn_object &b)
+{
+	//TODO: NaN != NaN
+	return !(a == b);
 }
 
 template <template <class T> class OpType, class TagType>
