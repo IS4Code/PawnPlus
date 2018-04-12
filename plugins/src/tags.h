@@ -18,6 +18,7 @@ struct tag_info
 
 	bool strong() const
 	{
+		if(name.size() == 0) return false;
 		char c = name[0];
 		return c >= 'A' && c <= 'Z';
 	}

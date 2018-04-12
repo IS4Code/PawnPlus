@@ -5,7 +5,7 @@
 
 using cell_string = strings::cell_string;
 
-dyn_object::dyn_object() : is_array(true), array_size(0), array_value(nullptr)
+dyn_object::dyn_object() : is_array(true), array_size(0), array_value(nullptr), tag(tags::find_tag(tags::tag_cell))
 {
 
 }
