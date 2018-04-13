@@ -11,7 +11,14 @@
 #define Map<%0,%1> Map@%0@%1
 #define ListIterator<%0> ListIterator@%0
 #define MapIterator<%0,%1> MapIterator@%0@%1
-#define Ref<%0> Ref@%0
+
+#define PP_TAG_PREFIX@String<%0> %0@String
+#define PP_TAG_PREFIX@Variant<%0> %0@Variant
+#define PP_TAG_PREFIX@String@Global<%0> %0@String@Global
+#define PP_TAG_PREFIX@Variant@Global<%0> %0@Variant@Global
+#define PP_TAG_PREFIX@GlobalString<%0> %0@String@Global
+#define PP_TAG_PREFIX@GlobalVariant<%0> %0@Variant@Global
+#define Ref<%0> PP_TAG_PREFIX@%0<Ref>
 
 #define StringTags String,GlobalString
 #define StringTag {StringTags}
