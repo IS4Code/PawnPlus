@@ -2,6 +2,7 @@
 #include "../hooks.h"
 #include "../events.h"
 #include "../utils/dyn_object.h"
+#include "../strings.h"
 #include <memory>
 #include <cstring>
 #include <unordered_map>
@@ -55,6 +56,16 @@ namespace Natives
 					case 's':
 					case '*':
 						break;
+					case 'S':
+					{
+						amx_GetAddr(amx, param, &addr);
+						auto ptr = reinterpret_cast<strings::cell_string*>(*addr);
+						size_t size = ptr->size();
+						amx_Allot(amx, size + 1, &param, &addr);
+						std::memcpy(addr, ptr->c_str(), size);
+						addr[size] = 0;
+						break;
+					}
 					case 'L':
 					{
 						amx_GetAddr(amx, param, &addr);
@@ -77,8 +88,8 @@ namespace Natives
 						amx->stk -= sizeof(cell);
 						*reinterpret_cast<cell*>(data + amx->stk) = fmt_value;
 						count++;
+						continue;
 					}
-					continue;
 					case 'l':
 					{
 						amx_GetAddr(amx, param, &addr);
@@ -91,25 +102,22 @@ namespace Natives
 							*reinterpret_cast<cell*>(data + amx->stk) = addr;
 							count++;
 						}
+						continue;
 					}
-					continue;
 					case 'v':
 					{
 						amx_GetAddr(amx, param, &addr);
 						auto ptr = reinterpret_cast<dyn_object*>(*addr);
-						amx->stk -= sizeof(cell);
-						cell addr = ptr->store(amx);
-						storage[ptr] = addr;
-						*reinterpret_cast<cell*>(data + amx->stk) = addr;
-						count++;
+						param = ptr->store(amx);
+						storage[ptr] = param;
+						break;
 					}
-					continue;
 					default:
 					{
 						amx_GetAddr(amx, param, &addr);
 						param = *addr;
+						break;
 					}
-					break;
 				}
 				amx->stk -= sizeof(cell);
 				*reinterpret_cast<cell*>(data + amx->stk) = param;
@@ -177,8 +185,19 @@ namespace Natives
 					case '*':
 					{
 						amx_Push(amx, param);
+						break;
 					}
-					break;
+					case 'S':
+					{
+						amx_GetAddr(amx, param, &addr);
+						auto ptr = reinterpret_cast<strings::cell_string*>(*addr);
+						size_t size = ptr->size();
+						amx_Allot(amx, size + 1, &param, &addr);
+						std::memcpy(addr, ptr->c_str(), size);
+						addr[size] = 0;
+						amx_Push(amx, param);
+						break;
+					}
 					case 'L':
 					{
 						amx_GetAddr(amx, param, &addr);
@@ -197,8 +216,8 @@ namespace Natives
 						}
 						*addr = 0;
 						amx_Push(amx, fmt_value);
+						break;
 					}
-					break;
 					case 'l':
 					{
 						amx_GetAddr(amx, param, &addr);
@@ -209,8 +228,8 @@ namespace Natives
 							storage[&*it] = addr;
 							amx_Push(amx, addr);
 						}
+						break;
 					}
-					break;
 					case 'v':
 					{
 						amx_GetAddr(amx, param, &addr);
@@ -218,15 +237,15 @@ namespace Natives
 						cell addr = ptr->store(amx);
 						storage[ptr] = addr;
 						amx_Push(amx, addr);
+						break;
 					}
-					break;
 					default:
 					{
 						amx_GetAddr(amx, param, &addr);
 						param = *addr;
 						amx_Push(amx, param);
+						break;
 					}
-					break;
 				}
 			}
 
