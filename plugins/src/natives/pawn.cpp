@@ -62,7 +62,7 @@ namespace Natives
 						auto ptr = reinterpret_cast<strings::cell_string*>(*addr);
 						size_t size = ptr->size();
 						amx_Allot(amx, size + 1, &param, &addr);
-						std::memcpy(addr, ptr->c_str(), size);
+						std::memcpy(addr, ptr->c_str(), size * sizeof(cell));
 						addr[size] = 0;
 						break;
 					}
@@ -193,7 +193,7 @@ namespace Natives
 						auto ptr = reinterpret_cast<strings::cell_string*>(*addr);
 						size_t size = ptr->size();
 						amx_Allot(amx, size + 1, &param, &addr);
-						std::memcpy(addr, ptr->c_str(), size);
+						std::memcpy(addr, ptr->c_str(), size * sizeof(cell));
 						addr[size] = 0;
 						amx_Push(amx, param);
 						break;
