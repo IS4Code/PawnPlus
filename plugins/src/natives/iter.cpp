@@ -31,7 +31,7 @@ class value_at
 
 public:
 	// native iter_set(ListIterator:iter, ...);
-	template <typename value_ftype Factory>
+	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_set(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
@@ -41,7 +41,7 @@ public:
 	}
 
 	// native iter_get(ListIterator:iter, ...);
-	template <typename result_ftype Factory>
+	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_get(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
@@ -50,7 +50,7 @@ public:
 	}
 
 	// native iter_get_key(MapIterator:iter, ...);
-	template <typename result_ftype Factory>
+	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_get_key(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
@@ -59,7 +59,7 @@ public:
 	}
 
 	// native iter_set_value(MapIterator:iter, ...);
-	template <typename value_ftype Factory>
+	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_set_value(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
@@ -69,7 +69,7 @@ public:
 	}
 
 	// native iter_get_value(MapIterator:iter, ...);
-	template <typename result_ftype Factory>
+	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_get_value(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;

@@ -12,7 +12,7 @@ class value_at
 
 public:
 	// native list_add(List:list, value, index=-1, ...);
-	template <typename value_ftype Factory>
+	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL list_add(AMX *amx, cell *params)
 	{
 		if(params[3] < -1) return -1;
@@ -32,7 +32,7 @@ public:
 	}
 
 	// native list_set(List:list, index, value);
-	template <typename value_ftype Factory>
+	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL list_set(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
@@ -44,7 +44,7 @@ public:
 	}
 
 	// native list_get(List:list, index, ...);
-	template <typename result_ftype Factory>
+	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL list_get(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;

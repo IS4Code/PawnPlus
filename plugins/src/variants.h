@@ -33,12 +33,17 @@ cell dyn_func_var(AMX *amx, const dyn_object &obj);
 template <size_t... Indices>
 class dyn_factory
 {
+#ifdef _WIN32
 	//VS hacks
 	template <class Type = dyn_object(&)(AMX*, decltype(static_cast<cell>(Indices))...)>
 	using ftype_template = Type;
 	static typename ftype_template<> fobj;
 public:
 	using type = decltype(fobj);
+#else
+public:
+	using type = dyn_object(&)(AMX*, decltype(static_cast<cell>(Indices))...);
+#endif
 };
 
 template <>
@@ -50,12 +55,17 @@ struct dyn_factory<>
 template <size_t... Indices>
 class dyn_result
 {
+#ifdef _WIN32
 	//VS hacks
 	template <class Type = cell(&)(AMX*, const dyn_object &obj, decltype(static_cast<cell>(Indices))...)>
 	using ftype_template = Type;
 	static typename ftype_template<> fobj;
 public:
 	using type = decltype(fobj);
+#else
+public:
+	using type = cell(&)(AMX*, const dyn_object &obj, decltype(static_cast<cell>(Indices))...);
+#endif
 };
 
 template <>

@@ -9,14 +9,14 @@ class value_at
 
 public:
 	// native Variant:var_new(value, ...);
-	template <typename value_ftype Factory>
+	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL var_new(AMX *amx, cell *params)
 	{
 		return variants::create(Factory(amx, params[Indices]...));
 	}
 
 	// native var_get(VariantTag:var, ...);
-	template <typename result_ftype Factory>
+	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL var_get(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
@@ -191,7 +191,7 @@ namespace Natives
 	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
 	static cell AMX_NATIVE_CALL var_mod(AMX *amx, cell *params)
 	{
-		return var_op<&dyn_object::operator%>(amx, params);
+		return var_op<&dyn_object::operator% >(amx, params);
 	}
 }
 

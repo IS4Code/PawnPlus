@@ -19,7 +19,7 @@ public:
 
 	public:
 		// native bool:map_add(Map:map, key, value, ...);
-		template <typename key_ftype KeyFactory, typename value_ftype ValueFactory>
+		template <key_ftype KeyFactory, typename value_ftype ValueFactory>
 		static cell AMX_NATIVE_CALL map_add(AMX *amx, cell *params)
 		{
 			auto ptr = reinterpret_cast<map_t*>(params[1]);
@@ -29,7 +29,7 @@ public:
 		}
 
 		// native bool:map_set(Map:map, key, value, ...);
-		template <typename key_ftype KeyFactory, typename value_ftype ValueFactory>
+		template <key_ftype KeyFactory, typename value_ftype ValueFactory>
 		static cell AMX_NATIVE_CALL map_set(AMX *amx, cell *params)
 		{
 			auto ptr = reinterpret_cast<map_t*>(params[1]);
@@ -39,7 +39,7 @@ public:
 		}
 
 		// native map_get(Map:map, key, ...);
-		template <typename key_ftype KeyFactory, typename result_ftype ValueFactory>
+		template <key_ftype KeyFactory, typename result_ftype ValueFactory>
 		static cell AMX_NATIVE_CALL map_get(AMX *amx, cell *params)
 		{
 			auto ptr = reinterpret_cast<map_t*>(params[1]);
@@ -54,7 +54,7 @@ public:
 	};
 
 	// native bool:map_remove(Map:map, key, ...);
-	template <typename key_ftype KeyFactory>
+	template <key_ftype KeyFactory>
 	static cell AMX_NATIVE_CALL map_remove(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
@@ -69,7 +69,7 @@ public:
 	}
 	
 	// native bool:map_set_cell(Map:map, key, offset, AnyTag:value, ...);
-	template <typename key_ftype KeyFactory, size_t TagIndex = 0>
+	template <key_ftype KeyFactory, size_t TagIndex = 0>
 	static cell AMX_NATIVE_CALL map_set_cell(AMX *amx, cell *params)
 	{
 		if(params[3] < 0) return 0;
@@ -86,7 +86,7 @@ public:
 	}
 
 	// native map_tagof(Map:map, key, ...);
-	template <typename key_ftype KeyFactory>
+	template <key_ftype KeyFactory>
 	static cell AMX_NATIVE_CALL map_tagof(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
@@ -100,7 +100,7 @@ public:
 	}
 
 	// native map_sizeof(Map:map, key, ...);
-	template <typename key_ftype KeyFactory>
+	template <key_ftype KeyFactory>
 	static cell AMX_NATIVE_CALL map_sizeof(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
@@ -121,7 +121,7 @@ class value_at
 
 public:
 	// native map_key_at(Map:map, index, ...);
-	template <typename result_ftype ValueFactory>
+	template <result_ftype ValueFactory>
 	static cell AMX_NATIVE_CALL map_key_at(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
@@ -136,7 +136,7 @@ public:
 	}
 
 	// native map_value_at(Map:map, index, ...);
-	template <typename result_ftype ValueFactory>
+	template <result_ftype ValueFactory>
 	static cell AMX_NATIVE_CALL map_value_at(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
