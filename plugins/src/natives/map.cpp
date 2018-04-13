@@ -19,7 +19,7 @@ public:
 
 	public:
 		// native bool:map_add(Map:map, key, value, ...);
-		template <key_ftype KeyFactory, typename value_ftype ValueFactory>
+		template <key_ftype KeyFactory, value_ftype ValueFactory>
 		static cell AMX_NATIVE_CALL map_add(AMX *amx, cell *params)
 		{
 			auto ptr = reinterpret_cast<map_t*>(params[1]);
@@ -29,7 +29,7 @@ public:
 		}
 
 		// native bool:map_set(Map:map, key, value, ...);
-		template <key_ftype KeyFactory, typename value_ftype ValueFactory>
+		template <key_ftype KeyFactory, value_ftype ValueFactory>
 		static cell AMX_NATIVE_CALL map_set(AMX *amx, cell *params)
 		{
 			auto ptr = reinterpret_cast<map_t*>(params[1]);
@@ -39,7 +39,7 @@ public:
 		}
 
 		// native map_get(Map:map, key, ...);
-		template <key_ftype KeyFactory, typename result_ftype ValueFactory>
+		template <key_ftype KeyFactory, result_ftype ValueFactory>
 		static cell AMX_NATIVE_CALL map_get(AMX *amx, cell *params)
 		{
 			auto ptr = reinterpret_cast<map_t*>(params[1]);

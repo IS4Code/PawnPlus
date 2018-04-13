@@ -7,19 +7,24 @@
 //#include <deque>
 #include <type_traits>
 
+#ifndef _DEBUG
+#ifdef _WIN32
 template <class Type>
 struct is_simple
 {
 	static constexpr const bool value = sizeof(Type) == sizeof(cell) && std::is_trivially_assignable<Type, Type>::value && std::is_trivially_destructible<Type>::value;
 };
-
+#else
 template <class Type>
-constexpr const bool is_simple_v = is_simple<Type>::value;
+struct is_simple
+{
+	static constexpr const bool value = sizeof(Type) == sizeof(cell);
+};
+#endif
 
 // Iterators fit inside a single cell, but not in debug in VC++.
-#ifndef _DEBUG
-static_assert(is_simple_v<std::vector<dyn_object>::iterator>, "Vector is not simple.");
-static_assert(is_simple_v<std::unordered_map<dyn_object, dyn_object>::iterator>, "Map is not simple.");
+static_assert(is_simple<std::vector<dyn_object>::iterator>::value, "Vector is not simple.");
+static_assert(is_simple<std::unordered_map<dyn_object, dyn_object>::iterator>::value, "Map is not simple.");
 //static_assert(is_simple_v<std::unordered_set<dyn_object>::iterator>, "Set is not simple.");
 #endif
 

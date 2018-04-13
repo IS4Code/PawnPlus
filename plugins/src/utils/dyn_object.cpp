@@ -245,6 +245,23 @@ inline void hash_combine(size_t& seed, const T& v)
 	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
+namespace std
+{
+	template<>
+	struct hash<cell_string>
+	{
+		size_t operator()(const cell_string &obj) const
+		{
+			size_t seed = 0;
+			for(size_t i = 0; i < obj.size(); i++)
+			{
+				hash_combine(seed, obj[i]);
+			}
+			return seed;
+		}
+	};
+}
+
 template <class TagType>
 bool dyn_object::get_hash_tagged(size_t &result) const
 {

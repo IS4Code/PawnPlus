@@ -1,4 +1,5 @@
 #include "dyn_op.h"
+#include <cmath>
 
 cell op_add<cell>::operator()(cell a, cell b) const
 {
