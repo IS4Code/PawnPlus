@@ -25,7 +25,7 @@
 #define VariantTags Variant,GlobalVariant
 #define VariantTag {VariantTags}
 
-#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map,Ref<String>,Ref<GlobalString>,Ref<Variant>,Ref<GlobalVariant>
+#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map
 #if defined PP_ADDITIONAL_TAGS
 #define AnyTags PP_ALL_TAGS,PP_ADDITIONAL_TAGS
 #else
