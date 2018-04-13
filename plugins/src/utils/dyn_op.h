@@ -330,7 +330,7 @@ template <>
 struct tag_traits<dyn_object*>
 {
 	static constexpr const cell tag_uid = tags::tag_variant;
-	static constexpr const char format_spec = 'V';
+	static constexpr const char format_spec = 'v';
 
 	static dyn_object *conv_to(cell v)
 	{

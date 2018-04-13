@@ -93,6 +93,17 @@ namespace Natives
 						}
 					}
 					continue;
+					case 'v':
+					{
+						amx_GetAddr(amx, param, &addr);
+						auto ptr = reinterpret_cast<dyn_object*>(*addr);
+						amx->stk -= sizeof(cell);
+						cell addr = ptr->store(amx);
+						storage[ptr] = addr;
+						*reinterpret_cast<cell*>(data + amx->stk) = addr;
+						count++;
+					}
+					continue;
 					default:
 					{
 						amx_GetAddr(amx, param, &addr);
@@ -176,7 +187,7 @@ namespace Natives
 						{
 							cell addr = it->store(amx);
 							storage[&*it] = addr;
-							amx_Push(amx, it->store(amx));
+							amx_Push(amx, addr);
 						}
 						cell fmt_value;
 						amx_Allot(amx, ptr->size() + 1, &fmt_value, &addr);
@@ -196,8 +207,17 @@ namespace Natives
 						{
 							cell addr = it->store(amx);
 							storage[&*it] = addr;
-							amx_Push(amx, it->store(amx));
+							amx_Push(amx, addr);
 						}
+					}
+					break;
+					case 'v':
+					{
+						amx_GetAddr(amx, param, &addr);
+						auto ptr = reinterpret_cast<dyn_object*>(*addr);
+						cell addr = ptr->store(amx);
+						storage[ptr] = addr;
+						amx_Push(amx, addr);
 					}
 					break;
 					default:
