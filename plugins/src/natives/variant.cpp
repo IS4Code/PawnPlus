@@ -39,6 +39,12 @@ namespace Natives
 		return value_at<1, 2, 3>::var_new<dyn_func_arr>(amx, params);
 	}
 
+	// native Variant:var_new_buf(size, tag_id);
+	static cell AMX_NATIVE_CALL var_new_buf(AMX *amx, cell *params)
+	{
+		return variants::create(amx, nullptr, params[1], params[2]);
+	}
+
 	// native Variant:var_new_str(const value[]);
 	static cell AMX_NATIVE_CALL var_new_str(AMX *amx, cell *params)
 	{
@@ -199,6 +205,7 @@ static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(var_new),
 	AMX_DECLARE_NATIVE(var_new_arr),
+	AMX_DECLARE_NATIVE(var_new_buf),
 	AMX_DECLARE_NATIVE(var_new_str),
 	AMX_DECLARE_NATIVE(var_new_var),
 	AMX_DECLARE_NATIVE(var_to_global),

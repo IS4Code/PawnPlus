@@ -18,8 +18,13 @@ dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : is_array(false), cel
 
 dyn_object::dyn_object(AMX *amx, cell *arr, cell size, cell tag_id) : is_array(true), array_size(size), tag(tags::find_tag(amx, tag_id))
 {
-	array_value = std::make_unique<cell[]>(size);
-	std::memcpy(array_value.get(), arr, size * sizeof(cell));
+	if(arr != nullptr)
+	{
+		array_value = std::make_unique<cell[]>(size);
+		std::memcpy(array_value.get(), arr, size * sizeof(cell));
+	}else{
+		array_value = std::unique_ptr<cell[]>(new cell[size]());
+	}
 }
 
 dyn_object::dyn_object(AMX *amx, cell *str) : is_array(true), tag(tags::find_tag(tags::tag_char))
@@ -53,10 +58,12 @@ dyn_object::dyn_object(cell value, tag_ptr tag) : is_array(false), cell_value(va
 
 dyn_object::dyn_object(cell *arr, cell size, tag_ptr tag) : is_array(true), array_size(size), tag(tag)
 {
-	array_value = std::make_unique<cell[]>(size);
 	if(arr != nullptr)
 	{
+		array_value = std::make_unique<cell[]>(size);
 		std::memcpy(array_value.get(), arr, size * sizeof(cell));
+	}else{
+		array_value = std::unique_ptr<cell[]>(new cell[size]());
 	}
 }
 
