@@ -39,7 +39,7 @@ namespace Natives
 		return value_at<1, 2, 3>::var_new<dyn_func_arr>(amx, params);
 	}
 
-	// native Variant:var_new_buf(size, tag_id);
+	// native Variant:var_new_buf(size, tag_id=0);
 	static cell AMX_NATIVE_CALL var_new_buf(AMX *amx, cell *params)
 	{
 		return variants::create(amx, nullptr, params[1], params[2]);
