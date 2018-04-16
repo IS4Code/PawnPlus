@@ -290,7 +290,7 @@ namespace Natives
 		return ret;
 	}
 
-	// pawn_unregister_callback(callback:id);
+	// native pawn_unregister_callback(callback:id);
 	static cell AMX_NATIVE_CALL pawn_unregister_callback(AMX *amx, cell *params)
 	{
 		return static_cast<cell>(Events::Remove(amx, params[1]));

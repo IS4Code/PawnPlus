@@ -166,26 +166,7 @@ bool dyn_object::set_cell(cell index, cell value)
 
 cell dyn_object::get_tag(AMX *amx) const
 {
-	if(tag->uid == tags::tag_cell) return 0x80000000;
-
-	int len;
-	amx_NameLength(amx, &len);
-	char *tagname = static_cast<char*>(alloca(len+1));
-
-	int num;
-	amx_NumTags(amx, &num);
-	for(int i = 0; i < num; i++)
-	{
-		cell tag_id;
-		if(!amx_GetTag(amx, i, tagname, &tag_id))
-		{
-			if(tag->name == tagname)
-			{
-				return tag_id | 0x80000000;
-			}
-		}
-	}
-	return 0;
+	return tag->get_id(amx);
 }
 
 cell dyn_object::store(AMX *amx) const

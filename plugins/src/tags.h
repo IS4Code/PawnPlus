@@ -21,6 +21,7 @@ struct tag_info
 	bool inherits_from(tag_ptr parent) const;
 	tag_ptr find_top_base() const;
 	bool same_base(tag_ptr tag) const;
+	cell get_id(AMX *amx) const;
 };
 
 namespace tags

@@ -134,3 +134,12 @@ bool tag_info::same_base(tag_ptr tag) const
 {
 	return find_top_base() == tag->find_top_base();
 }
+
+cell tag_info::get_id(AMX *amx) const
+{
+	for(auto &pair : tag_map[amx])
+	{
+		if(pair.second == this) return pair.first | 0x80000000;
+	}
+	return 0;
+}

@@ -142,6 +142,7 @@
     <ClCompile Include="src\natives\pp.cpp" />
     <ClCompile Include="src\natives\pawn.cpp" />
     <ClCompile Include="src\natives\str.cpp" />
+    <ClCompile Include="src\natives\tag.cpp" />
     <ClCompile Include="src\natives\task.cpp" />
     <ClCompile Include="src\natives\variant.cpp" />
     <ClCompile Include="src\reset.cpp" />
