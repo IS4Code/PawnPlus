@@ -132,6 +132,7 @@
   <ItemGroup>
     <ClCompile Include="lib\sdk\amxplugin.cpp" />
     <ClCompile Include="lib\subhook\subhook.c" />
+    <ClCompile Include="src\amxinfo.cpp" />
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\events.cpp" />
     <ClCompile Include="src\hooks.cpp" />
@@ -176,10 +177,12 @@
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClCompile Include="src\main.cpp" />
+    <ClInclude Include="src\amxinfo.h" />
     <ClInclude Include="src\context.h" />
     <ClInclude Include="src\events.h" />
     <ClInclude Include="src\fixes\linux.h" />
     <ClInclude Include="src\hooks.h" />
+    <ClInclude Include="src\main.h" />
     <ClInclude Include="src\natives.h" />
     <ClInclude Include="src\reset.h" />
     <ClInclude Include="src\strings.h" />

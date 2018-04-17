@@ -1,3 +1,5 @@
+#include "main.h"
+#include "amxinfo.h"
 #include "reset.h"
 #include "tasks.h"
 #include "threads.h"
@@ -11,7 +13,6 @@
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
 
-typedef void(*logprintf_t)(char* format, ...);
 logprintf_t logprintf;
 extern void *pAMXFunctions;
 
@@ -51,6 +52,7 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx)
 {
 	Context::Init(amx);
 	tags::load(amx);
+	amx::load(amx);
 	RegisterNatives(amx);
 	return AMX_ERR_NONE;
 }
@@ -59,6 +61,7 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx)
 {
 	Context::Remove(amx);
 	tags::unload(amx);
+	amx::unload(amx);
 	return AMX_ERR_NONE;
 }
 

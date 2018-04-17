@@ -1,9 +1,11 @@
 #include "hooks.h"
+#include "main.h"
 #include "tasks.h"
 #include "strings.h"
 #include "context.h"
 #include "events.h"
 #include "threads.h"
+#include "amxinfo.h"
 
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
@@ -11,9 +13,6 @@
 
 #include <cstring>
 #include <unordered_map>
-
-typedef void(*logprintf_t)(char* format, ...);
-extern logprintf_t logprintf;
 
 extern void *pAMXFunctions;
 
@@ -23,6 +22,7 @@ subhook_t amx_Exec_h;
 subhook_t amx_GetAddr_h;
 subhook_t amx_StrLen_h;
 subhook_t amx_FindPublic_h;
+subhook_t amx_Register_h;
 
 bool hook_ref_args = false;
 
@@ -129,13 +129,13 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 				break;
 				case SleepReturnAttach:
 				{
-					logprintf("[PP] thread_attach was called in a non-threaded code.");
+					logwarn(amx, "[PP] thread_attach was called in a non-threaded code.");
 					continue;
 				}
 				break;
 				case SleepReturnSync:
 				{
-					logprintf("[PP] thread_sync was called in a non-threaded code.");
+					logwarn(amx, "[PP] thread_sync was called in a non-threaded code.");
 					continue;
 				}
 				break;
@@ -226,6 +226,13 @@ namespace Hooks
 
 		return amx_FindPublicOrig(amx, funcname, index);
 	}
+
+	int AMXAPI amx_Register(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number)
+	{
+		int ret = reinterpret_cast<decltype(&amx_Register)>(subhook_get_trampoline(amx_Register_h))(amx, nativelist, number);
+		amx::register_natives(amx, nativelist, number);
+		return ret;
+	}
 }
 
 template <class Func>
@@ -241,6 +248,7 @@ void Hooks::Register()
 	RegisterAmxHook(amx_GetAddr_h, PLUGIN_AMX_EXPORT_GetAddr, &Hooks::amx_GetAddr);
 	RegisterAmxHook(amx_StrLen_h, PLUGIN_AMX_EXPORT_StrLen, &Hooks::amx_StrLen);
 	RegisterAmxHook(amx_FindPublic_h, PLUGIN_AMX_EXPORT_FindPublic, &Hooks::amx_FindPublic);
+	RegisterAmxHook(amx_Register_h, PLUGIN_AMX_EXPORT_Register, &Hooks::amx_Register);
 }
 
 void UnregisterHook(subhook_t hook)
@@ -255,6 +263,7 @@ void Hooks::Unregister()
 	UnregisterHook(amx_GetAddr_h);
 	UnregisterHook(amx_StrLen_h);
 	UnregisterHook(amx_FindPublic_h);
+	UnregisterHook(amx_Register_h);
 }
 
 void Hooks::ToggleStrLen(bool toggle)

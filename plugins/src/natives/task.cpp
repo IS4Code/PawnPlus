@@ -2,9 +2,6 @@
 #include "../tasks.h"
 #include "../context.h"
 
-typedef void(*logprintf_t)(char* format, ...);
-extern logprintf_t logprintf;
-
 namespace Natives
 {
 	// native task:wait_ticks(ticks);

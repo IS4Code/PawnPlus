@@ -34,9 +34,6 @@
     <ClCompile Include="src\natives\pp.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
-    <ClCompile Include="src\events.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\reset.cpp">
       <Filter>src\utils</Filter>
     </ClCompile>
@@ -84,6 +81,12 @@
     </ClCompile>
     <ClCompile Include="src\natives\tag.cpp">
       <Filter>src\natives</Filter>
+    </ClCompile>
+    <ClCompile Include="src\events.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\amxinfo.cpp">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -174,6 +177,12 @@
       <Filter>src\utils</Filter>
     </ClInclude>
     <ClInclude Include="src\tags.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\amxinfo.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\main.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
