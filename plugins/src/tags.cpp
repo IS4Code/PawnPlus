@@ -137,6 +137,7 @@ bool tag_info::same_base(tag_ptr tag) const
 
 cell tag_info::get_id(AMX *amx) const
 {
+	if(uid == tags::tag_cell) return 0x80000000;
 	for(auto &pair : tag_map[amx])
 	{
 		if(pair.second == this) return pair.first | 0x80000000;

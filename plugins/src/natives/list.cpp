@@ -173,7 +173,7 @@ namespace Natives
 		{
 			for(cell arg = 1; arg <= numargs; arg++)
 			{
-				ptr->push_back(dyn_object(amx, params[2 + arg], params[0]));
+				ptr->push_back(dyn_object(amx, params[2 + arg], params[1]));
 			}
 		}
 		return numargs;
