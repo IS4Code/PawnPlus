@@ -40,7 +40,12 @@ namespace aux
 		bool remove(size_t index)
 		{
 			if(index >= data.size() || data[index] == nullptr) return false;
-			data[index] = nullptr;
+			if(index == data.size() - 1)
+			{
+				data.erase(data.begin() + index);
+			}else{
+				data[index] = nullptr;
+			}
 			return true;
 		}
 
