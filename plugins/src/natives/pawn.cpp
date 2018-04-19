@@ -2,8 +2,9 @@
 #include "../amxinfo.h"
 #include "../hooks.h"
 #include "../events.h"
-#include "../utils/dyn_object.h"
+#include "../amxhook.h"
 #include "../strings.h"
+#include "../utils/dyn_object.h"
 #include <memory>
 #include <cstring>
 #include <unordered_map>
@@ -229,7 +230,7 @@ namespace Natives
 		return pawn_call<false>(amx, params);
 	}
 
-	// native callback:pawn_register_callback(const callback[], const function[], const additional_format[], {_,Float}:...);
+	// native callback:pawn_register_callback(const callback[], const function[], const additional_format[], AnyTag:...);
 	static cell AMX_NATIVE_CALL pawn_register_callback(AMX *amx, cell *params)
 	{
 		char *callback;
@@ -243,7 +244,7 @@ namespace Natives
 
 		if(callback == nullptr || fname == nullptr) return -1;
 
-		int ret = Events::Register(callback, amx, fname, format, params + 4, (params[0] / static_cast<int>(sizeof(cell))) - 3);
+		int ret = events::register_callback(callback, amx, fname, format, params + 4, (params[0] / static_cast<int>(sizeof(cell))) - 3);
 		if(ret == -1)
 		{
 			logerror(amx, "[PP] pawn_register_callback: not enough arguments");
@@ -255,7 +256,56 @@ namespace Natives
 	// native pawn_unregister_callback(callback:id);
 	static cell AMX_NATIVE_CALL pawn_unregister_callback(AMX *amx, cell *params)
 	{
-		return static_cast<cell>(Events::Remove(amx, params[1]));
+		return static_cast<cell>(events::remove_callback(amx, params[1]));
+	}
+
+	// native hook:pawn_hook_native(const function[], const format[], const handler[], const additional_format[], AnyTag:...);
+	static cell AMX_NATIVE_CALL pawn_hook_native(bool post, AMX *amx, cell *params)
+	{
+		char *native;
+		amx_StrParam(amx, params[1], native);
+
+		char *native_format;
+		amx_StrParam(amx, params[2], native_format);
+
+		char *fname;
+		amx_StrParam(amx, params[3], fname);
+
+		char *format;
+		amx_StrParam(amx, params[4], format);
+
+		if(native == nullptr || fname == nullptr) return -1;
+
+		int ret = amxhook::register_hook(amx, post, native, native_format, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
+		if(ret == -1)
+		{
+			if(post)
+			{
+				logerror(amx, "[PP] pawn_posthook_native: not enough arguments");
+			}else{
+				logerror(amx, "[PP] pawn_prehook_native: not enough arguments");
+			}
+			return 0;
+		}
+		return ret;
+	}
+
+	// native hook:pawn_prehook_native(const function[], const format[], const handler[], const additional_format[], AnyTag:...);
+	static cell AMX_NATIVE_CALL pawn_prehook_native(AMX *amx, cell *params)
+	{
+		return pawn_hook_native(false, amx, params);
+	}
+
+	// native hook:pawn_posthook_native(const function[], const format[], const handler[], const additional_format[], AnyTag:...);
+	static cell AMX_NATIVE_CALL pawn_posthook_native(AMX *amx, cell *params)
+	{
+		return pawn_hook_native(true, amx, params);
+	}
+
+	// native pawn_remove_hook(hook:id);
+	static cell AMX_NATIVE_CALL pawn_remove_hook(AMX *amx, cell *params)
+	{
+		return static_cast<cell>(amxhook::remove_hook(amx, params[1]));
 	}
 }
 
@@ -265,6 +315,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_call_public),
 	AMX_DECLARE_NATIVE(pawn_register_callback),
 	AMX_DECLARE_NATIVE(pawn_unregister_callback),
+	AMX_DECLARE_NATIVE(pawn_prehook_native),
+	AMX_DECLARE_NATIVE(pawn_posthook_native),
+	AMX_DECLARE_NATIVE(pawn_remove_hook),
 };
 
 int RegisterPawnNatives(AMX *amx)

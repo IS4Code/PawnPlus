@@ -88,6 +88,12 @@
     <ClCompile Include="src\amxinfo.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\stored_param.cpp">
+      <Filter>src\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\amxhook.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -184,6 +190,18 @@
     </ClInclude>
     <ClInclude Include="src\main.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\func_pool.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\stored_param.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\amxhook.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\pool.h">
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -2,6 +2,7 @@
 #include "amxinfo.h"
 #include "reset.h"
 #include "tasks.h"
+#include "events.h"
 #include "threads.h"
 #include "strings.h"
 #include "variants.h"
@@ -26,7 +27,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
 
-	Hooks::Register();
+	Hooks::register_callback();
 
 	Context::RegisterGroundCallback(
 		[](AMX *amx){
@@ -53,15 +54,17 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx)
 	Context::Init(amx);
 	tags::load(amx);
 	amx::load(amx);
+	events::load(amx);
 	RegisterNatives(amx);
 	return AMX_ERR_NONE;
 }
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx) 
 {
-	Context::Remove(amx);
+	Context::remove_callback(amx);
 	tags::unload(amx);
 	amx::unload(amx);
+	events::unload(amx);
 	return AMX_ERR_NONE;
 }
 

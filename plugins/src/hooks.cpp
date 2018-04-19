@@ -51,7 +51,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 {
 	if(index <= -3)
 	{
-		auto name = Events::Invoke(-3 - index, amx, retval);
+		auto name = events::invoke_callback(-3 - index, amx, retval);
 		if(name != nullptr)
 		{
 			int err = amx_FindPublicOrig(amx, name, &index);
@@ -90,7 +90,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
 					if(retval != nullptr) *retval = ctx.result;
-					TaskPool::Get(task)->Register(AMX_RESET(amx));
+					TaskPool::Get(task)->register_callback(AMX_RESET(amx));
 				}
 				break;
 				case SleepReturnWaitTicks:
@@ -217,7 +217,7 @@ namespace Hooks
 
 	int AMXAPI amx_FindPublic(AMX *amx, const char *funcname, int *index)
 	{
-		int id = Events::GetCallbackId(amx, funcname);
+		int id = events::get_callback_id(amx, funcname);
 		if(id != -1)
 		{
 			*index = -3 - id;
@@ -242,7 +242,7 @@ void RegisterAmxHook(subhook_t &hook, int index, Func *fnptr)
 	subhook_install(hook);
 }
 
-void Hooks::Register()
+void Hooks::register_callback()
 {
 	RegisterAmxHook(amx_Exec_h, PLUGIN_AMX_EXPORT_Exec, &Hooks::amx_Exec);
 	RegisterAmxHook(amx_GetAddr_h, PLUGIN_AMX_EXPORT_GetAddr, &Hooks::amx_GetAddr);

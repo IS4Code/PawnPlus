@@ -132,6 +132,7 @@
   <ItemGroup>
     <ClCompile Include="lib\sdk\amxplugin.cpp" />
     <ClCompile Include="lib\subhook\subhook.c" />
+    <ClCompile Include="src\amxhook.cpp" />
     <ClCompile Include="src\amxinfo.cpp" />
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\events.cpp" />
@@ -154,6 +155,7 @@
     <ClCompile Include="src\utils\dyn_object.cpp" />
     <ClCompile Include="src\utils\dyn_op.cpp" />
     <ClCompile Include="src\utils\object_pool.cpp" />
+    <ClCompile Include="src\utils\stored_param.cpp" />
     <ClCompile Include="src\utils\thread.cpp" />
     <ClCompile Include="src\utils\thread_posix.cpp" />
     <ClCompile Include="src\utils\thread_win.cpp" />
@@ -177,6 +179,7 @@
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClCompile Include="src\main.cpp" />
+    <ClInclude Include="src\amxhook.h" />
     <ClInclude Include="src\amxinfo.h" />
     <ClInclude Include="src\context.h" />
     <ClInclude Include="src\events.h" />
@@ -191,8 +194,11 @@
     <ClInclude Include="src\threads.h" />
     <ClInclude Include="src\utils\dyn_object.h" />
     <ClInclude Include="src\utils\dyn_op.h" />
+    <ClInclude Include="src\utils\func_pool.h" />
     <ClInclude Include="src\utils\object_pool.h" />
     <ClInclude Include="src\utils\optional.h" />
+    <ClInclude Include="src\utils\pool.h" />
+    <ClInclude Include="src\utils\stored_param.h" />
     <ClInclude Include="src\utils\thread.h" />
     <ClInclude Include="src\variants.h" />
   </ItemGroup>

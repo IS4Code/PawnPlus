@@ -28,15 +28,12 @@ struct AMX_CONTEXT
 struct AMX_STATE
 {
 	std::stack<AMX_CONTEXT> contexts;
-
-	std::unordered_multimap<std::string, Events::EventInfo> registered_events;
-	std::vector<std::string> callback_ids;
 };
 
 namespace Context
 {
 	void Init(AMX *amx);
-	void Remove(AMX *amx);
+	void remove_callback(AMX *amx);
 
 	int Push(AMX *amx);
 	int Pop(AMX *amx);

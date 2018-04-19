@@ -51,7 +51,7 @@ void Task::SetCompleted(cell result)
 	}
 }
 
-void Task::Register(AMX_RESET &&reset)
+void Task::register_callback(AMX_RESET &&reset)
 {
 	waiting.push(std::move(reset));
 }

@@ -2,15 +2,12 @@
 #include "tags.h"
 #include <unordered_map>
 
-typedef void(*logprintf_t)(const char* format, ...);
-extern logprintf_t logprintf;
-
 struct amx_info
 {
 	std::unordered_map<std::string, AMX_NATIVE> natives;
 };
 
-std::unordered_map<AMX*, amx_info> amx_map;
+static std::unordered_map<AMX*, amx_info> amx_map;
 
 void amx::load(AMX *amx)
 {

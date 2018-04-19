@@ -47,8 +47,11 @@ native pp_hook_check_ref_args(bool:hook);
 
 native pawn_call_native(const function[], const format[], AnyTag:...);
 native pawn_call_public(const function[], const format[], AnyTag:...);
-native callback:pawn_register_callback(const callback[], const handler[], const additional_format[], {_,Float}:...);
+native callback:pawn_register_callback(const callback[], const handler[], const additional_format[]="", AnyTag:...);
 native pawn_unregister_callback(callback:id);
+native hook:pawn_prehook_native(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
+native hook:pawn_posthook_native(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
+native pawn_remove_hook(hook:id);
 
 /*                 */
 /*      Tags       */

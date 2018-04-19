@@ -1,43 +1,84 @@
 #include "events.h"
 #include "hooks.h"
-#include "context.h"
+#include "utils/stored_param.h"
 
 #include <unordered_map>
 #include <string.h>
+#include <memory>
 
-typedef void(*logprintf_t)(char* format, ...);
-extern logprintf_t logprintf;
-
-namespace Events
+class event_info
 {
+	bool active;
+	std::vector<stored_param> arg_values;
+	std::string handler;
+public:
+	event_info(AMX *amx, const char *function, const char *format, const cell *args, size_t numargs);
+	bool invoke(AMX *amx, cell *retval, int id) const;
+	void deactivate();
+	bool is_active() const;
+};
 
-	ptrdiff_t Register(const char *callback, AMX *amx, const char *function, const char *format, const cell *params, int numargs)
+class amx_info
+{
+public:
+	std::unordered_multimap<std::string, event_info> registered_events;
+	std::vector<std::string> callback_ids;
+
+	amx_info(AMX *amx)
+	{
+
+	}
+};
+
+static std::unordered_map<AMX*, amx_info> amx_map;
+amx_info &get_info(AMX *amx)
+{
+	auto it = amx_map.find(amx);
+	if(it != amx_map.end()) return it->second;
+	return amx_map.insert(std::make_pair(amx, amx)).first->second;
+}
+
+struct not_enough_parameters {};
+struct pool_empty {};
+
+namespace events
+{
+	void load(AMX *amx)
+	{
+		get_info(amx);
+	}
+
+	void unload(AMX *amx)
+	{
+		amx_map.erase(amx);
+	}
+
+	int register_callback(const char *callback, AMX *amx, const char *function, const char *format, const cell *params, int numargs)
 	{
 		try{
-			auto &registered_events = Context::GetState(amx).registered_events;
-			auto it = registered_events.insert(std::make_pair(std::string(callback), EventInfo(amx, function, format, params, numargs)));
+			auto &registered_events = get_info(amx).registered_events;
+			auto it = registered_events.insert(std::make_pair(std::string(callback), event_info(amx, function, format, params, numargs)));
 			return std::distance(registered_events.begin(), it);
-		}catch(int)
+		}catch(nullptr_t)
 		{
 			return -1;
 		}
 	}
 
-	bool Remove(AMX *amx, ptrdiff_t index)
+	bool remove_callback(AMX *amx, int index)
 	{
-		auto &registered_events = Context::GetState(amx).registered_events;
+		auto &registered_events = get_info(amx).registered_events;
 		auto it = registered_events.begin();
 		std::advance(it, index);
-		bool active = it->second.IsActive();
-		it->second.Deactivate();
+		bool active = it->second.is_active();
+		it->second.deactivate();
 		return active;
 	}
 
-
-	int GetCallbackId(AMX *amx, const char *callback)
+	int get_callback_id(AMX *amx, const char *callback)
 	{
-		auto &registered_events = Context::GetState(amx).registered_events;
-		auto &callback_ids = Context::GetState(amx).callback_ids;
+		auto &registered_events = get_info(amx).registered_events;
+		auto &callback_ids = get_info(amx).callback_ids;
 
 		std::string name(callback);
 		if(registered_events.find(name) != registered_events.end())
@@ -49,10 +90,10 @@ namespace Events
 		return -1;
 	}
 
-	const char *Invoke(int id, AMX *amx, cell *retval)
+	const char *invoke_callback(int id, AMX *amx, cell *retval)
 	{
-		auto &registered_events = Context::GetState(amx).registered_events;
-		auto &callback_ids = Context::GetState(amx).callback_ids;
+		auto &registered_events = get_info(amx).registered_events;
+		auto &callback_ids = get_info(amx).callback_ids;
 		if(id < 0 || static_cast<size_t>(id) >= callback_ids.size()) return nullptr;
 
 		auto range = registered_events.equal_range(callback_ids[id]);
@@ -61,139 +102,65 @@ namespace Events
 		{
 			auto &ev = range.first->second;
 			ptrdiff_t eid = std::distance(registered_events.begin(), range.first);
-			if(ev.Invoke(amx, retval, eid)) ok = true;
+			if(ev.invoke(amx, retval, eid)) ok = true;
 			range.first++;
 		}
 
 		return ok ? callback_ids[id].c_str() : nullptr;
 	}
+}
 
-	EventParam::EventParam() : Type(ParamType::EventId)
+event_info::event_info(AMX *amx, const char *function, const char *format, const cell *args, size_t numargs)
+	: handler(function)
+{
+	if(format != nullptr)
 	{
-
-	}
-
-	EventParam::EventParam(cell val) : Type(ParamType::Cell), CellValue(val)
-	{
-
-	}
-
-	EventParam::EventParam(std::basic_string<cell> &&str) : Type(ParamType::String), StringValue(std::move(str))
-	{
-
-	}
-
-	EventParam::EventParam(const EventParam &obj) : Type(obj.Type), CellValue(obj.CellValue)
-	{
-		if(Type == ParamType::String)
+		size_t argi = -1;
+		size_t len = strlen(format);
+		for(size_t i = 0; i < len; i++)
 		{
-			new (&StringValue) std::basic_string<cell>(obj.StringValue);
+			arg_values.push_back(stored_param::create(amx, format[i], args, argi, numargs));
 		}
 	}
+}
 
-	EventParam::~EventParam()
+void event_info::deactivate()
+{
+	active = false;
+	arg_values.clear();
+	handler.clear();
+}
+
+bool event_info::is_active() const
+{
+	return active;
+}
+
+bool event_info::invoke(AMX *amx, cell *retval, int id) const
+{
+	if(!active) return false;
+	int index;
+	if(amx_FindPublicOrig(amx, handler.c_str(), &index)) return false;
+
+	cell *stk = reinterpret_cast<cell*>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + amx->stk);
+	std::vector<cell> oldargs(stk, stk + amx->paramcount);
+
+	cell heap, *heap_addr;
+	amx_Allot(amx, 0, &heap, &heap_addr);
+	for(auto it = arg_values.rbegin(); it != arg_values.rend(); it++)
 	{
-		if(Type == ParamType::String)
-		{
-			StringValue.~basic_string();
-		}
+		it->push(amx, id);
 	}
 
-	EventInfo::EventInfo(AMX *amx, const char *function, const char *format, const cell *args, size_t numargs)
-		: handler(function)
+	int err = amx_Exec(amx, retval, index);
+
+	amx_Release(amx, heap);
+	for(auto it = oldargs.rbegin(); it != oldargs.rend(); it++)
 	{
-		if(format != nullptr)
-		{
-			size_t argi = -1;
-			size_t len = strlen(format);
-			for(size_t i = 0; i < len; i++)
-			{
-				cell *addr, *addr2;
-				switch(format[i])
-				{
-					case 'a':
-						if(++argi >= numargs) throw 0;
-						amx_GetAddr(amx, args[argi], &addr);
-						if(++argi >= numargs) throw 0;
-						amx_GetAddr(amx, args[argi], &addr2);
-						argvalues.emplace_back(std::basic_string<cell>(addr, *addr2));
-						//logprintf("str is %d", argvalues.emplace_back(std::basic_string<cell>(addr, args[argi])).StringValue.size());
-						break;
-					case 's':
-						if(++argi >= numargs) throw 0;
-						amx_GetAddr(amx, args[argi], &addr);
-						argvalues.emplace_back(std::basic_string<cell>(addr));
-						break;
-					case 'e':
-						argvalues.emplace_back();
-						break;
-					default:
-						if(++argi >= numargs) throw 0;
-						amx_GetAddr(amx, args[argi], &addr);
-						argvalues.emplace_back(*addr);
-						break;
-				}
-			}
-		}
+		amx_Push(amx, *it);
 	}
 
+	if(err) amx_RaiseError(amx, err);
 
-	void EventInfo::Deactivate()
-	{
-		active = false;
-		argvalues.clear();
-		handler.clear();
-	}
-
-	bool EventInfo::IsActive()
-	{
-		return active;
-	}
-
-	bool EventInfo::Invoke(AMX *amx, cell *retval, ptrdiff_t id)
-	{
-		if(!active) return false;
-		int index;
-		if(amx_FindPublicOrig(amx, handler.c_str(), &index)) return false;
-
-		cell *stk = reinterpret_cast<cell*>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + amx->stk);
-		std::vector<cell> oldargs(stk, stk + amx->paramcount);
-
-		cell heap, *heap_addr;
-		amx_Allot(amx, 0, &heap, &heap_addr);
-		int pos = argvalues.size() - 1;
-		while(pos >= 0)
-		{
-			auto &arg = argvalues[pos];
-			switch(arg.Type)
-			{
-				case ParamType::Cell:
-					amx_Push(amx, arg.CellValue);
-					break;
-				case ParamType::EventId:
-					amx_Push(amx, id);
-					break;
-				case ParamType::String:
-					cell addr, *phys_addr;
-					amx_PushArray(amx, &addr, &phys_addr, arg.StringValue.c_str(), arg.StringValue.size()+1);
-					break;
-			}
-			pos--;
-		}
-
-		int err = amx_Exec(amx, retval, index);
-
-		amx_Release(amx, heap);
-
-		pos = oldargs.size() - 1;
-		while(pos >= 0)
-		{
-			amx_Push(amx, oldargs[pos]);
-			pos--;
-		}
-
-		if(err) amx_RaiseError(amx, err);
-
-		return true;
-	}
+	return true;
 }

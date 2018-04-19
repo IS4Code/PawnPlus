@@ -34,7 +34,7 @@ public:
 		return completed;
 	}
 	void SetCompleted(cell result);
-	void Register(AMX_RESET &&reset);
+	void register_callback(AMX_RESET &&reset);
 };
 
 namespace TaskPool

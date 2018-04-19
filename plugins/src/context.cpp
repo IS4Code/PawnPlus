@@ -46,7 +46,7 @@ void Context::Init(AMX *amx)
 	amx_infos[amx];
 }
 
-void Context::Remove(AMX *amx)
+void Context::remove_callback(AMX *amx)
 {
 	amx_infos.erase(amx);
 }
