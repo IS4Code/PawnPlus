@@ -76,7 +76,11 @@ int amxhook::register_hook(AMX *amx, bool post, const char *native, const char *
 	{
 		hooked_func hook(amx, str);
 		size_t index = hook.get_index();
-		if(index == -1) return -1;
+		if(index == -1)
+		{
+			logerror(amx, "[PP] Hook pool full. Adjust max_hooked_funcs (currently %d) and recompile.", max_hooked_funcs);
+			return -1;
+		}
 		native_hooks[index] = std::move(hook);
 		it = hooks_map.emplace(std::move(str), index).first;
 	}
