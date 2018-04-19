@@ -180,6 +180,8 @@ native Variant:var_mod(VariantTag:var1, VariantTag:var2);
 /*                 */
 
 native List:list_new();
+native List:list_new_args_tagged(tag_id=tagof(arg0), AnyTag:arg0=cellmin, AnyTag:...);
+#define list_new_args(%0) list_new_args_tagged(_,%0)
 native bool:list_delete(List:list);
 native list_size(List:list);
 native bool:list_clear(List:list);
@@ -189,6 +191,8 @@ native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value
 native list_add_str(List:list, const value[], index=-1);
 native list_add_var(List:list, VariantTag:value, index=-1);
 native list_add_list(List:list, List:range, index=-1);
+native list_add_args_tagged(tag_id=tagof(arg0), List:list, AnyTag:arg0=cellmin, AnyTag:...);
+#define list_add_args(%0) list_add_args_tagged(_,%0)
 
 native bool:list_remove(List:list, index);
 

@@ -77,6 +77,21 @@ namespace Natives
 		return reinterpret_cast<cell>(ptr);
 	}
 
+	// native List:list_new_args_tagged(tag_id=tagof(arg0), AnyTag:arg0=cellmin, AnyTag:...);
+	static cell AMX_NATIVE_CALL list_new_args_tagged(AMX *amx, cell *params)
+	{
+		auto ptr = new list_t();
+		cell numargs = (params[0] / sizeof(cell)) - 1;
+		if(numargs >= 1 && params[2] != 0x80000000)
+		{
+			for(cell arg = 1; arg <= numargs; arg++)
+			{
+				ptr->push_back(dyn_object(amx, params[1 + arg], params[1]));
+			}
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
 	// native list_delete(List:list);
 	static cell AMX_NATIVE_CALL list_delete(AMX *amx, cell *params)
 	{
@@ -139,13 +154,29 @@ namespace Natives
 			size_t index = ptr->size();
 			ptr->insert(ptr->end(), ptr2->begin(), ptr2->end());
 			return static_cast<cell>(index);
-		}else if(static_cast<ucell>(params[3]) > ptr->size())
+		} else if(static_cast<ucell>(params[3]) > ptr->size())
 		{
 			return -1;
-		}else{
+		} else {
 			ptr->insert(ptr->begin() + params[3], ptr2->begin(), ptr2->end());
 			return params[3];
 		}
+	}
+
+	// native list_add_args_tagged(tag_id=tagof(arg0), List:list, AnyTag:arg0=cellmin, AnyTag:...);
+	static cell AMX_NATIVE_CALL list_add_args_tagged(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<list_t*>(params[2]);
+		if(ptr == nullptr) return -1;
+		cell numargs = (params[0] / sizeof(cell)) - 2;
+		if(numargs >= 1 && params[3] != 0x80000000)
+		{
+			for(cell arg = 1; arg <= numargs; arg++)
+			{
+				ptr->push_back(dyn_object(amx, params[2 + arg], params[0]));
+			}
+		}
+		return numargs;
 	}
 
 	// native bool:list_remove(List:list, index);
@@ -251,6 +282,7 @@ namespace Natives
 static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(list_new),
+	AMX_DECLARE_NATIVE(list_new_args_tagged),
 	AMX_DECLARE_NATIVE(list_delete),
 	AMX_DECLARE_NATIVE(list_size),
 	AMX_DECLARE_NATIVE(list_clear),
@@ -259,6 +291,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_add_str),
 	AMX_DECLARE_NATIVE(list_add_var),
 	AMX_DECLARE_NATIVE(list_add_list),
+	AMX_DECLARE_NATIVE(list_add_args_tagged),
 	AMX_DECLARE_NATIVE(list_remove),
 	AMX_DECLARE_NATIVE(list_get),
 	AMX_DECLARE_NATIVE(list_get_arr),
