@@ -1,5 +1,5 @@
-#include "../natives.h"
-#include "../variants.h"
+#include "natives.h"
+#include "modules/variants.h"
 #include <unordered_map>
 #include <iterator>
 

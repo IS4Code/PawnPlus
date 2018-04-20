@@ -1,7 +1,7 @@
 #include "threads.h"
 #include "hooks.h"
-#include "reset.h"
-#include "tasks.h"
+#include "objects/reset.h"
+#include "modules/tasks.h"
 #include "utils/thread.h"
 #include <unordered_map>
 #include <mutex>

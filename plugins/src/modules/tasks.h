@@ -1,12 +1,10 @@
 #ifndef TASKS_H_INCLUDED
 #define TASKS_H_INCLUDED
 
-#include <queue>
-
-#include "sdk/amx/amx.h"
-
 #include "utils/optional.h"
-#include "reset.h"
+#include "objects/reset.h"
+#include "sdk/amx/amx.h"
+#include <queue>
 
 typedef size_t task_id;
 

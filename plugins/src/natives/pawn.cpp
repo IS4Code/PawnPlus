@@ -1,10 +1,10 @@
-#include "../natives.h"
-#include "../amxinfo.h"
-#include "../hooks.h"
-#include "../events.h"
-#include "../amxhook.h"
-#include "../strings.h"
-#include "../utils/dyn_object.h"
+#include "natives.h"
+#include "amxinfo.h"
+#include "hooks.h"
+#include "modules/events.h"
+#include "modules/amxhook.h"
+#include "modules/strings.h"
+#include "objects/dyn_object.h"
 #include <memory>
 #include <cstring>
 #include <unordered_map>

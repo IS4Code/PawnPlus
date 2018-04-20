@@ -1,5 +1,5 @@
-#include "../natives.h"
-#include "../variants.h"
+#include "natives.h"
+#include "modules/variants.h"
 #include <vector>
 
 typedef std::vector<dyn_object> list_t;

@@ -132,11 +132,16 @@
   <ItemGroup>
     <ClCompile Include="lib\sdk\amxplugin.cpp" />
     <ClCompile Include="lib\subhook\subhook.c" />
-    <ClCompile Include="src\amxhook.cpp" />
     <ClCompile Include="src\amxinfo.cpp" />
     <ClCompile Include="src\context.cpp" />
-    <ClCompile Include="src\events.cpp" />
     <ClCompile Include="src\hooks.cpp" />
+    <ClCompile Include="src\modules\amxhook.cpp" />
+    <ClCompile Include="src\modules\events.cpp" />
+    <ClCompile Include="src\modules\strings.cpp" />
+    <ClCompile Include="src\modules\tags.cpp" />
+    <ClCompile Include="src\modules\tasks.cpp" />
+    <ClCompile Include="src\modules\threads.cpp" />
+    <ClCompile Include="src\modules\variants.cpp" />
     <ClCompile Include="src\natives\iter.cpp" />
     <ClCompile Include="src\natives\list.cpp" />
     <ClCompile Include="src\natives\map.cpp" />
@@ -147,19 +152,14 @@
     <ClCompile Include="src\natives\tag.cpp" />
     <ClCompile Include="src\natives\task.cpp" />
     <ClCompile Include="src\natives\variant.cpp" />
-    <ClCompile Include="src\reset.cpp" />
-    <ClCompile Include="src\strings.cpp" />
-    <ClCompile Include="src\tags.cpp" />
-    <ClCompile Include="src\tasks.cpp" />
-    <ClCompile Include="src\threads.cpp" />
-    <ClCompile Include="src\utils\dyn_object.cpp" />
-    <ClCompile Include="src\utils\dyn_op.cpp" />
-    <ClCompile Include="src\utils\object_pool.cpp" />
-    <ClCompile Include="src\utils\stored_param.cpp" />
+    <ClCompile Include="src\objects\dyn_object.cpp" />
+    <ClCompile Include="src\objects\dyn_op.cpp" />
+    <ClCompile Include="src\objects\object_pool.cpp" />
+    <ClCompile Include="src\objects\reset.cpp" />
+    <ClCompile Include="src\objects\stored_param.cpp" />
     <ClCompile Include="src\utils\thread.cpp" />
     <ClCompile Include="src\utils\thread_posix.cpp" />
     <ClCompile Include="src\utils\thread_win.cpp" />
-    <ClCompile Include="src\variants.cpp" />
     <ClInclude Include="lib\subhook\subhook_linux.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExcludedFromBuild>
@@ -179,28 +179,28 @@
       <FileType>CppCode</FileType>
     </ClInclude>
     <ClCompile Include="src\main.cpp" />
-    <ClInclude Include="src\amxhook.h" />
     <ClInclude Include="src\amxinfo.h" />
     <ClInclude Include="src\context.h" />
-    <ClInclude Include="src\events.h" />
     <ClInclude Include="src\fixes\linux.h" />
     <ClInclude Include="src\hooks.h" />
     <ClInclude Include="src\main.h" />
+    <ClInclude Include="src\modules\amxhook.h" />
+    <ClInclude Include="src\modules\events.h" />
+    <ClInclude Include="src\modules\strings.h" />
+    <ClInclude Include="src\modules\tags.h" />
+    <ClInclude Include="src\modules\tasks.h" />
+    <ClInclude Include="src\modules\threads.h" />
+    <ClInclude Include="src\modules\variants.h" />
     <ClInclude Include="src\natives.h" />
-    <ClInclude Include="src\reset.h" />
-    <ClInclude Include="src\strings.h" />
-    <ClInclude Include="src\tags.h" />
-    <ClInclude Include="src\tasks.h" />
-    <ClInclude Include="src\threads.h" />
-    <ClInclude Include="src\utils\dyn_object.h" />
-    <ClInclude Include="src\utils\dyn_op.h" />
+    <ClInclude Include="src\objects\dyn_object.h" />
+    <ClInclude Include="src\objects\dyn_op.h" />
+    <ClInclude Include="src\objects\object_pool.h" />
+    <ClInclude Include="src\objects\reset.h" />
+    <ClInclude Include="src\objects\stored_param.h" />
     <ClInclude Include="src\utils\func_pool.h" />
-    <ClInclude Include="src\utils\object_pool.h" />
     <ClInclude Include="src\utils\optional.h" />
     <ClInclude Include="src\utils\pool.h" />
-    <ClInclude Include="src\utils\stored_param.h" />
     <ClInclude Include="src\utils\thread.h" />
-    <ClInclude Include="src\variants.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />

@@ -1,6 +1,6 @@
-#include "../natives.h"
-#include "../strings.h"
-#include "../utils/dyn_object.h"
+#include "natives.h"
+#include "modules/strings.h"
+#include "objects/dyn_object.h"
 #include <cstring>
 
 namespace Natives

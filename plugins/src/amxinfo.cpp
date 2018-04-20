@@ -1,5 +1,5 @@
 #include "amxinfo.h"
-#include "tags.h"
+#include "modules/tags.h"
 #include <unordered_map>
 
 struct amx_info

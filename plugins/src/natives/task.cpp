@@ -1,6 +1,6 @@
-#include "../natives.h"
-#include "../tasks.h"
-#include "../context.h"
+#include "natives.h"
+#include "context.h"
+#include "modules/tasks.h"
 
 namespace Natives
 {

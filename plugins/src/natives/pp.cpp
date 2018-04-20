@@ -1,5 +1,5 @@
-#include "../natives.h"
-#include "../hooks.h"
+#include "natives.h"
+#include "hooks.h"
 
 namespace Natives
 {

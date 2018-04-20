@@ -1,7 +1,7 @@
 #ifndef DYN_OBJECT_H_INCLUDED
 #define DYN_OBJECT_H_INCLUDED
 
-#include "../tags.h"
+#include "modules/tags.h"
 #include "sdk/amx/amx.h"
 #include <memory>
 #include <string>

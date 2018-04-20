@@ -1,8 +1,8 @@
 #ifndef VARIANTS_H_INCLUDED
 #define VARIANTS_H_INCLUDED
 
-#include "utils/object_pool.h"
-#include "utils/dyn_object.h"
+#include "objects/object_pool.h"
+#include "objects/dyn_object.h"
 #include "sdk/amx/amx.h"
 
 namespace variants

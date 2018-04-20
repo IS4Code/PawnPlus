@@ -1,8 +1,6 @@
 #ifndef CONTEXT_H_INCLUDED
 #define CONTEXT_H_INCLUDED
 
-#include "events.h"
-
 #include "sdk/amx/amx.h"
 #include <functional>
 #include <stack>

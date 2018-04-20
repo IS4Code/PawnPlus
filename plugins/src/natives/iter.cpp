@@ -1,6 +1,6 @@
-#include "../natives.h"
-#include "../variants.h"
-#include "../utils/dyn_object.h"
+#include "natives.h"
+#include "modules/variants.h"
+#include "objects/dyn_object.h"
 #include <vector>
 #include <unordered_map>
 //#include <unordered_set>

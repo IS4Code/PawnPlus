@@ -2,9 +2,9 @@
 #define DYN_OP_H_INCLUDED
 
 #include "dyn_object.h"
-#include "../variants.h"
-#include "../strings.h"
-#include "../tags.h"
+#include "modules/variants.h"
+#include "modules/strings.h"
+#include "modules/tags.h"
 #include "sdk/amx/amx.h"
 #include <string>
 

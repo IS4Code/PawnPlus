@@ -1,6 +1,6 @@
 #include "events.h"
 #include "hooks.h"
-#include "utils/stored_param.h"
+#include "objects/stored_param.h"
 
 #include <unordered_map>
 #include <string.h>

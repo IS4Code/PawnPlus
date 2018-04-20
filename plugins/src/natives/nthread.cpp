@@ -1,6 +1,6 @@
-#include "../natives.h"
-#include "../context.h"
-#include "../strings.h"
+#include "natives.h"
+#include "context.h"
+#include "modules/strings.h"
 #include <thread>
 #include <sstream>
 

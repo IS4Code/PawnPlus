@@ -2,7 +2,7 @@
 #include "amxinfo.h"
 #include "main.h"
 #include "utils/func_pool.h"
-#include "utils/stored_param.h"
+#include "objects/stored_param.h"
 #include "utils/pool.h"
 #include "subhook/subhook.h"
 #include <array>
