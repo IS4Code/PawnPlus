@@ -1,6 +1,15 @@
 /** PawnPlus v0.4 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
+#if defined _inc_PawnPlus
+#undef _inc_PawnPlus
+#endif
+
+#if defined _PawnPlus_included
+#endinput
+#endif
+#define _PawnPlus_included
+
 /*                 */
 /*      Setup      */
 /*                 */
