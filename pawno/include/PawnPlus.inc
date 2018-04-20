@@ -263,7 +263,7 @@ native ListIterator:operator++(ListIterator:iter) = list_next;
 #define iter_set_cell<%0> iter_set_cell@%0
 
 #define @define_List<%0> \
-stock const Void:List<%0>;\
+enum{Void:List<%0>};\
 native List<%0>:list_new<%0>()=list_new;\
 native bool:list_delete<%0>(List<%0>:l)=list_delete;\
 native list_size<%0>(List<%0>:l)=list_size;\
@@ -463,7 +463,7 @@ native MapIterator:operator++(MapIterator:iter) = map_next;
 #define iter_set_value_cell<%0,%1> iter_set_value_cell@%0@%1
 
 #define @define_Map<%0,%1> \
-stock const Void:Map<%0,%1>;\
+enum{Void:Map<%0,%1>};\
 native Map<%0,%1>:map_new<%0,%1>()=map_new;\
 native map_delete<%0,%1>(Map<%0,%1>:m)=map_delete;\
 native map_size<%0,%1>(Map<%0,%1>:m)=map_size;\
