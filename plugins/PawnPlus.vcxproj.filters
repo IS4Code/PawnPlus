@@ -94,6 +94,12 @@
     <ClCompile Include="src\modules\variants.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
+    <ClCompile Include="src\pluginapi.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\capi.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -207,6 +213,12 @@
       <Filter>src\modules</Filter>
     </ClInclude>
     <ClInclude Include="src\natives.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pluginapi.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\capi.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

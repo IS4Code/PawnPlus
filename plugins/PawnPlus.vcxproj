@@ -133,6 +133,7 @@
     <ClCompile Include="lib\sdk\amxplugin.cpp" />
     <ClCompile Include="lib\subhook\subhook.c" />
     <ClCompile Include="src\amxinfo.cpp" />
+    <ClCompile Include="src\capi.cpp" />
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\hooks.cpp" />
     <ClCompile Include="src\modules\amxhook.cpp" />
@@ -157,6 +158,7 @@
     <ClCompile Include="src\objects\object_pool.cpp" />
     <ClCompile Include="src\objects\reset.cpp" />
     <ClCompile Include="src\objects\stored_param.cpp" />
+    <ClCompile Include="src\pluginapi.cpp" />
     <ClCompile Include="src\utils\thread.cpp" />
     <ClCompile Include="src\utils\thread_posix.cpp" />
     <ClCompile Include="src\utils\thread_win.cpp" />
@@ -180,6 +182,7 @@
     </ClInclude>
     <ClCompile Include="src\main.cpp" />
     <ClInclude Include="src\amxinfo.h" />
+    <ClInclude Include="src\capi.h" />
     <ClInclude Include="src\context.h" />
     <ClInclude Include="src\fixes\linux.h" />
     <ClInclude Include="src\hooks.h" />
@@ -197,6 +200,7 @@
     <ClInclude Include="src\objects\object_pool.h" />
     <ClInclude Include="src\objects\reset.h" />
     <ClInclude Include="src\objects\stored_param.h" />
+    <ClInclude Include="src\pluginapi.h" />
     <ClInclude Include="src\utils\func_pool.h" />
     <ClInclude Include="src\utils\optional.h" />
     <ClInclude Include="src\utils\pool.h" />
