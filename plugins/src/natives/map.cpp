@@ -160,6 +160,230 @@ namespace Natives
 		return reinterpret_cast<cell>(ptr);
 	}
 
+	// native Map:map_new_args(key_tag_id=tagof(arg0), value_tag_id=tagof(arg1), AnyTag:arg0, AnyTag:arg1, AnyTag:...);
+	static cell AMX_NATIVE_CALL map_new_args(AMX *amx, cell *params)
+	{
+		auto ptr = new map_t();
+		cell numargs = params[0] / sizeof(cell) - 2;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_new_args: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[3 + arg], value = params[3 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2])));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native Map:map_new_args_str(key_tag_id=tagof(arg0), AnyTag:arg0, arg1[], AnyTag:...);
+	static cell AMX_NATIVE_CALL map_new_args_str(AMX *amx, cell *params)
+	{
+		auto ptr = new map_t();
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_new_args_str: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+			}
+			amx_GetAddr(amx, value, &value_addr);
+			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, value_addr)));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native Map:map_new_args_var(key_tag_id=tagof(arg0), AnyTag:arg0, VariantTag:arg1, AnyTag:...);
+	static cell AMX_NATIVE_CALL map_new_args_var(AMX *amx, cell *params)
+	{
+		auto ptr = new map_t();
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_new_args_str: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr)));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native Map:map_new_str_args(value_tag_id=tagof(arg1), arg0[], AnyTag:arg1, AnyTag:...);
+	static cell AMX_NATIVE_CALL map_new_str_args(AMX *amx, cell *params)
+	{
+		auto ptr = new map_t();
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_new_str_args: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
+			amx_GetAddr(amx, key, &key_addr);
+			if(arg == 0)
+			{
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(dyn_object(amx, key_addr), dyn_object(amx, *value_addr, params[1])));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native Map:map_new_str_args_str(arg0[], arg1[], ...);
+	static cell AMX_NATIVE_CALL map_new_str_args_str(AMX *amx, cell *params)
+	{
+		auto ptr = new map_t();
+		cell numargs = params[0] / sizeof(cell);
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_new_str_args_str: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[1 + arg], value = params[1 + arg + 1], *key_addr, *value_addr;
+			amx_GetAddr(amx, key, &key_addr);
+			amx_GetAddr(amx, value, &value_addr);
+			ptr->insert(std::make_pair(dyn_object(amx, key_addr), dyn_object(amx, value_addr)));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native Map:map_new_str_args_var(arg0[], VariantTag:arg1, {_,VariantTags}:...);
+	static cell AMX_NATIVE_CALL map_new_str_args_var(AMX *amx, cell *params)
+	{
+		auto ptr = new map_t();
+		cell numargs = params[0] / sizeof(cell);
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_new_str_args_var: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[1 + arg], value = params[1 + arg + 1], *key_addr, *value_addr;
+			amx_GetAddr(amx, key, &key_addr);
+			if(arg == 0)
+			{
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(dyn_object(amx, key_addr), variants::get(*value_addr)));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native Map:map_new_var_args(value_tag_id=tagof(arg1), VariantTag:arg0, AnyTag:arg1, AnyTag:...);
+	static cell AMX_NATIVE_CALL map_new_var_args(AMX *amx, cell *params)
+	{
+		auto ptr = new map_t();
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_new_var_args: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1])));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native Map:map_new_var_args_str(VariantTag:arg0, arg1[], {_,VariantTags}:...);
+	static cell AMX_NATIVE_CALL map_new_var_args_str(AMX *amx, cell *params)
+	{
+		auto ptr = new map_t();
+		cell numargs = params[0] / sizeof(cell);
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_new_var_args_str: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[1 + arg], value = params[1 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+			}
+			amx_GetAddr(amx, value, &value_addr);
+			ptr->insert(std::make_pair(variants::get(*key_addr), dyn_object(amx, value_addr)));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native Map:map_new_var_args_var(VariantTag:arg0, VariantTag:arg1, VariantTag:...);
+	static cell AMX_NATIVE_CALL map_new_var_args_var(AMX *amx, cell *params)
+	{
+		auto ptr = new map_t();
+		cell numargs = params[0] / sizeof(cell);
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_new_var_args_var: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[1 + arg], value = params[1 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(variants::get(*key_addr), variants::get(*value_addr)));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
 	// native map_delete(Map:map);
 	static cell AMX_NATIVE_CALL map_delete(AMX *amx, cell *params)
 	{
@@ -298,6 +522,239 @@ namespace Natives
 			ptr->insert(ptr2->begin(), ptr2->end());
 		}
 		return ptr->size() - ptr2->size();
+	}
+
+	// native Map:map_add_args(key_tag_id=tagof(arg0), value_tag_id=tagof(arg1), Map:map, AnyTag:arg0, AnyTag:arg1, AnyTag:...);
+	static cell AMX_NATIVE_CALL map_add_args(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 3;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_add_args: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[4 + arg], value = params[4 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2])));
+		}
+		return numargs / 2;
+	}
+
+	// native Map:map_add_args_str(key_tag_id=tagof(arg0), Map:map, AnyTag:arg0, arg1[], AnyTag:...);
+	static cell AMX_NATIVE_CALL map_add_args_str(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 2;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_add_args_str: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[3 + arg], value = params[3 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+			}
+			amx_GetAddr(amx, value, &value_addr);
+			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, value_addr)));
+		}
+		return numargs / 2;
+	}
+
+	// native Map:map_add_args_var(key_tag_id=tagof(arg0), Map:map, AnyTag:arg0, VariantTag:arg1, AnyTag:...);
+	static cell AMX_NATIVE_CALL map_add_args_var(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 2;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_add_args_str: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[3 + arg], value = params[3 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr)));
+		}
+		return numargs / 2;
+	}
+
+	// native Map:map_add_str_args(value_tag_id=tagof(arg1), Map:map, arg0[], AnyTag:arg1, AnyTag:...);
+	static cell AMX_NATIVE_CALL map_add_str_args(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 2;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_add_str_args: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[3 + arg], value = params[3 + arg + 1], *key_addr, *value_addr;
+			amx_GetAddr(amx, key, &key_addr);
+			if(arg == 0)
+			{
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(dyn_object(amx, key_addr), dyn_object(amx, *value_addr, params[1])));
+		}
+		return numargs / 2;
+	}
+
+	// native Map:map_add_str_args_str(Map:map, arg0[], arg1[], ...);
+	static cell AMX_NATIVE_CALL map_add_str_args_str(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_add_str_args_str: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
+			amx_GetAddr(amx, key, &key_addr);
+			amx_GetAddr(amx, value, &value_addr);
+			ptr->insert(std::make_pair(dyn_object(amx, key_addr), dyn_object(amx, value_addr)));
+		}
+		return numargs / 2;
+	}
+
+	// native Map:map_add_str_args_var(Map:map, arg0[], VariantTag:arg1, {_,VariantTags}:...);
+	static cell AMX_NATIVE_CALL map_add_str_args_var(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_add_str_args_var: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
+			amx_GetAddr(amx, key, &key_addr);
+			if(arg == 0)
+			{
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(dyn_object(amx, key_addr), variants::get(*value_addr)));
+		}
+		return numargs / 2;
+	}
+
+	// native Map:map_add_var_args(value_tag_id=tagof(arg1), Map:map, VariantTag:arg0, AnyTag:arg1, AnyTag:...);
+	static cell AMX_NATIVE_CALL map_add_var_args(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 2;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_add_var_args: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[3 + arg], value = params[3 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1])));
+		}
+		return numargs / 2;
+	}
+
+	// native Map:map_add_var_args_str(Map:map, VariantTag:arg0, arg1[], {_,VariantTags}:...);
+	static cell AMX_NATIVE_CALL map_add_var_args_str(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_add_var_args_str: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+			}
+			amx_GetAddr(amx, value, &value_addr);
+			ptr->insert(std::make_pair(variants::get(*key_addr), dyn_object(amx, value_addr)));
+		}
+		return numargs / 2;
+	}
+
+	// native Map:map_add_var_args_var(Map:map, VariantTag:arg0, VariantTag:arg1, VariantTag:...);
+	static cell AMX_NATIVE_CALL map_add_var_args_var(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			logerror(amx, "[PP] map_add_var_args_var: bad variable argument count %d (must be even).", numargs);
+			return 0;
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
+			if(arg == 0)
+			{
+				key_addr = &key;
+				value_addr = &value;
+			}else{
+				amx_GetAddr(amx, key, &key_addr);
+				amx_GetAddr(amx, key, &value_addr);
+			}
+			ptr->insert(std::make_pair(variants::get(*key_addr), variants::get(*value_addr)));
+		}
+		return numargs / 2;
 	}
 
 	// native bool:map_remove(Map:map, AnyTag:key, key_tag_id=tagof(key));
@@ -700,6 +1157,15 @@ namespace Natives
 static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(map_new),
+	AMX_DECLARE_NATIVE(map_new_args),
+	AMX_DECLARE_NATIVE(map_new_args_str),
+	AMX_DECLARE_NATIVE(map_new_args_var),
+	AMX_DECLARE_NATIVE(map_new_str_args),
+	AMX_DECLARE_NATIVE(map_new_str_args_str),
+	AMX_DECLARE_NATIVE(map_new_str_args_var),
+	AMX_DECLARE_NATIVE(map_new_var_args),
+	AMX_DECLARE_NATIVE(map_new_var_args_str),
+	AMX_DECLARE_NATIVE(map_new_var_args_var),
 	AMX_DECLARE_NATIVE(map_delete),
 	AMX_DECLARE_NATIVE(map_size),
 	AMX_DECLARE_NATIVE(map_clear),
@@ -720,6 +1186,15 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_var_add_str),
 	AMX_DECLARE_NATIVE(map_var_add_var),
 	AMX_DECLARE_NATIVE(map_add_map),
+	AMX_DECLARE_NATIVE(map_add_args),
+	AMX_DECLARE_NATIVE(map_add_args_str),
+	AMX_DECLARE_NATIVE(map_add_args_var),
+	AMX_DECLARE_NATIVE(map_add_str_args),
+	AMX_DECLARE_NATIVE(map_add_str_args_str),
+	AMX_DECLARE_NATIVE(map_add_str_args_var),
+	AMX_DECLARE_NATIVE(map_add_var_args),
+	AMX_DECLARE_NATIVE(map_add_var_args_str),
+	AMX_DECLARE_NATIVE(map_add_var_args_var),
 	AMX_DECLARE_NATIVE(map_remove),
 	AMX_DECLARE_NATIVE(map_arr_remove),
 	AMX_DECLARE_NATIVE(map_str_remove),

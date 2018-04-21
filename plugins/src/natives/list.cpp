@@ -77,17 +77,54 @@ namespace Natives
 		return reinterpret_cast<cell>(ptr);
 	}
 
-	// native List:list_new_args_tagged(tag_id=tagof(arg0), AnyTag:arg0=cellmin, AnyTag:...);
-	static cell AMX_NATIVE_CALL list_new_args_tagged(AMX *amx, cell *params)
+	// native List:list_new_args(tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...);
+	static cell AMX_NATIVE_CALL list_new_args(AMX *amx, cell *params)
 	{
 		auto ptr = new list_t();
 		cell numargs = (params[0] / sizeof(cell)) - 1;
-		if(numargs >= 1 && params[2] != 0x80000000)
+		for(cell arg = 0; arg < numargs; arg++)
 		{
-			for(cell arg = 1; arg <= numargs; arg++)
+			cell *addr, param = params[2 + arg];
+			if(arg == 0)
 			{
-				ptr->push_back(dyn_object(amx, params[1 + arg], params[1]));
+				addr = &param;
+			}else{
+				amx_GetAddr(amx, param, &addr);
 			}
+			ptr->push_back(dyn_object(amx, *addr, params[1]));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native List:list_new_args_str(arg0[], ...);
+	static cell AMX_NATIVE_CALL list_new_args_str(AMX *amx, cell *params)
+	{
+		auto ptr = new list_t();
+		cell numargs = params[0] / sizeof(cell);
+		for(cell arg = 0; arg < numargs; arg++)
+		{
+			cell *addr, param = params[1 + arg];
+			amx_GetAddr(amx, param, &addr);
+			ptr->push_back(dyn_object(amx, addr));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
+	// native List:list_new_args_var(VariantTag:arg0, VariantTag:...);
+	static cell AMX_NATIVE_CALL list_new_args_var(AMX *amx, cell *params)
+	{
+		auto ptr = new list_t();
+		cell numargs = params[0] / sizeof(cell);
+		for(cell arg = 0; arg < numargs; arg++)
+		{
+			cell *addr, param = params[1 + arg];
+			if(arg == 0)
+			{
+				addr = &param;
+			}else{
+				amx_GetAddr(amx, param, &addr);
+			}
+			ptr->push_back(variants::get(*addr));
 		}
 		return reinterpret_cast<cell>(ptr);
 	}
@@ -154,27 +191,66 @@ namespace Natives
 			size_t index = ptr->size();
 			ptr->insert(ptr->end(), ptr2->begin(), ptr2->end());
 			return static_cast<cell>(index);
-		} else if(static_cast<ucell>(params[3]) > ptr->size())
+		}else if(static_cast<ucell>(params[3]) > ptr->size())
 		{
 			return -1;
-		} else {
+		}else{
 			ptr->insert(ptr->begin() + params[3], ptr2->begin(), ptr2->end());
 			return params[3];
 		}
 	}
 
-	// native list_add_args_tagged(tag_id=tagof(arg0), List:list, AnyTag:arg0=cellmin, AnyTag:...);
-	static cell AMX_NATIVE_CALL list_add_args_tagged(AMX *amx, cell *params)
+	// native list_add_args(tag_id=tagof(arg0), List:list, AnyTag:arg0, AnyTag:...);
+	static cell AMX_NATIVE_CALL list_add_args(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<list_t*>(params[2]);
 		if(ptr == nullptr) return -1;
 		cell numargs = (params[0] / sizeof(cell)) - 2;
-		if(numargs >= 1 && params[3] != 0x80000000)
+		for(cell arg = 0; arg < numargs; arg++)
 		{
-			for(cell arg = 1; arg <= numargs; arg++)
+			cell *addr, param = params[3 + arg];
+			if(arg == 0)
 			{
-				ptr->push_back(dyn_object(amx, params[2 + arg], params[1]));
+				addr = &param;
+			}else{
+				amx_GetAddr(amx, param, &addr);
 			}
+			ptr->push_back(dyn_object(amx, *addr, params[1]));
+		}
+		return numargs;
+	}
+
+	// native list_add_args_str(List:list, arg0[], ...);
+	static cell AMX_NATIVE_CALL list_add_args_str(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 1;
+		for(cell arg = 0; arg < numargs; arg++)
+		{
+			cell *addr, param = params[2 + arg];
+			amx_GetAddr(amx, param, &addr);
+			ptr->push_back(dyn_object(amx, addr));
+		}
+		return numargs;
+	}
+
+	// native list_add_args_var(List:list, VariantTag:arg0, VariantTag:...);
+	static cell AMX_NATIVE_CALL list_add_args_var(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		if(ptr == nullptr) return -1;
+		cell numargs = params[0] / sizeof(cell) - 1;
+		for(cell arg = 0; arg < numargs; arg++)
+		{
+			cell *addr, param = params[2 + arg];
+			if(arg == 0)
+			{
+				addr = &param;
+			}else{
+				amx_GetAddr(amx, param, &addr);
+			}
+			ptr->push_back(variants::get(*addr));
 		}
 		return numargs;
 	}
@@ -282,7 +358,9 @@ namespace Natives
 static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(list_new),
-	AMX_DECLARE_NATIVE(list_new_args_tagged),
+	AMX_DECLARE_NATIVE(list_new_args),
+	AMX_DECLARE_NATIVE(list_new_args_str),
+	AMX_DECLARE_NATIVE(list_new_args_var),
 	AMX_DECLARE_NATIVE(list_delete),
 	AMX_DECLARE_NATIVE(list_size),
 	AMX_DECLARE_NATIVE(list_clear),
@@ -291,7 +369,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_add_str),
 	AMX_DECLARE_NATIVE(list_add_var),
 	AMX_DECLARE_NATIVE(list_add_list),
-	AMX_DECLARE_NATIVE(list_add_args_tagged),
+	AMX_DECLARE_NATIVE(list_add_args),
+	AMX_DECLARE_NATIVE(list_add_args_str),
+	AMX_DECLARE_NATIVE(list_add_args_var),
 	AMX_DECLARE_NATIVE(list_remove),
 	AMX_DECLARE_NATIVE(list_get),
 	AMX_DECLARE_NATIVE(list_get_arr),

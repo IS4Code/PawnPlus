@@ -189,8 +189,10 @@ native Variant:var_mod(VariantTag:var1, VariantTag:var2);
 /*                 */
 
 native List:list_new();
-native List:list_new_args_tagged(tag_id=tagof(arg0), AnyTag:arg0=cellmin, AnyTag:...);
+native List:list_new_args_tagged(tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) = list_new_args;
 #define list_new_args(%0) list_new_args_tagged(_,%0)
+native List:list_new_args_str(arg0[], ...);
+native List:list_new_args_var(VariantTag:arg0, VariantTag:...);
 native bool:list_delete(List:list);
 native list_size(List:list);
 native bool:list_clear(List:list);
@@ -200,8 +202,10 @@ native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value
 native list_add_str(List:list, const value[], index=-1);
 native list_add_var(List:list, VariantTag:value, index=-1);
 native list_add_list(List:list, List:range, index=-1);
-native list_add_args_tagged(tag_id=tagof(arg0), List:list, AnyTag:arg0=cellmin, AnyTag:...);
+native list_add_args_tagged(tag_id=tagof(arg0), List:list, AnyTag:arg0, AnyTag:...) = list_add_args;
 #define list_add_args(%0) list_add_args_tagged(_,%0)
+native list_add_args_str(List:list, arg0[], ...);
+native list_add_args_var(List:list, VariantTag:arg0, VariantTag:...);
 
 native bool:list_remove(List:list, index);
 
@@ -241,6 +245,8 @@ native bool:iter_set_cell_safe(ListIterator:iter, offset, AnyTag:value, tag_id=t
 native ListIterator:operator++(ListIterator:iter) = list_next;
 
 #define list_new<%0> list_new@%0
+#define list_new_args_tagged<%0> list_new_args_tagged@%0
+#define list_new_args_gen<%0>(%1) list_new_args_tagged<%0>(_,%1)
 #define list_delete<%0> list_delete@%0
 #define list_size<%0> list_size@%0
 #define list_clear<%0> list_clear@%0
@@ -248,6 +254,8 @@ native ListIterator:operator++(ListIterator:iter) = list_next;
 #define list_add<%0> list_add@%0
 #define list_add_arr<%0> list_add_arr@%0
 #define list_add_list<%0> list_add_list@%0
+#define list_add_args_tagged<%0> list_add_args_tagged@%0
+#define list_add_args_gen<%0>(%1) list_add_args_tagged<%0>(_,%1)
 
 #define list_remove<%0> list_remove@%0
 
@@ -274,12 +282,14 @@ native ListIterator:operator++(ListIterator:iter) = list_next;
 #define @define_List<%0> \
 enum{Void:List<%0>};\
 native List<%0>:list_new<%0>()=list_new;\
+native List<%0>:list_new_args_tagged<%0>(t=(tagof(%0:)),%0:a,%0:...)=list_new_args;\
 native bool:list_delete<%0>(List<%0>:l)=list_delete;\
 native list_size<%0>(List<%0>:l)=list_size;\
 native bool:list_clear<%0>(List<%0>:l)=list_clear;\
 native list_add<%0>(List<%0>:l,%0:v,i=-1,t=(tagof(%0:)))=list_add;\
 native list_add_arr<%0>(List<%0>:l,const %0:v[],i=-1,s=sizeof(v),t=(tagof(%0:)))=list_add_arr;\
 native list_add_list<%0>(List<%0>:l,List<%0>:l2,i=-1)=list_add_list;\
+native list_add_args_tagged<%0>(t=(tagof(%0:)),%0:a,%0:...)=list_add_args;\
 native bool:list_remove<%0>(List<%0>:l,i)=list_remove;\
 native %0:list_get<%0>(List<%0>:l,i,o=0)=list_get;\
 native list_get_arr<%0>(List<%0>:l,i,%0:v[],s=sizeof(v))=list_get_arr;\
@@ -305,6 +315,20 @@ native ListIterator<%0>:operator++(ListIterator<%0>:i)=list_next
 /*                 */
 
 native Map:map_new();
+native Map:map_new_args_tagged(key_tag_id=tagof(arg0), value_tag_id=tagof(arg1), AnyTag:arg0, AnyTag:arg1, AnyTag:...) = map_new_args;
+#define map_new_args(%0) map_new_args_tagged(_,_,%0)
+native Map:map_new_args_str_tagged(key_tag_id=tagof(arg0), AnyTag:arg0, arg1[], AnyTag:...) = map_new_args_str;
+#define map_new_args_str(%0) map_new_args_str_tagged(_,%0)
+native Map:map_new_args_var_tagged(key_tag_id=tagof(arg0), AnyTag:arg0, VariantTag:arg1, AnyTag:...) = map_new_args_var;
+#define map_new_args_var(%0) map_new_args_var_tagged(_,%0)
+native Map:map_new_str_args_tagged(value_tag_id=tagof(arg1), arg0[], AnyTag:arg1, AnyTag:...) = map_new_str_args;
+#define map_new_str_args(%0) map_new_str_args_tagged(_,%0)
+native Map:map_new_str_args_str(arg0[], arg1[], ...);
+native Map:map_new_str_args_var(arg0[], VariantTag:arg1, {_,VariantTags}:...);
+native Map:map_new_var_args_tagged(value_tag_id=tagof(arg1), VariantTag:arg0, AnyTag:arg1, AnyTag:...) = map_new_var_args;
+#define map_new_var_args(%0) map_new_var_args_tagged(_,%0)
+native Map:map_new_var_args_str(VariantTag:arg0, arg1[], {_,VariantTags}:...);
+native Map:map_new_var_args_var(VariantTag:arg0, VariantTag:arg1, VariantTag:...);
 native map_delete(Map:map);
 native map_size(Map:map);
 
@@ -325,6 +349,20 @@ native bool:map_var_add_arr(Map:map, VariantTag:key, const AnyTag:value[], value
 native bool:map_var_add_str(Map:map, VariantTag:key, const value[]);
 native bool:map_var_add_var(Map:map, VariantTag:key, VariantTag:value);
 native map_add_map(Map:map, Map:other, bool:overwrite);
+native map_add_args_tagged(key_tag_id=tagof(arg0), value_tag_id=tagof(arg1), Map:map, AnyTag:arg0, AnyTag:arg1, AnyTag:...) = map_add_args;
+#define map_add_args(%0) map_add_args_tagged(_,_,%0)
+native map_add_args_str_tagged(key_tag_id=tagof(arg0), Map:map, AnyTag:arg0, arg1[], AnyTag:...) = map_add_args_str;
+#define map_add_args_str(%0) map_add_args_str_tagged(_,%0)
+native map_add_args_var_tagged(key_tag_id=tagof(arg0), Map:map, AnyTag:arg0, VariantTag:arg1, AnyTag:...) = map_add_args_var;
+#define map_add_args_var(%0) map_add_args_var_tagged(_,%0)
+native map_add_str_args_tagged(value_tag_id=tagof(arg1), Map:map, arg0[], AnyTag:arg1, AnyTag:...) = map_add_str_args;
+#define map_add_str_args(%0) map_add_str_args_tagged(_,%0)
+native map_add_str_args_str(Map:map, arg0[], arg1[], ...);
+native map_add_str_args_var(Map:map, arg0[], VariantTag:arg1, {_,VariantTags}:...);
+native map_add_var_args_tagged(value_tag_id=tagof(arg1), Map:map, VariantTag:arg0, AnyTag:arg1, AnyTag:...) = map_add_var_args;
+#define map_add_var_args(%0) map_add_var_args_tagged(_,%0)
+native map_add_var_args_str(Map:map, VariantTag:arg0, arg1[], {_,VariantTags}:...);
+native map_add_var_args_var(Map:map, VariantTag:arg0, VariantTag:arg1, VariantTag:...);
 
 native bool:map_remove(Map:map, AnyTag:key, key_tag_id=tagof(key));
 native bool:map_arr_remove(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
@@ -424,6 +462,8 @@ native bool:iter_set_value_cell_safe(MapIterator:iter, offset, AnyTag:value, val
 native MapIterator:operator++(MapIterator:iter) = map_next;
 
 #define map_new<%0,%1> map_new@%0@%1
+#define map_new_args_tagged<%0,%1> map_new_args_tagged@%0@%1
+#define map_new_args_gen<%0,%1>(%2) map_new_args_tagged<%0,%1>(_,_,%2)
 #define map_delete<%0,%1> map_delete@%0@%1
 #define map_size<%0,%1> map_size@%0@%1
 
@@ -432,6 +472,8 @@ native MapIterator:operator++(MapIterator:iter) = map_next;
 #define map_arr_add<%0,%1> map_arr_add@%0@%1
 #define map_arr_add_arr<%0,%1> map_arr_add_arr@%0@%1
 #define map_add_map<%0,%1> map_add_map@%0@%1
+#define map_add_args_tagged<%0,%1> map_add_args_tagged@%0@%1
+#define map_add_args_gen<%0,%1>(%2) map_add_args_tagged<%0,%1>(_,_,%2)
 
 #define map_remove<%0,%1> map_remove@%0@%1
 #define map_arr_remove<%0,%1> map_arr_remove@%0@%1
@@ -474,6 +516,7 @@ native MapIterator:operator++(MapIterator:iter) = map_next;
 #define @define_Map<%0,%1> \
 enum{Void:Map<%0,%1>};\
 native Map<%0,%1>:map_new<%0,%1>()=map_new;\
+native Map<%0,%1>:map_new_args_tagged<%0,%1>(kt=(tagof(%0:)),vt=(tagof(%1:)),%0:a0,%1:a1,{%0,%1}:...)=map_new_args;\
 native map_delete<%0,%1>(Map<%0,%1>:m)=map_delete;\
 native map_size<%0,%1>(Map<%0,%1>:m)=map_size;\
 native bool:map_add<%0,%1>(Map<%0,%1>:m,%0:k,%1:v,kt=(tagof(%0:)),vt=(tagof(%1:)))=map_add;\
@@ -481,6 +524,7 @@ native bool:map_add_arr<%0,%1>(Map<%0,%1>:m,%0:k,const %1:v[],vs=sizeof(v),kt=(t
 native bool:map_arr_add<%0,%1>(Map<%0,%1>:m,const %0:k[],%1:v,ks=sizeof(k),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_arr_add;\
 native bool:map_arr_add_arr<%0,%1>(Map<%0,%1>:m,const %0:k[],const %1:v[],ks=sizeof(k),vs=sizeof(v),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_arr_add_arr;\
 native map_add_map<%0,%1>(Map<%0,%1>:m,Map<%0,%1>:m2,bool:ow);\
+native map_add_args_tagged<%0,%1>(kt=(tagof(%0:)),vt=(tagof(%1:)),Map<%0,%1>:m,%0:a0,%1:a1,{%0,%1}:...)=map_add_args;\
 native bool:map_remove<%0,%1>(Map<%0,%1>:m,%0:k,kt=(tagof(%0:)))=map_remove;\
 native bool:map_arr_remove<%0,%1>(Map<%0,%1>:m,const %0:k[],ks=sizeof(k),kt=(tagof(%0:)))=map_arr_remove;\
 native map_get<%0,%1>(Map<%0,%1>:m,%0:k,o=0,kt=(tagof(%0:)))=map_get;\
