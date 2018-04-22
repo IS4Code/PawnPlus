@@ -238,7 +238,7 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 		return true;
 	}
 
-	cell numargs = params[0];
+	cell numargs = params[0] / sizeof(cell);
 
 	cell reset_hea, *tmp;
 	amx_Allot(my_amx, 0, &reset_hea, &tmp);
@@ -332,7 +332,7 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 
 	for(auto mem : storage)
 	{
-		std::memcpy(std::get<1>(mem), std::get<0>(mem), std::get<2>(mem));
+		std::memcpy(std::get<1>(mem), std::get<0>(mem), std::get<2>(mem) * sizeof(cell));
 	}
 
 	amx_Release(my_amx, reset_hea);
