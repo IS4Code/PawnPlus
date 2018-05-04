@@ -15,13 +15,11 @@ struct AMX_RESET
 	AMX* amx;
 
 	AMX_RESET() = default;
-	AMX_RESET(AMX* amx);
+	AMX_RESET(AMX* amx, bool context);
 	AMX_RESET(AMX_RESET &&obj);
-	AMX_RESET(const AMX_RESET &obj);
 	AMX_RESET &operator=(AMX_RESET &&obj);
-	AMX_RESET &operator=(const AMX_RESET &obj);
 
-	void restore() const;
+	void restore();
 	void restore_no_context() const;
 };
 

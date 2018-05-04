@@ -98,23 +98,9 @@ AMX_CONTEXT &Context::Get(AMX *amx)
 	return amx_infos.at(amx).contexts.top();
 }
 
-AMX_CONTEXT Context::TryGet(AMX *amx)
+void Context::Restore(AMX *amx, AMX_CONTEXT &&context)
 {
-	auto it = amx_infos.find(amx);
-	if(it != amx_infos.end())
-	{
-		auto &stack = it->second.contexts;
-		if(!stack.empty())
-		{
-			return stack.top();
-		}
-	}
-	return AMX_CONTEXT();
-}
-
-void Context::Restore(AMX *amx, const AMX_CONTEXT &context)
-{
-	amx_infos.at(amx).contexts.top() = context;
+	amx_infos.at(amx).contexts.top() = std::move(context);
 }
 
 void Context::RegisterGroundCallback(const std::function<void(AMX*)> &callback)

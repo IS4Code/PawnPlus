@@ -324,6 +324,11 @@ struct tag_traits<strings::cell_string*>
 	{
 		return reinterpret_cast<cell>(v);
 	}
+
+	static void free(strings::cell_string *v)
+	{
+		strings::pool.free(v);
+	}
 };
 
 template <>
@@ -340,6 +345,61 @@ struct tag_traits<dyn_object*>
 	static cell conv_from(dyn_object *v)
 	{
 		return reinterpret_cast<cell>(v);
+	}
+
+	static void free(dyn_object *v)
+	{
+		variants::pool.free(v);
+	}
+};
+
+template <>
+struct tag_traits<std::vector<dyn_object>*>
+{
+	static constexpr const cell tag_uid = tags::tag_list;
+	static constexpr const char format_spec = 'l';
+
+	static std::vector<dyn_object> *conv_to(cell v)
+	{
+		return reinterpret_cast<std::vector<dyn_object>*>(v);
+	}
+
+	static cell conv_from(std::vector<dyn_object> *v)
+	{
+		return reinterpret_cast<cell>(v);
+	}
+
+	static void free(std::vector<dyn_object> *v)
+	{
+		if(v != nullptr)
+		{
+			delete v;
+		}
+	}
+};
+
+template <>
+struct tag_traits<std::unordered_map<dyn_object, dyn_object>*>
+{
+	static constexpr const cell tag_uid = tags::tag_map;
+	static constexpr const char format_spec = 'm';
+
+	static std::unordered_map<dyn_object, dyn_object> *conv_to(cell v)
+	{
+		return reinterpret_cast<std::unordered_map<dyn_object, dyn_object>*>(v);
+	}
+
+	static cell conv_from(std::unordered_map<dyn_object, dyn_object> *v)
+	{
+		return reinterpret_cast<cell>(v);
+	}
+
+	static void free(std::unordered_map<dyn_object, dyn_object> *v)
+	{
+		if(v != nullptr)
+		{
+			delete v;
+		}
 	}
 };
 

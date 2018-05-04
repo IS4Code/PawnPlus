@@ -61,6 +61,8 @@ native pawn_unregister_callback(callback:id);
 native hook:pawn_prehook_native(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
 native hook:pawn_posthook_native(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
 native pawn_remove_hook(hook:id);
+native Guard:pawn_guard(AnyTag:value, tag_id=tagof(value));
+native pawn_guard_free(Guard:guard);
 
 /*                 */
 /*      Tags       */
@@ -730,3 +732,12 @@ stock Ref<String>:operator=(String:arg) return Ref<String>:arg;
 stock Ref<GlobalString>:operator=(GlobalString:arg) return Ref<GlobalString>:arg;
 stock Ref<Variant>:operator=(Variant:arg) return Ref<Variant>:arg;
 stock Ref<GlobalVariant>:operator=(GlobalVariant:arg) return Ref<GlobalVariant>:arg;
+
+stock operator~(Guard:arr[], size)
+{
+    for(new i = 0; i < size; i++)
+    {
+        pawn_guard_free(arr[i]);
+        arr[i] = Guard:0;
+    }
+}

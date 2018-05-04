@@ -39,6 +39,8 @@ public:
 	size_t get_hash() const;
 	bool empty() const;
 	bool tag_check(const dyn_object &obj) const;
+	tag_ptr get_tag() const;
+	void free() const;
 	cell &operator[](cell index);
 	const cell &operator[](cell index) const;
 	friend bool operator==(const dyn_object &a, const dyn_object &b);
@@ -69,6 +71,8 @@ private:
 	dyn_object operator_func() const;
 	template <class TagType>
 	bool to_string_tagged(std::basic_string<cell> &result) const;
+	template <class TagType>
+	bool free_tagged() const;
 };
 
 namespace std

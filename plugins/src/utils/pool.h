@@ -1,6 +1,7 @@
 #ifndef POOL_H_INCLUDED
 #define POOL_H_INCLUDED
 
+#include "fixes/linux.h"
 #include <memory>
 #include <vector>
 #include <exception>
@@ -37,6 +38,11 @@ namespace aux
 			return add(new Type(std::move(value)));
 		}
 
+		size_t size() const
+		{
+			return data.size();
+		}
+
 		bool remove(size_t index)
 		{
 			if(index >= data.size() || data[index] == nullptr) return false;
@@ -53,6 +59,47 @@ namespace aux
 		{
 			if(index >= data.size() || data[index] == nullptr) return nullptr;
 			return data[index].get();
+		}
+
+		void clear()
+		{
+			data.clear();
+		}
+
+		pool()
+		{
+
+		}
+
+		pool(const pool<Type> &obj)
+		{
+			for(auto &ptr : obj.data)
+			{
+				if(ptr == nullptr)
+				{
+					data.push_back(nullptr);
+				}else{
+					data.push_back(std::make_unique<Type>(*ptr));
+				}
+			}
+		}
+
+		pool<Type> &operator=(const pool<Type> &obj)
+		{
+			if(this != &obj)
+			{
+				data.clear();
+				for(auto &ptr : obj.data)
+				{
+					if(ptr == nullptr)
+					{
+						data.push_back(nullptr);
+					}else{
+						data.push_back(std::make_unique<Type>(*ptr));
+					}
+				}
+			}
+			return *this;
 		}
 	};
 }

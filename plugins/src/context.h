@@ -1,6 +1,8 @@
 #ifndef CONTEXT_H_INCLUDED
 #define CONTEXT_H_INCLUDED
 
+#include "utils/pool.h"
+#include "objects/dyn_object.h"
 #include "sdk/amx/amx.h"
 #include <functional>
 #include <stack>
@@ -21,6 +23,42 @@ struct AMX_CONTEXT
 {
 	size_t task_object = -1;
 	cell result = 0;
+	aux::pool<dyn_object> guards;
+
+	AMX_CONTEXT()
+	{
+
+	}
+
+	AMX_CONTEXT(const AMX_CONTEXT &obj) = delete;
+	AMX_CONTEXT(AMX_CONTEXT &&obj)
+	{
+		guards = obj.guards;
+		obj.guards.clear();
+	}
+
+	AMX_CONTEXT &operator=(const AMX_CONTEXT &obj) = delete;
+	AMX_CONTEXT &operator=(AMX_CONTEXT &&obj)
+	{
+		if(this != &obj)
+		{
+			guards = obj.guards;
+			obj.guards.clear();
+		}
+		return *this;
+	}
+
+	~AMX_CONTEXT()
+	{
+		for(size_t i = 0; i < guards.size(); i++)
+		{
+			auto obj = guards.get(i);
+			if(obj != nullptr)
+			{
+				obj->free();
+			}
+		}
+	}
 };
 
 struct AMX_STATE
@@ -39,10 +77,9 @@ namespace Context
 	bool IsValid(AMX *amx);
 	AMX_STATE &GetState(AMX *amx);
 
-	void Restore(AMX *amx, const AMX_CONTEXT &context);
+	void Restore(AMX *amx, AMX_CONTEXT &&context);
 	bool IsPresent(AMX *amx);
 	AMX_CONTEXT &Get(AMX *amx);
-	AMX_CONTEXT TryGet(AMX *amx);
 
 	void RegisterGroundCallback(const std::function<void(AMX*)> &callback);
 

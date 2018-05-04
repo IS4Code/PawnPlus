@@ -262,10 +262,10 @@ bool dyn_object::get_hash_tagged(size_t &result) const
 		result = 0;
 		for(cell i = 0; i < array_size; i++)
 		{
-			hash_combine(result, *tag_traits<TagType>::conv_to(array_value[i]));
+			hash_combine(result, *tag::conv_to(array_value[i]));
 		}
 	}else{
-		result = hasher(*tag_traits<TagType>::conv_to(cell_value));
+		result = hasher(*tag::conv_to(cell_value));
 	}
 
 	hash_combine(result, tag::tag_uid);
@@ -302,6 +302,36 @@ bool dyn_object::empty() const
 bool dyn_object::tag_check(const dyn_object &obj) const
 {
 	return tag->same_base(obj.tag);
+}
+
+tag_ptr dyn_object::get_tag() const
+{
+	return tag;
+}
+
+template <class TagType>
+bool dyn_object::free_tagged() const
+{
+	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
+	typedef tag_traits<TagType> tag;
+
+	if(is_array)
+	{
+		for(cell i = 0; i < array_size; i++)
+		{
+			tag::free(tag::conv_to(array_value[i]));
+		}
+	}else{
+		tag::free(tag::conv_to(cell_value));
+	}
+
+	return true;
+}
+
+void dyn_object::free() const
+{
+	free_tagged<cell_string*>() || free_tagged<dyn_object*>() ||
+		free_tagged<std::vector<dyn_object>*>() || free_tagged<std::unordered_map<dyn_object, dyn_object>*>();
 }
 
 cell &dyn_object::operator[](cell index)

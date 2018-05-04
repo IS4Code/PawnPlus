@@ -2,7 +2,7 @@
 #include "modules/strings.h"
 #include <string>
 
-void *dyn_string(char *str, int temp)
+void *dyn_string(const char *str, int temp)
 {
 	return strings::create(std::string(str), temp);
 }

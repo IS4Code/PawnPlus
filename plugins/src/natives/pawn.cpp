@@ -307,6 +307,33 @@ namespace Natives
 	{
 		return static_cast<cell>(amxhook::remove_hook(amx, params[1]));
 	}
+
+	// native Guard:pawn_guard(AnyTag:value, tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL pawn_guard(AMX *amx, cell *params)
+	{
+		auto &ctx = Context::Get(amx);
+		auto obj = dyn_object(amx, params[1], params[2]);
+		if(obj.get_tag()->inherits_from(tags::tag_cell))
+		{
+			return 0;
+		}
+		return ctx.guards.add(std::move(obj)) + 1;
+	}
+
+	// native pawn_guard_free(Guard:guard);
+	static cell AMX_NATIVE_CALL pawn_guard_free(AMX *amx, cell *params)
+	{
+		cell id = params[1] - 1;
+		if(id == -1) return 0;
+		auto &ctx = Context::Get(amx);
+		auto obj = ctx.guards.get(id);
+		if(obj != nullptr)
+		{
+			obj->free();
+		}
+		ctx.guards.remove(id);
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -318,6 +345,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_prehook_native),
 	AMX_DECLARE_NATIVE(pawn_posthook_native),
 	AMX_DECLARE_NATIVE(pawn_remove_hook),
+	AMX_DECLARE_NATIVE(pawn_guard),
+	AMX_DECLARE_NATIVE(pawn_guard_free),
 };
 
 int RegisterPawnNatives(AMX *amx)
