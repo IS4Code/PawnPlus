@@ -393,6 +393,20 @@ namespace Natives
 		return 1;
 	}
 
+	// native map_delete_deep(Map:map);
+	static cell AMX_NATIVE_CALL map_delete_deep(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(ptr == nullptr) return 0;
+		for(auto &pair : *ptr)
+		{
+			pair.first.free();
+			pair.second.free();
+		}
+		delete ptr;
+		return 1;
+	}
+
 	// native map_size(Map:map);
 	static cell AMX_NATIVE_CALL map_size(AMX *amx, cell *params)
 	{
@@ -1167,6 +1181,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_new_var_args_str),
 	AMX_DECLARE_NATIVE(map_new_var_args_var),
 	AMX_DECLARE_NATIVE(map_delete),
+	AMX_DECLARE_NATIVE(map_delete_deep),
 	AMX_DECLARE_NATIVE(map_size),
 	AMX_DECLARE_NATIVE(map_clear),
 	AMX_DECLARE_NATIVE(map_add),
