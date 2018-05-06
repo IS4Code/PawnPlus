@@ -89,6 +89,12 @@ enum{
 	tag_uid_ref = 11
 };
 
+/*                 */
+/*      Tags       */
+/*                 */
+
+native AMX:amx_this();
+
 
 /*                 */
 /*     Strings     */

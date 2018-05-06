@@ -100,6 +100,9 @@
     <ClCompile Include="src\capi.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives\namx.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
