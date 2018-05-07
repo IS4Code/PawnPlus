@@ -81,11 +81,11 @@ namespace Natives
 		return static_cast<cell>(ok);
 	}
 
-	// native bool:str_is_valid(StringTag:str);
-	static cell AMX_NATIVE_CALL str_is_valid(AMX *amx, cell *params)
+	// native bool:str_valid(StringTag:str);
+	static cell AMX_NATIVE_CALL str_valid(AMX *amx, cell *params)
 	{
 		auto str = reinterpret_cast<strings::cell_string*>(params[1]);
-		return static_cast<cell>(strings::pool.is_valid(str));
+		return static_cast<cell>(strings::pool.valid(str));
 	}
 
 
@@ -422,7 +422,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_buf_addr),
 	AMX_DECLARE_NATIVE(str_to_global),
 	AMX_DECLARE_NATIVE(str_delete),
-	AMX_DECLARE_NATIVE(str_is_valid),
+	AMX_DECLARE_NATIVE(str_valid),
 
 	AMX_DECLARE_NATIVE(str_len),
 	AMX_DECLARE_NATIVE(str_get),

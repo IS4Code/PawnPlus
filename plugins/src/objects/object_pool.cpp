@@ -151,7 +151,7 @@ void object_pool<ObjType>::clear_tmp()
 }
 
 template <class ObjType>
-bool object_pool<ObjType>::is_valid(const_object_ptr obj) const
+bool object_pool<ObjType>::valid(const_object_ptr obj) const
 {
 	return find_in_list(obj, tmp_object_list) != tmp_object_list.end() || find_in_list(obj, object_list) != object_list.end();
 }

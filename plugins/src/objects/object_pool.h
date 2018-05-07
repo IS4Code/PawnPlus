@@ -34,7 +34,7 @@ public:
 	object_ptr find_cache(const_inner_ptr ptr);
 	bool free(object_ptr obj);
 	void clear_tmp();
-	bool is_valid(const_object_ptr obj) const;
+	bool valid(const_object_ptr obj) const;
 	object_ptr get(AMX *amx, cell addr);
 
 private:

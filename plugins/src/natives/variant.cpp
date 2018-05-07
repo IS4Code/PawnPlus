@@ -92,11 +92,11 @@ namespace Natives
 		return variants::pool.free(var);
 	}
 
-	// native bool:var_is_valid(VariantTag:var);
-	static cell AMX_NATIVE_CALL var_is_valid(AMX *amx, cell *params)
+	// native bool:var_valid(VariantTag:var);
+	static cell AMX_NATIVE_CALL var_valid(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		return variants::pool.is_valid(var);
+		return variants::pool.valid(var);
 	}
 
 	// native var_get(VariantTag:var, offset=0);
@@ -221,7 +221,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_to_local),
 	AMX_DECLARE_NATIVE(var_delete),
 	AMX_DECLARE_NATIVE(var_delete_deep),
-	AMX_DECLARE_NATIVE(var_is_valid),
+	AMX_DECLARE_NATIVE(var_valid),
 
 	AMX_DECLARE_NATIVE(var_get),
 	AMX_DECLARE_NATIVE(var_get_arr),

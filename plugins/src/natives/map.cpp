@@ -383,8 +383,8 @@ namespace Natives
 		return reinterpret_cast<cell>(ptr);
 	}
 
-	// native bool:map_is_valid(Map:map);
-	static cell AMX_NATIVE_CALL map_is_valid(AMX *amx, cell *params)
+	// native bool:map_valid(Map:map);
+	static cell AMX_NATIVE_CALL map_valid(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
 		return map_pool.contains(ptr);
@@ -1183,7 +1183,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_new_var_args),
 	AMX_DECLARE_NATIVE(map_new_var_args_str),
 	AMX_DECLARE_NATIVE(map_new_var_args_var),
-	AMX_DECLARE_NATIVE(map_is_valid),
+	AMX_DECLARE_NATIVE(map_valid),
 	AMX_DECLARE_NATIVE(map_delete),
 	AMX_DECLARE_NATIVE(map_delete_deep),
 	AMX_DECLARE_NATIVE(map_size),

@@ -129,8 +129,8 @@ namespace Natives
 		return reinterpret_cast<cell>(ptr);
 	}
 
-	// native bool:list_is_valid(List:list);
-	static cell AMX_NATIVE_CALL list_is_valid(AMX *amx, cell *params)
+	// native bool:list_valid(List:list);
+	static cell AMX_NATIVE_CALL list_valid(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
 		return list_pool.contains(ptr);
@@ -378,7 +378,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_new_args),
 	AMX_DECLARE_NATIVE(list_new_args_str),
 	AMX_DECLARE_NATIVE(list_new_args_var),
-	AMX_DECLARE_NATIVE(list_is_valid),
+	AMX_DECLARE_NATIVE(list_valid),
 	AMX_DECLARE_NATIVE(list_delete),
 	AMX_DECLARE_NATIVE(list_delete_deep),
 	AMX_DECLARE_NATIVE(list_size),
