@@ -1,7 +1,7 @@
 #ifndef CONTEXT_H_INCLUDED
 #define CONTEXT_H_INCLUDED
 
-#include "utils/pool.h"
+#include "utils/linear_pool.h"
 #include "objects/dyn_object.h"
 #include "sdk/amx/amx.h"
 #include <functional>
@@ -23,7 +23,7 @@ struct AMX_CONTEXT
 {
 	size_t task_object = -1;
 	cell result = 0;
-	aux::pool<dyn_object> guards;
+	aux::linear_pool<dyn_object> guards;
 
 	AMX_CONTEXT()
 	{

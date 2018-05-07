@@ -1,5 +1,5 @@
-#ifndef POOL_H_INCLUDED
-#define POOL_H_INCLUDED
+#ifndef LINEAR_POOL_H_INCLUDED
+#define LINEAR_POOL_H_INCLUDED
 
 #include "fixes/linux.h"
 #include <memory>
@@ -9,7 +9,7 @@
 namespace aux
 {
 	template <class Type>
-	class pool
+	class linear_pool
 	{
 		std::vector<std::unique_ptr<Type>> data;
 
@@ -27,6 +27,7 @@ namespace aux
 			data.push_back(std::unique_ptr<Type>(value));
 			return index;
 		}
+
 	public:
 		size_t add()
 		{
@@ -66,12 +67,12 @@ namespace aux
 			data.clear();
 		}
 
-		pool()
+		linear_pool()
 		{
 
 		}
 
-		pool(const pool<Type> &obj)
+		linear_pool(const linear_pool<Type> &obj)
 		{
 			for(auto &ptr : obj.data)
 			{
@@ -84,7 +85,7 @@ namespace aux
 			}
 		}
 
-		pool<Type> &operator=(const pool<Type> &obj)
+		linear_pool<Type> &operator=(const linear_pool<Type> &obj)
 		{
 			if(this != &obj)
 			{

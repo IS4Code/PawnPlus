@@ -202,9 +202,11 @@
     <ClInclude Include="src\objects\reset.h" />
     <ClInclude Include="src\objects\stored_param.h" />
     <ClInclude Include="src\pluginapi.h" />
+    <ClInclude Include="src\pools.h" />
     <ClInclude Include="src\utils\func_pool.h" />
     <ClInclude Include="src\utils\optional.h" />
-    <ClInclude Include="src\utils\pool.h" />
+    <ClInclude Include="src\utils\linear_pool.h" />
+    <ClInclude Include="src\utils\set_pool.h" />
     <ClInclude Include="src\utils\thread.h" />
   </ItemGroup>
   <ItemGroup>

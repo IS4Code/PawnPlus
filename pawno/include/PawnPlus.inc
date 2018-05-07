@@ -202,8 +202,9 @@ native List:list_new_args_tagged(tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) = 
 #define list_new_args(%0) list_new_args_tagged(_,%0)
 native List:list_new_args_str(arg0[], ...);
 native List:list_new_args_var(VariantTag:arg0, VariantTag:...);
-native list_delete(List:list);
-native list_delete_deep(List:list);
+native bool:list_is_valid(List:list);
+native bool:list_delete(List:list);
+native bool:list_delete_deep(List:list);
 native list_size(List:list);
 native bool:list_clear(List:list);
 
@@ -257,6 +258,7 @@ native ListIterator:operator++(ListIterator:iter) = list_next;
 #define list_new<%0> list_new@%0
 #define list_new_args_tagged<%0> list_new_args_tagged@%0
 #define list_new_args_gen<%0>(%1) list_new_args_tagged<%0>(_,%1)
+#define list_is_valid<%0> list_is_valid@%0
 #define list_delete<%0> list_delete@%0
 #define list_delete_deep<%0> list_delete_deep@%0
 #define list_size<%0> list_size@%0
@@ -294,8 +296,9 @@ native ListIterator:operator++(ListIterator:iter) = list_next;
 enum{Void:List<%0>};\
 native List<%0>:list_new<%0>()=list_new;\
 native List<%0>:list_new_args_tagged<%0>(t=(tagof(%0:)),%0:a,%0:...)=list_new_args;\
-native list_delete<%0>(List<%0>:l)=list_delete;\
-native list_delete_deep<%0>(List<%0>:l)=list_delete_deep;\
+native bool:list_is_valid<%0>(List<%0>:l)=list_is_valid;\
+native bool:list_delete<%0>(List<%0>:l)=list_delete;\
+native bool:list_delete_deep<%0>(List<%0>:l)=list_delete_deep;\
 native list_size<%0>(List<%0>:l)=list_size;\
 native bool:list_clear<%0>(List<%0>:l)=list_clear;\
 native list_add<%0>(List<%0>:l,%0:v,i=-1,t=(tagof(%0:)))=list_add;\
@@ -341,8 +344,9 @@ native Map:map_new_var_args_tagged(value_tag_id=tagof(arg1), VariantTag:arg0, An
 #define map_new_var_args(%0) map_new_var_args_tagged(_,%0)
 native Map:map_new_var_args_str(VariantTag:arg0, arg1[], {_,VariantTags}:...);
 native Map:map_new_var_args_var(VariantTag:arg0, VariantTag:arg1, VariantTag:...);
-native map_delete(Map:map);
-native map_delete_deep(Map:map);
+native bool:map_is_valid(Map:map);
+native bool:map_delete(Map:map);
+native bool:map_delete_deep(Map:map);
 native map_size(Map:map);
 
 native bool:map_add(Map:map, AnyTag:key, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
@@ -477,6 +481,7 @@ native MapIterator:operator++(MapIterator:iter) = map_next;
 #define map_new<%0,%1> map_new@%0@%1
 #define map_new_args_tagged<%0,%1> map_new_args_tagged@%0@%1
 #define map_new_args_gen<%0,%1>(%2) map_new_args_tagged<%0,%1>(_,_,%2)
+#define map_is_valid<%0,%1> map_is_valid@%0@%1
 #define map_delete<%0,%1> map_delete@%0@%1
 #define map_delete_deep<%0,%1> map_delete_deep@%0@%1
 #define map_size<%0,%1> map_size@%0@%1
@@ -531,8 +536,9 @@ native MapIterator:operator++(MapIterator:iter) = map_next;
 enum{Void:Map<%0,%1>};\
 native Map<%0,%1>:map_new<%0,%1>()=map_new;\
 native Map<%0,%1>:map_new_args_tagged<%0,%1>(kt=(tagof(%0:)),vt=(tagof(%1:)),%0:a0,%1:a1,{%0,%1}:...)=map_new_args;\
-native map_delete<%0,%1>(Map<%0,%1>:m)=map_delete;\
-native map_delete_deep<%0,%1>(Map<%0,%1>:m)=map_delete_deep;\
+native bool:map_is_valid<%0,%1>(Map<%0,%1>:m)=map_is_valid;\
+native bool:map_delete<%0,%1>(Map<%0,%1>:m)=map_delete;\
+native bool:map_delete_deep<%0,%1>(Map<%0,%1>:m)=map_delete_deep;\
 native map_size<%0,%1>(Map<%0,%1>:m)=map_size;\
 native bool:map_add<%0,%1>(Map<%0,%1>:m,%0:k,%1:v,kt=(tagof(%0:)),vt=(tagof(%1:)))=map_add;\
 native bool:map_add_arr<%0,%1>(Map<%0,%1>:m,%0:k,const %1:v[],vs=sizeof(v),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_add_arr;\

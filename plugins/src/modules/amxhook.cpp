@@ -3,7 +3,7 @@
 #include "main.h"
 #include "utils/func_pool.h"
 #include "objects/stored_param.h"
-#include "utils/pool.h"
+#include "utils/linear_pool.h"
 #include "subhook/subhook.h"
 #include <array>
 #include <unordered_map>
@@ -57,7 +57,7 @@ public:
 constexpr const size_t max_hooked_funcs = 256;
 std::array<hooked_func, max_hooked_funcs> native_hooks;
 std::unordered_map<std::string, size_t> hooks_map;
-aux::pool<size_t> hooks;
+aux::linear_pool<size_t> hooks;
 
 cell native_hook_handler(size_t index, AMX *amx, cell *params)
 {

@@ -176,9 +176,6 @@
     <ClInclude Include="src\utils\func_pool.h">
       <Filter>src\utils</Filter>
     </ClInclude>
-    <ClInclude Include="src\utils\pool.h">
-      <Filter>src\utils</Filter>
-    </ClInclude>
     <ClInclude Include="src\objects\stored_param.h">
       <Filter>src\objects</Filter>
     </ClInclude>
@@ -222,6 +219,15 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\capi.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\linear_pool.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\set_pool.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\pools.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

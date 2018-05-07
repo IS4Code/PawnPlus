@@ -1,8 +1,9 @@
 #include "natives.h"
+#include "pools.h"
 #include "modules/variants.h"
 #include <vector>
 
-typedef std::vector<dyn_object> list_t;
+aux::set_pool<list_t> list_pool;
 
 template <size_t... Indices>
 class value_at
@@ -17,15 +18,15 @@ public:
 	{
 		if(params[3] < -1) return -1;
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!list_pool.contains(ptr)) return -1;
 		if(params[3] == -1)
 		{
 			ptr->push_back(Factory(amx, params[Indices]...));
 			return static_cast<cell>(ptr->size() - 1);
-		} else if(static_cast<ucell>(params[3]) > ptr->size())
+		}else if(static_cast<ucell>(params[3]) > ptr->size())
 		{
 			return -1;
-		} else {
+		}else{
 			ptr->insert(ptr->begin() + params[3], Factory(amx, params[Indices]...));
 			return params[3];
 		}
@@ -37,7 +38,7 @@ public:
 	{
 		if(params[2] < 0) return 0;
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!list_pool.contains(ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		(*ptr)[params[2]] = Factory(amx, params[Indices]...);
 		return 1;
@@ -49,7 +50,7 @@ public:
 	{
 		if(params[2] < 0) return 0;
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!list_pool.contains(ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		return Factory(amx, (*ptr)[params[2]], params[Indices]...);
 	}
@@ -61,7 +62,7 @@ static cell AMX_NATIVE_CALL list_set_cell(AMX *amx, cell *params)
 {
 	if(params[2] < 0 || params[3] < 0) return 0;
 	auto ptr = reinterpret_cast<list_t*>(params[1]);
-	if(ptr == nullptr) return 0;
+	if(!list_pool.contains(ptr)) return 0;
 	if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 	auto &obj = (*ptr)[params[2]];
 	if(TagIndex && !obj.check_tag(amx, params[TagIndex])) return 0;
@@ -73,14 +74,13 @@ namespace Natives
 	// native List:list_new();
 	static cell AMX_NATIVE_CALL list_new(AMX *amx, cell *params)
 	{
-		auto ptr = new list_t();
-		return reinterpret_cast<cell>(ptr);
+		return reinterpret_cast<cell>(list_pool.add());
 	}
 
 	// native List:list_new_args(tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...);
 	static cell AMX_NATIVE_CALL list_new_args(AMX *amx, cell *params)
 	{
-		auto ptr = new list_t();
+		auto ptr = list_pool.add();
 		cell numargs = (params[0] / sizeof(cell)) - 1;
 		for(cell arg = 0; arg < numargs; arg++)
 		{
@@ -99,7 +99,7 @@ namespace Natives
 	// native List:list_new_args_str(arg0[], ...);
 	static cell AMX_NATIVE_CALL list_new_args_str(AMX *amx, cell *params)
 	{
-		auto ptr = new list_t();
+		auto ptr = list_pool.add();
 		cell numargs = params[0] / sizeof(cell);
 		for(cell arg = 0; arg < numargs; arg++)
 		{
@@ -113,7 +113,7 @@ namespace Natives
 	// native List:list_new_args_var(VariantTag:arg0, VariantTag:...);
 	static cell AMX_NATIVE_CALL list_new_args_var(AMX *amx, cell *params)
 	{
-		auto ptr = new list_t();
+		auto ptr = list_pool.add();
 		cell numargs = params[0] / sizeof(cell);
 		for(cell arg = 0; arg < numargs; arg++)
 		{
@@ -129,33 +129,37 @@ namespace Natives
 		return reinterpret_cast<cell>(ptr);
 	}
 
-	// native list_delete(List:list);
+	// native bool:list_is_valid(List:list);
+	static cell AMX_NATIVE_CALL list_is_valid(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		return list_pool.contains(ptr);
+	}
+
+	// native bool:list_delete(List:list);
 	static cell AMX_NATIVE_CALL list_delete(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		delete ptr;
-		return 1;
+		return list_pool.remove(ptr);
 	}
 
-	// native list_delete_deep(List:list);
+	// native bool:list_delete_deep(List:list);
 	static cell AMX_NATIVE_CALL list_delete_deep(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!list_pool.contains(ptr)) return 0;
 		for(auto &obj : *ptr)
 		{
 			obj.free();
 		}
-		delete ptr;
-		return 1;
+		return list_pool.remove(ptr);
 	}
 
 	// native list_size(List:list);
 	static cell AMX_NATIVE_CALL list_size(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!list_pool.contains(ptr)) return -1;
 		return static_cast<cell>(ptr->size());
 	}
 
@@ -163,7 +167,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_clear(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!list_pool.contains(ptr)) return 0;
 		ptr->clear();
 		return 1;
 	}
@@ -198,7 +202,7 @@ namespace Natives
 		if(params[3] < -1) return -1;
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
 		auto ptr2 = reinterpret_cast<list_t*>(params[2]);
-		if(ptr == nullptr || ptr2 == nullptr) return -1;
+		if(!list_pool.contains(ptr) || !list_pool.contains(ptr2)) return -1;
 		if(params[3] == -1)
 		{
 			size_t index = ptr->size();
@@ -217,7 +221,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_add_args(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<list_t*>(params[2]);
-		if(ptr == nullptr) return -1;
+		if(!list_pool.contains(ptr)) return -1;
 		cell numargs = (params[0] / sizeof(cell)) - 2;
 		for(cell arg = 0; arg < numargs; arg++)
 		{
@@ -237,7 +241,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_add_args_str(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!list_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 1;
 		for(cell arg = 0; arg < numargs; arg++)
 		{
@@ -252,7 +256,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_add_args_var(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!list_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 1;
 		for(cell arg = 0; arg < numargs; arg++)
 		{
@@ -273,7 +277,7 @@ namespace Natives
 	{
 		if(params[2] < 0) return 0;
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!list_pool.contains(ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		ptr->erase(ptr->begin() + params[1]);
 		return 1;
@@ -350,7 +354,7 @@ namespace Natives
 	{
 		if(params[2] < 0) return 0;
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!list_pool.contains(ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
 		return obj.get_tag(amx);
@@ -361,7 +365,7 @@ namespace Natives
 	{
 		if(params[2] < 0) return 0;
 		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!list_pool.contains(ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
 		return obj.get_size();
@@ -374,6 +378,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_new_args),
 	AMX_DECLARE_NATIVE(list_new_args_str),
 	AMX_DECLARE_NATIVE(list_new_args_var),
+	AMX_DECLARE_NATIVE(list_is_valid),
 	AMX_DECLARE_NATIVE(list_delete),
 	AMX_DECLARE_NATIVE(list_delete_deep),
 	AMX_DECLARE_NATIVE(list_size),

@@ -1,9 +1,9 @@
 #include "natives.h"
+#include "pools.h"
 #include "modules/variants.h"
-#include <unordered_map>
 #include <iterator>
 
-typedef std::unordered_map<dyn_object, dyn_object> map_t;
+aux::set_pool<map_t> map_pool;
 
 template <size_t... KeyIndices>
 class key_at
@@ -23,7 +23,7 @@ public:
 		static cell AMX_NATIVE_CALL map_add(AMX *amx, cell *params)
 		{
 			auto ptr = reinterpret_cast<map_t*>(params[1]);
-			if(ptr == nullptr) return -1;
+			if(!map_pool.contains(ptr)) return -1;
 			auto ret = ptr->insert(std::make_pair(KeyFactory(amx, params[KeyIndices]...), ValueFactory(amx, params[ValueIndices]...)));
 			return static_cast<cell>(ret.second);
 		}
@@ -33,7 +33,7 @@ public:
 		static cell AMX_NATIVE_CALL map_set(AMX *amx, cell *params)
 		{
 			auto ptr = reinterpret_cast<map_t*>(params[1]);
-			if(ptr == nullptr) return 0;
+			if(!map_pool.contains(ptr)) return 0;
 			(*ptr)[KeyFactory(amx, params[KeyIndices]...)] = ValueFactory(amx, params[ValueIndices]...);
 			return 1;
 		}
@@ -43,7 +43,7 @@ public:
 		static cell AMX_NATIVE_CALL map_get(AMX *amx, cell *params)
 		{
 			auto ptr = reinterpret_cast<map_t*>(params[1]);
-			if(ptr == nullptr) return 0;
+			if(!map_pool.contains(ptr)) return 0;
 			auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 			if(it != ptr->end())
 			{
@@ -58,7 +58,7 @@ public:
 	static cell AMX_NATIVE_CALL map_remove(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!map_pool.contains(ptr)) return 0;
 		auto it = ptr->find(KeyFactory(amx, KeyIndices...));
 		if(it != ptr->end())
 		{
@@ -74,7 +74,7 @@ public:
 	{
 		if(params[3] < 0) return 0;
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!map_pool.contains(ptr)) return 0;
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
@@ -90,7 +90,7 @@ public:
 	static cell AMX_NATIVE_CALL map_tagof(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!map_pool.contains(ptr)) return 0;
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
@@ -104,7 +104,7 @@ public:
 	static cell AMX_NATIVE_CALL map_sizeof(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!map_pool.contains(ptr)) return 0;
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
@@ -125,7 +125,7 @@ public:
 	static cell AMX_NATIVE_CALL map_key_at(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!map_pool.contains(ptr)) return 0;
 		auto it = ptr->begin();
 		std::advance(it, params[2]);
 		if(it != ptr->end())
@@ -140,7 +140,7 @@ public:
 	static cell AMX_NATIVE_CALL map_value_at(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!map_pool.contains(ptr)) return 0;
 		auto it = ptr->begin();
 		std::advance(it, params[2]);
 		if(it != ptr->end())
@@ -156,14 +156,13 @@ namespace Natives
 	// native Map:map_new();
 	static cell AMX_NATIVE_CALL map_new(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
-		return reinterpret_cast<cell>(ptr);
+		return reinterpret_cast<cell>(map_pool.add());
 	}
 
 	// native Map:map_new_args(key_tag_id=tagof(arg0), value_tag_id=tagof(arg1), AnyTag:arg0, AnyTag:arg1, AnyTag:...);
 	static cell AMX_NATIVE_CALL map_new_args(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
+		auto ptr = map_pool.add();
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
@@ -189,7 +188,7 @@ namespace Natives
 	// native Map:map_new_args_str(key_tag_id=tagof(arg0), AnyTag:arg0, arg1[], AnyTag:...);
 	static cell AMX_NATIVE_CALL map_new_args_str(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
+		auto ptr = map_pool.add();
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
@@ -214,7 +213,7 @@ namespace Natives
 	// native Map:map_new_args_var(key_tag_id=tagof(arg0), AnyTag:arg0, VariantTag:arg1, AnyTag:...);
 	static cell AMX_NATIVE_CALL map_new_args_var(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
+		auto ptr = map_pool.add();
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
@@ -240,7 +239,7 @@ namespace Natives
 	// native Map:map_new_str_args(value_tag_id=tagof(arg1), arg0[], AnyTag:arg1, AnyTag:...);
 	static cell AMX_NATIVE_CALL map_new_str_args(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
+		auto ptr = map_pool.add();
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
@@ -265,7 +264,7 @@ namespace Natives
 	// native Map:map_new_str_args_str(arg0[], arg1[], ...);
 	static cell AMX_NATIVE_CALL map_new_str_args_str(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
+		auto ptr = map_pool.add();
 		cell numargs = params[0] / sizeof(cell);
 		if(numargs % 2 != 0)
 		{
@@ -285,7 +284,7 @@ namespace Natives
 	// native Map:map_new_str_args_var(arg0[], VariantTag:arg1, {_,VariantTags}:...);
 	static cell AMX_NATIVE_CALL map_new_str_args_var(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
+		auto ptr = map_pool.add();
 		cell numargs = params[0] / sizeof(cell);
 		if(numargs % 2 != 0)
 		{
@@ -310,7 +309,7 @@ namespace Natives
 	// native Map:map_new_var_args(value_tag_id=tagof(arg1), VariantTag:arg0, AnyTag:arg1, AnyTag:...);
 	static cell AMX_NATIVE_CALL map_new_var_args(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
+		auto ptr = map_pool.add();
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
@@ -336,7 +335,7 @@ namespace Natives
 	// native Map:map_new_var_args_str(VariantTag:arg0, arg1[], {_,VariantTags}:...);
 	static cell AMX_NATIVE_CALL map_new_var_args_str(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
+		auto ptr = map_pool.add();
 		cell numargs = params[0] / sizeof(cell);
 		if(numargs % 2 != 0)
 		{
@@ -361,7 +360,7 @@ namespace Natives
 	// native Map:map_new_var_args_var(VariantTag:arg0, VariantTag:arg1, VariantTag:...);
 	static cell AMX_NATIVE_CALL map_new_var_args_var(AMX *amx, cell *params)
 	{
-		auto ptr = new map_t();
+		auto ptr = map_pool.add();
 		cell numargs = params[0] / sizeof(cell);
 		if(numargs % 2 != 0)
 		{
@@ -384,34 +383,38 @@ namespace Natives
 		return reinterpret_cast<cell>(ptr);
 	}
 
-	// native map_delete(Map:map);
+	// native bool:map_is_valid(Map:map);
+	static cell AMX_NATIVE_CALL map_is_valid(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		return map_pool.contains(ptr);
+	}
+
+	// native bool:map_delete(Map:map);
 	static cell AMX_NATIVE_CALL map_delete(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
-		delete ptr;
-		return 1;
+		return map_pool.remove(ptr);
 	}
 
-	// native map_delete_deep(Map:map);
+	// native bool:map_delete_deep(Map:map);
 	static cell AMX_NATIVE_CALL map_delete_deep(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!map_pool.contains(ptr)) return 0;
 		for(auto &pair : *ptr)
 		{
 			pair.first.free();
 			pair.second.free();
 		}
-		delete ptr;
-		return 1;
+		return map_pool.remove(ptr);
 	}
 
 	// native map_size(Map:map);
 	static cell AMX_NATIVE_CALL map_size(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		return static_cast<cell>(ptr->size());
 	}
 
@@ -419,7 +422,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_clear(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return 0;
+		if(!map_pool.contains(ptr)) return 0;
 		ptr->clear();
 		return 1;
 	}
@@ -525,7 +528,7 @@ namespace Natives
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
 		auto ptr2 = reinterpret_cast<map_t*>(params[2]);
-		if(ptr == nullptr || ptr2 == nullptr) return -1;
+		if(!map_pool.contains(ptr) || !map_pool.contains(ptr2)) return -1;
 		if(params[3])
 		{
 			for(auto &pair : *ptr2)
@@ -542,7 +545,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_add_args(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 3;
 		if(numargs % 2 != 0)
 		{
@@ -569,7 +572,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_add_args_str(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
@@ -595,7 +598,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_add_args_var(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
@@ -622,7 +625,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_add_str_args(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
@@ -648,7 +651,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_add_str_args_str(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
@@ -669,7 +672,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_add_str_args_var(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
@@ -695,7 +698,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_add_var_args(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
@@ -722,7 +725,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_add_var_args_str(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
@@ -748,7 +751,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_add_var_args_var(AMX *amx, cell *params)
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
-		if(ptr == nullptr) return -1;
+		if(!map_pool.contains(ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
@@ -1180,6 +1183,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_new_var_args),
 	AMX_DECLARE_NATIVE(map_new_var_args_str),
 	AMX_DECLARE_NATIVE(map_new_var_args_var),
+	AMX_DECLARE_NATIVE(map_is_valid),
 	AMX_DECLARE_NATIVE(map_delete),
 	AMX_DECLARE_NATIVE(map_delete_deep),
 	AMX_DECLARE_NATIVE(map_size),
