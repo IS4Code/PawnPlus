@@ -36,6 +36,8 @@ public:
 	void clear_tmp();
 	bool valid(const_object_ptr obj) const;
 	object_ptr get(AMX *amx, cell addr);
+	size_t local_size() const;
+	size_t global_size() const;
 
 private:
 	typename list_type::const_iterator find_in_list(const_object_ptr obj, const list_type &list) const;

@@ -49,6 +49,14 @@
 
 native pp_hook_strlen(bool:hook);
 native pp_hook_check_ref_args(bool:hook);
+native pp_num_tasks();
+native pp_num_local_strings();
+native pp_num_global_strings();
+native pp_num_local_variants();
+native pp_num_global_variants();
+native pp_num_lists();
+native pp_num_maps();
+native pp_num_guards();
 
 /*                 */
 /*      Pawn       */

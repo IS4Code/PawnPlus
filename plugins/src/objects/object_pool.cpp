@@ -168,5 +168,17 @@ auto object_pool<ObjType>::find_in_list(const_object_ptr obj, const list_type &l
 	return std::find_if(list.begin(), list.end(), [=](const std::unique_ptr<ObjType> &ptr) { return ptr.get() == obj; });
 }
 
+template <class ObjType>
+size_t object_pool<ObjType>::local_size() const
+{
+	return tmp_object_list.size();
+}
+
+template <class ObjType>
+size_t object_pool<ObjType>::global_size() const
+{
+	return object_list.size();
+}
+
 template class object_pool<std::basic_string<cell>>;
 template class object_pool<dyn_object>;

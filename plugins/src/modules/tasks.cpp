@@ -92,6 +92,11 @@ void TaskPool::RegisterTimer(cell interval, AMX_RESET &&reset)
 	timerResets.push_back(std::make_pair(time, std::move(reset)));
 }
 
+size_t TaskPool::Size()
+{
+	return pool.size();
+}
+
 void TaskPool::OnTick()
 {
 	{

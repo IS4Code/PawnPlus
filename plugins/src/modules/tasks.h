@@ -42,6 +42,7 @@ namespace TaskPool
 	Task &CreateTimerTask(cell interval);
 	Task *Get(task_id id);
 	void OnTick();
+	size_t Size();
 
 	void RegisterTicks(cell ticks, AMX_RESET &&reset);
 	void RegisterTimer(cell interval, AMX_RESET &&reset);
