@@ -49,7 +49,7 @@ struct AMX_CONTEXT
 
 	~AMX_CONTEXT()
 	{
-		for(auto &obj : guards)
+		for(auto obj : guards)
 		{
 			obj->free();
 		}

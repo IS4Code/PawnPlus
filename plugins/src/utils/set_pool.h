@@ -8,38 +8,26 @@
 
 namespace aux
 {
-	namespace impl
-	{
-		template <class Type>
-		struct conditional_delete
-		{
-			bool del;
-			conditional_delete(bool del) : del(del)
-			{
-
-			}
-
-			void operator()(Type *p) const
-			{
-				if(del) delete p;
-			}
-		};
-	}
-
 	template <class Type>
 	class set_pool
 	{
-		typedef std::unique_ptr<Type, impl::conditional_delete<Type>> unique_ptr;
-
-		std::unordered_set<unique_ptr> data;
+		std::unordered_set<Type*> data;
 
 		Type *add(Type *value)
 		{
-			data.insert(unique_ptr(value, true));
+			data.insert(value);
 			return value;
 		}
 
+		typedef typename std::unordered_set<Type*>::iterator iterator;
+		typedef typename std::unordered_set<Type*>::const_iterator const_iterator;
+
 	public:
+		Type *add(std::unique_ptr<Type> &&value)
+		{
+			return add(value.release());
+		}
+
 		Type *add()
 		{
 			return add(new Type());
@@ -57,33 +45,60 @@ namespace aux
 
 		void clear()
 		{
+			for(auto ptr : data)
+			{
+				delete ptr;
+			}
 			data.clear();
 		}
 
-		auto begin()
+		iterator begin()
 		{
 			return data.begin();
 		}
 
-		auto end()
+		iterator end()
 		{
 			return data.end();
 		}
 
 		bool remove(Type *value)
 		{
-			auto it = data.find(unique_ptr(value, false));
+			auto it = data.find(value);
 			if(it != data.end())
 			{
+				delete value;
 				data.erase(it);
 				return true;
 			}
 			return false;
 		}
 
-		bool contains(Type *value)
+		bool contains(const Type *value) const
 		{
-			return data.find(unique_ptr(value, false)) != data.end();
+			return data.find(const_cast<Type*>(value)) != data.cend();
+		}
+
+		iterator find(Type *value)
+		{
+			return data.find(value);
+		}
+
+		const_iterator find(const Type *value) const
+		{
+			return data.find(const_cast<Type*>(value));
+		}
+
+		void erase(iterator it)
+		{
+			data.erase(it);
+		}
+
+		std::unique_ptr<Type> extract(iterator it)
+		{
+			Type *ptr = *it;
+			data.erase(it);
+			return std::unique_ptr<Type>(ptr);
 		}
 
 		set_pool()
@@ -91,30 +106,9 @@ namespace aux
 
 		}
 
-		/*set_pool(const set_pool<Type> &obj)
-		{
-			for(auto &ptr : obj.data)
-			{
-				data.insert(std::make_unique<Type>(*ptr));
-			}
-		}*/
-
-		/*set_pool<Type> &operator=(const set_pool<Type> &obj)
-		{
-			if(this != &obj)
-			{
-				data.clear();
-				for(auto &ptr : obj.data)
-				{
-					add(Type(*ptr));
-				}
-			}
-			return *this;
-		}*/
-
 		set_pool(set_pool<Type> &&obj) : data(std::move(obj.data))
 		{
-
+			obj.data.clear();
 		}
 
 		set_pool<Type> &operator=(set_pool<Type> &&obj)
@@ -122,8 +116,14 @@ namespace aux
 			if(this != &obj)
 			{
 				data = std::move(obj.data);
+				obj.data.clear();
 			}
 			return *this;
+		}
+
+		~set_pool()
+		{
+			clear();
 		}
 	};
 }

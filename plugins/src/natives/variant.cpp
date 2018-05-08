@@ -20,7 +20,7 @@ public:
 	static cell AMX_NATIVE_CALL var_get(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(var == nullptr) return 0;
+		if(!variants::pool.contains(var)) return 0;
 		return Factory(amx, *var, params[Indices]...);
 	}
 };
@@ -67,7 +67,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_to_global(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(var == nullptr) return 0;
+		if(!variants::pool.contains(var)) return 0;
 		variants::pool.move_to_global(var);
 		return params[1];
 	}
@@ -76,7 +76,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_to_local(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(var == nullptr) return 0;
+		if(!variants::pool.contains(var)) return 0;
 		variants::pool.move_to_local(var);
 		return params[1];
 	}
@@ -85,24 +85,23 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_delete(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(var == nullptr) return 0;
-		return variants::pool.free(var);
+		return variants::pool.remove(var);
 	}
 
 	// native bool:var_delete_deep(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_delete_deep(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(var == nullptr) return 0;
+		if(!variants::pool.contains(var)) return 0;
 		var->free();
-		return variants::pool.free(var);
+		return variants::pool.remove(var);
 	}
 
 	// native bool:var_valid(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_valid(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		return variants::pool.valid(var);
+		return variants::pool.contains(var);
 	}
 
 	// native var_get(VariantTag:var, offset=0);
@@ -151,7 +150,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_set_cell(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(var == nullptr) return 0;
+		if(!variants::pool.contains(var)) return 0;
 		return var->set_cell(params[2], params[3]);
 	}
 
@@ -159,7 +158,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_set_cell_safe(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(var == nullptr) return 0;
+		if(!variants::pool.contains(var)) return 0;
 		if(!var->check_tag(amx, params[4])) return 0;
 		return var->set_cell(params[2], params[3]);
 	}
@@ -168,7 +167,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_tagof(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(var == nullptr) return 0;
+		if(!variants::pool.contains(var)) return 0;
 		return var->get_tag(amx);
 	}
 
@@ -176,7 +175,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_sizeof(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(var == nullptr) return 0;
+		if(!variants::pool.contains(var)) return 0;
 		return var->get_size();
 	}
 
@@ -185,6 +184,7 @@ namespace Natives
 	{
 		auto var1 = reinterpret_cast<dyn_object*>(params[1]);
 		auto var2 = reinterpret_cast<dyn_object*>(params[2]);
+		if((var1 != nullptr && !variants::pool.contains(var1)) || (var2 != nullptr && !variants::pool.contains(var2))) return 0;
 		if(var1 == nullptr || var1->empty()) return var2 == nullptr || var2->empty();
 		if(var2 == nullptr) return 0;
 		return *var1 == *var2;
@@ -195,9 +195,9 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_op(AMX *amx, cell *params)
 	{
 		auto var1 = reinterpret_cast<dyn_object*>(params[1]);
-		if(var1 == nullptr) return 0;
+		if(!variants::pool.contains(var1)) return 0;
 		auto var2 = reinterpret_cast<dyn_object*>(params[2]);
-		if(var2 == nullptr) return 0;
+		if(!variants::pool.contains(var2)) return 0;
 		auto var = (var1->*op)(*var2);
 		if(var.empty()) return 0;
 		return variants::create(std::move(var));

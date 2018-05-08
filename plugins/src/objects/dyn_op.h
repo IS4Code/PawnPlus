@@ -328,7 +328,7 @@ struct tag_traits<strings::cell_string*>
 
 	static void free(strings::cell_string *v)
 	{
-		strings::pool.free(v);
+		strings::pool.remove(v);
 	}
 };
 
@@ -350,7 +350,7 @@ struct tag_traits<dyn_object*>
 
 	static void free(dyn_object *v)
 	{
-		variants::pool.free(v);
+		variants::pool.remove(v);
 	}
 };
 

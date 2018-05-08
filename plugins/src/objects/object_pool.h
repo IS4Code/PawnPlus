@@ -1,6 +1,7 @@
 #ifndef OBJECT_POOL_H_INCLUDED
 #define OBJECT_POOL_H_INCLUDED
 
+#include "utils/set_pool.h"
 #include "sdk/amx/amx.h"
 #include <vector>
 #include <unordered_map>
@@ -16,14 +17,13 @@ public:
 	typedef decltype(&const_object_ptr()->operator[](0)) const_inner_ptr;
 
 private:
-	typedef std::vector<std::unique_ptr<ObjType>> list_type;
+	typedef aux::set_pool<ObjType> list_type;
 	list_type object_list;
 	list_type tmp_object_list;
 	std::unordered_map<const_inner_ptr, const_object_ptr> inner_cache;
 	
 public:
 	object_ptr add(bool temp);
-	//object_ptr add(object_ptr obj, bool temp);
 	object_ptr add(ObjType &&obj, bool temp);
 	cell get_address(AMX *amx, const_object_ptr obj) const;
 	cell get_inner_address(AMX *amx, const_object_ptr obj) const;
@@ -32,16 +32,12 @@ public:
 	bool move_to_local(const_object_ptr obj);
 	void set_cache(const_object_ptr obj);
 	object_ptr find_cache(const_inner_ptr ptr);
-	bool free(object_ptr obj);
+	bool remove(object_ptr obj);
 	void clear_tmp();
-	bool valid(const_object_ptr obj) const;
+	bool contains(const_object_ptr obj) const;
 	object_ptr get(AMX *amx, cell addr);
 	size_t local_size() const;
 	size_t global_size() const;
-
-private:
-	typename list_type::const_iterator find_in_list(const_object_ptr obj, const list_type &list) const;
-	typename list_type::iterator find_in_list(const_object_ptr obj, list_type &list) const;
 };
 
 #endif
