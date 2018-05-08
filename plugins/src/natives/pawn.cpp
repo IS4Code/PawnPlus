@@ -320,15 +320,36 @@ namespace Natives
 		return reinterpret_cast<cell>(ctx.guards.add(std::move(obj)));
 	}
 
-	// native pawn_guard_free(Guard:guard);
+	// native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL pawn_guard_arr(AMX *amx, cell *params)
+	{
+		auto &ctx = Context::Get(amx);
+		cell *addr;
+		amx_GetAddr(amx, params[1], &addr);
+		auto obj = dyn_object(amx, addr, params[2], params[3]);
+		if(obj.get_tag()->inherits_from(tags::tag_cell))
+		{
+			return 0;
+		}
+		return reinterpret_cast<cell>(ctx.guards.add(std::move(obj)));
+	}
+
+	// native bool:pawn_guard_valid(Guard:guard);
+	static cell AMX_NATIVE_CALL pawn_guard_valid(AMX *amx, cell *params)
+	{
+		auto obj = reinterpret_cast<dyn_object*>(params[1]);
+		auto &ctx = Context::Get(amx);
+		return ctx.guards.contains(obj);
+	}
+
+	// native bool:pawn_guard_free(Guard:guard);
 	static cell AMX_NATIVE_CALL pawn_guard_free(AMX *amx, cell *params)
 	{
 		auto obj = reinterpret_cast<dyn_object*>(params[1]);
 		auto &ctx = Context::Get(amx);
 		if(!ctx.guards.contains(obj)) return 0;
 		obj->free();
-		ctx.guards.remove(obj);
-		return 0;
+		return ctx.guards.remove(obj);
 	}
 }
 
@@ -342,6 +363,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_posthook_native),
 	AMX_DECLARE_NATIVE(pawn_remove_hook),
 	AMX_DECLARE_NATIVE(pawn_guard),
+	AMX_DECLARE_NATIVE(pawn_guard_arr),
+	AMX_DECLARE_NATIVE(pawn_guard_valid),
 	AMX_DECLARE_NATIVE(pawn_guard_free),
 };
 

@@ -62,7 +62,9 @@ native hook:pawn_prehook_native(const function[], const format[], const handler[
 native hook:pawn_posthook_native(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
 native pawn_remove_hook(hook:id);
 native Guard:pawn_guard(AnyTag:value, tag_id=tagof(value));
-native pawn_guard_free(Guard:guard);
+native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native bool:pawn_guard_valid(Guard:guard);
+native bool:pawn_guard_free(Guard:guard);
 
 /*                 */
 /*      Tags       */
