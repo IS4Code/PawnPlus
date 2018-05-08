@@ -147,6 +147,9 @@ native String:str_clone(StringTag:str);
 native String:str_val(AnyTag:value, tag_id=tagof(value));
 native String:str_val_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 native List:str_split(StringTag:str, const delims[]);
+native List:str_split_s(StringTag:str, StringTag:delims);
+native String:str_join(List:list, const delim[]);
+native String:str_join_s(List:list, StringTag:delim);
 
 native String:str_set(StringTag:target, StringTag:other);
 native String:str_append(StringTag:target, StringTag:other);

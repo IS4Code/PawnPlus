@@ -129,16 +129,8 @@ namespace Natives
 		dyn_object obj{amx, addr, params[2], params[3]};
 		return reinterpret_cast<cell>(strings::pool.add(obj.to_string(), true));
 	}
-
-	// native List:str_split(StringTag:str, const delims[]);
-	static cell AMX_NATIVE_CALL str_split(AMX *amx, cell *params)
+	static cell AMX_NATIVE_CALL str_split_base(AMX *amx, cell_string *str, const cell_string &delims)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		cell *addr;
-		amx_GetAddr(amx, params[2], &addr);
-
-		cell_string delims(addr);
-
 		auto list = list_pool.add();
 
 		cell_string::size_type last_pos = 0;
@@ -168,6 +160,72 @@ namespace Natives
 		}
 
 		return reinterpret_cast<cell>(list);
+	}
+
+	// native List:str_split(StringTag:str, const delims[]);
+	static cell AMX_NATIVE_CALL str_split(AMX *amx, cell *params)
+	{
+		if(params[1] == 0) return reinterpret_cast<cell>(list_pool.add());
+		auto str = reinterpret_cast<cell_string*>(params[1]);
+		cell *addr;
+		amx_GetAddr(amx, params[2], &addr);
+		cell_string delims(addr);
+		return str_split_base(amx, str, delims);
+	}
+
+	// native List:str_split_s(StringTag:str, StringTag:delims);
+	static cell AMX_NATIVE_CALL str_split_s(AMX *amx, cell *params)
+	{
+		if(params[1] == 0) return reinterpret_cast<cell>(list_pool.add());
+		auto str = reinterpret_cast<cell_string*>(params[1]);
+		if(params[2] == 0)
+		{
+			return str_split_base(amx, str, cell_string());
+		}else{
+			return str_split_base(amx, str, *reinterpret_cast<cell_string*>(params[2]));
+		}
+	}
+
+	static cell AMX_NATIVE_CALL str_join_base(AMX *amx, list_t *list, const cell_string &delim)
+	{
+		auto str = strings::pool.add(true);
+		bool first = true;
+		for(auto &obj : *list)
+		{
+			if(first)
+			{
+				first = false;
+			} else {
+				str->append(delim);
+			}
+			str->append(obj.to_string());
+		}
+
+		return reinterpret_cast<cell>(str);
+	}
+
+	// native String:str_join(List:list, const delim[]);
+	static cell AMX_NATIVE_CALL str_join(AMX *amx, cell *params)
+	{
+		auto list = reinterpret_cast<list_t*>(params[1]);
+		if(!list_pool.contains(list)) return 0;
+		cell *addr;
+		amx_GetAddr(amx, params[2], &addr);
+		cell_string delim(addr);
+		return str_join_base(amx, list, delim);
+	}
+
+	// native String:str_join_s(List:list, StringTag:delim);
+	static cell AMX_NATIVE_CALL str_join_s(AMX *amx, cell *params)
+	{
+		auto list = reinterpret_cast<list_t*>(params[1]);
+		if(!list_pool.contains(list)) return 0;
+		if(params[2] == 0)
+		{
+			return str_join_base(amx, list, cell_string());
+		}else{
+			return str_join_base(amx, list, *reinterpret_cast<cell_string*>(params[2]));
+		}
 	}
 
 	// native str_len(StringTag:str);
@@ -483,6 +541,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_val),
 	AMX_DECLARE_NATIVE(str_val_arr),
 	AMX_DECLARE_NATIVE(str_split),
+	AMX_DECLARE_NATIVE(str_split_s),
+	AMX_DECLARE_NATIVE(str_join),
+	AMX_DECLARE_NATIVE(str_join_s),
 
 	AMX_DECLARE_NATIVE(str_set),
 	AMX_DECLARE_NATIVE(str_append),
