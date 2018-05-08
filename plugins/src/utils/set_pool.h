@@ -55,6 +55,21 @@ namespace aux
 			return data.size();
 		}
 
+		void clear()
+		{
+			data.clear();
+		}
+
+		auto begin()
+		{
+			return data.begin();
+		}
+
+		auto end()
+		{
+			return data.end();
+		}
+
 		bool remove(Type *value)
 		{
 			auto it = data.find(unique_ptr(value, false));
@@ -69,6 +84,46 @@ namespace aux
 		bool contains(Type *value)
 		{
 			return data.find(unique_ptr(value, false)) != data.end();
+		}
+
+		set_pool()
+		{
+
+		}
+
+		/*set_pool(const set_pool<Type> &obj)
+		{
+			for(auto &ptr : obj.data)
+			{
+				data.insert(std::make_unique<Type>(*ptr));
+			}
+		}*/
+
+		/*set_pool<Type> &operator=(const set_pool<Type> &obj)
+		{
+			if(this != &obj)
+			{
+				data.clear();
+				for(auto &ptr : obj.data)
+				{
+					add(Type(*ptr));
+				}
+			}
+			return *this;
+		}*/
+
+		set_pool(set_pool<Type> &&obj) : data(std::move(obj.data))
+		{
+
+		}
+
+		set_pool<Type> &operator=(set_pool<Type> &&obj)
+		{
+			if(this != &obj)
+			{
+				data = std::move(obj.data);
+			}
+			return *this;
 		}
 	};
 }

@@ -1,7 +1,7 @@
 #ifndef CONTEXT_H_INCLUDED
 #define CONTEXT_H_INCLUDED
 
-#include "utils/linear_pool.h"
+#include "utils/set_pool.h"
 #include "objects/dyn_object.h"
 #include "sdk/amx/amx.h"
 #include <functional>
@@ -23,7 +23,7 @@ struct AMX_CONTEXT
 {
 	size_t task_object = -1;
 	cell result = 0;
-	aux::linear_pool<dyn_object> guards;
+	aux::set_pool<dyn_object> guards;
 
 	AMX_CONTEXT()
 	{
@@ -31,9 +31,8 @@ struct AMX_CONTEXT
 	}
 
 	AMX_CONTEXT(const AMX_CONTEXT &obj) = delete;
-	AMX_CONTEXT(AMX_CONTEXT &&obj)
+	AMX_CONTEXT(AMX_CONTEXT &&obj) : guards(std::move(obj.guards))
 	{
-		guards = obj.guards;
 		obj.guards.clear();
 	}
 
@@ -42,7 +41,7 @@ struct AMX_CONTEXT
 	{
 		if(this != &obj)
 		{
-			guards = obj.guards;
+			guards = std::move(obj.guards);
 			obj.guards.clear();
 		}
 		return *this;
@@ -50,13 +49,9 @@ struct AMX_CONTEXT
 
 	~AMX_CONTEXT()
 	{
-		for(size_t i = 0; i < guards.size(); i++)
+		for(auto &obj : guards)
 		{
-			auto obj = guards.get(i);
-			if(obj != nullptr)
-			{
-				obj->free();
-			}
+			obj->free();
 		}
 	}
 };

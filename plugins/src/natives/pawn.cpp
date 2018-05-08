@@ -317,21 +317,17 @@ namespace Natives
 		{
 			return 0;
 		}
-		return ctx.guards.add(std::move(obj)) + 1;
+		return reinterpret_cast<cell>(ctx.guards.add(std::move(obj)));
 	}
 
 	// native pawn_guard_free(Guard:guard);
 	static cell AMX_NATIVE_CALL pawn_guard_free(AMX *amx, cell *params)
 	{
-		cell id = params[1] - 1;
-		if(id == -1) return 0;
+		auto obj = reinterpret_cast<dyn_object*>(params[1]);
 		auto &ctx = Context::Get(amx);
-		auto obj = ctx.guards.get(id);
-		if(obj != nullptr)
-		{
-			obj->free();
-		}
-		ctx.guards.remove(id);
+		if(!ctx.guards.contains(obj)) return 0;
+		obj->free();
+		ctx.guards.remove(obj);
 		return 0;
 	}
 }
