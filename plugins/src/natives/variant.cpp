@@ -51,6 +51,12 @@ namespace Natives
 		return value_at<1>::var_new<dyn_func_str>(amx, params);
 	}
 
+	// native Variant:var_new_str_s(StringTag:value);
+	static cell AMX_NATIVE_CALL var_new_str_s(AMX *amx, cell *params)
+	{
+		return value_at<1>::var_new<dyn_func_str_s>(amx, params);
+	}
+
 	// native Variant:var_new_var(VariantTag:value);
 	static cell AMX_NATIVE_CALL var_new_var(AMX *amx, cell *params)
 	{
@@ -111,6 +117,12 @@ namespace Natives
 		return value_at<2, 3>::var_get<dyn_func_arr>(amx, params);
 	}
 
+	// native String:var_get_str_s(VariantTag:var);
+	static cell AMX_NATIVE_CALL var_get_str_s(AMX *amx, cell *params)
+	{
+		return value_at<>::var_get<dyn_func_str_s>(amx, params);
+	}
+
 	// native bool:var_get_safe(VariantTag:var, &AnyTag:value, offset=0, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL var_get_safe(AMX *amx, cell *params)
 	{
@@ -121,6 +133,18 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_get_arr_safe(AMX *amx, cell *params)
 	{
 		return value_at<2, 3, 4>::var_get<dyn_func_arr>(amx, params);
+	}
+
+	// native var_get_str_safe(VariantTag:var, value[], size=sizeof(value));
+	static cell AMX_NATIVE_CALL var_get_str_safe(AMX *amx, cell *params)
+	{
+		return value_at<2, 3>::var_get<dyn_func_str>(amx, params);
+	}
+
+	// native String:var_get_str_safe_s(VariantTag:var);
+	static cell AMX_NATIVE_CALL var_get_str_safe_s(AMX *amx, cell *params)
+	{
+		return value_at<0>::var_get<dyn_func_str_s>(amx, params);
 	}
 
 	// native bool:var_set_cell(VariantTag:var, offset, AnyTag:value);
@@ -216,6 +240,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_new_arr),
 	AMX_DECLARE_NATIVE(var_new_buf),
 	AMX_DECLARE_NATIVE(var_new_str),
+	AMX_DECLARE_NATIVE(var_new_str_s),
 	AMX_DECLARE_NATIVE(var_new_var),
 	AMX_DECLARE_NATIVE(var_to_global),
 	AMX_DECLARE_NATIVE(var_to_local),
@@ -225,8 +250,11 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(var_get),
 	AMX_DECLARE_NATIVE(var_get_arr),
+	AMX_DECLARE_NATIVE(var_get_str_s),
 	AMX_DECLARE_NATIVE(var_get_safe),
 	AMX_DECLARE_NATIVE(var_get_arr_safe),
+	AMX_DECLARE_NATIVE(var_get_str_safe),
+	AMX_DECLARE_NATIVE(var_get_str_safe_s),
 
 	AMX_DECLARE_NATIVE(var_set_cell),
 	AMX_DECLARE_NATIVE(var_set_cell_safe),

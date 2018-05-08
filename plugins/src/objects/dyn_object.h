@@ -21,13 +21,14 @@ class dyn_object
 public:
 	dyn_object();
 	dyn_object(AMX *amx, cell value, cell tag_id);
-	dyn_object(AMX *amx, cell *arr, cell size, cell tag_id);
-	dyn_object(AMX *amx, cell *str);
+	dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id);
+	dyn_object(AMX *amx, const cell *str);
 	dyn_object(cell value, tag_ptr tag);
-	dyn_object(cell *arr, cell size, tag_ptr tag);
+	dyn_object(const cell *arr, cell size, tag_ptr tag);
 	dyn_object(const dyn_object &obj);
 	dyn_object(dyn_object &&obj);
 	bool check_tag(AMX *amx, cell tag_id) const;
+	bool check_tag(tag_ptr test_tag) const;
 	bool get_cell(cell index, cell &value) const;
 	cell get_array(cell *arr, cell maxsize) const;
 	bool set_cell(cell index, cell value);

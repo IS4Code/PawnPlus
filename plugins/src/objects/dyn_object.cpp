@@ -16,7 +16,7 @@ dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : is_array(false), cel
 
 }
 
-dyn_object::dyn_object(AMX *amx, cell *arr, cell size, cell tag_id) : is_array(true), array_size(size), tag(tags::find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : is_array(true), array_size(size), tag(tags::find_tag(amx, tag_id))
 {
 	if(arr != nullptr)
 	{
@@ -27,7 +27,7 @@ dyn_object::dyn_object(AMX *amx, cell *arr, cell size, cell tag_id) : is_array(t
 	}
 }
 
-dyn_object::dyn_object(AMX *amx, cell *str) : is_array(true), tag(tags::find_tag(tags::tag_char))
+dyn_object::dyn_object(AMX *amx, const cell *str) : is_array(true), tag(tags::find_tag(tags::tag_char))
 {
 	if(str == nullptr || !str[0])
 	{
@@ -56,7 +56,7 @@ dyn_object::dyn_object(cell value, tag_ptr tag) : is_array(false), cell_value(va
 
 }
 
-dyn_object::dyn_object(cell *arr, cell size, tag_ptr tag) : is_array(true), array_size(size), tag(tag)
+dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : is_array(true), array_size(size), tag(tag)
 {
 	if(arr != nullptr)
 	{
@@ -117,6 +117,15 @@ std::string dyn_object::find_tag(AMX *amx, cell tag_id) const
 bool dyn_object::check_tag(AMX *amx, cell tag_id) const
 {
 	tag_ptr test_tag = tags::find_tag(amx, tag_id);
+	if(test_tag->uid == tags::tag_cell)
+	{
+		if(!tag->strong()) return true;
+	}
+	return tag->inherits_from(test_tag);
+}
+
+bool dyn_object::check_tag(tag_ptr test_tag) const
+{
 	if(test_tag->uid == tags::tag_cell)
 	{
 		if(!tag->strong()) return true;

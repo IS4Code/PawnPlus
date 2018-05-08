@@ -22,12 +22,16 @@ namespace variants
 dyn_object dyn_func(AMX *amx, cell value, cell tag_id);
 dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell tag_id);
 dyn_object dyn_func_str(AMX *amx, cell amx_addr);
+dyn_object dyn_func_str_s(AMX *amx, cell str);
 dyn_object dyn_func_var(AMX *amx, cell ptr);
 
 cell dyn_func(AMX *amx, const dyn_object &obj, cell offset);
 cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offset, cell tag_id);
 cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size);
 cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size, cell tag_id);
+cell dyn_func_str(AMX *amx, const dyn_object &obj, cell amx_addr, cell size);
+cell dyn_func_str_s(AMX *amx, const dyn_object &obj);
+cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell unused);
 cell dyn_func_var(AMX *amx, const dyn_object &obj);
 
 template <size_t... Indices>

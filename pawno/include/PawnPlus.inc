@@ -182,6 +182,7 @@ native Variant:var_new(AnyTag:value, tag_id=tagof(value));
 native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 native Variant:var_new_buf(size, tag_id=0);
 native Variant:var_new_str(const value[]);
+native Variant:var_new_str_s(StringTag:value);
 native Variant:var_new_var(VariantTag:value);
 native GlobalVariant:var_to_global(VariantTag:var);
 native Variant:var_to_local(VariantTag:var);
@@ -191,8 +192,12 @@ native bool:var_valid(VariantTag:var);
 
 native var_get(VariantTag:var, offset=0);
 native var_get_arr(VariantTag:var, AnyTag:value[], size=sizeof(value));
+native var_get_str(VariantTag:var, value[], size=sizeof(value)) = var_get_arr;
+native String:var_get_str_s(VariantTag:var);
 native bool:var_get_safe(VariantTag:var, &AnyTag:value, offset=0, tag_id=tagof(value));
 native var_get_arr_safe(VariantTag:var, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native var_get_str_safe(VariantTag:var, value[], size=sizeof(value));
+native String:var_get_str_safe_s(VariantTag:var);
 
 native bool:var_set_cell(VariantTag:var, offset, AnyTag:value);
 native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, tag_id=tagof(value));
