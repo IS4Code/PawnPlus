@@ -77,6 +77,20 @@ namespace Natives
 		return reinterpret_cast<cell>(list_pool.add());
 	}
 
+	// native List:list_new_arr(AnyTag:values[], size=sizeof(values), tag_id=tagof(values));
+	static cell AMX_NATIVE_CALL list_new_arr(AMX *amx, cell *params)
+	{
+		auto ptr = list_pool.add();
+		cell *arr;
+		amx_GetAddr(amx, params[1], &arr);
+
+		for(cell i = 0; i < params[2]; i++)
+		{
+			ptr->push_back(dyn_object(amx, arr[i], params[3]));
+		}
+		return reinterpret_cast<cell>(ptr);
+	}
+
 	// native List:list_new_args(tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...);
 	static cell AMX_NATIVE_CALL list_new_args(AMX *amx, cell *params)
 	{
@@ -375,6 +389,7 @@ namespace Natives
 static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(list_new),
+	AMX_DECLARE_NATIVE(list_new_arr),
 	AMX_DECLARE_NATIVE(list_new_args),
 	AMX_DECLARE_NATIVE(list_new_args_str),
 	AMX_DECLARE_NATIVE(list_new_args_var),

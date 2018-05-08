@@ -146,6 +146,7 @@ native String:str_sub(StringTag:str, start=0, end=cellmax);
 native String:str_clone(StringTag:str);
 native String:str_val(AnyTag:value, tag_id=tagof(value));
 native String:str_val_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native List:str_split(StringTag:str, const delims[]);
 
 native String:str_set(StringTag:target, StringTag:other);
 native String:str_append(StringTag:target, StringTag:other);
@@ -208,6 +209,7 @@ native Variant:var_mod(VariantTag:var1, VariantTag:var2);
 /*                 */
 
 native List:list_new();
+native List:list_new_arr(AnyTag:values[], size=sizeof(values), tag_id=tagof(values));
 native List:list_new_args_tagged(tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) = list_new_args;
 #define list_new_args(%0) list_new_args_tagged(_,%0)
 native List:list_new_args_str(arg0[], ...);
@@ -266,6 +268,7 @@ native bool:iter_set_cell_safe(ListIterator:iter, offset, AnyTag:value, tag_id=t
 native ListIterator:operator++(ListIterator:iter) = list_next;
 
 #define list_new<%0> list_new@%0
+#define list_new_arr<%0> list_new_arr@%0
 #define list_new_args_tagged<%0> list_new_args_tagged@%0
 #define list_new_args_gen<%0>(%1) list_new_args_tagged<%0>(_,%1)
 #define list_valid<%0> list_valid@%0
@@ -305,6 +308,7 @@ native ListIterator:operator++(ListIterator:iter) = list_next;
 #define @define_List<%0> \
 enum{Void:List<%0>};\
 native List<%0>:list_new<%0>()=list_new;\
+native List<%0>:list_new_arr<%0>(%0:v[],s=sizeof(v),t=(tagof(%0:)))=list_new_arr;\
 native List<%0>:list_new_args_tagged<%0>(t=(tagof(%0:)),%0:a,%0:...)=list_new_args;\
 native bool:list_valid<%0>(List<%0>:l)=list_valid;\
 native bool:list_delete<%0>(List<%0>:l)=list_delete;\
