@@ -238,7 +238,7 @@ native list_sizeof(List:list, index);
 
 native ListIterator:list_iter(List:list);
 native ListIterator:list_next(ListIterator:iter);
-native bool:list_valid(List:list, ListIterator:iter);
+native bool:list_iter_valid(List:list, ListIterator:iter);
 
 native iter_get(ListIterator:iter, offset=0);
 native iter_get_arr(ListIterator:iter, AnyTag:value[], size=sizeof(value));
@@ -283,7 +283,7 @@ native ListIterator:operator++(ListIterator:iter) = list_next;
 
 #define list_iter<%0> list_iter@%0
 #define list_next<%0> list_next@%0
-#define list_valid<%0> list_valid@%0
+#define list_iter_valid<%0> list_iter_valid@%0
 
 #define iter_get<%0> iter_get@%0
 #define iter_get_arr<%0> iter_get_arr@%0
@@ -316,7 +316,7 @@ forward List:operator=(List<%0>:l);\
 forward List<%0>:operator=(List:l);\
 native ListIterator<%0>:list_iter<%0>(List<%0>:l)=list_iter;\
 native ListIterator<%0>:list_next<%0>(ListIterator<%0>:i)=list_next;\
-native bool:list_valid<%0>(List<%0>:l,ListIterator<%0>:i)=list_valid;\
+native bool:list_iter_valid<%0>(List<%0>:l,ListIterator<%0>:i)=list_iter_valid;\
 native iter_get<%0>(ListIterator<%0>:i,o=0)=iter_get;\
 native iter_get_arr<%0>(ListIterator<%0>:i,%0:v[],s=sizeof(v))=iter_get_arr;\
 native bool:iter_set<%0>(ListIterator<%0>:i,%0:v,t=(tagof(%0:)))=iter_set;\
@@ -455,7 +455,7 @@ native map_var_sizeof(Map:map, VariantTag:key);
 
 native MapIterator:map_iter(Map:map);
 native MapIterator:map_next(MapIterator:iter);
-native bool:map_valid(Map:map, MapIterator:iter);
+native bool:map_iter_valid(Map:map, MapIterator:iter);
 
 native iter_get_key(MapIterator:iter, offset=0);
 native iter_get_key_arr(MapIterator:iter, AnyTag:value[], size=sizeof(value));
@@ -520,7 +520,7 @@ native MapIterator:operator++(MapIterator:iter) = map_next;
 
 #define map_iter<%0,%1> map_iter@%0@%1
 #define map_next<%0,%1> map_next@%0@%1
-#define map_valid<%0,%1> map_valid@%0@%1
+#define map_iter_valid<%0,%1> map_iter_valid@%0@%1
 
 #define iter_get_key<%0,%1> iter_get_key@%0@%1
 #define iter_get_key_arr<%0,%1> iter_get_key_arr@%0@%1
@@ -568,7 +568,7 @@ forward Map:operator=(Map<%0,%1>:m);\
 forward Map<%0,%1>:operator=(Map:m);\
 native MapIterator<%0,%1>:map_iter<%0,%1>(Map<%0,%1>:m)=map_iter;\
 native MapIterator<%0,%1>:map_next<%0,%1>(MapIterator<%0,%1>:i)=map_next;\
-native bool:map_valid<%0,%1>(Map<%0,%1>:m,MapIterator<%0,%1>:i)=map_valid;\
+native bool:map_iter_valid<%0,%1>(Map<%0,%1>:m,MapIterator<%0,%1>:i)=map_iter_valid;\
 native %0:iter_get_key<%0,%1>(MapIterator<%0,%1>:i,o=0)=iter_get_key;\
 native iter_get_key_arr<%0,%1>(MapIterator<%0,%1>:i,%0:v[],size=sizeof(v))=iter_get_key_arr;\
 native %1:iter_get_value<%0,%1>(MapIterator<%0,%1>:i,o=0)=iter_get_value;\
