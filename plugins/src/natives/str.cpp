@@ -67,6 +67,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL str_to_global(AMX *amx, cell *params)
 	{
 		auto str = reinterpret_cast<cell_string*>(params[1]);
+		if(!strings::pool.contains(str)) return 0;
 		strings::pool.move_to_global(str);
 		return params[1];
 	}
@@ -75,6 +76,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL str_to_local(AMX *amx, cell *params)
 	{
 		auto str = reinterpret_cast<cell_string*>(params[1]);
+		if(!strings::pool.contains(str)) return 0;
 		strings::pool.move_to_local(str);
 		return params[1];
 	}
