@@ -497,6 +497,7 @@ bool dyn_object::to_string_tagged(cell_string &str) const
 {
 	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
 	op_strval<TagType> op;
+	op_strval<cell> cell_op;
 
 	str = {};
 	if(is_array)
@@ -508,11 +509,25 @@ bool dyn_object::to_string_tagged(cell_string &str) const
 			{
 				str.append({',', ' '});
 			}
-			str.append(op(tag_traits<TagType>::conv_to(array_value[i])));
+			try{
+				str.append(op(tag_traits<TagType>::conv_to(array_value[i])));
+			}catch(int)
+			{
+				str.append(strings::convert(tag->name));
+				str.append({':'});
+				str.append(cell_op(tag_traits<cell>::conv_to(array_value[i])));
+			}
 		}
 		str.append({'}'});
 	}else{
-		str.append(op(tag_traits<TagType>::conv_to(cell_value)));
+		try{
+			str.append(op(tag_traits<TagType>::conv_to(cell_value)));
+		}catch(int)
+		{
+			str.append(strings::convert(tag->name));
+			str.append({':'});
+			str.append(cell_op(tag_traits<cell>::conv_to(cell_value)));
+		}
 	}
 	return true;
 }

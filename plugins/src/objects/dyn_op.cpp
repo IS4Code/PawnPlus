@@ -176,11 +176,25 @@ strings::cell_string op_strval<float>::operator()(float obj) const
 
 strings::cell_string op_strval<strings::cell_string*>::operator()(strings::cell_string *obj) const
 {
+	if(obj == nullptr)
+	{
+		return {};
+	}
+	if(!strings::pool.contains(obj))
+	{
+		throw 0;
+	}
+
 	return *obj;
 }
 
 strings::cell_string op_strval<dyn_object*>::operator()(dyn_object *obj) const
 {
+	if(obj != nullptr && !variants::pool.contains(obj))
+	{
+		throw 0;
+	}
+
 	strings::cell_string str;
 	str.append({'('});
 	if(obj != nullptr)
