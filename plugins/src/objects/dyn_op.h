@@ -350,6 +350,8 @@ struct tag_traits<dyn_object*>
 
 	static void free(dyn_object *v)
 	{
+		if(!variants::pool.contains(v)) return;
+		v->free();
 		variants::pool.remove(v);
 	}
 };
@@ -372,6 +374,11 @@ struct tag_traits<list_t*>
 
 	static void free(list_t *v)
 	{
+		if(!list_pool.contains(v)) return;
+		for(auto &obj : *v)
+		{
+			obj.free();
+		}
 		list_pool.remove(v);
 	}
 };
@@ -394,6 +401,12 @@ struct tag_traits<map_t*>
 
 	static void free(map_t *v)
 	{
+		if(!map_pool.contains(v)) return;
+		for(auto &pair : *v)
+		{
+			pair.first.free();
+			pair.second.free();
+		}
 		map_pool.remove(v);
 	}
 };
