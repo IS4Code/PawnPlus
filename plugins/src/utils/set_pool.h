@@ -79,9 +79,9 @@ namespace aux
 			return data.find(const_cast<Type*>(value)) != data.cend();
 		}
 
-		iterator find(Type *value)
+		iterator find(const Type *value)
 		{
-			return data.find(value);
+			return data.find(const_cast<Type*>(value));
 		}
 
 		const_iterator find(const Type *value) const

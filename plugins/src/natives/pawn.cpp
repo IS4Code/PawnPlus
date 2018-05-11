@@ -90,7 +90,7 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 	int pubindex = 0;
 	AMX_NATIVE func = nullptr;
 
-	if(native ? func = amx::find_native(amx, fname) : !amx_FindPublic(amx, fname, &pubindex))
+	if(native ? (func = amx::find_native(amx, fname)) != nullptr : !amx_FindPublic(amx, fname, &pubindex))
 	{
 		amx_stack stack(amx, native);
 		std::unordered_map<dyn_object*, cell> storage;

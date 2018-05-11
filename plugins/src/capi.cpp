@@ -8,7 +8,7 @@ void *dyn_string(const char *str, int temp)
 }
 
 void *func_list[] = {
-	&dyn_string
+	reinterpret_cast<void*>(&dyn_string)
 };
 
 PLUGIN_INFO capi::info = {

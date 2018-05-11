@@ -3,8 +3,9 @@
 #include "objects/stored_param.h"
 
 #include <unordered_map>
-#include <string.h>
+#include <cstring>
 #include <memory>
+#include <vector>
 
 class event_info
 {
@@ -116,7 +117,7 @@ event_info::event_info(AMX *amx, const char *function, const char *format, const
 	if(format != nullptr)
 	{
 		size_t argi = -1;
-		size_t len = strlen(format);
+		size_t len = std::strlen(format);
 		for(size_t i = 0; i < len; i++)
 		{
 			arg_values.push_back(stored_param::create(amx, format[i], args, argi, numargs));

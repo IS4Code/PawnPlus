@@ -51,7 +51,7 @@ void InitPluginApi(void *ppData[256])
 	}else{
 		codeCheck[0] = checkMagic0;
 		codeCheck[1] = checkMagic1;
-		func1 = &MyRegisterPlugin;
-		func2 = &MyFindPlugin;
+		func1 = reinterpret_cast<void*>(&MyRegisterPlugin);
+		func2 = reinterpret_cast<void*>(&MyFindPlugin);
 	}
 }

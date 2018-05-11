@@ -123,7 +123,7 @@ hooked_func::hooked_func(AMX *amx, const std::string &native) : native(native)
 	index = p.first;
 	if(index == -1) return;
 	auto f = amx::find_native(amx, native);
-	hook = subhook_new(f, p.second, {});
+	hook = subhook_new(reinterpret_cast<void*>(f), reinterpret_cast<void*>(p.second), {});
 	subhook_install(hook);
 }
 
