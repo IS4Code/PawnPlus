@@ -1,4 +1,5 @@
 #include "natives.h"
+#include "pools.h"
 #include "modules/variants.h"
 #include "objects/dyn_object.h"
 #include <vector>
@@ -23,8 +24,8 @@ struct is_simple
 #endif
 
 // Iterators fit inside a single cell, but not in debug in VC++.
-static_assert(is_simple<std::vector<dyn_object>::iterator>::value, "Vector is not simple.");
-static_assert(is_simple<std::unordered_map<dyn_object, dyn_object>::iterator>::value, "Map is not simple.");
+static_assert(is_simple<list_t::iterator>::value, "Vector is not simple.");
+static_assert(is_simple<map_t::iterator>::value, "Map is not simple.");
 //static_assert(is_simple_v<std::unordered_set<dyn_object>::iterator>, "Set is not simple.");
 #endif
 
@@ -40,7 +41,7 @@ public:
 	static cell AMX_NATIVE_CALL iter_set(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
-		auto &iter = reinterpret_cast<std::vector<dyn_object>::iterator&>(params[1]);
+		auto &iter = reinterpret_cast<list_t::iterator&>(params[1]);
 		*iter = Factory(amx, params[Indices]...);
 		return 1;
 	}
@@ -50,7 +51,7 @@ public:
 	static cell AMX_NATIVE_CALL iter_get(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
-		auto &iter = reinterpret_cast<std::vector<dyn_object>::iterator&>(params[1]);
+		auto &iter = reinterpret_cast<list_t::iterator&>(params[1]);
 		return Factory(amx, *iter, params[Indices]...);
 	}
 
@@ -59,7 +60,7 @@ public:
 	static cell AMX_NATIVE_CALL iter_get_key(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
-		auto &iter = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>::iterator&>(params[1]);
+		auto &iter = reinterpret_cast<map_t::iterator&>(params[1]);
 		return Factory(amx, iter->first, params[Indices]...);
 	}
 
@@ -68,7 +69,7 @@ public:
 	static cell AMX_NATIVE_CALL iter_set_value(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
-		auto &iter = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>::iterator&>(params[1]);
+		auto &iter = reinterpret_cast<map_t::iterator&>(params[1]);
 		iter->second = Factory(amx, params[Indices]...);
 		return 1;
 	}
@@ -78,7 +79,7 @@ public:
 	static cell AMX_NATIVE_CALL iter_get_value(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
-		auto &iter = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>::iterator&>(params[1]);
+		auto &iter = reinterpret_cast<map_t::iterator&>(params[1]);
 		return Factory(amx, iter->second, params[Indices]...);
 	}
 };
@@ -88,7 +89,7 @@ template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
 {
 	if(params[1] == 0 || params[2] < 0) return 0;
-	auto &obj = *reinterpret_cast<std::vector<dyn_object>::iterator&>(params[1]);
+	auto &obj = *reinterpret_cast<list_t::iterator&>(params[1]);
 	if(TagIndex && !obj.check_tag(amx, params[TagIndex])) return 0;
 	return obj.set_cell(params[2], params[3]);
 }
@@ -98,7 +99,7 @@ template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL iter_set_value_cell(AMX *amx, cell *params)
 {
 	if(params[1] == 0 || params[2] < 0) return 0;
-	auto &obj = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>::iterator&>(params[1])->second;
+	auto &obj = reinterpret_cast<map_t::iterator&>(params[1])->second;
 	if(TagIndex && !obj.check_tag(amx, params[TagIndex])) return 0;
 	return obj.set_cell(params[2], params[3]);
 }
@@ -108,34 +109,38 @@ namespace Natives
 	// native ListIterator:list_iter(List:list);
 	static cell AMX_NATIVE_CALL list_iter(AMX *amx, cell *params)
 	{
-		if(params[1] == 0) return 0;
-		auto iter = reinterpret_cast<std::vector<dyn_object>*>(params[1])->begin();
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		if(!list_pool.contains(ptr)) return 0;
+		auto iter = ptr->begin();
 		return reinterpret_cast<cell&>(iter);
 	}
 
 	// native MapIterator:map_iter(Map:map);
 	static cell AMX_NATIVE_CALL map_iter(AMX *amx, cell *params)
 	{
-		if(params[1] == 0) return 0;
-		auto iter = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>*>(params[1])->begin();
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(!map_pool.contains(ptr)) return 0;
+		auto iter = ptr->begin();
 		return reinterpret_cast<cell&>(iter);
 	}
 
 	// native bool:list_iter_valid(List:list, ListIterator:iter);
 	static cell AMX_NATIVE_CALL list_iter_valid(AMX *amx, cell *params)
 	{
-		if(params[1] == 0 || params[2] == 0) return 0;
-		auto ptr = reinterpret_cast<std::vector<dyn_object>*>(params[1]);
-		auto &iter = reinterpret_cast<std::vector<dyn_object>::iterator&>(params[2]);
+		if(params[2] == 0) return 0;
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		if(!list_pool.contains(ptr)) return 0;
+		auto &iter = reinterpret_cast<list_t::iterator&>(params[2]);
 		return iter != ptr->end();
 	}
 
 	// native bool:map_iter_valid(Map:map, MapIterator:iter);
 	static cell AMX_NATIVE_CALL map_iter_valid(AMX *amx, cell *params)
 	{
-		if(params[1] == 0 || params[2] == 0) return 0;
-		auto ptr = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>*>(params[1]);
-		auto &iter = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>::iterator&>(params[2]);
+		if(params[2] == 0) return 0;
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(!map_pool.contains(ptr)) return 0;
+		auto &iter = reinterpret_cast<map_t::iterator&>(params[2]);
 		return iter != ptr->end();
 	}
 
@@ -143,7 +148,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_next(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
-		auto &iter = reinterpret_cast<std::vector<dyn_object>::iterator&>(params[1]);
+		auto &iter = reinterpret_cast<list_t::iterator&>(params[1]);
 		iter++;
 		return reinterpret_cast<cell&>(iter);
 	}
@@ -152,7 +157,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL map_next(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
-		auto &iter = reinterpret_cast<std::unordered_map<dyn_object, dyn_object>::iterator&>(params[1]);
+		auto &iter = reinterpret_cast<map_t::iterator&>(params[1]);
 		iter++;
 		return reinterpret_cast<cell&>(iter);
 	}
