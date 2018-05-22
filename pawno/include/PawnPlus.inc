@@ -100,7 +100,7 @@ enum{
 };
 
 /*                 */
-/*      Tags       */
+/*       AMX       */
 /*                 */
 
 native AMX:amx_this();
@@ -130,6 +130,7 @@ native GlobalString:str_to_global(StringTag:str);
 native String:str_to_local(StringTag:str);
 native bool:str_delete(StringTag:str);
 native bool:str_valid(StringTag:str);
+native String:str_clone(StringTag:str);
 
 native str_len(StringTag:str);
 native str_get(StringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
@@ -143,7 +144,6 @@ native str_find(StringTag:str, StringTag:value, offset=0);
 
 native String:str_cat(StringTag:str1, StringTag:str2);
 native String:str_sub(StringTag:str, start=0, end=cellmax);
-native String:str_clone(StringTag:str);
 native String:str_val(AnyTag:value, tag_id=tagof(value));
 native String:str_val_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 native List:str_split(StringTag:str, const delims[]);
@@ -189,6 +189,7 @@ native Variant:var_to_local(VariantTag:var);
 native bool:var_delete(VariantTag:var);
 native bool:var_delete_deep(VariantTag:var);
 native bool:var_valid(VariantTag:var);
+native Variant:var_clone(VariantTag:var);
 
 native var_get(VariantTag:var, offset=0);
 native var_get_arr(VariantTag:var, AnyTag:value[], size=sizeof(value));
@@ -227,6 +228,7 @@ native bool:list_delete(List:list);
 native bool:list_delete_deep(List:list);
 native list_size(List:list);
 native bool:list_clear(List:list);
+native List:list_clone(List:list);
 
 native list_add(List:list, AnyTag:value, index=-1, tag_id=tagof(value));
 native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), tag_id=tagof(value));
@@ -282,6 +284,7 @@ native ListIterator:operator++(ListIterator:iter) = list_next;
 #define list_valid<%0> list_valid@%0
 #define list_delete<%0> list_delete@%0
 #define list_delete_deep<%0> list_delete_deep@%0
+#define list_clone<%0> list_clone@%0
 #define list_size<%0> list_size@%0
 #define list_clear<%0> list_clear@%0
 
@@ -321,6 +324,7 @@ native List<%0>:list_new_args_tagged<%0>(t=(tagof(%0:)),%0:a,%0:...)=list_new_ar
 native bool:list_valid<%0>(List<%0>:l)=list_valid;\
 native bool:list_delete<%0>(List<%0>:l)=list_delete;\
 native bool:list_delete_deep<%0>(List<%0>:l)=list_delete_deep;\
+native List<%0>:list_clone<%0>(List<%0>:l)=list_clone;\
 native list_size<%0>(List<%0>:l)=list_size;\
 native bool:list_clear<%0>(List<%0>:l)=list_clear;\
 native list_add<%0>(List<%0>:l,%0:v,i=-1,t=(tagof(%0:)))=list_add;\
@@ -369,6 +373,7 @@ native Map:map_new_var_args_var(VariantTag:arg0, VariantTag:arg1, VariantTag:...
 native bool:map_valid(Map:map);
 native bool:map_delete(Map:map);
 native bool:map_delete_deep(Map:map);
+native Map:map_clone(Map:map);
 native map_size(Map:map);
 
 native bool:map_add(Map:map, AnyTag:key, AnyTag:value, key_tag_id=tagof(key), value_tag_id=tagof(value));
@@ -506,6 +511,7 @@ native MapIterator:operator++(MapIterator:iter) = map_next;
 #define map_valid<%0,%1> map_valid@%0@%1
 #define map_delete<%0,%1> map_delete@%0@%1
 #define map_delete_deep<%0,%1> map_delete_deep@%0@%1
+#define map_clone<%0,%1> map_clone@%0@%1
 #define map_size<%0,%1> map_size@%0@%1
 
 #define map_add<%0,%1> map_add@%0@%1
@@ -561,6 +567,7 @@ native Map<%0,%1>:map_new_args_tagged<%0,%1>(kt=(tagof(%0:)),vt=(tagof(%1:)),%0:
 native bool:map_valid<%0,%1>(Map<%0,%1>:m)=map_valid;\
 native bool:map_delete<%0,%1>(Map<%0,%1>:m)=map_delete;\
 native bool:map_delete_deep<%0,%1>(Map<%0,%1>:m)=map_delete_deep;\
+native Map<%0,%1>:map_clone<%0,%1>(Map<%0,%1>:m)=map_clone;\
 native map_size<%0,%1>(Map<%0,%1>:m)=map_size;\
 native bool:map_add<%0,%1>(Map<%0,%1>:m,%0:k,%1:v,kt=(tagof(%0:)),vt=(tagof(%1:)))=map_add;\
 native bool:map_add_arr<%0,%1>(Map<%0,%1>:m,%0:k,const %1:v[],vs=sizeof(v),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_add_arr;\

@@ -169,6 +169,19 @@ namespace Natives
 		return list_pool.remove(ptr);
 	}
 
+	// native List:list_clone(List:list);
+	static cell AMX_NATIVE_CALL list_clone(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		if(!list_pool.contains(ptr)) return 0;
+		list_t *l = list_pool.add();
+		for(auto &&obj : *ptr)
+		{
+			l->push_back(obj.clone());
+		}
+		return reinterpret_cast<cell>(l);
+	}
+
 	// native list_size(List:list);
 	static cell AMX_NATIVE_CALL list_size(AMX *amx, cell *params)
 	{
@@ -396,6 +409,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_valid),
 	AMX_DECLARE_NATIVE(list_delete),
 	AMX_DECLARE_NATIVE(list_delete_deep),
+	AMX_DECLARE_NATIVE(list_clone),
 	AMX_DECLARE_NATIVE(list_size),
 	AMX_DECLARE_NATIVE(list_clear),
 	AMX_DECLARE_NATIVE(list_add),

@@ -107,6 +107,38 @@ bool object_pool<ObjType>::remove(object_ptr obj)
 }
 
 template <class ObjType>
+auto object_pool<ObjType>::clone(const_object_ptr obj) -> object_ptr
+{
+	auto it = object_list.find(obj);
+	if(it != object_list.end())
+	{
+		return add(ObjType(*obj), false);
+	}
+	it = tmp_object_list.find(obj);
+	if(it != tmp_object_list.end())
+	{
+		return add(ObjType(*obj), true);
+	}
+	return nullptr;
+}
+
+template <>
+auto object_pool<dyn_object>::clone(const_object_ptr obj) -> object_ptr
+{
+	auto it = object_list.find(obj);
+	if(it != object_list.end())
+	{
+		return add(obj->clone(), false);
+	}
+	it = tmp_object_list.find(obj);
+	if(it != tmp_object_list.end())
+	{
+		return add(obj->clone(), true);
+	}
+	return nullptr;
+}
+
+template <class ObjType>
 auto object_pool<ObjType>::get(AMX *amx, cell addr) -> object_ptr
 {
 	object_ptr obj = reinterpret_cast<object_ptr>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + addr);

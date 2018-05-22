@@ -330,6 +330,11 @@ struct tag_traits<strings::cell_string*>
 	{
 		strings::pool.remove(v);
 	}
+
+	static strings::cell_string *clone(strings::cell_string *v)
+	{
+		return strings::pool.clone(v);
+	}
 };
 
 template <>
@@ -353,6 +358,11 @@ struct tag_traits<dyn_object*>
 		if(!variants::pool.contains(v)) return;
 		v->free();
 		variants::pool.remove(v);
+	}
+
+	static dyn_object *clone(dyn_object *v)
+	{
+		return variants::pool.clone(v);
 	}
 };
 
@@ -381,6 +391,17 @@ struct tag_traits<list_t*>
 		}
 		list_pool.remove(v);
 	}
+
+	static list_t *clone(list_t *v)
+	{
+		if(!list_pool.contains(v)) return nullptr;
+		list_t *l = list_pool.add();
+		for(auto &&obj : *v)
+		{
+			l->push_back(obj.clone());
+		}
+		return l;
+	}
 };
 
 template <>
@@ -408,6 +429,17 @@ struct tag_traits<map_t*>
 			pair.second.free();
 		}
 		map_pool.remove(v);
+	}
+
+	static map_t *clone(map_t *v)
+	{
+		if(!map_pool.contains(v)) return nullptr;
+		map_t *m = map_pool.add();
+		for(auto &&pair : *v)
+		{
+			m->insert(std::make_pair(pair.first.clone(), pair.second.clone()));
+		}
+		return m;
 	}
 };
 

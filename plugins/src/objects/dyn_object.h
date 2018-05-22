@@ -42,6 +42,7 @@ public:
 	bool tag_check(const dyn_object &obj) const;
 	tag_ptr get_tag() const;
 	void free() const;
+	dyn_object clone() const;
 	cell &operator[](cell index);
 	const cell &operator[](cell index) const;
 	friend bool operator==(const dyn_object &a, const dyn_object &b);
@@ -74,6 +75,8 @@ private:
 	bool to_string_tagged(std::basic_string<cell> &result) const;
 	template <class TagType>
 	bool free_tagged() const;
+	template <class TagType>
+	bool clone_tagged(dyn_object &result) const;
 };
 
 namespace std

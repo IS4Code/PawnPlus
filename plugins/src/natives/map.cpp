@@ -410,6 +410,19 @@ namespace Natives
 		return map_pool.remove(ptr);
 	}
 
+	// native Map:map_clone(Map:map);
+	static cell AMX_NATIVE_CALL map_clone(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(!map_pool.contains(ptr)) return 0;
+		map_t *m = map_pool.add();
+		for(auto &&pair : *ptr)
+		{
+			m->insert(std::make_pair(pair.first.clone(), pair.second.clone()));
+		}
+		return reinterpret_cast<cell>(m);
+	}
+
 	// native map_size(Map:map);
 	static cell AMX_NATIVE_CALL map_size(AMX *amx, cell *params)
 	{
@@ -1186,6 +1199,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_valid),
 	AMX_DECLARE_NATIVE(map_delete),
 	AMX_DECLARE_NATIVE(map_delete_deep),
+	AMX_DECLARE_NATIVE(map_clone),
 	AMX_DECLARE_NATIVE(map_size),
 	AMX_DECLARE_NATIVE(map_clear),
 	AMX_DECLARE_NATIVE(map_add),

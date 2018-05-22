@@ -343,6 +343,37 @@ void dyn_object::free() const
 		free_tagged<std::vector<dyn_object>*>() || free_tagged<std::unordered_map<dyn_object, dyn_object>*>();
 }
 
+template <class TagType>
+bool dyn_object::clone_tagged(dyn_object &result) const
+{
+	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
+	typedef tag_traits<TagType> tag;
+
+	if(is_array)
+	{
+		result = {nullptr, array_size, this->tag};
+		for(cell i = 0; i < array_size; i++)
+		{
+			auto val = tag::clone(tag::conv_to(array_value[i]));
+			result.array_value[i] = tag::conv_from(val);
+		}
+	}else{
+		auto val = tag::clone(tag::conv_to(cell_value));
+		result = {tag::conv_from(val), this->tag};
+	}
+	return true;
+}
+
+dyn_object dyn_object::clone() const
+{
+	dyn_object result;
+	bool ok = clone_tagged<cell_string*>(result) || clone_tagged<dyn_object*>(result) ||
+		clone_tagged<std::vector<dyn_object>*>(result) || clone_tagged<std::unordered_map<dyn_object, dyn_object>*>(result);
+	if(ok) return result;
+
+	return *this;
+}
+
 cell &dyn_object::operator[](cell index)
 {
 	if(is_array)
@@ -469,7 +500,7 @@ bool dyn_object::operator_func_tagged(dyn_object &result) const
 
 	if(is_array)
 	{
-		result = {nullptr, array_size, tag::tag_name};
+		result = {nullptr, array_size, tags::find_tag(tag::tag_uid)};
 		OpType<TagType> op;
 		for(cell i = 0; i < array_size; i++)
 		{
@@ -479,7 +510,7 @@ bool dyn_object::operator_func_tagged(dyn_object &result) const
 	}else{
 		OpType<TagType> op;
 		TagType val = op(tag::conv_to(cell_value));
-		result = {tag::conv_from(val), tag::tag_name};
+		result = {tag::conv_from(val), tags::find_tag(tag::tag_uid)};
 	}
 	return true;
 }

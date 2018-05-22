@@ -33,6 +33,7 @@ public:
 	void set_cache(const_object_ptr obj);
 	object_ptr find_cache(const_inner_ptr ptr);
 	bool remove(object_ptr obj);
+	object_ptr clone(const_object_ptr obj);
 	void clear_tmp();
 	bool contains(const_object_ptr obj) const;
 	object_ptr get(AMX *amx, cell addr);

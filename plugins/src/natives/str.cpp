@@ -95,6 +95,13 @@ namespace Natives
 		return strings::pool.contains(str);
 	}
 
+	// native String:str_clone(StringTag:str);
+	static cell AMX_NATIVE_CALL str_clone(AMX *amx, cell *params)
+	{
+		auto str = reinterpret_cast<cell_string*>(params[1]);
+		return reinterpret_cast<cell>(strings::pool.clone(str));
+	}
+
 
 	// native String:str_cat(StringTag:str1, StringTag:str2);
 	static cell AMX_NATIVE_CALL str_cat(AMX *amx, cell *params)
@@ -459,17 +466,6 @@ namespace Natives
 		return params[1];
 	}
 
-	// native String:str_clone(StringTag:str);
-	static cell AMX_NATIVE_CALL str_clone(AMX *amx, cell *params)
-	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(str != nullptr && !strings::pool.contains(str)) return 0;
-		if(str == nullptr) return reinterpret_cast<cell>(strings::pool.add(true));
-
-		auto str2 = *str;
-		return reinterpret_cast<cell>(strings::pool.add(std::move(str2), true));
-	}
-
 	// native String:str_resize(StringTag:str, capacity, padding=0);
 	static cell AMX_NATIVE_CALL str_resize(AMX *amx, cell *params)
 	{
@@ -550,6 +546,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_to_global),
 	AMX_DECLARE_NATIVE(str_delete),
 	AMX_DECLARE_NATIVE(str_valid),
+	AMX_DECLARE_NATIVE(str_clone),
 
 	AMX_DECLARE_NATIVE(str_len),
 	AMX_DECLARE_NATIVE(str_get),
@@ -563,7 +560,6 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(str_cat),
 	AMX_DECLARE_NATIVE(str_sub),
-	AMX_DECLARE_NATIVE(str_clone),
 	AMX_DECLARE_NATIVE(str_val),
 	AMX_DECLARE_NATIVE(str_val_arr),
 	AMX_DECLARE_NATIVE(str_split),
