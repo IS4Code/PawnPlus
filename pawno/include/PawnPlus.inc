@@ -27,6 +27,8 @@
 #define PP_TAG_PREFIX@Variant@Global<%0> %0@Variant@Global
 #define PP_TAG_PREFIX@GlobalString<%0> %0@String@Global
 #define PP_TAG_PREFIX@GlobalVariant<%0> %0@Variant@Global
+#define PP_TAG_PREFIX@List<%0> %0@List
+#define PP_TAG_PREFIX@Map<%0> %0@Map
 #define Ref<%0> PP_TAG_PREFIX@%0<Ref>
 
 #define StringTags String,GlobalString
@@ -776,10 +778,22 @@ stock String:operator=(Ref<String>:arg) return String:arg;
 stock GlobalString:operator=(Ref<GlobalString>:arg) return GlobalString:arg;
 stock Variant:operator=(Ref<Variant>:arg) return Variant:arg;
 stock GlobalVariant:operator=(Ref<GlobalVariant>:arg) return GlobalVariant:arg;
+stock List:operator=(Ref<List>:arg) return List:arg;
+stock Map:operator=(Ref<Map>:arg) return Map:arg;
+
 stock Ref<String>:operator=(String:arg) return Ref<String>:arg;
 stock Ref<GlobalString>:operator=(GlobalString:arg) return Ref<GlobalString>:arg;
 stock Ref<Variant>:operator=(Variant:arg) return Ref<Variant>:arg;
 stock Ref<GlobalVariant>:operator=(GlobalVariant:arg) return Ref<GlobalVariant>:arg;
+stock Ref<List>:operator=(List:arg) return Ref<List>:arg;
+stock Ref<Map>:operator=(Map:arg) return Ref<Map>:arg;
+
+stock Ref:operator=(Ref<String>:arg) return Ref:arg;
+stock Ref:operator=(Ref<GlobalString>:arg) return Ref:arg;
+stock Ref:operator=(Ref<Variant>:arg) return Ref:arg;
+stock Ref:operator=(Ref<GlobalVariant>:arg) return Ref:arg;
+stock Ref:operator=(Ref<List>:arg) return Ref:arg;
+stock Ref:operator=(Ref<Map>:arg) return Ref:arg;
 
 stock operator~(Guard:arr[], size)
 {
