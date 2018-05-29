@@ -33,7 +33,7 @@ namespace Natives
 	// native task:task_new();
 	static cell AMX_NATIVE_CALL task_new(AMX *amx, cell *params)
 	{
-		return TaskPool::CreateNew().Id();
+		return TaskPool::CreateNew()->Id();
 	}
 
 	// native task_set_result(task:task, AnyTag:result);
@@ -64,15 +64,15 @@ namespace Natives
 	{
 		if(params[1] <= 0)
 		{
-			auto &task = TaskPool::CreateNew();
+			auto task = TaskPool::CreateNew();
 			if(params[1] == 0)
 			{
-				task.SetCompleted(0);
+				task->SetCompleted(0);
 			}
-			return task.Id();
+			return task->Id();
 		}else{
-			auto &task = TaskPool::CreateTickTask(params[1]);
-			return task.Id();
+			auto task = TaskPool::CreateTickTask(params[1]);
+			return task->Id();
 		}
 	}
 
@@ -81,15 +81,15 @@ namespace Natives
 	{
 		if(params[1] <= 0)
 		{
-			auto &task = TaskPool::CreateNew();
+			auto task = TaskPool::CreateNew();
 			if(params[1] == 0)
 			{
-				task.SetCompleted(0);
+				task->SetCompleted(0);
 			}
-			return task.Id();
+			return task->Id();
 		}else{
-			auto &task = TaskPool::CreateTimerTask(params[1]);
-			return task.Id();
+			auto task = TaskPool::CreateTimerTask(params[1]);
+			return task->Id();
 		}
 	}
 

@@ -5,6 +5,7 @@
 #include "objects/reset.h"
 #include "sdk/amx/amx.h"
 #include <queue>
+#include <memory>
 
 typedef size_t task_id;
 
@@ -37,10 +38,10 @@ public:
 
 namespace TaskPool
 {
-	Task &CreateNew();
-	Task &CreateTickTask(cell ticks);
-	Task &CreateTimerTask(cell interval);
-	Task *Get(task_id id);
+	std::shared_ptr<Task> CreateNew();
+	std::shared_ptr<Task> CreateTickTask(cell ticks);
+	std::shared_ptr<Task> CreateTimerTask(cell interval);
+	std::shared_ptr<Task> Get(task_id id);
 	void OnTick();
 	size_t Size();
 
