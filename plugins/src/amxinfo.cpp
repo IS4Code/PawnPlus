@@ -2,29 +2,36 @@
 #include "modules/tags.h"
 #include <unordered_map>
 
-struct amx_info
-{
-	std::unordered_map<std::string, AMX_NATIVE> natives;
-};
+static std::unordered_map<AMX*, amx::ptr> amx_map;
 
-static std::unordered_map<AMX*, amx_info> amx_map;
-
-void amx::load(AMX *amx)
+amx::ptr amx::load(AMX *amx)
 {
-	auto &info = amx_map[amx];
+	auto it = amx_map.find(amx);
+	if(it != amx_map.end())
+	{
+		return it->second;
+	}
+	auto ptr = amx::ptr(new ptr_info(amx));
+	amx_map.insert(std::make_pair(amx, ptr));
+	return ptr;
 }
 
 void amx::unload(AMX *amx)
 {
-	amx_map.erase(amx);
+	auto it = amx_map.find(amx);
+	if(it != amx_map.end())
+	{
+		it->second->invalidate();
+		amx_map.erase(it);
+	}
 }
 
 void amx::register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number)
 {
-	auto &info = amx_map[amx];
+	auto ptr = load(amx);
 	for(int i = 0; nativelist[i].name != nullptr && (i < number || number == -1); i++)
 	{
-		info.natives.insert(std::make_pair(nativelist[i].name, nativelist[i].func));
+		ptr->natives.insert(std::make_pair(nativelist[i].name, nativelist[i].func));
 	}
 }
 
@@ -35,9 +42,12 @@ AMX_NATIVE amx::find_native(AMX *amx, const char *name)
 
 AMX_NATIVE amx::find_native(AMX *amx, const std::string &name)
 {
-	auto &info = amx_map[amx];
-	auto it = info.natives.find(name);
-	if(it != info.natives.end())
+	auto ptr = load(amx);
+
+	auto &natives = ptr->natives;
+
+	auto it = natives.find(name);
+	if(it != natives.end())
 	{
 		return it->second;
 	}
@@ -47,7 +57,7 @@ AMX_NATIVE amx::find_native(AMX *amx, const std::string &name)
 		auto amxhdr = (AMX_HEADER*)amx->base;
 		auto func = (AMX_FUNCSTUB*)((unsigned char*)amxhdr+ amxhdr->natives + index* amxhdr->defsize);
 		auto f = reinterpret_cast<AMX_NATIVE>(func->address);
-		info.natives.insert(std::make_pair(name, f));
+		natives.insert(std::make_pair(name, f));
 		return f;
 	}
 	return nullptr;

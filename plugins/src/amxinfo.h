@@ -4,11 +4,61 @@
 #include "sdk/amx/amx.h"
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <cstring>
+#include <memory>
 
 namespace amx
 {
-	void load(AMX *amx);
+	class ptr_info
+	{
+		friend void unload(AMX*);
+		friend void register_natives(AMX*, const AMX_NATIVE_INFO*, int);
+		friend AMX_NATIVE find_native(AMX*, const std::string&);
+
+		AMX *_amx;
+		std::unordered_map<std::string, AMX_NATIVE> natives;
+
+		void invalidate()
+		{
+			_amx = nullptr;
+		}
+
+	public:
+		ptr_info() : _amx(nullptr)
+		{
+
+		}
+
+		explicit ptr_info(AMX *amx) : _amx(amx)
+		{
+
+		}
+
+		bool valid() const
+		{
+			return _amx != nullptr;
+		}
+
+		AMX *operator->()
+		{
+			return _amx;
+		}
+
+		AMX *operator*()
+		{
+			return _amx;
+		}
+
+		operator AMX*()
+		{
+			return _amx;
+		}
+	};
+
+	typedef std::shared_ptr<ptr_info> ptr;
+
+	ptr load(AMX *amx);
 	void unload(AMX *amx);
 	void register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number);
 	AMX_NATIVE find_native(AMX *amx, const char *name);
