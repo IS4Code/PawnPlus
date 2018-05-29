@@ -62,35 +62,13 @@ namespace Natives
 	// native task:task_ticks(ticks);
 	static cell AMX_NATIVE_CALL task_ticks(AMX *amx, cell *params)
 	{
-		if(params[1] <= 0)
-		{
-			auto task = TaskPool::CreateNew();
-			if(params[1] == 0)
-			{
-				task->SetCompleted(0);
-			}
-			return task->Id();
-		}else{
-			auto task = TaskPool::CreateTickTask(params[1]);
-			return task->Id();
-		}
+		return TaskPool::CreateTickTask(params[1])->Id();
 	}
 
 	// native task:task_ms(interval);
 	static cell AMX_NATIVE_CALL task_ms(AMX *amx, cell *params)
 	{
-		if(params[1] <= 0)
-		{
-			auto task = TaskPool::CreateNew();
-			if(params[1] == 0)
-			{
-				task->SetCompleted(0);
-			}
-			return task->Id();
-		}else{
-			auto task = TaskPool::CreateTimerTask(params[1]);
-			return task->Id();
-		}
+		return TaskPool::CreateTimerTask(params[1])->Id();
 	}
 
 	// native task_await(task:task);

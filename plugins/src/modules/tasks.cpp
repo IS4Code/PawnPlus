@@ -57,9 +57,12 @@ void Task::register_callback(AMX_RESET &&reset)
 std::shared_ptr<Task> TaskPool::CreateTickTask(cell ticks)
 {
 	auto task = CreateNew();
-	if(ticks == 0)
+	if(ticks <= 0)
 	{
-		task->SetCompleted(task->Id());
+		if(ticks == 0)
+		{
+			task->SetCompleted(1);
+		}
 	}else{
 		tickTasks.add(std::make_pair(ticks, task));
 	}
@@ -71,7 +74,10 @@ std::shared_ptr<Task> TaskPool::CreateTimerTask(cell interval)
 	auto task = CreateNew();
 	if(interval <= 0)
 	{
-		task->SetCompleted(task->Id());
+		if(interval == 0)
+		{
+			task->SetCompleted(1);
+		}
 	}else{
 		auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
 		timerTasks.add(std::make_pair(time, task));
@@ -108,7 +114,7 @@ void TaskPool::OnTick()
 			{
 				auto task = obj->second;
 				it = tickTasks.erase(it);
-				task->SetCompleted(task->Id());
+				task->SetCompleted(1);
 			}else{
 				it++;
 			}
@@ -147,7 +153,7 @@ void TaskPool::OnTick()
 			{
 				auto task = obj->second;
 				it = timerTasks.erase(it);
-				task->SetCompleted(task->Id());
+				task->SetCompleted(1);
 			}else{
 				it++;
 			}
