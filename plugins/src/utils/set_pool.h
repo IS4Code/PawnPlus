@@ -89,9 +89,11 @@ namespace aux
 			return data.find(const_cast<Type*>(value));
 		}
 
-		void erase(iterator it)
+		iterator erase(iterator it)
 		{
-			data.erase(it);
+			auto ptr = *it;
+			delete ptr;
+			return data.erase(it);
 		}
 
 		std::unique_ptr<Type> extract(iterator it)

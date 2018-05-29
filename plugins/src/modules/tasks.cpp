@@ -107,9 +107,8 @@ void TaskPool::OnTick()
 			if(obj->first == 0)
 			{
 				auto task = obj->second;
-				tickTasks.erase(it);
+				it = tickTasks.erase(it);
 				task->SetCompleted(task->Id());
-				it = tickTasks.begin();
 			}else{
 				it++;
 			}
@@ -125,14 +124,12 @@ void TaskPool::OnTick()
 			if(obj->first == 0)
 			{
 				AMX_RESET reset = std::move(obj->second);
-				tickResets.erase(it);
+				it = tickResets.erase(it);
 				AMX *amx = reset.amx;
 				if(!Context::IsValid(amx)) continue;
 
 				cell retval;
 				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
-
-				it = tickResets.begin();
 			}else{
 				it++;
 			}
@@ -149,9 +146,8 @@ void TaskPool::OnTick()
 			if(now >= obj->first)
 			{
 				auto task = obj->second;
-				timerTasks.erase(it);
+				it = timerTasks.erase(it);
 				task->SetCompleted(task->Id());
-				it = timerTasks.begin();
 			}else{
 				it++;
 			}
@@ -166,14 +162,12 @@ void TaskPool::OnTick()
 			if(now >= obj->first)
 			{
 				AMX_RESET reset = std::move(obj->second);
-				timerResets.erase(it);
+				it = timerResets.erase(it);
 				AMX *amx = reset.amx;
 				if(!Context::IsValid(amx)) continue;
 
 				cell retval;
 				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
-
-				it = timerResets.begin();
 			}else{
 				it++;
 			}
