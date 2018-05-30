@@ -1,220 +1,203 @@
 #include "tasks.h"
 #include "hooks.h"
 
-#include "fixes/linux.h"
-#include "utils/shared_linear_pool.h"
-#include "utils/set_pool.h"
+#include "utils/shared_set_pool.h"
 #include "sdk/amx/amx.h"
 #include <utility>
 #include <chrono>
-#include <vector>
+#include <list>
 #include <unordered_set>
 
-aux::shared_linear_pool<Task> pool;
-aux::set_pool<std::pair<ucell, std::shared_ptr<Task>>> tickTasks;
-aux::set_pool<std::pair<std::chrono::system_clock::time_point, std::shared_ptr<Task>>> timerTasks;
-aux::set_pool<std::pair<ucell, amx::reset>> tickResets;
-aux::set_pool<std::pair<std::chrono::system_clock::time_point, amx::reset>> timerResets;
-
-struct task_extra : amx::extra
+namespace tasks
 {
-	task_id task_object = -1;
-	cell result = 0;
+	aux::shared_set_pool<task> pool;
+	std::list<std::pair<ucell, std::shared_ptr<task>>> tickTasks;
+	std::list<std::pair<std::chrono::system_clock::time_point, std::shared_ptr<task>>> timerTasks;
+	std::list<std::pair<ucell, amx::reset>> tickResets;
+	std::list<std::pair<std::chrono::system_clock::time_point, amx::reset>> timerResets;
 
-	task_extra(AMX *amx) : amx::extra(amx)
+	tasks::extra &tasks::get_extra(AMX *amx, amx::object &owner)
 	{
-
+		auto &ctx = amx::get_context(amx, owner);
+		return ctx.get_extra<extra>();
 	}
-};
 
-bool tasks::set_result(AMX *amx, cell result)
-{
-	amx::object owner;
-	auto &ctx = amx::get_context(amx, owner);
-	auto &extra = ctx.get_extra<task_extra>();
-	extra.result = result;
-	if(extra.task_object != -1)
+	std::shared_ptr<task> add()
 	{
-		TaskPool::Get(extra.task_object)->SetCompleted(result);
-		return true;
+		return pool.add();
 	}
-	return false;
-}
 
-cell tasks::get_result(AMX *amx)
-{
-	amx::object owner;
-	auto &ctx = amx::get_context(amx, owner);
-	return ctx.get_extra<task_extra>().result;
-}
-
-std::shared_ptr<Task> TaskPool::CreateNew()
-{
-	size_t id = pool.size();
-	pool.add(Task(id));
-	return pool.at(id);
-}
-
-std::shared_ptr<Task> TaskPool::Get(task_id id)
-{
-	return pool.at(id);
-}
-
-void Task::SetCompleted(cell result)
-{
-	this->completed = true;
-	this->result = result;
-	while(waiting.size() > 0)
+	void task::set_completed(cell result)
 	{
-		auto &reset = waiting.front();
-		auto obj = reset.amx.lock();
-		if(obj)
+		_completed = true;
+		_result = result;
+		while(waiting.size() > 0)
 		{
-			AMX *amx = obj->get();
+			auto &reset = waiting.front();
+			auto obj = reset.amx.lock();
+			if(obj)
+			{
+				AMX *amx = obj->get();
 
-			cell retval;
-			reset.pri = result;
-			amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+				cell retval;
+				reset.pri = result;
+				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+			}
+			waiting.pop();
 		}
-		waiting.pop();
 	}
-}
 
-void Task::register_callback(amx::reset &&reset)
-{
-	waiting.push(std::move(reset));
-}
-
-std::shared_ptr<Task> TaskPool::CreateTickTask(cell ticks)
-{
-	auto task = CreateNew();
-	if(ticks <= 0)
+	void task::register_callback(amx::reset &&reset)
 	{
-		if(ticks == 0)
-		{
-			task->SetCompleted(1);
-		}
-	}else{
-		tickTasks.add(std::make_pair(ticks, task));
+		waiting.push(std::move(reset));
 	}
-	return task;
-}
 
-std::shared_ptr<Task> TaskPool::CreateTimerTask(cell interval)
-{
-	auto task = CreateNew();
-	if(interval <= 0)
+	std::shared_ptr<task> add_tick_task(cell ticks)
 	{
-		if(interval == 0)
+		auto task = add();
+		if(ticks <= 0)
 		{
-			task->SetCompleted(1);
+			if(ticks == 0)
+			{
+				task->set_completed(1);
+			}
+		} else {
+			tickTasks.push_back(std::make_pair(ticks, task));
 		}
-	}else{
+		return task;
+	}
+
+	std::shared_ptr<task> add_timer_task(cell interval)
+	{
+		auto task = add();
+		if(interval <= 0)
+		{
+			if(interval == 0)
+			{
+				task->set_completed(1);
+			}
+		} else {
+			auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
+			timerTasks.push_back(std::make_pair(time, task));
+		}
+		return task;
+	}
+
+	void register_tick(cell ticks, amx::reset &&reset)
+	{
+		tickResets.push_back(std::make_pair(ticks, std::move(reset)));
+	}
+
+	void register_timer(cell interval, amx::reset &&reset)
+	{
 		auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
-		timerTasks.add(std::make_pair(time, task));
+		timerResets.push_back(std::make_pair(time, std::move(reset)));
 	}
-	return task;
-}
 
-void TaskPool::RegisterTicks(cell ticks, amx::reset &&reset)
-{
-	tickResets.add(std::make_pair(ticks, std::move(reset)));
-}
-
-void TaskPool::RegisterTimer(cell interval, amx::reset &&reset)
-{
-	auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
-	timerResets.add(std::make_pair(time, std::move(reset)));
-}
-
-size_t TaskPool::Size()
-{
-	return pool.size();
-}
-
-void TaskPool::OnTick()
-{
+	bool contains(const task *ptr)
 	{
-		auto it = tickTasks.begin();
-		while(it != tickTasks.end())
-		{
-			auto pair = *it;
-
-			pair->first--;
-			if(pair->first == 0)
-			{
-				auto task = pair->second;
-				it = tickTasks.erase(it);
-				task->SetCompleted(1);
-			}else{
-				it++;
-			}
-		}
+		return pool.contains(ptr);
 	}
+
+	bool remove(task *ptr)
 	{
-		auto it = tickResets.begin();
-		while(it != tickResets.end())
+		return pool.remove(ptr);
+	}
+
+	std::shared_ptr<task> find(task *ptr)
+	{
+		return pool.get(ptr);
+	}
+
+	size_t size()
+	{
+		return pool.size();
+	}
+
+	void tick()
+	{
 		{
-			auto pair = *it;
-
-			pair->first--;
-			if(pair->first == 0)
+			auto it = tickTasks.begin();
+			while(it != tickTasks.end())
 			{
-				amx::reset reset = std::move(pair->second);
-				it = tickResets.erase(it);
+				auto &pair = *it;
 
-				auto obj = reset.amx.lock();
-				if(obj)
+				pair.first--;
+				if(pair.first == 0)
 				{
-					AMX *amx = obj->get();
-
-					cell retval;
-					amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+					auto task = pair.second;
+					it = tickTasks.erase(it);
+					task->set_completed(1);
+				} else {
+					it++;
 				}
-			}else{
-				it++;
 			}
 		}
-	}
-
-	auto now = std::chrono::system_clock::now();
-	{
-		auto it = timerTasks.begin();
-		while(it != timerTasks.end())
 		{
-			auto pair = *it;
-
-			if(now >= pair->first)
+			auto it = tickResets.begin();
+			while(it != tickResets.end())
 			{
-				auto task = pair->second;
-				it = timerTasks.erase(it);
-				task->SetCompleted(1);
-			}else{
-				it++;
-			}
-		}
-	}
-	{
-		auto it = timerResets.begin();
-		while(it != timerResets.end())
-		{
-			auto pair = *it;
+				auto &pair = *it;
 
-			if(now >= pair->first)
-			{
-				amx::reset reset = std::move(pair->second);
-				it = timerResets.erase(it);
-
-				auto obj = reset.amx.lock();
-				if(obj)
+				pair.first--;
+				if(pair.first == 0)
 				{
-					AMX *amx = obj->get();
+					amx::reset reset = std::move(pair.second);
+					it = tickResets.erase(it);
 
-					cell retval;
-					amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+					auto obj = reset.amx.lock();
+					if(obj)
+					{
+						AMX *amx = obj->get();
+
+						cell retval;
+						amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+					}
+				} else {
+					it++;
 				}
-			}else{
-				it++;
+			}
+		}
+
+		auto now = std::chrono::system_clock::now();
+		{
+			auto it = timerTasks.begin();
+			while(it != timerTasks.end())
+			{
+				auto &pair = *it;
+
+				if(now >= pair.first)
+				{
+					auto task = pair.second;
+					it = timerTasks.erase(it);
+					task->set_completed(1);
+				} else {
+					it++;
+				}
+			}
+		}
+		{
+			auto it = timerResets.begin();
+			while(it != timerResets.end())
+			{
+				auto &pair = *it;
+
+				if(now >= pair.first)
+				{
+					amx::reset reset = std::move(pair.second);
+					it = timerResets.erase(it);
+
+					auto obj = reset.amx.lock();
+					if(obj)
+					{
+						AMX *amx = obj->get();
+
+						cell retval;
+						amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+					}
+				} else {
+					it++;
+				}
 			}
 		}
 	}

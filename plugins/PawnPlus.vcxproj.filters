@@ -233,11 +233,11 @@
     <ClInclude Include="src\pools.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\utils\shared_linear_pool.h">
-      <Filter>src\utils</Filter>
-    </ClInclude>
     <ClInclude Include="src\modules\guards.h">
       <Filter>src\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\shared_set_pool.h">
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

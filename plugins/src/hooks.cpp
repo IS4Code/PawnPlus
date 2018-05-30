@@ -81,15 +81,21 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 		{
 			index = AMX_EXEC_CONT;
 
+			amx::object owner;
+			tasks::extra info = tasks::get_extra(amx, owner);
+
 			switch(amx->pri & SleepReturnTypeMask)
 			{
 				case SleepReturnAwait:
 				{
-					task_id task = SleepReturnValueMask & amx->pri;
-					amx->pri = 0;
-					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = tasks::get_result(amx);
-					TaskPool::Get(task)->register_callback(amx::reset(amx, true));
+					if(auto task = info.awaited_task.lock())
+					{
+						amx->pri = 0;
+						amx->error = ret = AMX_ERR_NONE;
+						if(retval != nullptr) *retval = info.result;
+						task->register_callback(amx::reset(amx, true));
+						info.awaited_task = {};
+					}
 				}
 				break;
 				case SleepReturnWaitTicks:
@@ -97,8 +103,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					cell ticks = SleepReturnValueMask & amx->pri;
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = tasks::get_result(amx);
-					TaskPool::RegisterTicks(ticks, amx::reset(amx, true));
+					if(retval != nullptr) *retval = info.result;
+					tasks::register_tick(ticks, amx::reset(amx, true));
 				}
 				break;
 				case SleepReturnWaitMs:
@@ -106,15 +112,15 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					cell interval = SleepReturnValueMask & amx->pri;
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = tasks::get_result(amx);
-					TaskPool::RegisterTimer(interval, amx::reset(amx, true));
+					if(retval != nullptr) *retval = info.result;
+					tasks::register_timer(interval, amx::reset(amx, true));
 				}
 				break;
 				case SleepReturnWaitInf:
 				{
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = tasks::get_result(amx);
+					if(retval != nullptr) *retval = info.result;
 				}
 				break;
 				case SleepReturnDetach:
@@ -122,7 +128,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					auto flags = static_cast<Threads::SyncFlags>(SleepReturnValueMask & amx->pri);
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = tasks::get_result(amx);
+					if(retval != nullptr) *retval = info.result;
 					Threads::DetachThread(amx, flags);
 				}
 				break;

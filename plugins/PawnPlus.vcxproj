@@ -209,7 +209,7 @@
     <ClInclude Include="src\utils\optional.h" />
     <ClInclude Include="src\utils\linear_pool.h" />
     <ClInclude Include="src\utils\set_pool.h" />
-    <ClInclude Include="src\utils\shared_linear_pool.h" />
+    <ClInclude Include="src\utils\shared_set_pool.h" />
     <ClInclude Include="src\utils\thread.h" />
   </ItemGroup>
   <ItemGroup>

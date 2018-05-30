@@ -1,58 +1,63 @@
 #ifndef TASKS_H_INCLUDED
 #define TASKS_H_INCLUDED
 
-#include "utils/optional.h"
 #include "objects/reset.h"
 #include "sdk/amx/amx.h"
 #include <queue>
 #include <memory>
 
-typedef size_t task_id;
-
 namespace tasks
 {
-	bool set_result(AMX *amx, cell result);
-	cell get_result(AMX *amx);
+	class task
+	{
+		cell _result = 0;
+		bool _completed = false;
+		std::queue<amx::reset> waiting;
+	public:
+		task()
+		{
+
+		}
+		cell result()
+		{
+			return _result;
+		}
+		bool completed()
+		{
+			return _completed;
+		}
+		void set_completed(cell result);
+		void register_callback(amx::reset &&reset);
+	};
+
+	struct extra : amx::extra
+	{
+		cell result = 0;
+		std::weak_ptr<task> awaited_task;
+		std::weak_ptr<task> bound_task;
+
+		extra(AMX *amx) : amx::extra(amx)
+		{
+
+		}
+	};
+
+	std::shared_ptr<task> add();
+	std::shared_ptr<task> add_tick_task(cell ticks);
+	std::shared_ptr<task> add_timer_task(cell interval);
+
+	bool contains(const task *ptr);
+	bool remove(task *ptr);
+
+	std::shared_ptr<task> find(task *ptr);
+
+	void tick();
+	size_t size();
+
+	void register_tick(cell ticks, amx::reset &&reset);
+	void register_timer(cell interval, amx::reset &&reset);
+
+	extra &get_extra(AMX *amx, amx::object &owner);
 }
-
-class Task
-{
-	const task_id id;
-	cell result = 0;
-	bool completed = false;
-	std::queue<amx::reset> waiting;
-public:
-	Task(task_id id) : id(id)
-	{
-
-	}
-	task_id Id()
-	{
-		return id;
-	}
-	cell Result()
-	{
-		return result;
-	}
-	bool Completed()
-	{
-		return completed;
-	}
-	void SetCompleted(cell result);
-	void register_callback(amx::reset &&reset);
-};
-
-namespace TaskPool
-{
-	std::shared_ptr<Task> CreateNew();
-	std::shared_ptr<Task> CreateTickTask(cell ticks);
-	std::shared_ptr<Task> CreateTimerTask(cell interval);
-	std::shared_ptr<Task> Get(task_id id);
-	void OnTick();
-	size_t Size();
-
-	void RegisterTicks(cell ticks, amx::reset &&reset);
-	void RegisterTimer(cell interval, amx::reset &&reset);
-};
 
 #endif

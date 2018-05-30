@@ -4,7 +4,7 @@
 
 namespace Natives
 {
-	// native task:wait_ticks(ticks);
+	// native Task:wait_ticks(ticks);
 	static cell AMX_NATIVE_CALL wait_ticks(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
@@ -17,7 +17,7 @@ namespace Natives
 		}
 	}
 
-	// native task:wait_ms(interval);
+	// native Task:wait_ms(interval);
 	static cell AMX_NATIVE_CALL wait_ms(AMX *amx, cell *params)
 	{
 		if(params[1] == 0) return 0;
@@ -30,60 +30,78 @@ namespace Natives
 		}
 	}
 
-	// native task:task_new();
+	// native Task:task_new();
 	static cell AMX_NATIVE_CALL task_new(AMX *amx, cell *params)
 	{
-		return TaskPool::CreateNew()->Id();
+		return reinterpret_cast<cell>(tasks::add().get());
 	}
 
-	// native task_set_result(task:task, AnyTag:result);
+	// native bool:task_delete(Task:task);
+	static cell AMX_NATIVE_CALL task_delete(AMX *amx, cell *params)
+	{
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		return tasks::remove(task);
+	}
+
+	// native bool:task_valid(Task:task);
+	static cell AMX_NATIVE_CALL task_valid(AMX *amx, cell *params)
+	{
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		return tasks::contains(task);
+	}
+
+	// native task_set_result(Task:task, AnyTag:result);
 	static cell AMX_NATIVE_CALL task_set_result(AMX *amx, cell *params)
 	{
-		auto task = TaskPool::Get(params[1]);
-		if(task != nullptr)
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		if(tasks::contains(task))
 		{
-			task->SetCompleted(params[2]);
+			task->set_completed(params[2]);
 			return 1;
 		}
 		return 0;
 	}
 
-	// native task_get_result(task:task);
+	// native task_get_result(Task:task);
 	static cell AMX_NATIVE_CALL task_get_result(AMX *amx, cell *params)
 	{
-		auto task = TaskPool::Get(params[1]);
-		if(task != nullptr)
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		if(tasks::contains(task))
 		{
-			return task->Result();
+			return task->result();
 		}
 		return 0;
 	}
 
-	// native task:task_ticks(ticks);
+	// native Task:task_ticks(ticks);
 	static cell AMX_NATIVE_CALL task_ticks(AMX *amx, cell *params)
 	{
-		return TaskPool::CreateTickTask(params[1])->Id();
+		return reinterpret_cast<cell>(tasks::add_tick_task(params[1]).get());
 	}
 
-	// native task:task_ms(interval);
+	// native Task:task_ms(interval);
 	static cell AMX_NATIVE_CALL task_ms(AMX *amx, cell *params)
 	{
-		return TaskPool::CreateTimerTask(params[1])->Id();
+		return reinterpret_cast<cell>(tasks::add_timer_task(params[1]).get());
 	}
 
-	// native task_await(task:task);
+	// native task_await(Task:task);
 	static cell AMX_NATIVE_CALL task_await(AMX *amx, cell *params)
 	{
-		task_id id = static_cast<task_id>(params[1]);
-		auto task = TaskPool::Get(id);
-		if(task != nullptr)
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		
+		if(auto lock = tasks::find(task))
 		{
-			if(!task->Completed())
+			if(!lock->completed())
 			{
+				amx::object owner;
+				auto &info = tasks::get_extra(amx, owner);
+				info.awaited_task = lock;
+
 				amx_RaiseError(amx, AMX_ERR_SLEEP);
-				return SleepReturnAwait | (id & SleepReturnValueMask);
+				return SleepReturnAwait;
 			}else{
-				return task->Result();
+				return task->result();
 			}
 		}
 		return 0;
@@ -92,7 +110,15 @@ namespace Natives
 	// native task_yield(AnyTag:value);
 	static cell AMX_NATIVE_CALL task_yield(AMX *amx, cell *params)
 	{
-		return tasks::set_result(amx, params[1]);
+		amx::object owner;
+		auto &info = tasks::get_extra(amx, owner);
+		info.result = params[1];
+		if(auto task = info.bound_task.lock())
+		{
+			task->set_completed(info.result);
+			return 1;
+		}
+		return 0;
 	}
 }
 
@@ -101,6 +127,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(wait_ticks),
 	AMX_DECLARE_NATIVE(wait_ms),
 	AMX_DECLARE_NATIVE(task_new),
+	AMX_DECLARE_NATIVE(task_delete),
+	AMX_DECLARE_NATIVE(task_valid),
 	AMX_DECLARE_NATIVE(task_set_result),
 	AMX_DECLARE_NATIVE(task_get_result),
 	AMX_DECLARE_NATIVE(task_ticks),

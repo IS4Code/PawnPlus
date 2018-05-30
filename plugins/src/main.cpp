@@ -68,6 +68,6 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx)
 
 PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 {
-	TaskPool::OnTick();
+	tasks::tick();
 	Threads::SyncThreads();
 }

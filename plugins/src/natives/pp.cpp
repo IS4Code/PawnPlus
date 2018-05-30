@@ -26,7 +26,7 @@ namespace Natives
 	// native pp_num_tasks();
 	static cell AMX_NATIVE_CALL pp_num_tasks(AMX *amx, cell *params)
 	{
-		return TaskPool::Size();
+		return tasks::size();
 	}
 
 	// native pp_num_local_strings();

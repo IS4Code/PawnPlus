@@ -621,12 +621,14 @@ native MapIterator<%0,%1>:operator++(MapIterator<%0,%1>:i)=map_next
 
 native wait_ticks(ticks);
 native wait_ms(interval);
-native task:task_new();
-native task_set_result(task:task, AnyTag:result);
-native task_get_result(task:task);
-native task:task_ticks(ticks);
-native task:task_ms(interval);
-native task_await(task:task);
+native Task:task_new();
+native bool:task_delete(Task:task);
+native bool:task_valid(Task:task);
+native task_set_result(Task:task, AnyTag:result);
+native task_get_result(Task:task);
+native Task:task_ticks(ticks);
+native Task:task_ms(interval);
+native task_await(Task:task);
 native task_yield(AnyTag:value);
 
 #if !defined PP_NO_ALIASES
