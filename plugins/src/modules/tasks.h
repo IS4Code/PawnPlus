@@ -3,8 +3,9 @@
 
 #include "objects/reset.h"
 #include "sdk/amx/amx.h"
-#include <queue>
+#include <list>
 #include <memory>
+#include <functional>
 
 namespace tasks
 {
@@ -12,7 +13,8 @@ namespace tasks
 	{
 		cell _result = 0;
 		bool _completed = false;
-		std::queue<amx::reset> waiting;
+		std::list<amx::reset> callbacks;
+		std::list<std::function<void(task&)>> handlers;
 	public:
 		task()
 		{
@@ -26,8 +28,16 @@ namespace tasks
 		{
 			return _completed;
 		}
+
+		typedef std::list<amx::reset>::iterator reset_iterator;
+		typedef std::list<std::function<void(task&)>>::iterator handler_iterator;
+
 		void set_completed(cell result);
-		void register_callback(amx::reset &&reset);
+		reset_iterator register_reset(amx::reset &&reset);
+		handler_iterator register_handler(const std::function<void(task&)> &func);
+		handler_iterator register_handler(std::function<void(task&)> &&func);
+		void unregister_reset(const reset_iterator &it);
+		void unregister_handler(const handler_iterator &it);
 	};
 
 	struct extra : amx::extra

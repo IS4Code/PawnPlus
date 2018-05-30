@@ -93,7 +93,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						amx->pri = 0;
 						amx->error = ret = AMX_ERR_NONE;
 						if(retval != nullptr) *retval = info.result;
-						task->register_callback(amx::reset(amx, true));
+						task->register_reset(amx::reset(amx, true));
 						info.awaited_task = {};
 					}
 				}

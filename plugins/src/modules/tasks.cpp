@@ -31,25 +31,63 @@ namespace tasks
 	{
 		_completed = true;
 		_result = result;
-		while(waiting.size() > 0)
-		{
-			auto &reset = waiting.front();
-			auto obj = reset.amx.lock();
-			if(obj)
-			{
-				AMX *amx = obj->get();
 
-				cell retval;
-				reset.pri = result;
-				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+		{
+			auto it = callbacks.begin();
+			while(it != callbacks.end())
+			{
+				auto &reset = callbacks.front();
+				if(auto obj = reset.amx.lock())
+				{
+					AMX *amx = obj->get();
+
+					cell retval;
+					reset.pri = result;
+					amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+				}
+				it = callbacks.erase(it);
 			}
-			waiting.pop();
+		}
+		{
+			auto it = handlers.begin();
+			while(it != handlers.end())
+			{
+				auto &handler = handlers.front();
+				handler(*this);
+				it = handlers.erase(it);
+			}
 		}
 	}
 
-	void task::register_callback(amx::reset &&reset)
+	task::reset_iterator task::register_reset(amx::reset &&reset)
 	{
-		waiting.push(std::move(reset));
+		callbacks.push_back(std::move(reset));
+		auto it = callbacks.end();
+		return --it;
+	}
+
+	task::handler_iterator task::register_handler(const std::function<void(task&)> &func)
+	{
+		handlers.push_back(func);
+		auto it = handlers.end();
+		return --it;
+	}
+
+	task::handler_iterator task::register_handler(std::function<void(task&)> &&func)
+	{
+		handlers.push_back(std::move(func));
+		auto it = handlers.end();
+		return --it;
+	}
+
+	void task::unregister_reset(const reset_iterator &it)
+	{
+		callbacks.erase(it);
+	}
+
+	void task::unregister_handler(const handler_iterator &it)
+	{
+		handlers.erase(it);
 	}
 
 	std::shared_ptr<task> add_tick_task(cell ticks)

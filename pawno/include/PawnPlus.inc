@@ -628,6 +628,8 @@ native task_set_result(Task:task, AnyTag:result);
 native task_get_result(Task:task);
 native Task:task_ticks(ticks);
 native Task:task_ms(interval);
+native Task:task_any(Task:...);
+native Task:task_all(Task:...);
 native task_await(Task:task);
 native task_yield(AnyTag:value);
 

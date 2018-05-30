@@ -1,6 +1,7 @@
 #include "natives.h"
 #include "context.h"
 #include "modules/tasks.h"
+#include <algorithm>
 
 namespace Natives
 {
@@ -85,6 +86,74 @@ namespace Natives
 		return reinterpret_cast<cell>(tasks::add_timer_task(params[1]).get());
 	}
 
+	// native Task:task_any(Task:...);
+	static cell AMX_NATIVE_CALL task_any(AMX *amx, cell *params)
+	{
+		auto created = tasks::add();
+		cell num = params[0] / sizeof(cell);
+		auto list = std::shared_ptr<std::vector<std::pair<tasks::task::handler_iterator, std::weak_ptr<tasks::task>>>>(new std::vector<std::pair<tasks::task::handler_iterator, std::weak_ptr<tasks::task>>>());
+		for(cell i = 1; i <= num; i++)
+		{
+			cell *addr;
+			amx_GetAddr(amx, params[i], &addr);
+			auto task = reinterpret_cast<tasks::task*>(*addr);
+			if(auto lock = tasks::find(task))
+			{
+				auto it = lock->register_handler([created, list](tasks::task &t)
+				{
+					for(auto &reg : *list)
+					{
+						if(auto lock2 = reg.second.lock())
+						{
+							if(lock2.get() != &t)
+							{
+								lock2->unregister_handler(reg.first);
+							}
+						}
+					}
+					list->clear();
+					created->set_completed(reinterpret_cast<cell>(&t));
+				});
+				list->push_back(std::make_pair(it, lock));
+			}
+		}
+		return reinterpret_cast<cell>(created.get());
+	}
+
+	// native Task:task_all(Task:...);
+	static cell AMX_NATIVE_CALL task_all(AMX *amx, cell *params)
+	{
+		auto created = tasks::add();
+		cell num = params[0] / sizeof(cell);
+		auto list = std::shared_ptr<std::vector<std::weak_ptr<tasks::task>>>(new std::vector<std::weak_ptr<tasks::task>>());
+		for(cell i = 1; i <= num; i++)
+		{
+			cell *addr;
+			amx_GetAddr(amx, params[i], &addr);
+			auto task = reinterpret_cast<tasks::task*>(*addr);
+			if(auto lock = tasks::find(task))
+			{
+				lock->register_handler([created, list](tasks::task &t)
+				{
+					if(std::all_of(list->begin(), list->end(), [](std::weak_ptr<tasks::task> &ptr)
+					{
+						if(auto lock = ptr.lock())
+						{
+							return lock->completed();
+						}
+						return true;
+					}))
+					{
+						list->clear();
+						created->set_completed(reinterpret_cast<cell>(&t));
+					}
+				});
+				list->push_back(lock);
+			}
+		}
+		return reinterpret_cast<cell>(created.get());
+	}
+
 	// native task_await(Task:task);
 	static cell AMX_NATIVE_CALL task_await(AMX *amx, cell *params)
 	{
@@ -133,6 +202,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_get_result),
 	AMX_DECLARE_NATIVE(task_ticks),
 	AMX_DECLARE_NATIVE(task_ms),
+	AMX_DECLARE_NATIVE(task_any),
+	AMX_DECLARE_NATIVE(task_all),
 	AMX_DECLARE_NATIVE(task_await),
 	AMX_DECLARE_NATIVE(task_yield),
 };
