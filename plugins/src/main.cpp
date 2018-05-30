@@ -33,7 +33,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 
 	Hooks::register_callback();
 
-	Context::RegisterGroundCallback(
+	amx::on_bottom(
 		[](AMX *amx){
 			strings::pool.clear_tmp();
 			variants::pool.clear_tmp();

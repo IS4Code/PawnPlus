@@ -92,15 +92,7 @@ namespace Natives
 	// native task_yield(AnyTag:value);
 	static cell AMX_NATIVE_CALL task_yield(AMX *amx, cell *params)
 	{
-		amx::object owner;
-		auto &ctx = Context::Get(amx, owner);
-		ctx.result = params[1];
-		if(ctx.task_object != -1)
-		{
-			TaskPool::Get(ctx.task_object)->SetCompleted(ctx.result);
-			return 1;
-		}
-		return 0;
+		return tasks::set_result(amx, params[1]);
 	}
 }
 

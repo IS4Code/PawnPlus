@@ -4,6 +4,7 @@
 #include "modules/events.h"
 #include "modules/amxhook.h"
 #include "modules/strings.h"
+#include "modules/guards.h"
 #include "objects/dyn_object.h"
 #include <memory>
 #include <cstring>
@@ -311,21 +312,17 @@ namespace Natives
 	// native Guard:pawn_guard(AnyTag:value, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL pawn_guard(AMX *amx, cell *params)
 	{
-		amx::object owner;
-		auto &ctx = Context::Get(amx, owner);
 		auto obj = dyn_object(amx, params[1], params[2]);
 		if(obj.get_tag()->inherits_from(tags::tag_cell))
 		{
 			return 0;
 		}
-		return reinterpret_cast<cell>(ctx.guards.add(std::move(obj)));
+		return reinterpret_cast<cell>(guards::add(amx, std::move(obj)));
 	}
 
 	// native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL pawn_guard_arr(AMX *amx, cell *params)
 	{
-		amx::object owner;
-		auto &ctx = Context::Get(amx, owner);
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
 		auto obj = dyn_object(amx, addr, params[2], params[3]);
@@ -333,27 +330,21 @@ namespace Natives
 		{
 			return 0;
 		}
-		return reinterpret_cast<cell>(ctx.guards.add(std::move(obj)));
+		return reinterpret_cast<cell>(guards::add(amx, std::move(obj)));
 	}
 
 	// native bool:pawn_guard_valid(Guard:guard);
 	static cell AMX_NATIVE_CALL pawn_guard_valid(AMX *amx, cell *params)
 	{
 		auto obj = reinterpret_cast<dyn_object*>(params[1]);
-		amx::object owner;
-		auto &ctx = Context::Get(amx, owner);
-		return ctx.guards.contains(obj);
+		return guards::contains(amx, obj);
 	}
 
 	// native bool:pawn_guard_free(Guard:guard);
 	static cell AMX_NATIVE_CALL pawn_guard_free(AMX *amx, cell *params)
 	{
 		auto obj = reinterpret_cast<dyn_object*>(params[1]);
-		amx::object owner;
-		auto &ctx = Context::Get(amx, owner);
-		if(!ctx.guards.contains(obj)) return 0;
-		obj->free();
-		return ctx.guards.remove(obj);
+		return guards::free(amx, obj);
 	}
 }
 

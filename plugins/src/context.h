@@ -1,10 +1,8 @@
 #ifndef CONTEXT_H_INCLUDED
 #define CONTEXT_H_INCLUDED
 
-#include "utils/set_pool.h"
-#include "objects/dyn_object.h"
-#include "sdk/amx/amx.h"
 #include "amxinfo.h"
+#include "sdk/amx/amx.h"
 #include <functional>
 #include <stack>
 #include <unordered_map>
@@ -20,70 +18,71 @@ constexpr cell SleepReturnDetach = 0xB0000000;
 constexpr cell SleepReturnAttach = 0xB1000000;
 constexpr cell SleepReturnSync = 0xB2000000;
 
-struct AMX_CONTEXT
+namespace amx
 {
-	size_t task_object = -1;
-	cell result = 0;
-	aux::set_pool<dyn_object> guards;
-
-	AMX_CONTEXT()
+	class context
 	{
+		AMX *_amx;
+		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
 
-	}
-
-	AMX_CONTEXT(const AMX_CONTEXT &obj) = delete;
-	AMX_CONTEXT(AMX_CONTEXT &&obj) : guards(std::move(obj.guards))
-	{
-		obj.guards.clear();
-	}
-
-	AMX_CONTEXT &operator=(const AMX_CONTEXT &obj) = delete;
-	AMX_CONTEXT &operator=(AMX_CONTEXT &&obj)
-	{
-		if(this != &obj)
+	public:
+		context()
 		{
-			guards = std::move(obj.guards);
-			obj.guards.clear();
-		}
-		return *this;
-	}
 
-	~AMX_CONTEXT()
-	{
-		for(auto obj : guards)
+		}
+
+		context(AMX *amx)
 		{
-			obj->free();
+
 		}
-	}
-};
 
-struct AMX_STATE : public amx::extra
-{
-	std::stack<AMX_CONTEXT> contexts;
+		context(const context &obj) = delete;
+		context(context &&obj) : _amx(obj._amx), extras(std::move(obj.extras))
+		{
+			obj._amx = nullptr;
+			obj.extras.clear();
+		}
 
-	AMX_STATE(AMX *amx) : amx::extra(amx)
-	{
+		context &operator=(const context &obj) = delete;
+		context &operator=(context &&obj)
+		{
+			if(this != &obj)
+			{
+				_amx = obj._amx;
+				extras = std::move(obj.extras);
+				obj._amx = nullptr;
+				obj.extras.clear();
+			}
+			return *this;
+		}
 
-	}
-};
+		template <class ExtraType>
+		ExtraType &get_extra()
+		{
+			std::type_index key = typeid(ExtraType);
 
-namespace Context
-{
-	int Push(AMX *amx);
-	int Pop(AMX *amx);
+			auto it = extras.find(key);
+			if(it == extras.end())
+			{
+				it = extras.insert(std::make_pair(key, std::unique_ptr<ExtraType>(new ExtraType(_amx)))).first;
+			}
+			return static_cast<ExtraType&>(*it->second);
+		}
+	};
 
-	AMX_STATE &GetState(AMX *amx, amx::object &obj);
+	int push(AMX *amx);
+	int pop(AMX *amx);
 
-	void Restore(AMX *amx, AMX_CONTEXT &&context);
-	bool IsPresent(AMX *amx);
-	AMX_CONTEXT &Get(AMX *amx, amx::object &obj);
+	void restore(AMX *amx, context &&context);
+	bool has_context(AMX *amx);
+	context &get_context(AMX *amx, object &obj);
 
-	void RegisterGroundCallback(const std::function<void(AMX*)> &callback);
+	void on_bottom(const std::function<void(AMX*)> &callback);
 
 	template <class Func>
-	void RegisterGroundCallback(const Func &callback)
+	void on_bottom(const Func &callback)
 	{
-		return RegisterGroundCallback(std::function<void(AMX*)>(callback));
+		return on_bottom(std::function<void(AMX*)>(callback));
 	}
 }
 

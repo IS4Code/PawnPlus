@@ -138,6 +138,7 @@
     <ClCompile Include="src\hooks.cpp" />
     <ClCompile Include="src\modules\amxhook.cpp" />
     <ClCompile Include="src\modules\events.cpp" />
+    <ClCompile Include="src\modules\guards.cpp" />
     <ClCompile Include="src\modules\strings.cpp" />
     <ClCompile Include="src\modules\tags.cpp" />
     <ClCompile Include="src\modules\tasks.cpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="src\main.h" />
     <ClInclude Include="src\modules\amxhook.h" />
     <ClInclude Include="src\modules\events.h" />
+    <ClInclude Include="src\modules\guards.h" />
     <ClInclude Include="src\modules\strings.h" />
     <ClInclude Include="src\modules\tags.h" />
     <ClInclude Include="src\modules\tasks.h" />

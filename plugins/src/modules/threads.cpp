@@ -16,7 +16,7 @@ thread_local thread_state *my_instance;
 class thread_state
 {
 	std::mutex mutex;
-	AMX_RESET reset;
+	amx::reset reset;
 	aux::thread thread;
 	AMX_CALLBACK orig_callback;
 	AMX *amx;
@@ -35,7 +35,7 @@ class thread_state
 	int auto_callback(AMX *amx, cell index, cell *result, cell *params)
 	{
 		std::unique_lock<std::mutex> lock(mutex);
-		reset = AMX_RESET(amx, false);
+		reset = amx::reset(amx, false);
 		amx->callback = orig_callback;
 		pending_callback = std::make_tuple(0, index, result, params);
 		pending = true;
@@ -85,7 +85,7 @@ class thread_state
 						amx->callback = orig_callback;
 						amx->pri = 0;
 						amx->error = 0;
-						reset = AMX_RESET(amx, false);
+						reset = amx::reset(amx, false);
 						attach = true;
 						join_sync.notify_all();
 						return;
@@ -162,7 +162,7 @@ public:
 			}else{
 				amx->callback = &amx_Callback;
 			}
-			reset = AMX_RESET(amx, false);
+			reset = amx::reset(amx, false);
 
 			std::lock_guard<std::mutex> lock(mutex);
 			resume_sync.notify_one();
@@ -206,7 +206,7 @@ public:
 			thread.pause();
 			amx->callback = orig_callback;
 			// might as well store paramcount
-			reset = AMX_RESET(amx, false);
+			reset = amx::reset(amx, false);
 			amx->stk = amx->stp;
 			amx->hea = amx->hlw;
 			amx->cip = 0;

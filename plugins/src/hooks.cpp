@@ -47,7 +47,7 @@ int AMXAPI amx_FindPublicOrig(AMX *amx, const char *funcname, int *index)
 	}
 }
 
-int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_RESET *reset)
+int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset)
 {
 	if(index <= -3)
 	{
@@ -62,13 +62,13 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 	Threads::PauseThreads(amx);
 	Threads::JoinThreads(amx);
 
-	AMX_RESET *old = nullptr;
-	if(restore && Context::IsPresent(amx))
+	amx::reset *old = nullptr;
+	if(restore && amx::has_context(amx))
 	{
-		old = new AMX_RESET(amx, true);
+		old = new amx::reset(amx, true);
 	}
 
-	Context::Push(amx);
+	amx::push(amx);
 	if(reset != nullptr)
 	{
 		reset->restore();
@@ -81,8 +81,6 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 		{
 			index = AMX_EXEC_CONT;
 
-			amx::object obj;
-			auto &ctx = Context::Get(amx, obj);
 			switch(amx->pri & SleepReturnTypeMask)
 			{
 				case SleepReturnAwait:
@@ -90,8 +88,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 					task_id task = SleepReturnValueMask & amx->pri;
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = ctx.result;
-					TaskPool::Get(task)->register_callback(AMX_RESET(amx, true));
+					if(retval != nullptr) *retval = tasks::get_result(amx);
+					TaskPool::Get(task)->register_callback(amx::reset(amx, true));
 				}
 				break;
 				case SleepReturnWaitTicks:
@@ -99,8 +97,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 					cell ticks = SleepReturnValueMask & amx->pri;
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = ctx.result;
-					TaskPool::RegisterTicks(ticks, AMX_RESET(amx, true));
+					if(retval != nullptr) *retval = tasks::get_result(amx);
+					TaskPool::RegisterTicks(ticks, amx::reset(amx, true));
 				}
 				break;
 				case SleepReturnWaitMs:
@@ -108,15 +106,15 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 					cell interval = SleepReturnValueMask & amx->pri;
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = ctx.result;
-					TaskPool::RegisterTimer(interval, AMX_RESET(amx, true));
+					if(retval != nullptr) *retval = tasks::get_result(amx);
+					TaskPool::RegisterTimer(interval, amx::reset(amx, true));
 				}
 				break;
 				case SleepReturnWaitInf:
 				{
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = ctx.result;
+					if(retval != nullptr) *retval = tasks::get_result(amx);
 				}
 				break;
 				case SleepReturnDetach:
@@ -124,7 +122,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 					auto flags = static_cast<Threads::SyncFlags>(SleepReturnValueMask & amx->pri);
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
-					if(retval != nullptr) *retval = ctx.result;
+					if(retval != nullptr) *retval = tasks::get_result(amx);
 					Threads::DetachThread(amx, flags);
 				}
 				break;
@@ -144,7 +142,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 		}
 		break;
 	}
-	Context::Pop(amx);
+	amx::pop(amx);
 	if(old != nullptr)
 	{
 		old->restore();

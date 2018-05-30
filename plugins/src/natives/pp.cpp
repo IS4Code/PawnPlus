@@ -4,6 +4,7 @@
 #include "modules/tasks.h"
 #include "modules/strings.h"
 #include "modules/variants.h"
+#include "modules/guards.h"
 #include "pools.h"
 
 namespace Natives
@@ -67,9 +68,7 @@ namespace Natives
 	// native pp_num_guards();
 	static cell AMX_NATIVE_CALL pp_num_guards(AMX *amx, cell *params)
 	{
-		amx::object owner;
-		auto &ctx = Context::Get(amx, owner);
-		return ctx.guards.size();
+		return guards::count(amx);
 	}
 }
 

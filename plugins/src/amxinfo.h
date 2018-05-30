@@ -47,6 +47,24 @@ namespace amx
 		}
 
 		instance(const instance &obj) = delete;
+		instance(instance &&obj) : _amx(obj._amx), extras(std::move(obj.extras))
+		{
+			obj._amx = nullptr;
+			obj.extras.clear();
+		}
+
+		instance &operator=(const instance &obj) = delete;
+		instance &operator=(instance &&obj)
+		{
+			if(this != &obj)
+			{
+				_amx = obj._amx;
+				extras = std::move(obj.extras);
+				obj._amx = nullptr;
+				obj.extras.clear();
+			}
+			return *this;
+		}
 
 		template <class ExtraType>
 		ExtraType &get_extra()
@@ -60,8 +78,6 @@ namespace amx
 			}
 			return static_cast<ExtraType&>(*it->second);
 		}
-
-		instance *operator=(const instance &obj) = delete;
 
 		AMX *get()
 		{

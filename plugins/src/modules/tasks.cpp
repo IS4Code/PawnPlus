@@ -10,14 +10,43 @@
 #include <vector>
 #include <unordered_set>
 
-typedef void(*logprintf_t)(char* format, ...);
-extern logprintf_t logprintf;
-
 aux::shared_linear_pool<Task> pool;
 aux::set_pool<std::pair<ucell, std::shared_ptr<Task>>> tickTasks;
 aux::set_pool<std::pair<std::chrono::system_clock::time_point, std::shared_ptr<Task>>> timerTasks;
-aux::set_pool<std::pair<ucell, AMX_RESET>> tickResets;
-aux::set_pool<std::pair<std::chrono::system_clock::time_point, AMX_RESET>> timerResets;
+aux::set_pool<std::pair<ucell, amx::reset>> tickResets;
+aux::set_pool<std::pair<std::chrono::system_clock::time_point, amx::reset>> timerResets;
+
+struct task_extra : amx::extra
+{
+	size_t task_object = -1;
+	cell result = 0;
+
+	task_extra(AMX *amx) : amx::extra(amx)
+	{
+
+	}
+};
+
+bool tasks::set_result(AMX *amx, cell result)
+{
+	amx::object owner;
+	auto &ctx = amx::get_context(amx, owner);
+	auto &extra = ctx.get_extra<task_extra>();
+	extra.result = result;
+	if(extra.task_object != -1)
+	{
+		TaskPool::Get(extra.task_object)->SetCompleted(result);
+		return true;
+	}
+	return false;
+}
+
+cell tasks::get_result(AMX *amx)
+{
+	amx::object owner;
+	auto &ctx = amx::get_context(amx, owner);
+	return ctx.get_extra<task_extra>().result;
+}
 
 std::shared_ptr<Task> TaskPool::CreateNew()
 {
@@ -51,7 +80,7 @@ void Task::SetCompleted(cell result)
 	}
 }
 
-void Task::register_callback(AMX_RESET &&reset)
+void Task::register_callback(amx::reset &&reset)
 {
 	waiting.push(std::move(reset));
 }
@@ -87,12 +116,12 @@ std::shared_ptr<Task> TaskPool::CreateTimerTask(cell interval)
 	return task;
 }
 
-void TaskPool::RegisterTicks(cell ticks, AMX_RESET &&reset)
+void TaskPool::RegisterTicks(cell ticks, amx::reset &&reset)
 {
 	tickResets.add(std::make_pair(ticks, std::move(reset)));
 }
 
-void TaskPool::RegisterTimer(cell interval, AMX_RESET &&reset)
+void TaskPool::RegisterTimer(cell interval, amx::reset &&reset)
 {
 	auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
 	timerResets.add(std::make_pair(time, std::move(reset)));
@@ -131,7 +160,7 @@ void TaskPool::OnTick()
 			pair->first--;
 			if(pair->first == 0)
 			{
-				AMX_RESET reset = std::move(pair->second);
+				amx::reset reset = std::move(pair->second);
 				it = tickResets.erase(it);
 
 				auto obj = reset.amx.lock();
@@ -173,7 +202,7 @@ void TaskPool::OnTick()
 
 			if(now >= pair->first)
 			{
-				AMX_RESET reset = std::move(pair->second);
+				amx::reset reset = std::move(pair->second);
 				it = timerResets.erase(it);
 
 				auto obj = reset.amx.lock();

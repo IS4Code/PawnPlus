@@ -103,6 +103,9 @@
     <ClCompile Include="src\natives\namx.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\guards.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -232,6 +235,9 @@
     </ClInclude>
     <ClInclude Include="src\utils\shared_linear_pool.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\guards.h">
+      <Filter>src\modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

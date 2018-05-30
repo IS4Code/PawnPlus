@@ -9,12 +9,18 @@
 
 typedef size_t task_id;
 
+namespace tasks
+{
+	bool set_result(AMX *amx, cell result);
+	cell get_result(AMX *amx);
+}
+
 class Task
 {
 	const task_id id;
 	cell result = 0;
 	bool completed = false;
-	std::queue<AMX_RESET> waiting;
+	std::queue<amx::reset> waiting;
 public:
 	Task(task_id id) : id(id)
 	{
@@ -33,7 +39,7 @@ public:
 		return completed;
 	}
 	void SetCompleted(cell result);
-	void register_callback(AMX_RESET &&reset);
+	void register_callback(amx::reset &&reset);
 };
 
 namespace TaskPool
@@ -45,8 +51,8 @@ namespace TaskPool
 	void OnTick();
 	size_t Size();
 
-	void RegisterTicks(cell ticks, AMX_RESET &&reset);
-	void RegisterTimer(cell interval, AMX_RESET &&reset);
+	void RegisterTicks(cell ticks, amx::reset &&reset);
+	void RegisterTimer(cell interval, amx::reset &&reset);
 };
 
 #endif

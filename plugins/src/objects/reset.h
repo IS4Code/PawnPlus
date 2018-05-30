@@ -7,21 +7,24 @@
 #include <memory>
 #include "sdk/amx/amx.h"
 
-struct AMX_RESET
+namespace amx
 {
-	cell cip, frm, pri, alt, hea, reset_hea, stk, reset_stk;
-	std::unique_ptr<unsigned char[]> heap, stack;
-	AMX_CONTEXT context;
+	struct reset
+	{
+		cell cip, frm, pri, alt, hea, reset_hea, stk, reset_stk;
+		std::unique_ptr<unsigned char[]> heap, stack;
+		amx::context context;
 
-	amx::handle amx;
+		amx::handle amx;
 
-	AMX_RESET() = default;
-	AMX_RESET(AMX* amx, bool context);
-	AMX_RESET(AMX_RESET &&obj);
-	AMX_RESET &operator=(AMX_RESET &&obj);
+		reset() = default;
+		reset(AMX* amx, bool context);
+		reset(reset &&obj);
+		reset &operator=(reset &&obj);
 
-	bool restore();
-	bool restore_no_context() const;
-};
+		bool restore();
+		bool restore_no_context() const;
+	};
+}
 
 #endif
