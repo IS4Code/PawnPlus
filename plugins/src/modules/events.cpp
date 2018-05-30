@@ -32,9 +32,10 @@ public:
 	}
 };
 
-amx_info &get_info(AMX *amx)
+amx_info &get_info(AMX *amx, amx::object &obj)
 {
-	return amx::load(amx)->get_extra<amx_info>();
+	obj = amx::load_lock(amx);
+	return obj->get_extra<amx_info>();
 }
 
 struct not_enough_parameters {};
@@ -45,7 +46,8 @@ namespace events
 	int register_callback(const char *callback, AMX *amx, const char *function, const char *format, const cell *params, int numargs)
 	{
 		try{
-			auto &registered_events = get_info(amx).registered_events;
+			amx::object obj;
+			auto &registered_events = get_info(amx, obj).registered_events;
 			auto it = registered_events.insert(std::make_pair(std::string(callback), event_info(amx, function, format, params, numargs)));
 			return std::distance(registered_events.begin(), it);
 		}catch(nullptr_t)
@@ -56,7 +58,8 @@ namespace events
 
 	bool remove_callback(AMX *amx, int index)
 	{
-		auto &registered_events = get_info(amx).registered_events;
+		amx::object obj;
+		auto &registered_events = get_info(amx, obj).registered_events;
 		auto it = registered_events.begin();
 		std::advance(it, index);
 		bool active = it->second.is_active();
@@ -66,8 +69,10 @@ namespace events
 
 	int get_callback_id(AMX *amx, const char *callback)
 	{
-		auto &registered_events = get_info(amx).registered_events;
-		auto &callback_ids = get_info(amx).callback_ids;
+		amx::object obj;
+		auto &info = get_info(amx, obj);
+		auto &registered_events = info.registered_events;
+		auto &callback_ids = info.callback_ids;
 
 		std::string name(callback);
 		if(registered_events.find(name) != registered_events.end())
@@ -81,8 +86,10 @@ namespace events
 
 	const char *invoke_callback(int id, AMX *amx, cell *retval)
 	{
-		auto &registered_events = get_info(amx).registered_events;
-		auto &callback_ids = get_info(amx).callback_ids;
+		amx::object obj;
+		auto &info = get_info(amx, obj);
+		auto &registered_events = info.registered_events;
+		auto &callback_ids = info.callback_ids;
 		if(id < 0 || static_cast<size_t>(id) >= callback_ids.size()) return nullptr;
 
 		auto range = registered_events.equal_range(callback_ids[id]);

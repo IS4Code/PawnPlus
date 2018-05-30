@@ -2,6 +2,7 @@
 #define RESET_H_INCLUDED
 
 #include "context.h"
+#include "amxinfo.h"
 
 #include <memory>
 #include "sdk/amx/amx.h"
@@ -12,15 +13,15 @@ struct AMX_RESET
 	std::unique_ptr<unsigned char[]> heap, stack;
 	AMX_CONTEXT context;
 
-	AMX* amx;
+	amx::handle amx;
 
 	AMX_RESET() = default;
 	AMX_RESET(AMX* amx, bool context);
 	AMX_RESET(AMX_RESET &&obj);
 	AMX_RESET &operator=(AMX_RESET &&obj);
 
-	void restore();
-	void restore_no_context() const;
+	bool restore();
+	bool restore_no_context() const;
 };
 
 #endif

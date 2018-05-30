@@ -38,13 +38,15 @@ void Task::SetCompleted(cell result)
 	while(waiting.size() > 0)
 	{
 		auto &reset = waiting.front();
-		AMX *amx = reset.amx;
-		if(!Context::IsValid(amx)) continue;
+		auto obj = reset.amx.lock();
+		if(obj)
+		{
+			AMX *amx = obj->get();
 
-		cell retval;
-
-		reset.pri = result;
-		amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+			cell retval;
+			reset.pri = result;
+			amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+		}
 		waiting.pop();
 	}
 }
@@ -107,12 +109,12 @@ void TaskPool::OnTick()
 		auto it = tickTasks.begin();
 		while(it != tickTasks.end())
 		{
-			auto obj = *it;
+			auto pair = *it;
 
-			obj->first--;
-			if(obj->first == 0)
+			pair->first--;
+			if(pair->first == 0)
 			{
-				auto task = obj->second;
+				auto task = pair->second;
 				it = tickTasks.erase(it);
 				task->SetCompleted(1);
 			}else{
@@ -124,18 +126,22 @@ void TaskPool::OnTick()
 		auto it = tickResets.begin();
 		while(it != tickResets.end())
 		{
-			auto obj = *it;
+			auto pair = *it;
 
-			obj->first--;
-			if(obj->first == 0)
+			pair->first--;
+			if(pair->first == 0)
 			{
-				AMX_RESET reset = std::move(obj->second);
+				AMX_RESET reset = std::move(pair->second);
 				it = tickResets.erase(it);
-				AMX *amx = reset.amx;
-				if(!Context::IsValid(amx)) continue;
 
-				cell retval;
-				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+				auto obj = reset.amx.lock();
+				if(obj)
+				{
+					AMX *amx = obj->get();
+
+					cell retval;
+					amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+				}
 			}else{
 				it++;
 			}
@@ -147,11 +153,11 @@ void TaskPool::OnTick()
 		auto it = timerTasks.begin();
 		while(it != timerTasks.end())
 		{
-			auto obj = *it;
+			auto pair = *it;
 
-			if(now >= obj->first)
+			if(now >= pair->first)
 			{
-				auto task = obj->second;
+				auto task = pair->second;
 				it = timerTasks.erase(it);
 				task->SetCompleted(1);
 			}else{
@@ -163,17 +169,21 @@ void TaskPool::OnTick()
 		auto it = timerResets.begin();
 		while(it != timerResets.end())
 		{
-			auto obj = *it;
+			auto pair = *it;
 
-			if(now >= obj->first)
+			if(now >= pair->first)
 			{
-				AMX_RESET reset = std::move(obj->second);
+				AMX_RESET reset = std::move(pair->second);
 				it = timerResets.erase(it);
-				AMX *amx = reset.amx;
-				if(!Context::IsValid(amx)) continue;
 
-				cell retval;
-				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+				auto obj = reset.amx.lock();
+				if(obj)
+				{
+					AMX *amx = obj->get();
+
+					cell retval;
+					amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+				}
 			}else{
 				it++;
 			}

@@ -81,7 +81,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, AMX_
 		{
 			index = AMX_EXEC_CONT;
 
-			auto &ctx = Context::Get(amx);
+			amx::object obj;
+			auto &ctx = Context::Get(amx, obj);
 			switch(amx->pri & SleepReturnTypeMask)
 			{
 				case SleepReturnAwait:

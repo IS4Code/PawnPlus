@@ -67,7 +67,8 @@ namespace Natives
 	// native pp_num_guards();
 	static cell AMX_NATIVE_CALL pp_num_guards(AMX *amx, cell *params)
 	{
-		auto &ctx = Context::Get(amx);
+		amx::object owner;
+		auto &ctx = Context::Get(amx, owner);
 		return ctx.guards.size();
 	}
 }

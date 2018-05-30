@@ -74,7 +74,8 @@ tag_ptr tags::find_tag(AMX *amx, cell tag_id)
 	tag_id &= 0x7FFFFFFF;
 	if(tag_id == 0) return ::tag_list[tag_cell];
 
-	auto &map = amx::load(amx)->get_extra<tag_map_info>().tag_map;
+	auto obj = amx::load_lock(amx);
+	auto &map = obj->get_extra<tag_map_info>().tag_map;
 	auto it = map.find(tag_id);
 	if(it != map.end())
 	{
@@ -136,7 +137,8 @@ bool tag_info::same_base(tag_ptr tag) const
 cell tag_info::get_id(AMX *amx) const
 {
 	if(uid == tags::tag_cell) return 0x80000000;
-	auto &map = amx::load(amx)->get_extra<tag_map_info>().tag_map;
+	auto obj = amx::load_lock(amx);
+	auto &map = obj->get_extra<tag_map_info>().tag_map;
 	for(auto &pair : map)
 	{
 		if(pair.second == this) return pair.first | 0x80000000;

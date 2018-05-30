@@ -20,24 +20,19 @@ constexpr cell SleepReturnDetach = 0xB0000000;
 constexpr cell SleepReturnAttach = 0xB1000000;
 constexpr cell SleepReturnSync = 0xB2000000;
 
-struct AMX_CONTEXT : public amx::extra
+struct AMX_CONTEXT
 {
 	size_t task_object = -1;
 	cell result = 0;
 	aux::set_pool<dyn_object> guards;
 
-	AMX_CONTEXT() : amx::extra(nullptr)
-	{
-
-	}
-
-	AMX_CONTEXT(AMX *amx) : amx::extra(amx)
+	AMX_CONTEXT()
 	{
 
 	}
 
 	AMX_CONTEXT(const AMX_CONTEXT &obj) = delete;
-	AMX_CONTEXT(AMX_CONTEXT &&obj) : amx::extra(nullptr), guards(std::move(obj.guards))
+	AMX_CONTEXT(AMX_CONTEXT &&obj) : guards(std::move(obj.guards))
 	{
 		obj.guards.clear();
 	}
@@ -53,7 +48,7 @@ struct AMX_CONTEXT : public amx::extra
 		return *this;
 	}
 
-	virtual ~AMX_CONTEXT()
+	~AMX_CONTEXT()
 	{
 		for(auto obj : guards)
 		{
@@ -62,9 +57,14 @@ struct AMX_CONTEXT : public amx::extra
 	}
 };
 
-struct AMX_STATE
+struct AMX_STATE : public amx::extra
 {
 	std::stack<AMX_CONTEXT> contexts;
+
+	AMX_STATE(AMX *amx) : amx::extra(amx)
+	{
+
+	}
 };
 
 namespace Context
@@ -72,12 +72,11 @@ namespace Context
 	int Push(AMX *amx);
 	int Pop(AMX *amx);
 
-	bool IsValid(AMX *amx);
-	AMX_STATE &GetState(AMX *amx);
+	AMX_STATE &GetState(AMX *amx, amx::object &obj);
 
 	void Restore(AMX *amx, AMX_CONTEXT &&context);
 	bool IsPresent(AMX *amx);
-	AMX_CONTEXT &Get(AMX *amx);
+	AMX_CONTEXT &Get(AMX *amx, amx::object &obj);
 
 	void RegisterGroundCallback(const std::function<void(AMX*)> &callback);
 

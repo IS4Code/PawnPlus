@@ -9,8 +9,11 @@ extern logprintf_t logprintf;
 
 int globalExecLevel = 0;
 
-
-std::unordered_map<AMX*, AMX_STATE> amx_infos;
+AMX_STATE &get_state(AMX *amx, amx::object &obj)
+{
+	obj = amx::load_lock(amx);
+	return obj->get_extra<AMX_STATE>();
+}
 
 template <class Ret, class... Args>
 class invocation_list
@@ -44,8 +47,8 @@ invocation_list<void, AMX*> ground_callbacks;
 int Context::Push(AMX *amx)
 {
 	globalExecLevel++;
-	amx_infos[amx].contexts.emplace();
-
+	amx::object obj;
+	get_state(amx, obj).contexts.emplace();
 	return globalExecLevel;
 }
 
@@ -61,36 +64,32 @@ int Context::Pop(AMX *amx)
 		ground_callbacks.invoke(amx);
 	}
 
-	auto &info = amx_infos.at(amx);
-
-	info.contexts.pop();
+	amx::object obj;
+	get_state(amx, obj).contexts.pop();
 
 	return globalExecLevel;
 }
 
-bool Context::IsValid(AMX *amx)
-{
-	return amx_infos.find(amx) != amx_infos.end();
-}
-
 bool Context::IsPresent(AMX *amx)
 {
-	return amx_infos.at(amx).contexts.size() > 0;
+	amx::object obj;
+	return get_state(amx, obj).contexts.size() > 0;
 }
 
-AMX_STATE &Context::GetState(AMX *amx)
+AMX_STATE &Context::GetState(AMX *amx, amx::object &obj)
 {
-	return amx_infos[amx];
+	return get_state(amx, obj);
 }
 
-AMX_CONTEXT &Context::Get(AMX *amx)
+AMX_CONTEXT &Context::Get(AMX *amx, amx::object &obj)
 {
-	return amx_infos.at(amx).contexts.top();
+	return get_state(amx, obj).contexts.top();
 }
 
 void Context::Restore(AMX *amx, AMX_CONTEXT &&context)
 {
-	amx_infos.at(amx).contexts.top() = std::move(context);
+	amx::object obj;
+	get_state(amx, obj).contexts.top() = std::move(context);
 }
 
 void Context::RegisterGroundCallback(const std::function<void(AMX*)> &callback)

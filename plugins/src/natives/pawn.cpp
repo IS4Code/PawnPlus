@@ -311,7 +311,8 @@ namespace Natives
 	// native Guard:pawn_guard(AnyTag:value, tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL pawn_guard(AMX *amx, cell *params)
 	{
-		auto &ctx = Context::Get(amx);
+		amx::object owner;
+		auto &ctx = Context::Get(amx, owner);
 		auto obj = dyn_object(amx, params[1], params[2]);
 		if(obj.get_tag()->inherits_from(tags::tag_cell))
 		{
@@ -323,7 +324,8 @@ namespace Natives
 	// native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL pawn_guard_arr(AMX *amx, cell *params)
 	{
-		auto &ctx = Context::Get(amx);
+		amx::object owner;
+		auto &ctx = Context::Get(amx, owner);
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
 		auto obj = dyn_object(amx, addr, params[2], params[3]);
@@ -338,7 +340,8 @@ namespace Natives
 	static cell AMX_NATIVE_CALL pawn_guard_valid(AMX *amx, cell *params)
 	{
 		auto obj = reinterpret_cast<dyn_object*>(params[1]);
-		auto &ctx = Context::Get(amx);
+		amx::object owner;
+		auto &ctx = Context::Get(amx, owner);
 		return ctx.guards.contains(obj);
 	}
 
@@ -346,7 +349,8 @@ namespace Natives
 	static cell AMX_NATIVE_CALL pawn_guard_free(AMX *amx, cell *params)
 	{
 		auto obj = reinterpret_cast<dyn_object*>(params[1]);
-		auto &ctx = Context::Get(amx);
+		amx::object owner;
+		auto &ctx = Context::Get(amx, owner);
 		if(!ctx.guards.contains(obj)) return 0;
 		obj->free();
 		return ctx.guards.remove(obj);

@@ -25,33 +25,28 @@ namespace amx
 		virtual ~extra() = default;
 	};
 
-	class ptr_info
+	typedef std::weak_ptr<class instance> handle;
+	typedef std::shared_ptr<class instance> object;
+
+	class instance
 	{
-		friend void unload(AMX*);
-		friend void register_natives(AMX*, const AMX_NATIVE_INFO*, int);
-		friend AMX_NATIVE find_native(AMX*, const std::string&);
+		friend object load_lock(AMX *amx);
 
 		AMX *_amx;
 		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
 
-		void invalidate()
+		explicit instance(AMX *amx) : _amx(amx)
 		{
-			_amx = nullptr;
-			extras.clear();
+
 		}
 
 	public:
-		ptr_info() : _amx(nullptr)
+		instance() : _amx(nullptr)
 		{
 
 		}
 
-		ptr_info(const ptr_info &obj) = delete;
-
-		explicit ptr_info(AMX *amx) : _amx(amx)
-		{
-
-		}
+		instance(const instance &obj) = delete;
 
 		template <class ExtraType>
 		ExtraType &get_extra()
@@ -66,19 +61,9 @@ namespace amx
 			return static_cast<ExtraType&>(*it->second);
 		}
 
-		bool valid() const
-		{
-			return _amx != nullptr;
-		}
+		instance *operator=(const instance &obj) = delete;
 
-		ptr_info *operator=(const ptr_info &obj) = delete;
-
-		AMX *operator->()
-		{
-			return _amx;
-		}
-
-		AMX *operator*()
+		AMX *get()
 		{
 			return _amx;
 		}
@@ -89,10 +74,9 @@ namespace amx
 		}
 	};
 
-	typedef std::shared_ptr<ptr_info> ptr;
-
-	ptr load(AMX *amx);
-	void unload(AMX *amx);
+	handle load(AMX *amx);
+	object load_lock(AMX *amx);
+	bool unload(AMX *amx);
 	void register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number);
 	AMX_NATIVE find_native(AMX *amx, const char *name);
 	AMX_NATIVE find_native(AMX *amx, const std::string &name);

@@ -5,11 +5,12 @@
 typedef void(*logprintf_t)(char* format, ...);
 extern logprintf_t logprintf;
 
-AMX_RESET::AMX_RESET(AMX* amx, bool context) : amx(amx), cip(amx->cip), frm(amx->frm), pri(amx->pri), alt(amx->alt), hea(amx->hea), reset_hea(amx->reset_hea), stk(amx->stk), reset_stk(amx->reset_stk)
+AMX_RESET::AMX_RESET(AMX* amx, bool context) : amx(amx::load(amx)), cip(amx->cip), frm(amx->frm), pri(amx->pri), alt(amx->alt), hea(amx->hea), reset_hea(amx->reset_hea), stk(amx->stk), reset_stk(amx->reset_stk)
 {
 	if(context)
 	{
-		this->context = std::move(Context::Get(amx));
+		amx::object owner;
+		this->context = std::move(Context::Get(amx, owner));
 	}
 
 	unsigned char *dat, *h, *s;
@@ -28,14 +29,23 @@ AMX_RESET::AMX_RESET(AMX* amx, bool context) : amx(amx), cip(amx->cip), frm(amx-
 	std::memcpy(stack.get(), s, stack_size);
 }
 
-void AMX_RESET::restore()
+bool AMX_RESET::restore()
 {
-	restore_no_context();
+	if(!restore_no_context()) return false;
+	auto obj = amx.lock();
+	if(!obj) return false;
+	auto amx = obj->get();
 	Context::Restore(amx, std::move(context));
+	return true;
 }
 
-void AMX_RESET::restore_no_context() const
+bool AMX_RESET::restore_no_context() const
 {
+	auto obj = amx.lock();
+	if(!obj) return false;
+
+	auto amx = obj->get();
+
 	unsigned char *dat, *h, *s;
 
 	auto amxhdr = (AMX_HEADER*)amx->base;
@@ -57,6 +67,8 @@ void AMX_RESET::restore_no_context() const
 
 	size_t stack_size = amxhdr->stp - amxhdr->dat - stk;
 	std::memcpy(s, stack.get(), stack_size);
+
+	return true;
 }
 
 AMX_RESET::AMX_RESET(AMX_RESET &&obj) : context(std::move(obj.context)), amx(obj.amx), cip(obj.cip), frm(obj.frm), pri(obj.pri), alt(obj.alt), hea(obj.hea), reset_hea(obj.reset_hea), heap(std::move(obj.heap)), stk(obj.stk), reset_stk(obj.reset_stk), stack(std::move(obj.stack))
