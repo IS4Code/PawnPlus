@@ -4,12 +4,27 @@
 #include "sdk/amx/amx.h"
 #include <string>
 #include <vector>
+#include <typeindex>
 #include <unordered_map>
 #include <cstring>
 #include <memory>
 
 namespace amx
 {
+	class extra
+	{
+	protected:
+		AMX *_amx;
+
+	public:
+		extra(AMX *amx) : _amx(amx)
+		{
+			
+		}
+
+		virtual ~extra() = default;
+	};
+
 	class ptr_info
 	{
 		friend void unload(AMX*);
@@ -17,11 +32,12 @@ namespace amx
 		friend AMX_NATIVE find_native(AMX*, const std::string&);
 
 		AMX *_amx;
-		std::unordered_map<std::string, AMX_NATIVE> natives;
+		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
 
 		void invalidate()
 		{
 			_amx = nullptr;
+			extras.clear();
 		}
 
 	public:
@@ -30,15 +46,32 @@ namespace amx
 
 		}
 
+		ptr_info(const ptr_info &obj) = delete;
+
 		explicit ptr_info(AMX *amx) : _amx(amx)
 		{
 
+		}
+
+		template <class ExtraType>
+		ExtraType &get_extra()
+		{
+			std::type_index key = typeid(ExtraType);
+
+			auto it = extras.find(key);
+			if(it == extras.end())
+			{
+				it = extras.insert(std::make_pair(key, std::unique_ptr<ExtraType>(new ExtraType(_amx)))).first;
+			}
+			return static_cast<ExtraType&>(*it->second);
 		}
 
 		bool valid() const
 		{
 			return _amx != nullptr;
 		}
+
+		ptr_info *operator=(const ptr_info &obj) = delete;
 
 		AMX *operator->()
 		{

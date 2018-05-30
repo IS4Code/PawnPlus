@@ -2,6 +2,16 @@
 #include "modules/tags.h"
 #include <unordered_map>
 
+struct natives_extra : public amx::extra
+{
+	natives_extra(AMX *amx) : extra(amx)
+	{
+
+	}
+
+	std::unordered_map<std::string, AMX_NATIVE> natives;
+};
+
 static std::unordered_map<AMX*, amx::ptr> amx_map;
 
 amx::ptr amx::load(AMX *amx)
@@ -29,9 +39,10 @@ void amx::unload(AMX *amx)
 void amx::register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number)
 {
 	auto ptr = load(amx);
+	auto &natives = ptr->get_extra<natives_extra>().natives;
 	for(int i = 0; nativelist[i].name != nullptr && (i < number || number == -1); i++)
 	{
-		ptr->natives.insert(std::make_pair(nativelist[i].name, nativelist[i].func));
+		natives.insert(std::make_pair(nativelist[i].name, nativelist[i].func));
 	}
 }
 
@@ -43,8 +54,7 @@ AMX_NATIVE amx::find_native(AMX *amx, const char *name)
 AMX_NATIVE amx::find_native(AMX *amx, const std::string &name)
 {
 	auto ptr = load(amx);
-
-	auto &natives = ptr->natives;
+	auto &natives = ptr->get_extra<natives_extra>().natives;
 
 	auto it = natives.find(name);
 	if(it != natives.end())

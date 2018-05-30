@@ -1,8 +1,8 @@
 #include "tags.h"
+#include "amxinfo.h"
 #include <unordered_map>
 #include <vector>
 
-std::unordered_map<AMX*, std::unordered_map<cell, tag_ptr>> tag_map;
 std::vector<tag_info*> tag_list = {
 	new tag_info(0, " ", nullptr),
 	new tag_info(1, "", nullptr),
@@ -18,31 +18,29 @@ std::vector<tag_info*> tag_list = {
 	new tag_info(11, "Ref", nullptr),
 };
 
-void tags::load(AMX *amx)
+struct tag_map_info : public amx::extra
 {
-	auto &map = ::tag_map[amx];
+	std::unordered_map<cell, tag_ptr> tag_map;
 
-	int len;
-	amx_NameLength(amx, &len);
-	char *tag_name = static_cast<char*>(alloca(len + 1));
-	
-	int num;
-	amx_NumTags(amx, &num);
-	for(int i = 0; i < num; i++)
+	tag_map_info(AMX *amx) : amx::extra(amx)
 	{
-		cell tag_id;
-		if(!amx_GetTag(amx, i, tag_name, &tag_id))
+		int len;
+		amx_NameLength(amx, &len);
+		char *tag_name = static_cast<char*>(alloca(len + 1));
+
+		int num;
+		amx_NumTags(amx, &num);
+		for(int i = 0; i < num; i++)
 		{
-			auto info = find_tag(tag_name, -1);
-			map[tag_id & 0x7FFFFFFF] = info;
+			cell tag_id;
+			if(!amx_GetTag(amx, i, tag_name, &tag_id))
+			{
+				auto info = tags::find_tag(tag_name, -1);
+				tag_map[tag_id & 0x7FFFFFFF] = info;
+			}
 		}
 	}
-}
-
-void tags::unload(AMX *amx)
-{
-	::tag_map.erase(amx);
-}
+};
 
 tag_ptr tags::find_tag(const char *name, size_t sublen)
 {
@@ -76,7 +74,7 @@ tag_ptr tags::find_tag(AMX *amx, cell tag_id)
 	tag_id &= 0x7FFFFFFF;
 	if(tag_id == 0) return ::tag_list[tag_cell];
 
-	auto &map = ::tag_map[amx];
+	auto &map = amx::load(amx)->get_extra<tag_map_info>().tag_map;
 	auto it = map.find(tag_id);
 	if(it != map.end())
 	{
@@ -138,7 +136,8 @@ bool tag_info::same_base(tag_ptr tag) const
 cell tag_info::get_id(AMX *amx) const
 {
 	if(uid == tags::tag_cell) return 0x80000000;
-	for(auto &pair : tag_map[amx])
+	auto &map = amx::load(amx)->get_extra<tag_map_info>().tag_map;
+	for(auto &pair : map)
 	{
 		if(pair.second == this) return pair.first | 0x80000000;
 	}

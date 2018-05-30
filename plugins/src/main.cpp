@@ -55,20 +55,14 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) 
 {
-	Context::Init(amx);
-	tags::load(amx);
 	amx::load(amx);
-	events::load(amx);
 	RegisterNatives(amx);
 	return AMX_ERR_NONE;
 }
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx) 
 {
-	Context::remove_callback(amx);
-	tags::unload(amx);
 	amx::unload(amx);
-	events::unload(amx);
 	return AMX_ERR_NONE;
 }
 

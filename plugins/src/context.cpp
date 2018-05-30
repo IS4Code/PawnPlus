@@ -41,16 +41,6 @@ public:
 
 invocation_list<void, AMX*> ground_callbacks;
 
-void Context::Init(AMX *amx)
-{
-	amx_infos[amx];
-}
-
-void Context::remove_callback(AMX *amx)
-{
-	amx_infos.erase(amx);
-}
-
 int Context::Push(AMX *amx)
 {
 	globalExecLevel++;

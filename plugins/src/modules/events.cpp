@@ -1,4 +1,5 @@
 #include "events.h"
+#include "amxinfo.h"
 #include "hooks.h"
 #include "objects/stored_param.h"
 
@@ -19,24 +20,21 @@ public:
 	bool is_active() const;
 };
 
-class amx_info
+class amx_info : public amx::extra
 {
 public:
 	std::unordered_multimap<std::string, event_info> registered_events;
 	std::vector<std::string> callback_ids;
 
-	amx_info(AMX *amx)
+	amx_info(AMX *amx) : amx::extra(amx)
 	{
 
 	}
 };
 
-static std::unordered_map<AMX*, amx_info> amx_map;
 amx_info &get_info(AMX *amx)
 {
-	auto it = amx_map.find(amx);
-	if(it != amx_map.end()) return it->second;
-	return amx_map.insert(std::make_pair(amx, amx)).first->second;
+	return amx::load(amx)->get_extra<amx_info>();
 }
 
 struct not_enough_parameters {};
@@ -44,16 +42,6 @@ struct pool_empty {};
 
 namespace events
 {
-	void load(AMX *amx)
-	{
-		get_info(amx);
-	}
-
-	void unload(AMX *amx)
-	{
-		amx_map.erase(amx);
-	}
-
 	int register_callback(const char *callback, AMX *amx, const char *function, const char *format, const cell *params, int numargs)
 	{
 		try{

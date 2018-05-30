@@ -15,7 +15,7 @@
 class hook_handler
 {
 	size_t index;
-	AMX *amx;
+	amx::ptr amx;
 	std::string handler;
 	std::string format;
 	std::vector<stored_param> arg_values;
@@ -210,7 +210,7 @@ cell hooked_func::invoke(AMX *amx, cell *params) const
 	return result;
 }
 
-hook_handler::hook_handler(size_t index, AMX *amx, const char *func_format, const char *function, const char *format, const cell *args, size_t numargs) : index(index), amx(amx), handler(function)
+hook_handler::hook_handler(size_t index, AMX *amx, const char *func_format, const char *function, const char *format, const cell *args, size_t numargs) : index(index), amx(amx::load(amx)), handler(function)
 {
 	if(func_format != nullptr)
 	{
@@ -229,7 +229,9 @@ hook_handler::hook_handler(size_t index, AMX *amx, const char *func_format, cons
 
 bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cell &result) const
 {
-	auto my_amx = this->amx;
+	auto &my_amx = *this->amx;
+
+	if(!my_amx.valid()) return true;
 
 	int index;
 	if(amx_FindPublic(my_amx, handler.c_str(), &index) != AMX_ERR_NONE)

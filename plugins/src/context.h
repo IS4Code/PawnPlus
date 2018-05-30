@@ -4,6 +4,7 @@
 #include "utils/set_pool.h"
 #include "objects/dyn_object.h"
 #include "sdk/amx/amx.h"
+#include "amxinfo.h"
 #include <functional>
 #include <stack>
 #include <unordered_map>
@@ -19,19 +20,24 @@ constexpr cell SleepReturnDetach = 0xB0000000;
 constexpr cell SleepReturnAttach = 0xB1000000;
 constexpr cell SleepReturnSync = 0xB2000000;
 
-struct AMX_CONTEXT
+struct AMX_CONTEXT : public amx::extra
 {
 	size_t task_object = -1;
 	cell result = 0;
 	aux::set_pool<dyn_object> guards;
 
-	AMX_CONTEXT()
+	AMX_CONTEXT() : amx::extra(nullptr)
+	{
+
+	}
+
+	AMX_CONTEXT(AMX *amx) : amx::extra(amx)
 	{
 
 	}
 
 	AMX_CONTEXT(const AMX_CONTEXT &obj) = delete;
-	AMX_CONTEXT(AMX_CONTEXT &&obj) : guards(std::move(obj.guards))
+	AMX_CONTEXT(AMX_CONTEXT &&obj) : amx::extra(nullptr), guards(std::move(obj.guards))
 	{
 		obj.guards.clear();
 	}
@@ -47,7 +53,7 @@ struct AMX_CONTEXT
 		return *this;
 	}
 
-	~AMX_CONTEXT()
+	virtual ~AMX_CONTEXT()
 	{
 		for(auto obj : guards)
 		{
@@ -63,9 +69,6 @@ struct AMX_STATE
 
 namespace Context
 {
-	void Init(AMX *amx);
-	void remove_callback(AMX *amx);
-
 	int Push(AMX *amx);
 	int Pop(AMX *amx);
 

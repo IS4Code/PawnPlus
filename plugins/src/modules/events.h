@@ -5,9 +5,6 @@
 
 namespace events
 {
-	void load(AMX *amx);
-	void unload(AMX *amx);
-
 	int register_callback(const char *callback, AMX *amx, const char *function, const char *format, const cell *params, int numargs);
 	bool remove_callback(AMX *amx, int index);
 	int get_callback_id(AMX *amx, const char *callback);
