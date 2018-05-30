@@ -18,7 +18,7 @@ aux::set_pool<std::pair<std::chrono::system_clock::time_point, amx::reset>> time
 
 struct task_extra : amx::extra
 {
-	size_t task_object = -1;
+	task_id task_object = -1;
 	cell result = 0;
 
 	task_extra(AMX *amx) : amx::extra(amx)

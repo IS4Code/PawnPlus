@@ -3,9 +3,6 @@
 #include <unordered_map>
 #include <forward_list>
 
-typedef void(*logprintf_t)(char* format, ...);
-extern logprintf_t logprintf;
-
 int globalExecLevel = 0;
 
 struct AMX_STATE : public amx::extra
@@ -53,11 +50,11 @@ public:
 
 invocation_list<void, AMX*> ground_callbacks;
 
-int amx::push(AMX *amx)
+int amx::push(AMX *amx, int index)
 {
 	globalExecLevel++;
 	amx::object obj;
-	get_state(amx, obj).contexts.emplace();
+	get_state(amx, obj).contexts.emplace(amx, index);
 	return globalExecLevel;
 }
 

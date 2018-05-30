@@ -68,7 +68,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 		old = new amx::reset(amx, true);
 	}
 
-	amx::push(amx);
+	amx::push(amx, index);
 	if(reset != nullptr)
 	{
 		reset->restore();

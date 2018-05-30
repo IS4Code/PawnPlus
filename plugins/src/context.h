@@ -23,6 +23,7 @@ namespace amx
 	class context
 	{
 		AMX *_amx;
+		int _index;
 		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
 
 	public:
@@ -31,13 +32,13 @@ namespace amx
 
 		}
 
-		context(AMX *amx)
+		context(AMX *amx, int index) : _amx(amx), _index(index)
 		{
 
 		}
 
 		context(const context &obj) = delete;
-		context(context &&obj) : _amx(obj._amx), extras(std::move(obj.extras))
+		context(context &&obj) : _amx(obj._amx), _index(obj._index), extras(std::move(obj.extras))
 		{
 			obj._amx = nullptr;
 			obj.extras.clear();
@@ -49,11 +50,17 @@ namespace amx
 			if(this != &obj)
 			{
 				_amx = obj._amx;
+				_index = obj._index;
 				extras = std::move(obj.extras);
 				obj._amx = nullptr;
 				obj.extras.clear();
 			}
 			return *this;
+		}
+
+		int get_index() const
+		{
+			return _index;
 		}
 
 		template <class ExtraType>
@@ -70,7 +77,7 @@ namespace amx
 		}
 	};
 
-	int push(AMX *amx);
+	int push(AMX *amx, int index);
 	int pop(AMX *amx);
 
 	void restore(AMX *amx, context &&context);
