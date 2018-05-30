@@ -11,6 +11,7 @@
 namespace tasks
 {
 	aux::shared_set_pool<task> pool;
+
 	std::list<std::pair<ucell, std::shared_ptr<task>>> tickTasks;
 	std::list<std::pair<std::chrono::system_clock::time_point, std::shared_ptr<task>>> timerTasks;
 	std::list<std::pair<ucell, amx::reset>> tickResets;
@@ -27,62 +28,54 @@ namespace tasks
 		return pool.add();
 	}
 
+	void task::reset_handler::invoke(task &t)
+	{
+		if(auto obj = _reset.amx.lock())
+		{
+			AMX *amx = obj->get();
+
+			cell retval;
+			_reset.pri = t.result();
+			amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &_reset);
+		}
+	}
+
+	void task::func_handler::invoke(task &t)
+	{
+		_func(t);
+	}
+
 	void task::set_completed(cell result)
 	{
 		_completed = true;
 		_result = result;
 
+		for(auto &handler : handlers)
 		{
-			auto it = callbacks.begin();
-			while(it != callbacks.end())
-			{
-				auto &reset = callbacks.front();
-				if(auto obj = reset.amx.lock())
-				{
-					AMX *amx = obj->get();
-
-					cell retval;
-					reset.pri = result;
-					amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
-				}
-				it = callbacks.erase(it);
-			}
+			handler->invoke(*this);
 		}
-		{
-			auto it = handlers.begin();
-			while(it != handlers.end())
-			{
-				auto &handler = handlers.front();
-				handler(*this);
-				it = handlers.erase(it);
-			}
-		}
+		handlers.clear();
 	}
 
-	task::reset_iterator task::register_reset(amx::reset &&reset)
+	task::handler_iterator task::register_reset(amx::reset &&reset)
 	{
-		callbacks.push_back(std::move(reset));
-		auto it = callbacks.end();
+		handlers.push_back(std::unique_ptr<reset_handler>(new reset_handler(std::move(reset))));
+		auto it = handlers.end();
 		return --it;
 	}
 
 	task::handler_iterator task::register_handler(const std::function<void(task&)> &func)
 	{
-		handlers.push_back(func);
+		handlers.push_back(std::unique_ptr<func_handler>(new func_handler(func)));
 		auto it = handlers.end();
 		return --it;
 	}
 
 	task::handler_iterator task::register_handler(std::function<void(task&)> &&func)
 	{
-		handlers.push_back(std::move(func));
+		handlers.push_back(std::unique_ptr<func_handler>(new func_handler(std::move(func))));
 		auto it = handlers.end();
 		return --it;
-	}
-
-	void task::unregister_reset(const reset_iterator &it)
-	{
-		callbacks.erase(it);
 	}
 
 	void task::unregister_handler(const handler_iterator &it)

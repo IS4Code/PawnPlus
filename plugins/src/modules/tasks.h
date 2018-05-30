@@ -11,10 +11,22 @@ namespace tasks
 {
 	class task
 	{
+	public:
+		class handler
+		{
+			friend class task;
+
+			virtual void invoke(task &t) = 0;
+
+		public:
+			virtual ~handler() = default;
+		};
+
+	private:
 		cell _result = 0;
 		bool _completed = false;
-		std::list<amx::reset> callbacks;
-		std::list<std::function<void(task&)>> handlers;
+		std::list<std::unique_ptr<handler>> handlers;
+
 	public:
 		task()
 		{
@@ -29,15 +41,43 @@ namespace tasks
 			return _completed;
 		}
 
-		typedef std::list<amx::reset>::iterator reset_iterator;
-		typedef std::list<std::function<void(task&)>>::iterator handler_iterator;
+		typedef std::list<std::unique_ptr<handler>>::iterator handler_iterator;
 
 		void set_completed(cell result);
-		reset_iterator register_reset(amx::reset &&reset);
+		handler_iterator register_reset(amx::reset &&reset);
 		handler_iterator register_handler(const std::function<void(task&)> &func);
 		handler_iterator register_handler(std::function<void(task&)> &&func);
-		void unregister_reset(const reset_iterator &it);
 		void unregister_handler(const handler_iterator &it);
+
+	private:
+		struct reset_handler : public handler
+		{
+			amx::reset _reset;
+
+			reset_handler(amx::reset &&reset) : _reset(std::move(reset))
+			{
+
+			}
+
+			virtual void invoke(task &t) override;
+		};
+
+		struct func_handler : public handler
+		{
+			std::function<void(task&)> _func;
+
+			func_handler(const std::function<void(task&)> &func) : _func(func)
+			{
+
+			}
+
+			func_handler(std::function<void(task&)> &&func) : _func(std::move(func))
+			{
+
+			}
+
+			virtual void invoke(task &t) override;
+		};
 	};
 
 	struct extra : amx::extra
