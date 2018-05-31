@@ -44,6 +44,18 @@ namespace Natives
 		return tasks::remove(task);
 	}
 
+	// native Task:task_keep(Task:task);
+	static cell AMX_NATIVE_CALL task_keep(AMX *amx, cell *params)
+	{
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		if(tasks::contains(task))
+		{
+			task->keep();
+			return params[1];
+		}
+		return 0;
+	}
+
 	// native bool:task_valid(Task:task);
 	static cell AMX_NATIVE_CALL task_valid(AMX *amx, cell *params)
 	{
@@ -112,6 +124,7 @@ namespace Natives
 						}
 					}
 					list->clear();
+					t.keep();
 					created->set_completed(reinterpret_cast<cell>(&t));
 				});
 				list->push_back(std::make_pair(it, lock));
@@ -145,6 +158,7 @@ namespace Natives
 					}))
 					{
 						list->clear();
+						t.keep();
 						created->set_completed(reinterpret_cast<cell>(&t));
 					}
 				});
@@ -198,6 +212,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_new),
 	AMX_DECLARE_NATIVE(task_delete),
 	AMX_DECLARE_NATIVE(task_valid),
+	AMX_DECLARE_NATIVE(task_keep),
 	AMX_DECLARE_NATIVE(task_set_result),
 	AMX_DECLARE_NATIVE(task_get_result),
 	AMX_DECLARE_NATIVE(task_ticks),

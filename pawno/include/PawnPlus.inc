@@ -624,6 +624,7 @@ native wait_ms(interval);
 native Task:task_new();
 native bool:task_delete(Task:task);
 native bool:task_valid(Task:task);
+native Task:task_keep(Task:task);
 native task_set_result(Task:task, AnyTag:result);
 native task_get_result(Task:task);
 native Task:task_ticks(ticks);

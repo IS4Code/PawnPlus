@@ -55,6 +55,11 @@ namespace tasks
 			handler->invoke(*this);
 		}
 		handlers.clear();
+
+		if(!_keep)
+		{
+			pool.remove(this);
+		}
 	}
 
 	task::handler_iterator task::register_reset(amx::reset &&reset)

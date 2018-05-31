@@ -25,12 +25,17 @@ namespace tasks
 	private:
 		cell _result = 0;
 		bool _completed = false;
+		bool _keep = false;
 		std::list<std::unique_ptr<handler>> handlers;
 
 	public:
 		task()
 		{
 
+		}
+		void keep()
+		{
+			_keep = true;
 		}
 		cell result()
 		{
