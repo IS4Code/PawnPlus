@@ -18,6 +18,7 @@ extern void *pAMXFunctions;
 
 extern int ExecLevel;
 
+subhook_t amx_Init_h;
 subhook_t amx_Exec_h;
 subhook_t amx_GetAddr_h;
 subhook_t amx_StrLen_h;
@@ -25,6 +26,44 @@ subhook_t amx_FindPublic_h;
 subhook_t amx_Register_h;
 
 bool hook_ref_args = false;
+
+// Automatically destroys the AMX machine when the info instance is destroyed (i.e. the AMX becomes unused)
+struct forked_amx_holder : public amx::extra
+{
+	forked_amx_holder(AMX *amx) : amx::extra(amx)
+	{
+
+	}
+
+	virtual ~forked_amx_holder() override
+	{
+		delete _amx->base;
+		delete _amx;
+	}
+};
+
+// Holds the original code of the program (i.e. before relocation)
+struct amx_code_info : public amx::extra
+{
+	std::unique_ptr<unsigned char[]> code;
+
+	amx_code_info(AMX *amx) : amx::extra(amx)
+	{
+		auto amxhdr = (AMX_HEADER*)amx->base;
+		code = std::make_unique<unsigned char[]>(amxhdr->dat - amxhdr->cod);
+		std::memcpy(code.get(), amx->base + amxhdr->cod, amxhdr->dat - amxhdr->cod);
+	}
+};
+
+int AMXAPI amx_InitOrig(AMX *amx, void *program)
+{
+	if(subhook_is_installed(amx_Init_h))
+	{
+		return reinterpret_cast<decltype(&amx_Init)>(subhook_get_trampoline(amx_Init_h))(amx, program);
+	} else {
+		return amx_Init(amx, program);
+	}
+}
 
 int AMXAPI amx_ExecOrig(AMX *amx, cell *retval, int index)
 {
@@ -144,6 +183,59 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					continue;
 				}
 				break;
+				case SleepReturnFork:
+				{
+					cell result_addr = SleepReturnValueMask & amx->pri;
+					AMX *amx_fork = new AMX();
+
+					auto code = owner->get_extra<amx_code_info>().code.get();
+
+					auto amxhdr = (AMX_HEADER*)amx->base;
+					amx_fork->base = new unsigned char[amxhdr->stp];
+					std::memcpy(amx_fork->base, amx->base, amxhdr->cod); // copy header
+					std::memcpy(amx_fork->base + amxhdr->cod, code, amxhdr->dat - amxhdr->cod); // copy original code
+					int initret = amx_Init(amx_fork, amx_fork->base);
+					if(initret != AMX_ERR_NONE)
+					{
+						delete amx_fork;
+						logwarn(amx, "[PP] amx_fork: couldn't create the fork (error %d).", initret);
+						continue;
+					}
+					std::memcpy(amx_fork->base + amxhdr->dat, amx->base + amxhdr->dat, amxhdr->hea - amxhdr->dat); // copy the data
+					
+					auto lock = amx::load_lock(amx_fork);
+
+					amx::reset reset(amx, false);
+					reset.amx = lock;
+					reset.restore_no_context(); // copy the heap/stack
+
+					amx_fork->pri = 1;
+					amx_fork->error = AMX_ERR_NONE;
+					amx_fork->callback = amx_Callback;
+					amx_fork->flags |= AMX_FLAG_NTVREG;
+
+					lock->get_extra<forked_amx_holder>();
+					cell *result;
+					amx_GetAddr(amx, result_addr, &result);
+					amx_Exec(amx_fork, result, AMX_EXEC_CONT);
+					amx::unload(amx_fork);
+
+					if(amx_fork->error == AMX_ERR_SLEEP && (amx_fork->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
+					{
+						auto old_callback = amx->callback;
+						auto old_base = amx->base;
+						*amx = *amx_fork;
+						amx->callback = old_callback;
+						amx->base = old_base;
+						std::memcpy(amx->base, amx_fork->base, amxhdr->stp);
+					}
+
+					amx->pri = 0;
+					amx->error = AMX_ERR_NONE;
+
+					continue;
+				}
+				break;
 			}
 		}
 		break;
@@ -160,6 +252,19 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 
 namespace Hooks
 {
+	int AMXAPI amx_Init(AMX *amx, void *program)
+	{
+		amx->base = (unsigned char*)program;
+		amx::load_lock(amx)->get_extra<amx_code_info>();
+		amx->base = nullptr;
+		int ret = amx_InitOrig(amx, program);
+		if(ret != AMX_ERR_NONE)
+		{
+			amx::unload(amx);
+		}
+		return ret;
+	}
+
 	int AMXAPI amx_Exec(AMX *amx, cell *retval, int index)
 	{
 		return amx_ExecContext(amx, retval, index, false, nullptr);
@@ -249,6 +354,7 @@ void RegisterAmxHook(subhook_t &hook, int index, Func *fnptr)
 
 void Hooks::register_callback()
 {
+	RegisterAmxHook(amx_Init_h, PLUGIN_AMX_EXPORT_Init, &Hooks::amx_Init);
 	RegisterAmxHook(amx_Exec_h, PLUGIN_AMX_EXPORT_Exec, &Hooks::amx_Exec);
 	RegisterAmxHook(amx_GetAddr_h, PLUGIN_AMX_EXPORT_GetAddr, &Hooks::amx_GetAddr);
 	RegisterAmxHook(amx_StrLen_h, PLUGIN_AMX_EXPORT_StrLen, &Hooks::amx_StrLen);
@@ -264,6 +370,7 @@ void UnregisterHook(subhook_t hook)
 
 void Hooks::Unregister()
 {
+	UnregisterHook(amx_Init_h);
 	UnregisterHook(amx_Exec_h);
 	UnregisterHook(amx_GetAddr_h);
 	UnregisterHook(amx_StrLen_h);

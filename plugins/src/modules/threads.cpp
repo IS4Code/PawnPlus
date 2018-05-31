@@ -29,6 +29,7 @@ class thread_state
 	volatile bool attach = false;
 	volatile bool done = false;
 	bool paused = false;
+	amx::object lock;
 
 	static constexpr cell sync_index = std::numeric_limits<cell>::min();
 
@@ -110,7 +111,7 @@ class thread_state
 	}
 
 public:
-	thread_state(AMX *amx) : amx(amx), orig_callback(amx->callback), reset(amx, false),
+	thread_state(AMX *amx) : amx(amx), lock(amx::load_lock(amx)), orig_callback(amx->callback), reset(amx, false),
 		thread([=]() { run(); })
 	{
 
@@ -135,6 +136,7 @@ public:
 			reset.restore_no_context();
 			cell retval;
 			amx_Exec(amx, &retval, AMX_EXEC_CONT);
+			delete this;
 			return true;
 		}
 		if(pending)

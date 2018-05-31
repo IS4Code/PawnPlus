@@ -112,6 +112,23 @@ enum{
 /*                 */
 
 native AMX:amx_this();
+native Var:amx_var(&AnyTag:var);
+native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
+native bool:amx_valid(Var:var);
+native bool:amx_delete(Var:var);
+native amx_set(Var:var, AnyTag:value, index=0);
+native amx_get(Var:var, index=0);
+native amx_sizeof(Var:var);
+native bool:amx_fork(&result=0);
+native amx_commit();
+/*
+native amx_yield(val=0);
+*/
+stock amx_yield(val=0)
+{
+    #emit stor.s.pri val
+    #emit halt 0
+}
 
 
 /*                 */

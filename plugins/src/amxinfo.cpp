@@ -19,6 +19,7 @@ amx::handle amx::load(AMX *amx)
 	return load_lock(amx);
 }
 
+// Nothing should be loaded from the AMX here, since it may not even be initialized yet
 amx::object amx::load_lock(AMX *amx)
 {
 	auto it = amx_map.find(amx);

@@ -57,7 +57,7 @@ namespace aux
 
 	void thread::thread_exit()
 	{
-
+		detach();
 	}
 
 	void thread::start()
