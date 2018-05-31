@@ -64,7 +64,7 @@ native pp_num_global_variants();
 native pp_num_lists();
 native pp_num_maps();
 native pp_num_guards();
-native String:pp_entry();
+native String:pp_entry_s();
 
 /*                 */
 /*      Pawn       */

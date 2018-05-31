@@ -72,8 +72,10 @@ namespace Natives
 	}
 
 	// native String:pp_entry();
-	static cell AMX_NATIVE_CALL pp_entry(AMX *amx, cell *params)
+	static cell AMX_NATIVE_CALL pp_entry_s(AMX *amx, cell *params)
 	{
+		if(amx::has_context(amx)) return 0;
+
 		amx::object owner;
 		auto &ctx = amx::get_context(amx, owner);
 		int index = ctx.get_index();
@@ -110,7 +112,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_num_lists),
 	AMX_DECLARE_NATIVE(pp_num_maps),
 	AMX_DECLARE_NATIVE(pp_num_guards),
-	AMX_DECLARE_NATIVE(pp_entry),
+	AMX_DECLARE_NATIVE(pp_entry_s),
 };
 
 int RegisterConfigNatives(AMX *amx)
