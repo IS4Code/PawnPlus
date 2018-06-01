@@ -71,7 +71,7 @@ namespace Natives
 		return guards::count(amx);
 	}
 
-	// native String:pp_entry();
+	// native String:pp_entry_s();
 	static cell AMX_NATIVE_CALL pp_entry_s(AMX *amx, cell *params)
 	{
 		if(amx::has_context(amx)) return 0;

@@ -218,17 +218,16 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					cell *result;
 					amx_GetAddr(amx, result_addr, &result);
 					amx_Exec(amx_fork, result, AMX_EXEC_CONT);
-					amx::unload(amx_fork);
 
 					if(amx_fork->error == AMX_ERR_SLEEP && (amx_fork->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
 					{
-						auto old_callback = amx->callback;
-						auto old_base = amx->base;
-						*amx = *amx_fork;
-						amx->callback = old_callback;
-						amx->base = old_base;
-						std::memcpy(amx->base, amx_fork->base, amxhdr->stp);
+						amx::reset reset(amx_fork, false);
+						reset.amx = owner;
+						reset.restore_no_context();
+						std::memcpy(amx->base + amxhdr->dat, amx_fork->base + amxhdr->dat, amxhdr->hea - amxhdr->dat);
 					}
+
+					amx::unload(amx_fork);
 
 					amx->pri = 0;
 					amx->error = AMX_ERR_NONE;

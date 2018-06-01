@@ -34,7 +34,15 @@ namespace Natives
 		return reinterpret_cast<cell>(strings::create(tag->name, true));
 	}
 
-	// native bool:tag_derived_from(tag_uid, baseuid);
+	// native tag_base(tag_uid);
+	static cell AMX_NATIVE_CALL tag_base(AMX *amx, cell *params)
+	{
+		auto base = tags::find_tag(params[1])->base;
+		if(base != nullptr) return base->uid;
+		return 0;
+	}
+
+	// native bool:tag_derived_from(tag_uid, base_uid);
 	static cell AMX_NATIVE_CALL tag_derived_from(AMX *amx, cell *params)
 	{
 		return tags::find_tag(params[1])->inherits_from(tags::find_tag(params[2]));
@@ -47,6 +55,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(tag_id),
 	AMX_DECLARE_NATIVE(tag_name),
 	AMX_DECLARE_NATIVE(tag_name_s),
+	AMX_DECLARE_NATIVE(tag_base),
 	AMX_DECLARE_NATIVE(tag_derived_from),
 };
 

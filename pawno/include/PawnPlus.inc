@@ -90,7 +90,8 @@ native tag_uid(tag_id);
 native tag_id(tag_uid);
 native tag_name(tag_uid, name[], size=sizeof(name));
 native String:tag_name_s(tag_uid);
-native bool:tag_derived_from(tag_uid, baseuid);
+native tag_base(tag_uid);
+native bool:tag_derived_from(tag_uid, base_uid);
 
 enum{
 	tag_uid_unknown = 0,
