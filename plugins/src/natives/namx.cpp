@@ -153,6 +153,13 @@ namespace Natives
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnForkCommit;
 	}
+
+	// native amx_end_fork();
+	static cell AMX_NATIVE_CALL amx_end_fork(AMX *amx, cell *params)
+	{
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return SleepReturnForkEnd;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -167,6 +174,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_sizeof),
 	AMX_DECLARE_NATIVE(amx_fork),
 	AMX_DECLARE_NATIVE(amx_commit),
+	AMX_DECLARE_NATIVE(amx_end_fork),
 };
 
 int RegisterAmxNatives(AMX *amx)

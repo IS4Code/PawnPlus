@@ -89,7 +89,7 @@ int AMXAPI amx_FindPublicOrig(AMX *amx, const char *funcname, int *index)
 	}
 }
 
-int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset)
+int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset, bool forked)
 {
 	if(index <= -3)
 	{
@@ -176,12 +176,14 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				break;
 				case SleepReturnAttach:
 				{
+					amx->pri = 0;
 					logwarn(amx, "[PP] thread_attach was called in a non-threaded code.");
 					continue;
 				}
 				break;
 				case SleepReturnSync:
 				{
+					amx->pri = 0;
 					logwarn(amx, "[PP] thread_sync was called in a non-threaded code.");
 					continue;
 				}
@@ -229,7 +231,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						lock->get_extra<forked_amx_holder>();
 						cell *result;
 						amx_GetAddr(amx, result_addr, &result);
-						amx_Exec(amx_fork, result, AMX_EXEC_CONT);
+						amx_ExecContext(amx_fork, result, AMX_EXEC_CONT, false, nullptr, true);
 
 						if(amx_fork->error == AMX_ERR_SLEEP && (amx_fork->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
 						{
@@ -258,7 +260,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 
 						cell *result;
 						amx_GetAddr(amx, result_addr, &result);
-						amx_Exec(amx, result, AMX_EXEC_CONT);
+						amx_ExecContext(amx, result, AMX_EXEC_CONT, false, nullptr, true);
 
 						if(amx->error == AMX_ERR_SLEEP && (amx->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
 						{
@@ -280,6 +282,28 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					amx->error = AMX_ERR_NONE;
 
 					continue;
+				}
+				break;
+				case SleepReturnForkCommit:
+				{
+					if(!forked)
+					{
+						amx->pri = 0;
+						logwarn(amx, "[PP] amx_commit was called from a non-forked code.");
+						continue;
+					}
+				}
+				break;
+				case SleepReturnForkEnd:
+				{
+					if(!forked)
+					{
+						amx->pri = 0;
+						logwarn(amx, "[PP] amx_fork_end was called from a non-forked code.");
+						continue;
+					}else{
+						if(retval != nullptr) *retval = info.result;
+					}
 				}
 				break;
 			}

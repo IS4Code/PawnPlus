@@ -23,6 +23,7 @@ constexpr cell SleepReturnFork = 0xC0000000;
 constexpr cell SleepReturnForkFlagsClone = 0x00000001;
 constexpr cell SleepReturnForkFlagsCopyData = 0x00000002;
 constexpr cell SleepReturnForkCommit = 0xC1000000;
+constexpr cell SleepReturnForkEnd = 0xC2000000;
 
 namespace amx
 {

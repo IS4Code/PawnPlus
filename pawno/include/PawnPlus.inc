@@ -122,6 +122,7 @@ native amx_get(Var:var, index=0);
 native amx_sizeof(Var:var);
 native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true);
 native amx_commit();
+native amx_end_fork();
 /*
 native amx_yield(val=0);
 */
@@ -134,12 +135,12 @@ stock amx_yield(val=0)
 
 #if !defined PP_NO_ALIASES
 
-#define amx_forked(%0) for(new PP@af:_@pp_amx_forked=PP@af:amx_fork(%0);_@pp_amx_forked;_@pp_amx_forked=PP@af:amx_yield())
+#define amx_forked(%0) for(new PP@af:_@pp_amx_forked=PP@af:amx_fork(%0);_@pp_amx_forked;_@pp_amx_forked=PP@af:amx_end_fork())
 stock operator~(PP@af:arr[], count)
 {
     for(new i = 0; i < count; i++)
     {
-        if(arr[i]) amx_yield();
+        if(arr[i]) amx_end_fork();
     }
 }
 
