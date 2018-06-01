@@ -44,13 +44,13 @@ namespace Natives
 		return tasks::remove(task);
 	}
 
-	// native Task:task_keep(Task:task);
+	// native Task:task_keep(Task:task, bool:keep=true);
 	static cell AMX_NATIVE_CALL task_keep(AMX *amx, cell *params)
 	{
 		auto task = reinterpret_cast<tasks::task*>(params[1]);
 		if(tasks::contains(task))
 		{
-			task->keep();
+			task->keep(params[2]);
 			return params[1];
 		}
 		return 0;
@@ -124,7 +124,7 @@ namespace Natives
 						}
 					}
 					list->clear();
-					t.keep();
+					t.keep(true);
 					created->set_completed(reinterpret_cast<cell>(&t));
 				});
 				list->push_back(std::make_pair(it, lock));
@@ -158,7 +158,7 @@ namespace Natives
 					}))
 					{
 						list->clear();
-						t.keep();
+						t.keep(true);
 						created->set_completed(reinterpret_cast<cell>(&t));
 					}
 				});

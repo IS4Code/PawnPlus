@@ -74,7 +74,7 @@ namespace Natives
 	// native String:pp_entry_s();
 	static cell AMX_NATIVE_CALL pp_entry_s(AMX *amx, cell *params)
 	{
-		if(amx::has_context(amx)) return 0;
+		if(!amx::has_context(amx)) return 0;
 
 		amx::object owner;
 		auto &ctx = amx::get_context(amx, owner);

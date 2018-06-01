@@ -33,9 +33,9 @@ namespace tasks
 		{
 
 		}
-		void keep()
+		void keep(bool keep)
 		{
-			_keep = true;
+			_keep = keep;
 		}
 		cell result()
 		{
