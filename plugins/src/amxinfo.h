@@ -90,6 +90,14 @@ namespace amx
 			return static_cast<ExtraType&>(*it->second);
 		}
 
+		template <class ExtraType>
+		bool has_extra() const
+		{
+			std::type_index key = typeid(ExtraType);
+
+			return extras.find(key) != extras.end();
+		}
+
 		AMX *get()
 		{
 			return _amx;

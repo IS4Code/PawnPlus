@@ -17,6 +17,7 @@ class thread_state
 {
 	std::mutex mutex;
 	amx::reset reset;
+	amx::context original_context;
 	aux::thread thread;
 	AMX_CALLBACK orig_callback;
 	AMX *amx;
@@ -114,7 +115,8 @@ public:
 	thread_state(AMX *amx) : amx(amx), lock(amx::load_lock(amx)), orig_callback(amx->callback), reset(amx, false),
 		thread([=]() { run(); })
 	{
-
+		amx::object owner;
+		original_context = std::move(amx::get_context(amx, owner));
 	}
 
 	thread_state(const thread_state&) = delete;
@@ -133,9 +135,10 @@ public:
 		{
 			attach = false;
 			done = true;
-			reset.restore_no_context();
+			//reset.restore_no_context();
+			reset.context = std::move(original_context);
 			cell retval;
-			amx_Exec(amx, &retval, AMX_EXEC_CONT);
+			amx_ExecContext(amx, &retval, AMX_EXEC_CONT, false, &reset);
 			delete this;
 			return true;
 		}

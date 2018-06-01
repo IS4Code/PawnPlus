@@ -58,6 +58,14 @@ struct amx_code_info : public amx::extra
 	}
 };
 
+struct forked_context : public amx::extra
+{
+	forked_context(AMX *amx) : amx::extra(amx)
+	{
+
+	}
+};
+
 int AMXAPI amx_InitOrig(AMX *amx, void *program)
 {
 	if(subhook_is_installed(amx_Init_h))
@@ -115,6 +123,14 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 	{
 		reset->restore();
 	}
+
+	if(forked)
+	{
+		amx::object owner;
+		auto &ctx = amx::get_context(amx, owner);
+		ctx.get_extra<forked_context>();
+	}
+	
 	int ret;
 	while(true)
 	{
@@ -124,6 +140,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 			index = AMX_EXEC_CONT;
 
 			amx::object owner;
+			auto &ctx = amx::get_context(amx, owner);
 			tasks::extra info = tasks::get_extra(amx, owner);
 
 			switch(amx->pri & SleepReturnTypeMask)
@@ -289,14 +306,19 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					if(!forked)
 					{
 						amx->pri = 0;
-						logwarn(amx, "[PP] amx_commit was called from a non-forked code.");
+						if(ctx.has_extra<forked_context>())
+						{
+							logwarn(amx, "[PP] amx_commit: the original context is no longer present.");
+						}else{
+							logwarn(amx, "[PP] amx_commit was called from a non-forked code.");
+						}
 						continue;
 					}
 				}
 				break;
 				case SleepReturnForkEnd:
 				{
-					if(!forked)
+					if(!forked && !ctx.has_extra<forked_context>())
 					{
 						amx->pri = 0;
 						logwarn(amx, "[PP] amx_fork_end was called from a non-forked code.");
