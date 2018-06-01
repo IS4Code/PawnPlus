@@ -32,7 +32,7 @@ namespace amx
 	{
 		if(!restore_no_context()) return false;
 		auto obj = amx.lock();
-		if(!obj) return false;
+		if(!obj || !obj->valid()) return false;
 		auto amx = obj->get();
 		amx::restore(amx, std::move(context));
 		return true;
@@ -41,7 +41,7 @@ namespace amx
 	bool reset::restore_no_context() const
 	{
 		auto obj = amx.lock();
-		if(!obj) return false;
+		if(!obj || !obj->valid()) return false;
 
 		auto amx = obj->get();
 

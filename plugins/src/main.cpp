@@ -62,6 +62,7 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx)
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx) 
 {
+	amx::invalidate(amx);
 	amx::unload(amx);
 	return AMX_ERR_NONE;
 }

@@ -31,6 +31,7 @@ namespace amx
 	class instance
 	{
 		friend object load_lock(AMX *amx);
+		friend bool invalidate(AMX *amx);
 
 		AMX *_amx;
 		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
@@ -38,6 +39,11 @@ namespace amx
 		explicit instance(AMX *amx) : _amx(amx)
 		{
 
+		}
+
+		void invalidate()
+		{
+			_amx = nullptr;
 		}
 
 	public:
@@ -51,6 +57,11 @@ namespace amx
 		{
 			obj._amx = nullptr;
 			obj.extras.clear();
+		}
+
+		bool valid() const
+		{
+			return _amx != nullptr;
 		}
 
 		instance &operator=(const instance &obj) = delete;
@@ -93,6 +104,7 @@ namespace amx
 	handle load(AMX *amx);
 	object load_lock(AMX *amx);
 	bool unload(AMX *amx);
+	bool invalidate(AMX *amx);
 	void register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number);
 	AMX_NATIVE find_native(AMX *amx, const char *name);
 	AMX_NATIVE find_native(AMX *amx, const std::string &name);

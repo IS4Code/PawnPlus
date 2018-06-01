@@ -43,6 +43,17 @@ bool amx::unload(AMX *amx)
 	return false;
 }
 
+bool amx::invalidate(AMX *amx)
+{
+	auto it = amx_map.find(amx);
+	if(it != amx_map.end())
+	{
+		it->second->invalidate();
+		return true;
+	}
+	return false;
+}
+
 void amx::register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number)
 {
 	auto obj = load_lock(amx);

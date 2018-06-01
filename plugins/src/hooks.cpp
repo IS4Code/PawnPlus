@@ -6,6 +6,7 @@
 #include "modules/strings.h"
 #include "modules/events.h"
 #include "modules/threads.h"
+#include "modules/amxutils.h"
 
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
@@ -13,6 +14,8 @@
 
 #include <cstring>
 #include <unordered_map>
+
+using namespace tasks;
 
 extern void *pAMXFunctions;
 
@@ -37,7 +40,7 @@ struct forked_amx_holder : public amx::extra
 
 	virtual ~forked_amx_holder() override
 	{
-		delete _amx->base;
+		delete[] _amx->base;
 		delete _amx;
 	}
 };
@@ -50,8 +53,8 @@ struct amx_code_info : public amx::extra
 	amx_code_info(AMX *amx) : amx::extra(amx)
 	{
 		auto amxhdr = (AMX_HEADER*)amx->base;
-		code = std::make_unique<unsigned char[]>(amxhdr->dat - amxhdr->cod);
-		std::memcpy(code.get(), amx->base + amxhdr->cod, amxhdr->dat - amxhdr->cod);
+		code = std::make_unique<unsigned char[]>(amxhdr->size - amxhdr->cod);
+		std::memcpy(code.get(), amx->base + amxhdr->cod, amxhdr->size - amxhdr->cod);
 	}
 };
 
@@ -143,7 +146,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
 					if(retval != nullptr) *retval = info.result;
-					tasks::register_tick(ticks, amx::reset(amx, true));
+					task::register_tick(ticks, amx::reset(amx, true));
 				}
 				break;
 				case SleepReturnWaitMs:
@@ -152,7 +155,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
 					if(retval != nullptr) *retval = info.result;
-					tasks::register_timer(interval, amx::reset(amx, true));
+					task::register_timer(interval, amx::reset(amx, true));
 				}
 				break;
 				case SleepReturnWaitInf:
@@ -185,49 +188,93 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				break;
 				case SleepReturnFork:
 				{
-					cell result_addr = SleepReturnValueMask & amx->pri;
-					AMX *amx_fork = new AMX();
+					cell result_addr = owner->get_extra<fork_info_extra>().result_address;
 
-					auto code = owner->get_extra<amx_code_info>().code.get();
+					cell flags = SleepReturnValueMask & amx->pri;
 
 					auto amxhdr = (AMX_HEADER*)amx->base;
-					amx_fork->base = new unsigned char[amxhdr->stp];
-					std::memcpy(amx_fork->base, amx->base, amxhdr->cod); // copy header
-					std::memcpy(amx_fork->base + amxhdr->cod, code, amxhdr->dat - amxhdr->cod); // copy original code
-					int initret = amx_Init(amx_fork, amx_fork->base);
-					if(initret != AMX_ERR_NONE)
+					if(flags & SleepReturnForkFlagsClone)
 					{
-						delete amx_fork;
-						logwarn(amx, "[PP] amx_fork: couldn't create the fork (error %d).", initret);
-						continue;
+						AMX *amx_fork = new AMX();
+
+						auto code = owner->get_extra<amx_code_info>().code.get();
+
+						amx_fork->base = new unsigned char[amxhdr->stp];
+						std::memcpy(amx_fork->base, amx->base, amxhdr->cod); // copy header
+						std::memcpy(amx_fork->base + amxhdr->cod, code, amxhdr->size - amxhdr->cod); // copy original code
+						int initret = amx_Init(amx_fork, amx_fork->base);
+						if(initret != AMX_ERR_NONE)
+						{
+							delete[] amx_fork->base;
+							delete amx_fork;
+							logwarn(amx, "[PP] amx_fork: couldn't create the fork (error %d).", initret);
+							continue;
+						}
+						if(flags & SleepReturnForkFlagsCopyData)
+						{
+							std::memcpy(amx_fork->base + amxhdr->dat, amx->base + amxhdr->dat, amxhdr->hea - amxhdr->dat); // copy the data
+						}
+
+						auto lock = amx::load_lock(amx_fork);
+
+						amx::reset reset(amx, false);
+						reset.amx = lock;
+						reset.restore_no_context(); // copy the heap/stack
+
+						amx_fork->pri = 1;
+						amx_fork->error = AMX_ERR_NONE;
+						amx_fork->callback = amx_Callback;
+						amx_fork->flags |= AMX_FLAG_NTVREG;
+
+						lock->get_extra<forked_amx_holder>();
+						cell *result;
+						amx_GetAddr(amx, result_addr, &result);
+						amx_Exec(amx_fork, result, AMX_EXEC_CONT);
+
+						if(amx_fork->error == AMX_ERR_SLEEP && (amx_fork->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
+						{
+							amx::reset reset(amx_fork, false);
+							reset.amx = owner;
+							reset.restore_no_context();
+							if(flags & SleepReturnForkFlagsCopyData)
+							{
+								std::memcpy(amx->base + amxhdr->dat, amx_fork->base + amxhdr->dat, amxhdr->hea - amxhdr->dat);
+							}
+						}
+
+						amx::unload(amx_fork);
+					}else{
+						amx::reset reset(amx, true);
+
+						unsigned char *orig_data;
+						if(flags & SleepReturnForkFlagsCopyData)
+						{
+							orig_data = new unsigned char[amxhdr->hea - amxhdr->dat];
+							std::memcpy(orig_data, amx->base + amxhdr->dat, amxhdr->hea - amxhdr->dat); // backup the data
+						}
+
+						amx->pri = 1;
+						amx->error = AMX_ERR_NONE;
+
+						cell *result;
+						amx_GetAddr(amx, result_addr, &result);
+						amx_Exec(amx, result, AMX_EXEC_CONT);
+
+						if(amx->error == AMX_ERR_SLEEP && (amx->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
+						{
+
+						}else{
+							reset.restore();
+							if(flags & SleepReturnForkFlagsCopyData)
+							{
+								std::memcpy(amx->base + amxhdr->dat, orig_data, amxhdr->hea - amxhdr->dat);
+							}
+						}
+						if(flags & SleepReturnForkFlagsCopyData)
+						{
+							delete[] orig_data;
+						}
 					}
-					std::memcpy(amx_fork->base + amxhdr->dat, amx->base + amxhdr->dat, amxhdr->hea - amxhdr->dat); // copy the data
-					
-					auto lock = amx::load_lock(amx_fork);
-
-					amx::reset reset(amx, false);
-					reset.amx = lock;
-					reset.restore_no_context(); // copy the heap/stack
-
-					amx_fork->pri = 1;
-					amx_fork->error = AMX_ERR_NONE;
-					amx_fork->callback = amx_Callback;
-					amx_fork->flags |= AMX_FLAG_NTVREG;
-
-					lock->get_extra<forked_amx_holder>();
-					cell *result;
-					amx_GetAddr(amx, result_addr, &result);
-					amx_Exec(amx_fork, result, AMX_EXEC_CONT);
-
-					if(amx_fork->error == AMX_ERR_SLEEP && (amx_fork->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
-					{
-						amx::reset reset(amx_fork, false);
-						reset.amx = owner;
-						reset.restore_no_context();
-						std::memcpy(amx->base + amxhdr->dat, amx_fork->base + amxhdr->dat, amxhdr->hea - amxhdr->dat);
-					}
-
-					amx::unload(amx_fork);
 
 					amx->pri = 0;
 					amx->error = AMX_ERR_NONE;

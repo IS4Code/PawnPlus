@@ -239,6 +239,9 @@
     <ClInclude Include="src\utils\shared_set_pool.h">
       <Filter>src\utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\modules\amxutils.h">
+      <Filter>src\modules</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />

@@ -1,7 +1,8 @@
 #include "natives.h"
-#include "utils/set_pool.h"
 #include "amxinfo.h"
 #include "context.h"
+#include "modules/amxutils.h"
+#include "utils/set_pool.h"
 
 class amx_var_info
 {
@@ -127,11 +128,23 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:amx_fork(&result=0);
+	// native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true);
 	static cell AMX_NATIVE_CALL amx_fork(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return SleepReturnFork | (SleepReturnValueMask & params[1]);
+		cell flags = SleepReturnFork;
+		if(params[2])
+		{
+			flags |= SleepReturnForkFlagsClone;
+		}
+		if(params[3])
+		{
+			flags |= SleepReturnForkFlagsCopyData;
+		}
+		amx::object owner;
+		auto &ctx = amx::get_context(amx, owner);
+		ctx.get_extra<fork_info_extra>().result_address = params[1];
+		return SleepReturnFork | flags;
 	}
 
 	// native amx_commit();

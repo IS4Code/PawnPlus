@@ -3,6 +3,8 @@
 #include "modules/tasks.h"
 #include <algorithm>
 
+using namespace tasks;
+
 namespace Natives
 {
 	// native Task:wait_ticks(ticks);
@@ -34,7 +36,7 @@ namespace Natives
 	// native Task:task_new();
 	static cell AMX_NATIVE_CALL task_new(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(tasks::add().get());
+		return reinterpret_cast<cell>(task::add().get());
 	}
 
 	// native bool:task_delete(Task:task);
@@ -89,19 +91,19 @@ namespace Natives
 	// native Task:task_ticks(ticks);
 	static cell AMX_NATIVE_CALL task_ticks(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(tasks::add_tick_task(params[1]).get());
+		return reinterpret_cast<cell>(task::add_tick_task(params[1]).get());
 	}
 
 	// native Task:task_ms(interval);
 	static cell AMX_NATIVE_CALL task_ms(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(tasks::add_timer_task(params[1]).get());
+		return reinterpret_cast<cell>(task::add_timer_task(params[1]).get());
 	}
 
 	// native Task:task_any(Task:...);
 	static cell AMX_NATIVE_CALL task_any(AMX *amx, cell *params)
 	{
-		auto created = tasks::add();
+		auto created = task::add();
 		cell num = params[0] / sizeof(cell);
 		auto list = std::shared_ptr<std::vector<std::pair<tasks::task::handler_iterator, std::weak_ptr<tasks::task>>>>(new std::vector<std::pair<tasks::task::handler_iterator, std::weak_ptr<tasks::task>>>());
 		for(cell i = 1; i <= num; i++)
@@ -136,7 +138,7 @@ namespace Natives
 	// native Task:task_all(Task:...);
 	static cell AMX_NATIVE_CALL task_all(AMX *amx, cell *params)
 	{
-		auto created = tasks::add();
+		auto created = task::add();
 		cell num = params[0] / sizeof(cell);
 		auto list = std::shared_ptr<std::vector<std::weak_ptr<tasks::task>>>(new std::vector<std::weak_ptr<tasks::task>>());
 		for(cell i = 1; i <= num; i++)

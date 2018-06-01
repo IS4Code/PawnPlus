@@ -15,6 +15,7 @@ namespace tasks
 		class handler
 		{
 			friend class task;
+			friend void tick();
 
 			virtual void invoke(task &t) = 0;
 
@@ -30,6 +31,10 @@ namespace tasks
 
 	public:
 		task()
+		{
+
+		}
+		task(cell result) : _completed(true), _result(result)
 		{
 
 		}
@@ -54,12 +59,38 @@ namespace tasks
 		handler_iterator register_handler(std::function<void(task&)> &&func);
 		void unregister_handler(const handler_iterator &it);
 
+		static std::shared_ptr<task> add();
+		static std::shared_ptr<task> add_tick_task(cell ticks);
+		static std::shared_ptr<task> add_timer_task(cell interval);
+		static void register_tick(cell ticks, amx::reset &&reset);
+		static void register_timer(cell interval, amx::reset &&reset);
+
 	private:
-		struct reset_handler : public handler
+		class reset_handler : public handler
 		{
 			amx::reset _reset;
+			amx::object owner;
 
+		public:
 			reset_handler(amx::reset &&reset) : _reset(std::move(reset))
+			{
+				owner = _reset.amx.lock();
+			}
+
+			virtual void invoke(task &t) override;
+		};
+
+		class func_handler : public handler
+		{
+			std::function<void(task&)> _func;
+
+		public:
+			func_handler(const std::function<void(task&)> &func) : _func(func)
+			{
+
+			}
+
+			func_handler(std::function<void(task&)> &&func) : _func(std::move(func))
 			{
 
 			}
@@ -67,16 +98,12 @@ namespace tasks
 			virtual void invoke(task &t) override;
 		};
 
-		struct func_handler : public handler
+		class task_handler : public handler
 		{
-			std::function<void(task&)> _func;
+			std::weak_ptr<task> _task;
 
-			func_handler(const std::function<void(task&)> &func) : _func(func)
-			{
-
-			}
-
-			func_handler(std::function<void(task&)> &&func) : _func(std::move(func))
+		public:
+			task_handler(std::weak_ptr<task> task) : _task(task)
 			{
 
 			}
@@ -97,10 +124,6 @@ namespace tasks
 		}
 	};
 
-	std::shared_ptr<task> add();
-	std::shared_ptr<task> add_tick_task(cell ticks);
-	std::shared_ptr<task> add_timer_task(cell interval);
-
 	bool contains(const task *ptr);
 	bool remove(task *ptr);
 
@@ -108,9 +131,6 @@ namespace tasks
 
 	void tick();
 	size_t size();
-
-	void register_tick(cell ticks, amx::reset &&reset);
-	void register_timer(cell interval, amx::reset &&reset);
 
 	extra &get_extra(AMX *amx, amx::object &owner);
 }

@@ -190,6 +190,7 @@
     <ClInclude Include="src\hooks.h" />
     <ClInclude Include="src\main.h" />
     <ClInclude Include="src\modules\amxhook.h" />
+    <ClInclude Include="src\modules\amxutils.h" />
     <ClInclude Include="src\modules\events.h" />
     <ClInclude Include="src\modules\guards.h" />
     <ClInclude Include="src\modules\strings.h" />
