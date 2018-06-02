@@ -50,7 +50,7 @@ namespace events
 			auto &registered_events = get_info(amx, obj).registered_events;
 			auto it = registered_events.insert(std::make_pair(std::string(callback), event_info(amx, function, format, params, numargs)));
 			return std::distance(registered_events.begin(), it);
-		}catch(nullptr_t)
+		}catch(std::nullptr_t)
 		{
 			return -1;
 		}
@@ -97,7 +97,7 @@ namespace events
 		while(range.first != range.second)
 		{
 			auto &ev = range.first->second;
-			ptrdiff_t eid = std::distance(registered_events.begin(), range.first);
+			std::ptrdiff_t eid = std::distance(registered_events.begin(), range.first);
 			if(ev.invoke(amx, retval, eid)) ok = true;
 			range.first++;
 		}

@@ -15,7 +15,7 @@ namespace tasks
 	std::list<std::pair<ucell, std::unique_ptr<task::handler>>> tick_handlers;
 	std::list<std::pair<std::chrono::system_clock::time_point, std::unique_ptr<task::handler>>> timer_handlers;
 
-	tasks::extra &tasks::get_extra(AMX *amx, amx::object &owner)
+	tasks::extra &get_extra(AMX *amx, amx::object &owner)
 	{
 		auto &ctx = amx::get_context(amx, owner);
 		return ctx.get_extra<extra>();
