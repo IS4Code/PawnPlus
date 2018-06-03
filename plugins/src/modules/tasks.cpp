@@ -12,6 +12,7 @@ namespace tasks
 {
 	aux::shared_set_pool<task> pool;
 
+	ucell tick_count = 0;
 	std::list<std::pair<ucell, std::unique_ptr<task::handler>>> tick_handlers;
 	std::list<std::pair<std::chrono::system_clock::time_point, std::unique_ptr<task::handler>>> timer_handlers;
 
@@ -98,74 +99,58 @@ namespace tasks
 		handlers.erase(it);
 	}
 
+	template <class Ord, class Obj>
+	typename std::list<std::pair<Ord, Obj>>::iterator insert_sorted(std::list<std::pair<Ord, Obj>> &list, const Ord &ord, Obj &&obj)
+	{
+		for(auto it = list.begin();; it++)
+		{
+			if(it == list.end() || it->first > ord)
+			{
+				return list.insert(it, std::make_pair(ord, std::forward<Obj>(obj)));
+			}
+		}
+	}
+
 	std::shared_ptr<task> task::add_tick_task(cell ticks)
 	{
-		auto task = add();
-		if(ticks <= 0)
+		if(ticks == 0)
 		{
-			if(ticks == 0)
-			{
-				task->set_completed(1);
-			}
-		}else{
-			tick_handlers.push_back(
-				std::make_pair(
-					ticks,
-					std::unique_ptr<task_handler>(
-						new task_handler(task)
-					)
-				)
-			);
+			return nullptr;
+		}
+		auto task = add();
+		if(ticks > 0)
+		{
+			ucell time = tick_count + (ucell)ticks;
+			insert_sorted(tick_handlers, time, std::unique_ptr<handler>(new task_handler(task)));
 		}
 		return task;
 	}
 
 	std::shared_ptr<task> task::add_timer_task(cell interval)
 	{
-		auto task = add();
-		if(interval <= 0)
+		if(interval == 0)
 		{
-			if(interval == 0)
-			{
-				task->set_completed(1);
-			}
-		}else{
+			return nullptr;
+		}
+		auto task = add();
+		if(interval > 0)
+		{
 			auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
-			timer_handlers.push_back(
-				std::make_pair(
-					time,
-					std::unique_ptr<task_handler>(
-						new task_handler(task)
-					)
-				)
-			);
+			insert_sorted(timer_handlers, time, std::unique_ptr<handler>(new task_handler(task)));
 		}
 		return task;
 	}
 
 	void task::register_tick(cell ticks, amx::reset &&reset)
 	{
-		tick_handlers.push_back(
-			std::make_pair(
-				ticks,
-				std::unique_ptr<reset_handler>(
-					new reset_handler(std::move(reset))
-				)
-			)
-		);
+		ucell time = tick_count + (ucell)ticks;
+		insert_sorted(tick_handlers, time, std::unique_ptr<handler>(new reset_handler(std::move(reset))));
 	}
 
 	void task::register_timer(cell interval, amx::reset &&reset)
 	{
 		auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
-		timer_handlers.push_back(
-			std::make_pair(
-				time,
-				std::unique_ptr<reset_handler>(
-					new reset_handler(std::move(reset))
-				)
-			)
-		);
+		insert_sorted(timer_handlers, time, std::unique_ptr<handler>(new reset_handler(std::move(reset))));
 	}
 
 	bool contains(const task *ptr)
@@ -192,22 +177,26 @@ namespace tasks
 	{
 		task auto_result(1);
 
+		tick_count++;
 		{
 			auto it = tick_handlers.begin();
 			while(it != tick_handlers.end())
 			{
 				auto &pair = *it;
 
-				pair.first--;
-				if(pair.first == 0)
+				if(pair.first <= tick_count)
 				{
 					auto handler = std::move(pair.second);
 					it = tick_handlers.erase(it);
 					handler->invoke(auto_result);
 				}else{
-					it++;
+					break;
 				}
 			}
+		}
+		if(tick_handlers.empty())
+		{
+			tick_count = 0;
 		}
 
 		auto now = std::chrono::system_clock::now();
