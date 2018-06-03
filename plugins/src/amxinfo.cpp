@@ -10,6 +10,11 @@ struct natives_extra : public amx::extra
 	}
 
 	std::unordered_map<std::string, AMX_NATIVE> natives;
+
+	virtual std::unique_ptr<extra> clone() override
+	{
+		return std::unique_ptr<extra>(new natives_extra(*this));
+	}
 };
 
 static std::unordered_map<AMX*, std::shared_ptr<amx::instance>> amx_map;
@@ -31,6 +36,20 @@ amx::object amx::load_lock(AMX *amx)
 	amx_map.insert(std::make_pair(amx, ptr));
 	return ptr;
 }
+
+amx::handle amx::clone(AMX *amx, AMX *new_amx)
+{
+	return clone_lock(amx, new_amx);
+}
+
+amx::object amx::clone_lock(AMX *amx, AMX *new_amx)
+{
+	auto obj = load_lock(amx);
+	auto ptr = std::shared_ptr<instance>(new instance(*obj, new_amx));
+	amx_map.insert(std::make_pair(new_amx, ptr));
+	return ptr;
+}
+
 
 bool amx::unload(AMX *amx)
 {

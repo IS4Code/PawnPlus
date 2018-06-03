@@ -215,6 +215,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					if(flags & SleepReturnForkFlagsClone)
 					{
 						AMX *amx_fork = new AMX();
+						auto lock = amx::clone_lock(amx, amx_fork);
 
 						auto code = owner->get_extra<amx_code_info>().code.get();
 
@@ -226,6 +227,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						{
 							delete[] amx_fork->base;
 							delete amx_fork;
+							amx::unload(amx_fork);
 							logwarn(amx, "[PP] amx_fork: couldn't create the fork (error %d).", initret);
 							continue;
 						}
@@ -233,8 +235,6 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						{
 							std::memcpy(amx_fork->base + amxhdr->dat, amx->base + amxhdr->dat, amxhdr->hea - amxhdr->dat); // copy the data
 						}
-
-						auto lock = amx::load_lock(amx_fork);
 
 						amx::reset reset(amx, false);
 						reset.amx = lock;

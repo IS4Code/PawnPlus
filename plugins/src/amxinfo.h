@@ -22,6 +22,11 @@ namespace amx
 			
 		}
 
+		virtual std::unique_ptr<extra> clone()
+		{
+			return nullptr;
+		}
+
 		virtual ~extra() = default;
 	};
 
@@ -31,6 +36,7 @@ namespace amx
 	class instance
 	{
 		friend object load_lock(AMX *amx);
+		friend object clone_lock(AMX *amx, AMX *new_amx);
 		friend bool invalidate(AMX *amx);
 
 		AMX *_amx;
@@ -44,6 +50,21 @@ namespace amx
 		void invalidate()
 		{
 			_amx = nullptr;
+		}
+
+		instance(const instance &obj, AMX *new_amx) : _amx(new_amx)
+		{
+			for(const auto &pair : obj.extras)
+			{
+				if(pair.second)
+				{
+					auto clone = pair.second->clone();
+					if(clone)
+					{
+						extras[pair.first] = std::move(clone);
+					}
+				}
+			}
 		}
 
 	public:
@@ -111,6 +132,8 @@ namespace amx
 
 	handle load(AMX *amx);
 	object load_lock(AMX *amx);
+	handle clone(AMX *amx, AMX *new_amx);
+	object clone_lock(AMX *amx, AMX *new_amx);
 	bool unload(AMX *amx);
 	bool invalidate(AMX *amx);
 	void register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number);
