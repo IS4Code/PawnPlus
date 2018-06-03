@@ -59,11 +59,12 @@ namespace tasks
 		_completed = true;
 		_result = result;
 
+		auto handlers = std::move(this->handlers);
+
 		for(auto &handler : handlers)
 		{
 			handler->invoke(*this);
 		}
-		handlers.clear();
 
 		if(!_keep)
 		{

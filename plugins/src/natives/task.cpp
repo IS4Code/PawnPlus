@@ -88,6 +88,29 @@ namespace Natives
 		return 0;
 	}
 
+	// native task_reset(Task:task);
+	static cell AMX_NATIVE_CALL task_reset(AMX *amx, cell *params)
+	{
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		if(tasks::contains(task))
+		{
+			task->reset();
+			return 1;
+		}
+		return 0;
+	}
+
+	// native bool:task_completed(Task:task);
+	static cell AMX_NATIVE_CALL task_completed(AMX *amx, cell *params)
+	{
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		if(tasks::contains(task))
+		{
+			return task->completed();
+		}
+		return 0;
+	}
+
 	// native Task:task_ticks(ticks);
 	static cell AMX_NATIVE_CALL task_ticks(AMX *amx, cell *params)
 	{
@@ -217,6 +240,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_keep),
 	AMX_DECLARE_NATIVE(task_set_result),
 	AMX_DECLARE_NATIVE(task_get_result),
+	AMX_DECLARE_NATIVE(task_reset),
+	AMX_DECLARE_NATIVE(task_completed),
 	AMX_DECLARE_NATIVE(task_ticks),
 	AMX_DECLARE_NATIVE(task_ms),
 	AMX_DECLARE_NATIVE(task_any),

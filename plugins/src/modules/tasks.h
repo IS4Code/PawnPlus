@@ -42,13 +42,19 @@ namespace tasks
 		{
 			_keep = keep;
 		}
-		cell result()
+		cell result() const
 		{
 			return _result;
 		}
-		bool completed()
+		bool completed() const
 		{
 			return _completed;
+		}
+		void reset()
+		{
+			_result = 0;
+			_completed = false;
+			handlers.clear();
 		}
 
 		typedef std::list<std::unique_ptr<handler>>::iterator handler_iterator;
