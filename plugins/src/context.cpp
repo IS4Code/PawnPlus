@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <forward_list>
+#include <exception>
 
 int globalExecLevel = 0;
 
@@ -62,7 +63,7 @@ int amx::pop(AMX *amx)
 {
 	if(globalExecLevel == 0)
 	{
-		//error
+		throw std::exception("[PP] Context stack imbalance.");
 	}
 	globalExecLevel--;
 	if(globalExecLevel == 0)

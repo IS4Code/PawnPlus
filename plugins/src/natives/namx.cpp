@@ -23,7 +23,7 @@ public:
 
 	bool valid()
 	{
-		return !_amx.expired();
+		return !_amx.expired() && _amx.lock()->valid();
 	}
 
 	bool set(cell index, cell value)
