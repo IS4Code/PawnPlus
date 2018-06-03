@@ -262,9 +262,11 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 
 						if(amx_fork->error == AMX_ERR_SLEEP && (amx_fork->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
 						{
-							amx::reset reset(amx_fork, false);
+							amx::reset reset(amx_fork, true);
+							amx::pop(amx_fork);
+							reset.context.remove_extra<forked_context>();
 							reset.amx = owner;
-							reset.restore_no_context();
+							reset.restore();
 							if(flags & SleepReturnForkFlagsCopyData)
 							{
 								std::memcpy(amx->base + amxhdr->dat, amx_fork->base + amxhdr->dat, amxhdr->hea - amxhdr->dat);
@@ -289,7 +291,10 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 
 						if(amx->error == AMX_ERR_SLEEP && (amx->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
 						{
-
+							reset = amx::reset(amx, true);
+							amx::pop(amx);
+							reset.context.remove_extra<forked_context>();
+							reset.restore();
 						}else{
 							reset.restore();
 							if(flags & SleepReturnForkFlagsCopyData)
@@ -321,6 +326,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 							logwarn(amx, "[PP] amx_commit was called from a non-forked code.");
 						}
 						continue;
+					}else{
+						return ret;
 					}
 				}
 				break;

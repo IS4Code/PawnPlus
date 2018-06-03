@@ -119,6 +119,20 @@ namespace amx
 			return extras.find(key) != extras.end();
 		}
 
+		template <class ExtraType>
+		bool remove_extra()
+		{
+			std::type_index key = typeid(ExtraType);
+
+			auto it = extras.find(key);
+			if(it != extras.end())
+			{
+				extras.erase(it);
+				return true;
+			}
+			return false;
+		}
+
 		AMX *get()
 		{
 			return _amx;
