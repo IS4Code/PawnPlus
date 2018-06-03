@@ -217,7 +217,9 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				break;
 				case SleepReturnFork:
 				{
-					cell result_addr = owner->get_extra<fork_info_extra>().result_address;
+					auto &extra = ctx.get_extra<fork_info_extra>();
+					cell result_addr = extra.result_address;
+					cell error_addr = extra.error_address;
 
 					cell flags = SleepReturnValueMask & amx->pri;
 
@@ -256,9 +258,10 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						amx_fork->flags |= AMX_FLAG_NTVREG;
 
 						lock->get_extra<forked_amx_holder>();
-						cell *result;
+						cell *result, *error;
 						amx_GetAddr(amx, result_addr, &result);
-						amx_ExecContext(amx_fork, result, AMX_EXEC_CONT, false, nullptr, true);
+						amx_GetAddr(amx, error_addr, &error);
+						*error = amx_ExecContext(amx_fork, result, AMX_EXEC_CONT, false, nullptr, true);
 
 						if(amx_fork->error == AMX_ERR_SLEEP && (amx_fork->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
 						{
@@ -285,9 +288,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						amx->pri = 1;
 						amx->error = AMX_ERR_NONE;
 
-						cell *result;
-						amx_GetAddr(amx, result_addr, &result);
-						amx_ExecContext(amx, result, AMX_EXEC_CONT, false, nullptr, true);
+						cell result, error;
+						error = amx_ExecContext(amx, &result, AMX_EXEC_CONT, false, nullptr, true);
 
 						if(amx->error == AMX_ERR_SLEEP && (amx->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
 						{
@@ -301,6 +303,11 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 							{
 								std::memcpy(amx->base + amxhdr->dat, orig_data, amxhdr->hea - amxhdr->dat);
 							}
+							cell *result_var, *error_var;
+							amx_GetAddr(amx, result_addr, &result_var);
+							amx_GetAddr(amx, error_addr, &error_var);
+							*result_var = result;
+							*error_var = error;
 						}
 						if(flags & SleepReturnForkFlagsCopyData)
 						{

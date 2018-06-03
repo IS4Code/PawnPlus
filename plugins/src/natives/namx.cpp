@@ -128,7 +128,7 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true);
+	// native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true, &error=0);
 	static cell AMX_NATIVE_CALL amx_fork(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
@@ -142,8 +142,9 @@ namespace Natives
 			flags |= SleepReturnForkFlagsCopyData;
 		}
 		amx::object owner;
-		auto &ctx = amx::get_context(amx, owner);
-		ctx.get_extra<fork_info_extra>().result_address = params[1];
+		auto &extra = amx::get_context(amx, owner).get_extra<fork_info_extra>();
+		extra.result_address = params[1];
+		extra.error_address = params[4];
 		return SleepReturnFork | flags;
 	}
 
