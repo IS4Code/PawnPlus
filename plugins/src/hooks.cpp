@@ -60,9 +60,19 @@ struct amx_code_info : public amx::extra
 
 struct forked_context : public amx::extra
 {
+	bool cloned = false;
+
 	forked_context(AMX *amx) : amx::extra(amx)
 	{
 
+	}
+
+	virtual ~forked_context() override
+	{
+		if(cloned)
+		{
+			amx::unload(_amx);
+		}
 	}
 };
 
@@ -128,14 +138,14 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 	{
 		amx::object owner;
 		auto &ctx = amx::get_context(amx, owner);
-		ctx.get_extra<forked_context>();
+		ctx.get_extra<forked_context>().cloned = owner->has_extra<forked_amx_holder>();
 	}
 	
 	int ret;
 	while(true)
 	{
 		ret = amx_ExecOrig(amx, retval, index);
-		if(ret == AMX_ERR_SLEEP)
+		if(ret == AMX_ERR_SLEEP || amx->error == AMX_ERR_SLEEP)
 		{
 			index = AMX_EXEC_CONT;
 
@@ -260,8 +270,6 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 								std::memcpy(amx->base + amxhdr->dat, amx_fork->base + amxhdr->dat, amxhdr->hea - amxhdr->dat);
 							}
 						}
-
-						amx::unload(amx_fork);
 					}else{
 						amx::reset reset(amx, true);
 
