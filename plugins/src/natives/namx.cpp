@@ -148,11 +148,11 @@ namespace Natives
 		return SleepReturnFork | flags;
 	}
 
-	// native amx_commit();
+	// native amx_commit(bool:context=true);
 	static cell AMX_NATIVE_CALL amx_commit(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return SleepReturnForkCommit;
+		return SleepReturnForkCommit | (SleepReturnValueMask & params[1]);
 	}
 
 	// native amx_end_fork();
