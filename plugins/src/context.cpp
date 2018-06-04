@@ -63,7 +63,7 @@ int amx::pop(AMX *amx)
 {
 	if(globalExecLevel == 0)
 	{
-		throw std::exception("[PP] Context stack imbalance.");
+		throw std::logic_error("[PP] Context stack imbalance.");
 	}
 	globalExecLevel--;
 	if(globalExecLevel == 0)
