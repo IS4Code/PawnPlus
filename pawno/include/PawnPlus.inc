@@ -132,6 +132,37 @@ stock amx_yield(val=0)
     #emit halt 0
     return 0;
 }
+native amx_error(amx_err:code, result=0);
+
+enum amx_err
+{
+    amx_err_exit = 1,
+    amx_err_assert,
+    amx_err_stackerr,
+    amx_err_bounds,
+    amx_err_memaccess,
+    amx_err_invinstr,
+    amx_err_stacklow,
+    amx_err_heaplow,
+    amx_err_callback,
+    amx_err_native,
+    amx_err_divide,
+    amx_err_sleep,
+    amx_err_invstate,
+    
+    amx_err_memory = 16,
+    amx_err_format,
+    amx_err_version,
+    amx_err_notfound,
+    amx_err_index,
+    amx_err_debug,
+    amx_err_init,
+    amx_err_userdata,
+    amx_err_init_jit,
+    amx_err_params,
+    amx_err_domain,
+    amx_err_general,
+};
 
 #if !defined PP_NO_ALIASES
 
