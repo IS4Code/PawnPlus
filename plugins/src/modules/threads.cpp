@@ -203,10 +203,10 @@ public:
 
 	void pause()
 	{
-		if(started && !pending && (flags & Threads::SyncFlags::SyncInterrupt) == Threads::SyncFlags::SyncInterrupt)
+		if(started && !pending && !paused && !done && (flags & Threads::SyncFlags::SyncInterrupt) == Threads::SyncFlags::SyncInterrupt)
 		{
 			std::lock_guard<std::mutex> lock(mutex);
-			if(pending) return;
+			if(paused || pending || done) return;
 
 			thread.pause();
 			amx->callback = orig_callback;
