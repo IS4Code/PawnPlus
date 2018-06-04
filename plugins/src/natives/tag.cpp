@@ -5,19 +5,19 @@
 namespace Natives
 {
 
-	// native tag_uid(tag_id);
+	// native tag_uid:tag_uid(tag_id);
 	static cell AMX_NATIVE_CALL tag_uid(AMX *amx, cell *params)
 	{
 		return tags::find_tag(amx, params[1])->uid;
 	}
 
-	// native tag_id(tag_uid);
+	// native tag_id(tag_uid:tag_uid);
 	static cell AMX_NATIVE_CALL tag_id(AMX *amx, cell *params)
 	{
 		return tags::find_tag(params[1])->get_id(amx);
 	}
 
-	// native tag_name(tag_uid, name[], size=sizeof(name));
+	// native tag_name(tag_uid:tag_uid, name[], size=sizeof(name));
 	static cell AMX_NATIVE_CALL tag_name(AMX *amx, cell *params)
 	{
 		cell *addr;
@@ -27,14 +27,14 @@ namespace Natives
 		return tag->name.size();
 	}
 
-	// native String:tag_name_s(tag_uid);
+	// native String:tag_name_s(tag_uid:tag_uid);
 	static cell AMX_NATIVE_CALL tag_name_s(AMX *amx, cell *params)
 	{
 		tag_ptr tag = tags::find_tag(params[1]);
 		return reinterpret_cast<cell>(strings::create(tag->name, true));
 	}
 
-	// native tag_base(tag_uid);
+	// native tag_base(tag_uid:tag_uid);
 	static cell AMX_NATIVE_CALL tag_base(AMX *amx, cell *params)
 	{
 		auto base = tags::find_tag(params[1])->base;
@@ -42,7 +42,7 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:tag_derived_from(tag_uid, base_uid);
+	// native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
 	static cell AMX_NATIVE_CALL tag_derived_from(AMX *amx, cell *params)
 	{
 		return tags::find_tag(params[1])->inherits_from(tags::find_tag(params[2]));

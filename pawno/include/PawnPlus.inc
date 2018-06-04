@@ -86,26 +86,26 @@ native bool:pawn_guard_free(Guard:guard);
 /*      Tags       */
 /*                 */
 
-native tag_uid(tag_id);
-native tag_id(tag_uid);
-native tag_name(tag_uid, name[], size=sizeof(name));
-native String:tag_name_s(tag_uid);
-native tag_base(tag_uid);
-native bool:tag_derived_from(tag_uid, base_uid);
+native tag_uid:tag_uid(tag_id);
+native tag_id(tag_uid:tag_uid);
+native tag_name(tag_uid:tag_uid, name[], size=sizeof(name));
+native String:tag_name_s(tag_uid:tag_uid);
+native tag_base(tag_uid:tag_uid);
+native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
 
 enum{
-	tag_uid_unknown = 0,
-	tag_uid_cell = 1,
-	tag_uid_bool = 2,
-	tag_uid_char = 3,
-	tag_uid_float = 4,
-	tag_uid_string = 5,
-	tag_uid_variant = 6,
-	tag_uid_list = 7,
-	tag_uid_map = 8,
-	tag_uid_list_iterator = 9,
-	tag_uid_map_iterator = 10,
-	tag_uid_ref = 11
+	tag_uid:tag_uid_unknown = 0,
+	tag_uid:tag_uid_cell = 1,
+	tag_uid:tag_uid_bool = 2,
+	tag_uid:tag_uid_char = 3,
+	tag_uid:tag_uid_float = 4,
+	tag_uid:tag_uid_string = 5,
+	tag_uid:tag_uid_variant = 6,
+	tag_uid:tag_uid_list = 7,
+	tag_uid:tag_uid_map = 8,
+	tag_uid:tag_uid_list_iterator = 9,
+	tag_uid:tag_uid_map_iterator = 10,
+	tag_uid:tag_uid_ref = 11
 };
 
 /*                 */
