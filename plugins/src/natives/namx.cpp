@@ -128,7 +128,7 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true, &error=0);
+	// native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true, &amx_err:error=amx_err:0);
 	static cell AMX_NATIVE_CALL amx_fork(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
