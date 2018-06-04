@@ -149,7 +149,6 @@ namespace Natives
 						}
 					}
 					list->clear();
-					t.keep(true);
 					created->set_completed(reinterpret_cast<cell>(&t));
 				});
 				list->push_back(std::make_pair(it, lock));
@@ -183,7 +182,6 @@ namespace Natives
 					}))
 					{
 						list->clear();
-						t.keep(true);
 						created->set_completed(reinterpret_cast<cell>(&t));
 					}
 				});

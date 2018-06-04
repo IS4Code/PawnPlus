@@ -67,7 +67,7 @@ namespace tasks
 			handler->invoke(*this);
 		}
 
-		if(!_keep)
+		if(!_keep && _completed)
 		{
 			pool.remove(this);
 		}
