@@ -38,6 +38,8 @@ namespace tags
 	constexpr const cell tag_list_iterator = 9;
 	constexpr const cell tag_map_iterator = 10;
 	constexpr const cell tag_ref = 11;
+	constexpr const cell tag_task = 12;
+	constexpr const cell tag_guard = 13;
 
 	tag_ptr find_tag(const char *name, size_t sublen=-1);
 	tag_ptr find_tag(AMX *amx, cell tag_id);

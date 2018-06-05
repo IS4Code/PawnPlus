@@ -105,7 +105,9 @@ enum{
 	tag_uid:tag_uid_map = 8,
 	tag_uid:tag_uid_list_iterator = 9,
 	tag_uid:tag_uid_map_iterator = 10,
-	tag_uid:tag_uid_ref = 11
+	tag_uid:tag_uid_ref = 11,
+	tag_uid:tag_uid_task = 12,
+	tag_uid:tag_uid_guard = 13
 };
 
 /*                 */
