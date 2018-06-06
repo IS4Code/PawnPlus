@@ -65,7 +65,7 @@ static cell AMX_NATIVE_CALL list_set_cell(AMX *amx, cell *params)
 	if(!list_pool.contains(ptr)) return 0;
 	if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 	auto &obj = (*ptr)[params[2]];
-	if(TagIndex && !obj.check_tag(amx, params[TagIndex])) return 0;
+	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 	return obj.set_cell(params[3], params[4]);
 }
 

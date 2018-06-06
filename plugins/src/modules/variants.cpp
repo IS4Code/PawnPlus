@@ -27,6 +27,13 @@ dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell tag_id)
 	return dyn_object(amx, addr, size, tag_id);
 }
 
+dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell tag_id)
+{
+	cell *addr;
+	amx_GetAddr(amx, amx_addr, &addr);
+	return dyn_object(amx, addr, size, size2, tag_id);
+}
+
 dyn_object dyn_func_str(AMX *amx, cell amx_addr)
 {
 	cell *addr;
@@ -59,7 +66,7 @@ cell dyn_func(AMX *amx, const dyn_object &obj, cell offset)
 
 cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offset, cell tag_id)
 {
-	if(!obj.check_tag(amx, tag_id)) return 0;
+	if(!obj.tag_assignable(amx, tag_id)) return 0;
 	cell *addr;
 	amx_GetAddr(amx, result, &addr);
 	if(obj.get_cell(offset, *addr)) return 1;
@@ -75,7 +82,7 @@ cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size)
 
 cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size, cell tag_id)
 {
-	if(!obj.check_tag(amx, tag_id)) return 0;
+	if(!obj.tag_assignable(amx, tag_id)) return 0;
 	cell *addr;
 	amx_GetAddr(amx, amx_addr, &addr);
 	return obj.get_array(addr, size);
@@ -83,7 +90,7 @@ cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size, cel
 
 cell dyn_func_str(AMX *amx, const dyn_object &obj, cell amx_addr, cell size)
 {
-	if(!obj.check_tag(tags::find_tag(tags::tag_char))) return 0;
+	if(!obj.tag_assignable(tags::find_tag(tags::tag_char))) return 0;
 	cell *addr;
 	amx_GetAddr(amx, amx_addr, &addr);
 	return obj.get_array(addr, size);
@@ -98,7 +105,7 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj)
 cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell unused)
 {
 	if(obj.get_size() == 0) return 0;
-	if(!obj.check_tag(tags::find_tag(tags::tag_char))) return 0;
+	if(!obj.tag_assignable(tags::find_tag(tags::tag_char))) return 0;
 	return reinterpret_cast<cell>(strings::create(&obj[0], true, false, false));
 }
 

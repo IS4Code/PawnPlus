@@ -90,7 +90,7 @@ static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
 {
 	if(params[1] == 0 || params[2] < 0) return 0;
 	auto &obj = *reinterpret_cast<list_t::iterator&>(params[1]);
-	if(TagIndex && !obj.check_tag(amx, params[TagIndex])) return 0;
+	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 	return obj.set_cell(params[2], params[3]);
 }
 
@@ -100,7 +100,7 @@ static cell AMX_NATIVE_CALL iter_set_value_cell(AMX *amx, cell *params)
 {
 	if(params[1] == 0 || params[2] < 0) return 0;
 	auto &obj = reinterpret_cast<map_t::iterator&>(params[1])->second;
-	if(TagIndex && !obj.check_tag(amx, params[TagIndex])) return 0;
+	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 	return obj.set_cell(params[2], params[3]);
 }
 

@@ -39,6 +39,12 @@ namespace Natives
 		return value_at<1, 2, 3>::var_new<dyn_func_arr>(amx, params);
 	}
 
+	// native Variant:var_new_arr_2d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL var_new_arr_2d(AMX *amx, cell *params)
+	{
+		return value_at<1, 2, 3, 4>::var_new<dyn_func_arr>(amx, params);
+	}
+
 	// native Variant:var_new_buf(size, tag_id=0);
 	static cell AMX_NATIVE_CALL var_new_buf(AMX *amx, cell *params)
 	{
@@ -166,7 +172,7 @@ namespace Natives
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
 		if(!variants::pool.contains(var)) return 0;
-		if(!var->check_tag(amx, params[4])) return 0;
+		if(!var->tag_assignable(amx, params[4])) return 0;
 		return var->set_cell(params[2], params[3]);
 	}
 
@@ -245,6 +251,7 @@ static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(var_new),
 	AMX_DECLARE_NATIVE(var_new_arr),
+	AMX_DECLARE_NATIVE(var_new_arr_2d),
 	AMX_DECLARE_NATIVE(var_new_buf),
 	AMX_DECLARE_NATIVE(var_new_str),
 	AMX_DECLARE_NATIVE(var_new_str_s),

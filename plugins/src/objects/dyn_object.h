@@ -9,40 +9,53 @@
 
 class dyn_object
 {
-	bool is_array;
+	unsigned char dimension;
 	union{
 		cell cell_value;
-		cell array_size;
+		cell *array_data;
 	};
-	std::unique_ptr<cell[]> array_value;
 	tag_ptr tag;
-	std::string find_tag(AMX *amx, cell tag_id) const;
 
 public:
 	dyn_object();
 	dyn_object(AMX *amx, cell value, cell tag_id);
 	dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id);
+	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id);
 	dyn_object(AMX *amx, const cell *str);
 	dyn_object(cell value, tag_ptr tag);
 	dyn_object(const cell *arr, cell size, tag_ptr tag);
 	dyn_object(const dyn_object &obj);
 	dyn_object(dyn_object &&obj);
-	bool check_tag(AMX *amx, cell tag_id) const;
-	bool check_tag(tag_ptr test_tag) const;
+
+	bool tag_assignable(AMX *amx, cell tag_id) const;
+	bool tag_assignable(tag_ptr test_tag) const;
+	bool tag_compatible(const dyn_object &obj) const;
+	bool struct_compatible(const dyn_object &obj) const;
+
 	bool get_cell(cell index, cell &value) const;
 	cell get_array(cell *arr, cell maxsize) const;
 	bool set_cell(cell index, cell value);
-	cell get_tag(AMX *amx) const;
 	cell store(AMX *amx) const;
 	void load(AMX *amx, cell amx_addr);
+
+	tag_ptr get_tag() const;
+	cell get_tag(AMX *amx) const;
 	cell get_size() const;
+	bool empty() const;
+	bool is_array() const;
+	cell array_start() const;
+	cell data_size() const;
+
 	char get_specifier() const;
 	size_t get_hash() const;
-	bool empty() const;
-	bool tag_check(const dyn_object &obj) const;
-	tag_ptr get_tag() const;
 	void free() const;
 	dyn_object clone() const;
+
+	cell *begin();
+	cell *end();
+	const cell *begin() const;
+	const cell *end() const;
+
 	cell &operator[](cell index);
 	const cell &operator[](cell index) const;
 	friend bool operator==(const dyn_object &a, const dyn_object &b);
@@ -55,6 +68,8 @@ public:
 	dyn_object operator%(const dyn_object &obj) const;
 	dyn_object &operator=(const dyn_object &obj);
 	dyn_object &operator=(dyn_object &&obj);
+
+	~dyn_object();
 
 private:
 	template <class TagType>

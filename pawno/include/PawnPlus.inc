@@ -254,6 +254,7 @@ native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,F
 
 native Variant:var_new(AnyTag:value, tag_id=tagof(value));
 native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native Variant:var_new_arr_2d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), tag_id=tagof(value));
 native Variant:var_new_buf(size, tag_id=0);
 native Variant:var_new_str(const value[]);
 native Variant:var_new_str_s(StringTag:value);

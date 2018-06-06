@@ -79,7 +79,7 @@ public:
 		if(it != ptr->end())
 		{
 			auto &obj = it->second;
-			if(TagIndex && !obj.check_tag(amx, params[TagIndex])) return 0;
+			if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 			return obj.set_cell(params[3], params[4]);
 		}
 		return 0;
