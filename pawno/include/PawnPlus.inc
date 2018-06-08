@@ -255,6 +255,7 @@ native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,F
 native Variant:var_new(AnyTag:value, tag_id=tagof(value));
 native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 native Variant:var_new_arr_2d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), tag_id=tagof(value));
+native Variant:var_new_arr_3d(const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), tag_id=tagof(value));
 native Variant:var_new_buf(size, tag_id=0);
 native Variant:var_new_str(const value[]);
 native Variant:var_new_str_s(StringTag:value);
@@ -279,7 +280,7 @@ native bool:var_set_cell(VariantTag:var, offset, AnyTag:value);
 native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, tag_id=tagof(value));
 
 native var_tagof(VariantTag:var);
-native var_sizeof(VariantTag:var);
+native var_sizeof(VariantTag:var, ...);
 native bool:var_equal(VariantTag:var1, VariantTag:var2);
 native Variant:var_add(VariantTag:var1, VariantTag:var2);
 native Variant:var_sub(VariantTag:var1, VariantTag:var2);

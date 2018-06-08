@@ -22,6 +22,7 @@ namespace variants
 dyn_object dyn_func(AMX *amx, cell value, cell tag_id);
 dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell tag_id);
 dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell tag_id);
+dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell size3, cell tag_id);
 dyn_object dyn_func_str(AMX *amx, cell amx_addr);
 dyn_object dyn_func_str_s(AMX *amx, cell str);
 dyn_object dyn_func_var(AMX *amx, cell ptr);

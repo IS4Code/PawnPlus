@@ -5,11 +5,12 @@
 #include "sdk/amx/amx.h"
 #include <memory>
 #include <string>
+#include <vector>
 #include <cstring>
 
 class dyn_object
 {
-	unsigned char dimension;
+	unsigned char rank;
 	union{
 		cell cell_value;
 		cell *array_data;
@@ -21,6 +22,7 @@ public:
 	dyn_object(AMX *amx, cell value, cell tag_id);
 	dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id);
 	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id);
+	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id);
 	dyn_object(AMX *amx, const cell *str);
 	dyn_object(cell value, tag_ptr tag);
 	dyn_object(const cell *arr, cell size, tag_ptr tag);
@@ -40,11 +42,12 @@ public:
 
 	tag_ptr get_tag() const;
 	cell get_tag(AMX *amx) const;
-	cell get_size() const;
+	cell get_size(const std::vector<cell> &indices) const;
 	bool empty() const;
 	bool is_array() const;
 	cell array_start() const;
 	cell data_size() const;
+	cell array_size() const;
 
 	char get_specifier() const;
 	size_t get_hash() const;

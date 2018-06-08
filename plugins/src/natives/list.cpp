@@ -395,7 +395,7 @@ namespace Natives
 		if(!list_pool.contains(ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
-		return obj.get_size();
+		return obj.get_size({});
 	}
 }
 

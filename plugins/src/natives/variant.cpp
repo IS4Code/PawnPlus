@@ -45,6 +45,12 @@ namespace Natives
 		return value_at<1, 2, 3, 4>::var_new<dyn_func_arr>(amx, params);
 	}
 
+	// native Variant:var_new_arr_3d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[]), tag_id=tagof(value));
+	static cell AMX_NATIVE_CALL var_new_arr_3d(AMX *amx, cell *params)
+	{
+		return value_at<1, 2, 3, 4, 5>::var_new<dyn_func_arr>(amx, params);
+	}
+
 	// native Variant:var_new_buf(size, tag_id=0);
 	static cell AMX_NATIVE_CALL var_new_buf(AMX *amx, cell *params)
 	{
@@ -184,12 +190,20 @@ namespace Natives
 		return var->get_tag(amx);
 	}
 
-	// native var_sizeof(VariantTag:var);
+	// native var_sizeof(VariantTag:var, ...);
 	static cell AMX_NATIVE_CALL var_sizeof(AMX *amx, cell *params)
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
 		if(!variants::pool.contains(var)) return 0;
-		return var->get_size();
+		cell num = params[0] / sizeof(cell) - 1;
+		std::vector<cell> indices;
+		for(cell i = 0; i < num; i++)
+		{
+			cell *addr;
+			amx_GetAddr(amx, params[2 + i], &addr);
+			indices.push_back(*addr);
+		}
+		return var->get_size(indices);
 	}
 
 	// native bool:var_equal(VariantTag:var1, VariantTag:var2);
@@ -252,6 +266,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_new),
 	AMX_DECLARE_NATIVE(var_new_arr),
 	AMX_DECLARE_NATIVE(var_new_arr_2d),
+	AMX_DECLARE_NATIVE(var_new_arr_3d),
 	AMX_DECLARE_NATIVE(var_new_buf),
 	AMX_DECLARE_NATIVE(var_new_str),
 	AMX_DECLARE_NATIVE(var_new_str_s),

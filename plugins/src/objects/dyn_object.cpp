@@ -12,17 +12,17 @@ bool memequal(void const* ptr1, void const* ptr2, size_t size)
 	return !std::memcmp(ptr1, ptr2, size);
 }
 
-dyn_object::dyn_object() : dimension(1), array_data(nullptr), tag(tags::find_tag(tags::tag_cell))
+dyn_object::dyn_object() : rank(1), array_data(nullptr), tag(tags::find_tag(tags::tag_cell))
 {
 
 }
 
-dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : dimension(0), cell_value(value), tag(tags::find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : rank(0), cell_value(value), tag(tags::find_tag(amx, tag_id))
 {
 
 }
 
-dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : dimension(1), tag(tags::find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : rank(1), tag(tags::find_tag(amx, tag_id))
 {
 	if(arr != nullptr)
 	{
@@ -34,60 +34,104 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : dime
 	array_data[0] = size + 1;
 }
 
-dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id) : dimension(2), tag(tags::find_tag(amx, tag_id))
+void find_array_end(AMX *amx, const cell *&ptr)
+{
+	if(!*ptr)
+	{
+		ptr++;
+	}else{
+		auto data = amx->base + ((AMX_HEADER*)amx->base)->dat;
+		auto dat = (cell*)(data);
+		auto hlw = (cell*)(data + amx->hlw);
+		auto hea = (cell*)(data + amx->hea);
+		auto stk = (cell*)(data + amx->stk);
+		auto stp = (cell*)(data + amx->stp);
+
+		bool on_dat = ptr >= dat && ptr < hlw;
+		bool on_heap = ptr >= hlw && ptr < hea;
+		bool on_stack = ptr >= stk && ptr < stp;
+
+		while(true)
+		{
+			if(on_dat && ptr >= hlw) break;
+			if(on_heap && ptr >= hea) break;
+			if(on_stack && ptr >= stp) break;
+
+			ptr++;
+			if(!*ptr)
+			{
+				ptr++;
+				break;
+			}
+		}
+	}
+}
+
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id) : rank(2), tag(tags::find_tag(amx, tag_id))
 {
 	if(arr != nullptr)
 	{
-		const cell *last = &arr[size - 1];
+		const cell *last = arr;
+		last = (cell*)((char*)last + *last);
+		last--;
 		last = (cell*)((char*)last + *last);
 		if(size2 > 0)
 		{
 			last += size2;
-		}else if(!*last)
-		{
-			last++;
 		}else{
-			auto data = amx->base + ((AMX_HEADER*)amx->base)->dat;
-			auto dat = (cell*)(data);
-			auto hlw = (cell*)(data + amx->hlw);
-			auto hea = (cell*)(data + amx->hea);
-			auto stk = (cell*)(data + amx->stk);
-			auto stp = (cell*)(data + amx->stp);
-
-			bool on_dat = arr >= dat && arr < hlw;
-			bool on_heap = arr >= hlw && arr < hea;
-			bool on_stack = arr >= stk && arr < stp;
-
-			while(true)
-			{
-				if(on_dat && last >= hlw) break;
-				if(on_heap && last >= hea) break;
-				if(on_stack && last >= stp) break;
-
-				last++;
-				if(!*last)
-				{
-					last++;
-					break;
-				}
-			}
+			find_array_end(amx, last);
 		}
 		cell length = last - arr;
 		array_data = new cell[length + 1];
 		std::memcpy(array_data + 1, arr, length * sizeof(cell));
 		array_data[0] = length + 1;
 	}else{
-		cell length = size2 > 0 ? size + size * size2 : size;
+		cell length = size + size * size2;
 		array_data = new cell[length + 1]();
-		for(cell i = 1; i <= size; i++)
+		for(cell i = 0; i < size; i++)
 		{
-			array_data[i] = size - i;
+			array_data[1 + i] = (size + i * size2 - i) * sizeof(cell);
 		}
 		array_data[0] = length + 1;
 	}
 }
 
-dyn_object::dyn_object(AMX *amx, const cell *str) : dimension(1), tag(tags::find_tag(tags::tag_char))
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id) : rank(3), tag(tags::find_tag(amx, tag_id))
+{
+	if(arr != nullptr)
+	{
+		const cell *last = arr;
+		last = (cell*)((char*)last + *last);
+		last = (cell*)((char*)last + *last);
+		last--;
+		last = (cell*)((char*)last + *last);
+		if(size3 > 0)
+		{
+			last += size3;
+		}else{
+			find_array_end(amx, last);
+		}
+		cell length = last - arr;
+		array_data = new cell[length + 1];
+		std::memcpy(array_data + 1, arr, length * sizeof(cell));
+		array_data[0] = length + 1;
+	}else{
+		cell length = size + size * size2 + size * size2 * size3;
+		array_data = new cell[length + 1]();
+		for(cell i = 0; i < size; i++)
+		{
+			array_data[1 + i] = (size + i * size2 - i) * sizeof(cell);
+			for(cell j = 0; j < size2; j++)
+			{
+				cell ofs = size + i * size + j;
+				array_data[1 + ofs] = (size + size * size2 + i * size2 * size3 + j * size2 - ofs) * sizeof(cell);
+			}
+		}
+		array_data[0] = length + 1;
+	}
+}
+
+dyn_object::dyn_object(AMX *amx, const cell *str) : rank(1), tag(tags::find_tag(tags::tag_char))
 {
 	if(str == nullptr || !str[0])
 	{
@@ -109,12 +153,12 @@ dyn_object::dyn_object(AMX *amx, const cell *str) : dimension(1), tag(tags::find
 	array_data[size + 1] = 0;
 }
 
-dyn_object::dyn_object(cell value, tag_ptr tag) : dimension(0), cell_value(value), tag(tag)
+dyn_object::dyn_object(cell value, tag_ptr tag) : rank(0), cell_value(value), tag(tag)
 {
 
 }
 
-dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : dimension(1), tag(tag)
+dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(tag)
 {
 	if(arr != nullptr)
 	{
@@ -126,7 +170,7 @@ dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : dimension(1), 
 	array_data[0] = size + 1;
 }
 
-dyn_object::dyn_object(const dyn_object &obj) : dimension(obj.dimension), tag(obj.tag)
+dyn_object::dyn_object(const dyn_object &obj) : rank(obj.rank), tag(obj.tag)
 {
 	if(is_array())
 	{
@@ -143,7 +187,7 @@ dyn_object::dyn_object(const dyn_object &obj) : dimension(obj.dimension), tag(ob
 	}
 }
 
-dyn_object::dyn_object(dyn_object &&obj) : dimension(obj.dimension), tag(obj.tag)
+dyn_object::dyn_object(dyn_object &&obj) : rank(obj.rank), tag(obj.tag)
 {
 	if(is_array())
 	{
@@ -175,7 +219,7 @@ bool dyn_object::tag_assignable(tag_ptr test_tag) const
 
 cell dyn_object::data_size() const
 {
-	switch(dimension)
+	switch(rank)
 	{
 		case 0:
 			return 1;
@@ -189,7 +233,7 @@ cell dyn_object::array_start() const
 	if(is_array())
 	{
 		cell *b = array_data + 1;
-		auto dim = dimension;
+		auto dim = rank;
 		while(dim > 1)
 		{
 			b = (cell*)((char*)b + *b);
@@ -199,6 +243,22 @@ cell dyn_object::array_start() const
 	}else{
 		return 0;
 	}
+}
+
+bool array_bounds(const cell *data, cell &begin, cell &end, cell data_begin, cell data_end, cell index)
+{
+	if(index < 0) return false;
+	cell size = end - begin;
+	if(index >= size) return false;
+	cell next = begin + index + 1;
+	if(next == data_begin)
+	{
+		end = data_end;
+	}else{
+		end = next + data[next] / sizeof(cell);
+	}
+	begin = begin + index + data[begin + index] / sizeof(cell);
+	return true;
 }
 
 bool dyn_object::get_cell(cell index, cell &value) const
@@ -260,7 +320,7 @@ void dyn_object::load(AMX *amx, cell amx_addr)
 
 bool dyn_object::is_array() const
 {
-	return dimension > 0;
+	return rank > 0;
 }
 
 cell *dyn_object::begin()
@@ -303,14 +363,43 @@ const cell *dyn_object::end() const
 	}
 }
 
-cell dyn_object::get_size() const
+cell dyn_object::array_size() const
 {
 	if(is_array())
 	{
 		return end() - begin();
-	}else{
+	} else {
 		return 1;
 	}
+}
+
+cell dyn_object::get_size(const std::vector<cell> &indices) const
+{
+	if(!is_array()) return std::all_of(indices.begin(), indices.end(), [](const cell &i){return i == 0;});
+	if(empty()) return 0;
+
+	const cell *block = array_data + 1;
+	cell data_begin = begin() - block, data_end = end() - block;
+	cell begin = 0, end = block[0] / sizeof(cell);
+	bool cells = false;
+	for(cell index : indices)
+	{
+		if(cells)
+		{
+			if(index > 0) return 0;
+		}else if(begin >= data_begin)
+		{
+			cell size = end - begin;
+			if(index >= size) return 0;
+			cells = true;
+			continue;
+		}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
+		{
+			return 0;
+		}
+	}
+	if(cells) return 1;
+	return end - begin;
 }
 
 template <class TagType>
@@ -461,7 +550,7 @@ const cell &dyn_object::operator[](cell index) const
 bool dyn_object::struct_compatible(const dyn_object &obj) const
 {
 	if(empty() && obj.empty()) return true;
-	if(dimension != obj.dimension) return false;
+	if(rank != obj.rank) return false;
 	if(empty() || obj.empty()) return false;
 	if(is_array())
 	{
@@ -488,7 +577,7 @@ bool dyn_object::operator_eq_tagged(const dyn_object &obj, bool &result) const
 bool operator==(const dyn_object &a, const dyn_object &b)
 {
 	if(!a.tag_compatible(b) || !a.struct_compatible(b)) return false;
-	if(memequal(a.begin(), b.begin(), a.get_size() * sizeof(cell))) return true;
+	if(memequal(a.begin(), b.begin(), a.array_size() * sizeof(cell))) return true;
 	bool result = false;
 	a.operator_eq_tagged<cell_string*>(b, result) || a.operator_eq_tagged<dyn_object*>(b, result);
 	return result;
@@ -627,7 +716,7 @@ bool dyn_object::to_string_tagged<char[]>(cell_string &str) const
 {
 	if(!tag->inherits_from(tag_traits<char[]>::tag_uid)) return false;
 
-	if(dimension == 1)
+	if(rank == 1)
 	{
 		str = cell_string(array_data + 1);
 	}else{
@@ -697,7 +786,7 @@ dyn_object &dyn_object::operator=(const dyn_object &obj)
 	{
 		delete[] array_data;
 	}
-	dimension = obj.dimension;
+	rank = obj.rank;
 	tag = obj.tag;
 	if(is_array())
 	{
@@ -722,7 +811,7 @@ dyn_object &dyn_object::operator=(dyn_object &&obj)
 	{
 		delete[] array_data;
 	}
-	dimension = obj.dimension;
+	rank = obj.rank;
 	tag = obj.tag;
 	if(is_array())
 	{
