@@ -108,7 +108,7 @@ public:
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
-			return it->second.get_size({});
+			return it->second.get_size();
 		}
 		return 0;
 	}

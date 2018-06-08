@@ -200,12 +200,7 @@ dyn_object::dyn_object(dyn_object &&obj) : rank(obj.rank), tag(obj.tag)
 
 bool dyn_object::tag_assignable(AMX *amx, cell tag_id) const
 {
-	tag_ptr test_tag = tags::find_tag(amx, tag_id);
-	if(test_tag->uid == tags::tag_cell)
-	{
-		if(!tag->strong()) return true;
-	}
-	return tag->inherits_from(test_tag);
+	return tag_assignable(tags::find_tag(amx, tag_id));
 }
 
 bool dyn_object::tag_assignable(tag_ptr test_tag) const
@@ -263,29 +258,176 @@ bool array_bounds(const cell *data, cell &begin, cell &end, cell data_begin, cel
 
 bool dyn_object::get_cell(cell index, cell &value) const
 {
-	if(index < 0) return false;
-	const cell *ptr = begin() + index;
-	if(ptr >= end()) return false;
-	value = *ptr;
-	return true;
+	return get_cell(&index, 1, value);
 }
 
-cell dyn_object::get_array(cell *arr, cell maxsize) const
+bool dyn_object::get_cell(const cell *indices, cell num_indices, cell &value) const
 {
-	const cell *ptr = begin();
-	cell length = end() - ptr;
-	if(length > maxsize) length = maxsize;
-	std::memcpy(arr, ptr, length * sizeof(cell));
-	return length;
+	auto addr = get_cell_addr(indices, num_indices);
+	if(addr)
+	{
+		value = *addr;
+		return true;
+	}
+	return false;
 }
 
 bool dyn_object::set_cell(cell index, cell value)
 {
-	if(index < 0) return false;
-	cell *ptr = begin() + index;
-	if(ptr >= end()) return false;
-	*ptr = value;
-	return true;
+	return set_cell(&index, 1, value);
+}
+
+bool dyn_object::set_cell(const cell *indices, cell num_indices, cell value)
+{
+	auto addr = get_cell_addr(indices, num_indices);
+	if(addr)
+	{
+		*addr = value;
+		return true;
+	}
+	return false;
+}
+
+cell dyn_object::get_array(cell *arr, cell maxsize) const
+{
+	return get_array(nullptr, 0, arr, maxsize);
+}
+
+cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cell maxsize) const
+{
+	const cell *block;
+	cell begin, end;
+
+	if(!is_array())
+	{
+		if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0; }))
+		{
+			block = &cell_value;
+			begin = 0;
+			end = 1;
+		}
+		return 0;
+	}else{
+		if(empty()) return 0;
+
+		block = array_data + 1;
+		cell data_begin = this->begin() - block, data_end = this->end() - block;
+		begin = 0;
+		end = rank > 2 ? block[0] / sizeof(cell) : data_end;
+		for(cell i = 0; i < num_indices; i++)
+		{
+			cell index = indices[i];
+			if(begin >= data_begin)
+			{
+				cell size = end - begin;
+				if(index >= size) return false;
+				begin += index;
+				end = begin + 1;
+			}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
+			{
+				return false;
+			}
+		}
+		if(end > begin)
+		{
+			while(begin < data_begin)
+			{
+				begin += block[begin] / sizeof(cell);
+			}
+			while(end < data_begin)
+			{
+				end += block[end] / sizeof(cell);
+			}
+			if(end == data_begin)
+			{
+				end = data_end;
+			}
+		}
+	}
+	cell size = end - begin;
+	if(maxsize > size) maxsize = size;
+	std::memcpy(arr, block + begin, maxsize * sizeof(cell));
+	return size;
+}
+
+cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices)
+{
+	if(!is_array())
+	{
+		if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0; }))
+		{
+			return &cell_value;
+		}
+		return nullptr;
+	}
+	if(empty()) return nullptr;
+
+	cell *block = array_data + 1;
+	cell data_begin = begin() - block, data_end = end() - block;
+	cell begin = 0, end = rank > 2 ? block[0] / sizeof(cell) : data_end;
+	for(cell i = 0; i < num_indices; i++)
+	{
+		cell index = indices[i];
+		if(begin >= data_begin)
+		{
+			cell size = end - begin;
+			if(index >= size) return nullptr;
+			begin += index;
+			end = begin + 1;
+		}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
+		{
+			return nullptr;
+		}
+	}
+	while(begin < data_begin)
+	{
+		if(!array_bounds(block, begin, end, data_begin, data_end, 0))
+		{
+			return nullptr;
+		}
+	}
+	if(end <= begin) return nullptr;
+	return &block[begin];
+}
+
+const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) const
+{
+	if(!is_array())
+	{
+		if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0; }))
+		{
+			return &cell_value;
+		}
+		return nullptr;
+	}
+	if(empty()) return nullptr;
+
+	const cell *block = array_data + 1;
+	cell data_begin = begin() - block, data_end = end() - block;
+	cell begin = 0, end = rank > 2 ? block[0] / sizeof(cell) : data_end;
+	for(cell i = 0; i < num_indices; i++)
+	{
+		cell index = indices[i];
+		if(begin >= data_begin)
+		{
+			cell size = end - begin;
+			if(index >= size) return nullptr;
+			begin += index;
+			end = begin + 1;
+		}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
+		{
+			return nullptr;
+		}
+	}
+	while(begin < data_begin)
+	{
+		if(!array_bounds(block, begin, end, data_begin, data_end, 0))
+		{
+			return nullptr;
+		}
+	}
+	if(end <= begin) return nullptr;
+	return &block[begin];
 }
 
 cell dyn_object::get_tag(AMX *amx) const
@@ -373,17 +515,23 @@ cell dyn_object::array_size() const
 	}
 }
 
-cell dyn_object::get_size(const std::vector<cell> &indices) const
+cell dyn_object::get_size() const
 {
-	if(!is_array()) return std::all_of(indices.begin(), indices.end(), [](const cell &i){return i == 0;});
+	return get_size(nullptr, 0);
+}
+
+cell dyn_object::get_size(const cell *indices, cell num_indices) const
+{
+	if(!is_array()) return std::all_of(indices, indices + num_indices, [](const cell &i){return i == 0;}) ? 1 : 0;
 	if(empty()) return 0;
 
 	const cell *block = array_data + 1;
 	cell data_begin = begin() - block, data_end = end() - block;
 	cell begin = 0, end = block[0] / sizeof(cell);
 	bool cells = false;
-	for(cell index : indices)
+	for(cell i = 0; i < num_indices; i++)
 	{
+		cell index = indices[i];
 		if(cells)
 		{
 			if(index > 0) return 0;

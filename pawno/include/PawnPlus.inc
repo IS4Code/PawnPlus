@@ -269,20 +269,20 @@ native bool:var_delete_deep(VariantTag:var);
 native bool:var_valid(VariantTag:var);
 native Variant:var_clone(VariantTag:var);
 
-native var_get(VariantTag:var, offset=0);
-native var_get_arr(VariantTag:var, AnyTag:value[], size=sizeof(value));
-native var_get_str(VariantTag:var, value[], size=sizeof(value)) = var_get_arr;
-native String:var_get_str_s(VariantTag:var);
-native bool:var_get_safe(VariantTag:var, &AnyTag:value, offset=0, tag_id=tagof(value));
-native var_get_arr_safe(VariantTag:var, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-native var_get_str_safe(VariantTag:var, value[], size=sizeof(value));
-native String:var_get_str_safe_s(VariantTag:var);
+native var_get(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+native var_get_arr(VariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
+native var_get_str(VariantTag:var, value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
+native String:var_get_str_s(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+native bool:var_get_safe(VariantTag:var, &AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), tag_id=tagof(value));
+native var_get_arr_safe(VariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets), tag_id=tagof(value));
+native var_get_str_safe(VariantTag:var, value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
+native String:var_get_str_safe_s(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
 
-native bool:var_set_cell(VariantTag:var, offset, AnyTag:value);
-native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, tag_id=tagof(value));
+native bool:var_set_cell(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+native bool:var_set_cell_safe(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), tag_id=tagof(value));
 
 native var_tagof(VariantTag:var);
-native var_sizeof(VariantTag:var, ...);
+native var_sizeof(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
 native bool:var_equal(VariantTag:var1, VariantTag:var2);
 native Variant:var_add(VariantTag:var1, VariantTag:var2);
 native Variant:var_sub(VariantTag:var1, VariantTag:var2);

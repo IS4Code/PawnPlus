@@ -66,7 +66,7 @@ static cell AMX_NATIVE_CALL list_set_cell(AMX *amx, cell *params)
 	if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 	auto &obj = (*ptr)[params[2]];
 	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
-	return obj.set_cell(params[3], params[4]);
+	return obj.set_cell({params[3]}, params[4]);
 }
 
 namespace Natives
@@ -395,7 +395,7 @@ namespace Natives
 		if(!list_pool.contains(ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
-		return obj.get_size({});
+		return obj.get_size();
 	}
 }
 

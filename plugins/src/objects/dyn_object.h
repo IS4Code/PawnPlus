@@ -5,7 +5,6 @@
 #include "sdk/amx/amx.h"
 #include <memory>
 #include <string>
-#include <vector>
 #include <cstring>
 
 class dyn_object
@@ -35,14 +34,20 @@ public:
 	bool struct_compatible(const dyn_object &obj) const;
 
 	bool get_cell(cell index, cell &value) const;
-	cell get_array(cell *arr, cell maxsize) const;
+	bool get_cell(const cell *indices, cell num_indices, cell &value) const;
 	bool set_cell(cell index, cell value);
+	bool set_cell(const cell *indices, cell num_indices, cell value);
+	cell get_array(cell *arr, cell maxsize) const;
+	cell get_array(const cell *indices, cell num_indices, cell *arr, cell maxsize) const;
+	cell *get_cell_addr(const cell *indices, cell num_indices);
+	const cell *get_cell_addr(const cell *indices, cell num_indices) const;
 	cell store(AMX *amx) const;
 	void load(AMX *amx, cell amx_addr);
 
 	tag_ptr get_tag() const;
 	cell get_tag(AMX *amx) const;
-	cell get_size(const std::vector<cell> &indices) const;
+	cell get_size() const;
+	cell get_size(const cell *indices, cell num_indices) const;
 	bool empty() const;
 	bool is_array() const;
 	cell array_start() const;
