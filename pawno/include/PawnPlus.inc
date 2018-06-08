@@ -122,6 +122,8 @@ native bool:amx_delete(Var:var);
 native amx_set(Var:var, AnyTag:value, index=0);
 native amx_get(Var:var, index=0);
 native amx_sizeof(Var:var);
+native bool:amx_my(Var:var);
+native bool:amx_to_ref(Var:var, ref[1][]);
 native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true, &amx_err:error=amx_err:0);
 native amx_commit(bool:context=true);
 native amx_end_fork();

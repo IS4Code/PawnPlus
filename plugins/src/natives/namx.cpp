@@ -16,6 +16,11 @@ public:
 
 	}
 
+	cell address()
+	{
+		return _addr;
+	}
+
 	cell size()
 	{
 		return _size;
@@ -23,7 +28,20 @@ public:
 
 	bool valid()
 	{
-		return !_amx.expired() && _amx.lock()->valid();
+		if(auto lock = _amx.lock())
+		{
+			return lock->valid();
+		}
+		return false;
+	}
+
+	bool from_amx(AMX *amx)
+	{
+		if(auto lock = _amx.lock())
+		{
+			return lock->get() == amx;
+		}
+		return false;
 	}
 
 	bool set(cell index, cell value)
@@ -128,6 +146,31 @@ namespace Natives
 		return 0;
 	}
 
+	// native bool:amx_my(Var:var);
+	static cell AMX_NATIVE_CALL amx_my(AMX *amx, cell *params)
+	{
+		auto info = reinterpret_cast<amx_var_info*>(params[1]);
+		if(amx_var_pool.contains(info))
+		{
+			return info->from_amx(amx);
+		}
+		return 0;
+	}
+
+	// native bool:amx_to_ref(Var:var, ref[1][]);
+	static cell AMX_NATIVE_CALL amx_to_ref(AMX *amx, cell *params)
+	{
+		auto info = reinterpret_cast<amx_var_info*>(params[1]);
+		if(amx_var_pool.contains(info) && info->from_amx(amx))
+		{
+			cell *addr;
+			amx_GetAddr(amx, params[2], &addr);
+			*addr = info->address() - params[2];
+			return 1;
+		}
+		return 0;
+	}
+
 	// native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true, &amx_err:error=amx_err:0);
 	static cell AMX_NATIVE_CALL amx_fork(AMX *amx, cell *params)
 	{
@@ -180,6 +223,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_valid),
 	AMX_DECLARE_NATIVE(amx_delete),
 	AMX_DECLARE_NATIVE(amx_sizeof),
+	AMX_DECLARE_NATIVE(amx_my),
+	AMX_DECLARE_NATIVE(amx_to_ref),
 	AMX_DECLARE_NATIVE(amx_fork),
 	AMX_DECLARE_NATIVE(amx_commit),
 	AMX_DECLARE_NATIVE(amx_end_fork),
