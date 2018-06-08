@@ -201,8 +201,8 @@ namespace Natives
 	{
 		auto var = reinterpret_cast<dyn_object*>(params[1]);
 		if(!variants::pool.contains(var)) return 0;
-		cell offsets_size = params[4];
-		cell *offsets_addr = get_offsets(amx, params[3], offsets_size);
+		cell offsets_size = params[3];
+		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
 		return var->get_size(offsets_addr, offsets_size);
 	}
 

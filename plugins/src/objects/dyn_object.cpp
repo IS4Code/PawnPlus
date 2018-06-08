@@ -72,8 +72,13 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell ta
 	if(arr != nullptr)
 	{
 		const cell *last = arr;
-		last = (cell*)((char*)last + *last);
-		last--;
+		if(size > 0)
+		{
+			last += size - 1;
+		}else{
+			last = (cell*)((char*)last + *last);
+			last--;
+		}
 		last = (cell*)((char*)last + *last);
 		if(size2 > 0)
 		{
