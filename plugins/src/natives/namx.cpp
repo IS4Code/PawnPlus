@@ -171,22 +171,18 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true, &amx_err:error=amx_err:0);
+	// native bool:amx_fork(fork_level:level=fork_script, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
 	static cell AMX_NATIVE_CALL amx_fork(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		cell flags = SleepReturnFork;
-		if(params[2])
-		{
-			flags |= SleepReturnForkFlagsClone;
-		}
+		cell flags = params[1] & SleepReturnForkFlagsMethodMask;
 		if(params[3])
 		{
 			flags |= SleepReturnForkFlagsCopyData;
 		}
 		amx::object owner;
 		auto &extra = amx::get_context(amx, owner).get_extra<fork_info_extra>();
-		extra.result_address = params[1];
+		extra.result_address = params[2];
 		extra.error_address = params[4];
 		return SleepReturnFork | flags;
 	}

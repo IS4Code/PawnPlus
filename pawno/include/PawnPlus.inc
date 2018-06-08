@@ -114,6 +114,13 @@ enum{
 /*       AMX       */
 /*                 */
 
+enum fork_level
+{
+    fork_exec = 0,
+    fork_data = 1,
+    fork_script = 2,
+};
+
 native AMX:amx_this();
 native Var:amx_var(&AnyTag:var);
 native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
@@ -124,7 +131,7 @@ native amx_get(Var:var, index=0);
 native amx_sizeof(Var:var);
 native bool:amx_my(Var:var);
 native bool:amx_to_ref(Var:var, ref[1][]);
-native bool:amx_fork(&result=0, bool:clone=true, bool:use_data=true, &amx_err:error=amx_err:0);
+native bool:amx_fork(fork_level:level=fork_script, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
 native amx_commit(bool:context=true);
 native amx_end_fork();
 /*

@@ -226,8 +226,80 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 
 					cell flags = SleepReturnValueMask & amx->pri;
 
+					cell method = flags & SleepReturnForkFlagsMethodMask;
+
 					auto amxhdr = (AMX_HEADER*)amx->base;
-					if(flags & SleepReturnForkFlagsClone)
+					if(method == 0)
+					{
+						amx->pri = 1;
+						amx->error = AMX_ERR_NONE;
+
+						cell cip = amx->cip, stk = amx->stk, hea = amx->hea, frm = amx->frm;
+
+						cell result, error;
+						error = amx_ExecContext(amx, &result, AMX_EXEC_CONT, false, nullptr, true);
+
+						if(amx->error == AMX_ERR_SLEEP && (amx->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
+						{
+
+						}else{
+							amx->cip = cip;
+							amx->stk = stk;
+							amx->hea = hea;
+							amx->frm = frm;
+
+							cell *result_var, *error_var;
+							amx_GetAddr(amx, result_addr, &result_var);
+							amx_GetAddr(amx, error_addr, &error_var);
+							if(result_var) *result_var = result;
+							if(error_var) *error_var = error;
+						}
+					}else if(method == 1)
+					{
+						amx::reset reset(amx, true);
+
+						unsigned char *orig_data;
+						if(flags & SleepReturnForkFlagsCopyData)
+						{
+							orig_data = new unsigned char[amxhdr->hea - amxhdr->dat];
+							std::memcpy(orig_data, amx->base + amxhdr->dat, amxhdr->hea - amxhdr->dat); // backup the data
+						}
+
+						amx->pri = 1;
+						amx->error = AMX_ERR_NONE;
+
+						cell result, error;
+						error = amx_ExecContext(amx, &result, AMX_EXEC_CONT, false, nullptr, true);
+
+						if(amx->error == AMX_ERR_SLEEP && (amx->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
+						{
+							if(amx->pri & SleepReturnValueMask)
+							{
+								reset = amx::reset(amx, true);
+								amx::pop(amx);
+								reset.context.remove_extra<forked_context>();
+								reset.restore();
+							}else{
+								amx::pop(amx);
+								reset.restore();
+							}
+						}else{
+							reset.restore();
+							if(flags & SleepReturnForkFlagsCopyData)
+							{
+								std::memcpy(amx->base + amxhdr->dat, orig_data, amxhdr->hea - amxhdr->dat);
+							}
+							cell *result_var, *error_var;
+							amx_GetAddr(amx, result_addr, &result_var);
+							amx_GetAddr(amx, error_addr, &error_var);
+							if(result_var) *result_var = result;
+							if(error_var) *error_var = error;
+						}
+						if(flags & SleepReturnForkFlagsCopyData)
+						{
+							delete[] orig_data;
+						}
+					}else if(method == 2)
 					{
 						AMX *amx_fork = new AMX();
 						auto lock = amx::clone_lock(amx, amx_fork);
@@ -285,50 +357,6 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 							{
 								std::memcpy(amx->base + amxhdr->dat, amx_fork->base + amxhdr->dat, amxhdr->hea - amxhdr->dat);
 							}
-						}
-					}else{
-						amx::reset reset(amx, true);
-
-						unsigned char *orig_data;
-						if(flags & SleepReturnForkFlagsCopyData)
-						{
-							orig_data = new unsigned char[amxhdr->hea - amxhdr->dat];
-							std::memcpy(orig_data, amx->base + amxhdr->dat, amxhdr->hea - amxhdr->dat); // backup the data
-						}
-
-						amx->pri = 1;
-						amx->error = AMX_ERR_NONE;
-
-						cell result, error;
-						error = amx_ExecContext(amx, &result, AMX_EXEC_CONT, false, nullptr, true);
-
-						if(amx->error == AMX_ERR_SLEEP && (amx->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
-						{
-							if(amx->pri & SleepReturnValueMask)
-							{
-								reset = amx::reset(amx, true);
-								amx::pop(amx);
-								reset.context.remove_extra<forked_context>();
-								reset.restore();
-							}else{
-								amx::pop(amx);
-								reset.restore();
-							}
-						}else{
-							reset.restore();
-							if(flags & SleepReturnForkFlagsCopyData)
-							{
-								std::memcpy(amx->base + amxhdr->dat, orig_data, amxhdr->hea - amxhdr->dat);
-							}
-							cell *result_var, *error_var;
-							amx_GetAddr(amx, result_addr, &result_var);
-							amx_GetAddr(amx, error_addr, &error_var);
-							*result_var = result;
-							*error_var = error;
-						}
-						if(flags & SleepReturnForkFlagsCopyData)
-						{
-							delete[] orig_data;
 						}
 					}
 
