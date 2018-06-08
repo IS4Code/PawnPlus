@@ -119,8 +119,11 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 		}
 	}
 
-	Threads::PauseThreads(amx);
-	Threads::JoinThreads(amx);
+	if(!forked)
+	{
+		Threads::PauseThreads(amx);
+		Threads::JoinThreads(amx);
+	}
 
 	amx::reset *old = nullptr;
 	if(restore && amx::has_context(amx))
@@ -375,7 +378,10 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 		old->restore();
 		delete old;
 	}
-	Threads::ResumeThreads(amx);
+	if(!forked)
+	{
+		Threads::ResumeThreads(amx);
+	}
 	return ret;
 }
 
