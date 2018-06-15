@@ -137,6 +137,7 @@
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\hooks.cpp" />
     <ClCompile Include="src\modules\amxhook.cpp" />
+    <ClCompile Include="src\modules\amxutils.cpp" />
     <ClCompile Include="src\modules\events.cpp" />
     <ClCompile Include="src\modules\guards.cpp" />
     <ClCompile Include="src\modules\strings.cpp" />

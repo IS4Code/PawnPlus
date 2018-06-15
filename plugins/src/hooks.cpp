@@ -2,6 +2,7 @@
 #include "main.h"
 #include "context.h"
 #include "amxinfo.h"
+#include "pools.h"
 #include "modules/tasks.h"
 #include "modules/strings.h"
 #include "modules/events.h"
@@ -394,6 +395,34 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						if(retval != nullptr) *retval = info.result;
 						amx->error = ret = AMX_ERR_NONE;
 					}
+				}
+				break;
+				case SleepReturnAllocVar:
+				case SleepReturnAllocVarZero:
+				{
+					cell size = SleepReturnValueMask & amx->pri;
+					cell amx_addr, *addr;
+					if(amx_Allot(amx, size, &amx_addr, &addr) == AMX_ERR_NONE)
+					{
+						auto var = amx_var_pool.add(amx_var_info(amx, amx_addr, size));
+						if((amx->pri & SleepReturnTypeMask) == SleepReturnAllocVarZero)
+						{
+							var->fill(0);
+						}
+						amx->pri = reinterpret_cast<cell>(var);
+					}else{
+						amx->pri = 0;
+					}
+					amx->error = ret = AMX_ERR_NONE;
+					continue;
+				}
+				break;
+				case SleepReturnFreeVar:
+				{
+					amx_Release(amx, SleepReturnValueMask & amx->pri);
+					amx->pri = 1;
+					amx->error = ret = AMX_ERR_NONE;
+					continue;
 				}
 				break;
 			}

@@ -126,6 +126,8 @@ native Var:amx_var(&AnyTag:var);
 native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
 native bool:amx_valid(Var:var);
 native bool:amx_delete(Var:var);
+native Var:amx_alloc(size, bool:zero=true);
+native bool:amx_free(Var:var);
 native amx_set(Var:var, AnyTag:value, index=0);
 native amx_get(Var:var, index=0);
 native amx_sizeof(Var:var);

@@ -106,6 +106,9 @@
     <ClCompile Include="src\modules\guards.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\amxutils.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

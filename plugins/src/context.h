@@ -25,6 +25,10 @@ constexpr cell SleepReturnForkFlagsCopyData = 0x00010000;
 constexpr cell SleepReturnForkCommit = 0xC1000000;
 constexpr cell SleepReturnForkEnd = 0xC2000000;
 
+constexpr cell SleepReturnAllocVar = 0xD0000000;
+constexpr cell SleepReturnAllocVarZero = 0xD1000000;
+constexpr cell SleepReturnFreeVar = 0xD2000000;
+
 namespace amx
 {
 	class context

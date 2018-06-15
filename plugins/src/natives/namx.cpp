@@ -4,75 +4,6 @@
 #include "modules/amxutils.h"
 #include "utils/set_pool.h"
 
-class amx_var_info
-{
-	amx::handle _amx;
-	cell _addr;
-	cell _size;
-
-public:
-	amx_var_info(AMX *amx, cell addr, cell size) : _amx(amx::load(amx)), _addr(addr), _size(size)
-	{
-
-	}
-
-	cell address()
-	{
-		return _addr;
-	}
-
-	cell size()
-	{
-		return _size;
-	}
-
-	bool valid()
-	{
-		if(auto lock = _amx.lock())
-		{
-			return lock->valid();
-		}
-		return false;
-	}
-
-	bool from_amx(AMX *amx)
-	{
-		if(auto lock = _amx.lock())
-		{
-			return lock->get() == amx;
-		}
-		return false;
-	}
-
-	bool set(cell index, cell value)
-	{
-		if(index < 0 || index >= _size) return false;
-		if(auto lock = _amx.lock())
-		{
-			cell *addr;
-			if(amx_GetAddr(lock->get(), _addr + index, &addr) == AMX_ERR_NONE)
-			{
-				*addr = value;
-			}
-		}
-		return false;
-	}
-
-	cell get(cell index)
-	{
-		if(index < 0 || index >= _size) return false;
-		if(auto lock = _amx.lock())
-		{
-			cell *addr;
-			if(amx_GetAddr(lock->get(), _addr + index, &addr) == AMX_ERR_NONE)
-			{
-				return *addr;
-			}
-		}
-		return 0;
-	}
-};
-
 aux::set_pool<amx_var_info> amx_var_pool;
 
 namespace Natives
@@ -207,6 +138,32 @@ namespace Natives
 		amx_RaiseError(amx, params[1]);
 		return params[2];
 	}
+
+	// native Var:amx_alloc(size, bool:zero=true);
+	static cell AMX_NATIVE_CALL amx_alloc(AMX *amx, cell *params)
+	{
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return (params[2] ? SleepReturnAllocVarZero : SleepReturnAllocVar) | (SleepReturnValueMask & params[1]);
+	}
+
+	// native bool:amx_free(Var:var);
+	static cell AMX_NATIVE_CALL amx_free(AMX *amx, cell *params)
+	{
+		auto info = reinterpret_cast<amx_var_info*>(params[1]);
+		if(amx_var_pool.contains(info))
+		{
+			if(info->from_amx(amx))
+			{
+				amx_RaiseError(amx, AMX_ERR_SLEEP);
+				cell addr = info->free();
+				if(addr != -1)
+				{
+					return SleepReturnFreeVar | (SleepReturnValueMask & addr);
+				}
+			}
+		}
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -218,6 +175,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_get),
 	AMX_DECLARE_NATIVE(amx_valid),
 	AMX_DECLARE_NATIVE(amx_delete),
+	AMX_DECLARE_NATIVE(amx_alloc),
+	AMX_DECLARE_NATIVE(amx_free),
 	AMX_DECLARE_NATIVE(amx_sizeof),
 	AMX_DECLARE_NATIVE(amx_my),
 	AMX_DECLARE_NATIVE(amx_to_ref),
