@@ -294,6 +294,7 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 
 					amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
 					std::memcpy(target_addr, src_addr, length * sizeof(cell));
+					target_addr[length] = 0;
 					storage.push_back(std::make_tuple(target_addr, src_addr, length));
 
 					amx_Push(my_amx, amx_addr);
