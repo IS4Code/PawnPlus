@@ -93,22 +93,20 @@ native String:tag_name_s(tag_uid:tag_uid);
 native tag_base(tag_uid:tag_uid);
 native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
 
-enum{
-	tag_uid:tag_uid_unknown = 0,
-	tag_uid:tag_uid_cell = 1,
-	tag_uid:tag_uid_bool = 2,
-	tag_uid:tag_uid_char = 3,
-	tag_uid:tag_uid_float = 4,
-	tag_uid:tag_uid_string = 5,
-	tag_uid:tag_uid_variant = 6,
-	tag_uid:tag_uid_list = 7,
-	tag_uid:tag_uid_map = 8,
-	tag_uid:tag_uid_list_iterator = 9,
-	tag_uid:tag_uid_map_iterator = 10,
-	tag_uid:tag_uid_ref = 11,
-	tag_uid:tag_uid_task = 12,
-	tag_uid:tag_uid_guard = 13
-};
+#define tag_uid_unknown (tag_uid:0)
+#define tag_uid_cell (tag_uid:1)
+#define tag_uid_bool (tag_uid:2)
+#define tag_uid_char (tag_uid:3)
+#define tag_uid_float (tag_uid:4)
+#define tag_uid_string (tag_uid:5)
+#define tag_uid_variant (tag_uid:6)
+#define tag_uid_list (tag_uid:7)
+#define tag_uid_map (tag_uid:8)
+#define tag_uid_list_iterator (tag_uid:9)
+#define tag_uid_map_iterator (tag_uid:10)
+#define tag_uid_ref (tag_uid:11)
+#define tag_uid_task (tag_uid:12)
+#define tag_uid_guard (tag_uid:13)
 
 /*                 */
 /*       AMX       */
