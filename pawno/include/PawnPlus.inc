@@ -289,6 +289,7 @@ native bool:var_set_cell(VariantTag:var, AnyTag:value, const offsets[]={cellmin}
 native bool:var_set_cell_safe(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), tag_id=tagof(value));
 
 native var_tagof(VariantTag:var);
+native tag_uid:var_tag_uid(VariantTag:var);
 native var_sizeof(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
 native bool:var_equal(VariantTag:var1, VariantTag:var2);
 native Variant:var_add(VariantTag:var1, VariantTag:var2);

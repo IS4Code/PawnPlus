@@ -196,6 +196,14 @@ namespace Natives
 		return var->get_tag(amx);
 	}
 
+	// native tag_uid:var_tag_uid(VariantTag:var);
+	static cell AMX_NATIVE_CALL var_tag_uid(AMX *amx, cell *params)
+	{
+		auto var = reinterpret_cast<dyn_object*>(params[1]);
+		if(!variants::pool.contains(var)) return 0;
+		return var->get_tag()->uid;
+	}
+
 	// native var_sizeof(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
 	static cell AMX_NATIVE_CALL var_sizeof(AMX *amx, cell *params)
 	{
@@ -290,6 +298,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_set_cell_safe),
 
 	AMX_DECLARE_NATIVE(var_tagof),
+	AMX_DECLARE_NATIVE(var_tag_uid),
 	AMX_DECLARE_NATIVE(var_sizeof),
 	AMX_DECLARE_NATIVE(var_equal),
 	AMX_DECLARE_NATIVE(var_add),
