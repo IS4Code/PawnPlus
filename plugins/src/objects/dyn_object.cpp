@@ -154,7 +154,7 @@ dyn_object::dyn_object(AMX *amx, const cell *str) : rank(1), tag(tags::find_tag(
 	}
 	array_data = new cell[size + 2];
 	array_data[0] = size + 2;
-	std::memcpy(array_data + 2, str, size * sizeof(cell));
+	std::memcpy(array_data + 1, str, size * sizeof(cell));
 	array_data[size + 1] = 0;
 }
 
