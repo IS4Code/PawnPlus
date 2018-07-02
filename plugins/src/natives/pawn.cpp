@@ -260,8 +260,8 @@ namespace Natives
 		return static_cast<cell>(events::remove_callback(amx, params[1]));
 	}
 
-	// native hook:pawn_hook_native(const function[], const format[], const handler[], const additional_format[], AnyTag:...);
-	static cell AMX_NATIVE_CALL pawn_hook_native(bool post, AMX *amx, cell *params)
+	// native hook:pawn_native_filter(const function[], const format[], bool:output=false, const handler[], const additional_format[], AnyTag:...);
+	static cell AMX_NATIVE_CALL pawn_native_filter(AMX *amx, cell *params)
 	{
 		char *native;
 		amx_StrParam(amx, params[1], native);
@@ -269,38 +269,23 @@ namespace Natives
 		char *native_format;
 		amx_StrParam(amx, params[2], native_format);
 
+		bool post = !!params[3];
+
 		char *fname;
-		amx_StrParam(amx, params[3], fname);
+		amx_StrParam(amx, params[4], fname);
 
 		char *format;
-		amx_StrParam(amx, params[4], format);
+		amx_StrParam(amx, params[5], format);
 
 		if(native == nullptr || fname == nullptr) return -1;
 
 		int ret = amxhook::register_hook(amx, post, native, native_format, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
 		if(ret == -1)
 		{
-			if(post)
-			{
-				logerror(amx, "[PP] pawn_posthook_native: not enough arguments");
-			}else{
-				logerror(amx, "[PP] pawn_prehook_native: not enough arguments");
-			}
+			logerror(amx, "[PP] pawn_set_native_filter: not enough arguments");
 			return 0;
 		}
 		return ret;
-	}
-
-	// native hook:pawn_prehook_native(const function[], const format[], const handler[], const additional_format[], AnyTag:...);
-	static cell AMX_NATIVE_CALL pawn_prehook_native(AMX *amx, cell *params)
-	{
-		return pawn_hook_native(false, amx, params);
-	}
-
-	// native hook:pawn_posthook_native(const function[], const format[], const handler[], const additional_format[], AnyTag:...);
-	static cell AMX_NATIVE_CALL pawn_posthook_native(AMX *amx, cell *params)
-	{
-		return pawn_hook_native(true, amx, params);
 	}
 
 	// native pawn_remove_hook(hook:id);
@@ -354,8 +339,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_call_public),
 	AMX_DECLARE_NATIVE(pawn_register_callback),
 	AMX_DECLARE_NATIVE(pawn_unregister_callback),
-	AMX_DECLARE_NATIVE(pawn_prehook_native),
-	AMX_DECLARE_NATIVE(pawn_posthook_native),
+	AMX_DECLARE_NATIVE(pawn_native_filter),
 	AMX_DECLARE_NATIVE(pawn_remove_hook),
 	AMX_DECLARE_NATIVE(pawn_guard),
 	AMX_DECLARE_NATIVE(pawn_guard_arr),
