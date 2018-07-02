@@ -3,6 +3,7 @@
 #include "modules/strings.h"
 #include "objects/dyn_object.h"
 #include <cstring>
+#include <algorithm>
 
 typedef strings::cell_string cell_string;
 
@@ -533,6 +534,56 @@ namespace Natives
 		}
 		return params[1];
 	}
+
+	static cell to_lower(cell c)
+	{
+		if(65 <= c && c <= 90) return c + 32;
+		return c;
+	}
+
+	static cell to_upper(cell c)
+	{
+		if(97 <= c && c <= 122) return c - 32;
+		return c;
+	}
+
+	// native String:str_to_lower(StringTag:str);
+	static cell AMX_NATIVE_CALL str_to_lower(AMX *amx, cell *params)
+	{
+		auto str = reinterpret_cast<cell_string*>(params[1]);
+		if(!strings::pool.contains(str)) return 0;
+		auto str2 = *str;
+		std::transform(str2.begin(), str2.end(), str2.begin(), to_lower);
+		return reinterpret_cast<cell>(strings::pool.add(std::move(str2), true));
+	}
+
+	// native String:str_to_upper(StringTag:str);
+	static cell AMX_NATIVE_CALL str_to_upper(AMX *amx, cell *params)
+	{
+		auto str = reinterpret_cast<cell_string*>(params[1]);
+		if(!strings::pool.contains(str)) return 0;
+		auto str2 = *str;
+		std::transform(str2.begin(), str2.end(), str2.begin(), to_upper);
+		return reinterpret_cast<cell>(strings::pool.add(std::move(str2), true));
+	}
+
+	// native String:str_set_to_lower(StringTag:str);
+	static cell AMX_NATIVE_CALL str_set_to_lower(AMX *amx, cell *params)
+	{
+		auto str = reinterpret_cast<cell_string*>(params[1]);
+		if(!strings::pool.contains(str)) return 0;
+		std::transform(str->begin(), str->end(), str->begin(), to_lower);
+		return params[1];
+	}
+
+	// native String:str_set_to_upper(StringTag:str);
+	static cell AMX_NATIVE_CALL str_set_to_upper(AMX *amx, cell *params)
+	{
+		auto str = reinterpret_cast<cell_string*>(params[1]);
+		if(!strings::pool.contains(str)) return 0;
+		std::transform(str->begin(), str->end(), str->begin(), to_upper);
+		return params[1];
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -566,12 +617,16 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_split_s),
 	AMX_DECLARE_NATIVE(str_join),
 	AMX_DECLARE_NATIVE(str_join_s),
+	AMX_DECLARE_NATIVE(str_to_lower),
+	AMX_DECLARE_NATIVE(str_to_upper),
 
 	AMX_DECLARE_NATIVE(str_set),
 	AMX_DECLARE_NATIVE(str_append),
 	AMX_DECLARE_NATIVE(str_del),
 	AMX_DECLARE_NATIVE(str_clear),
 	AMX_DECLARE_NATIVE(str_resize),
+	AMX_DECLARE_NATIVE(str_set_to_lower),
+	AMX_DECLARE_NATIVE(str_set_to_upper),
 
 	AMX_DECLARE_NATIVE(str_format),
 	AMX_DECLARE_NATIVE(str_format_s),

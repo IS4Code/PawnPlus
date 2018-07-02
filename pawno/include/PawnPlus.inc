@@ -233,12 +233,16 @@ native List:str_split(StringTag:str, const delims[]);
 native List:str_split_s(StringTag:str, StringTag:delims);
 native String:str_join(List:list, const delim[]);
 native String:str_join_s(List:list, StringTag:delim);
+native String:str_to_lower(StringTag:str);
+native String:str_to_upper(StringTag:str);
 
 native String:str_set(StringTag:target, StringTag:other);
 native String:str_append(StringTag:target, StringTag:other);
 native String:str_del(StringTag:target, start=0, end=cellmax);
 native String:str_clear(StringTag:str);
 native String:str_resize(StringTag:str, size, padding=0);
+native String:str_set_to_lower(StringTag:str);
+native String:str_set_to_upper(StringTag:str);
 
 native String:str_format(const format[], {StringTags,Float,_}:...);
 native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
