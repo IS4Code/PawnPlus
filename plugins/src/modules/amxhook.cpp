@@ -279,6 +279,29 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 				}
 				break;
 			}
+			case 'a':
+			{
+				if(amx != my_amx)
+				{
+					cell amx_addr, *src_addr, *target_addr;
+					amx_GetAddr(amx, param, &src_addr);
+
+					if(argi + 1 >= numargs)
+					{
+						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.name().c_str(), argi, c);
+						return true;
+					}
+					int length = params[2 + argi];
+					amx_Allot(my_amx, length, &amx_addr, &target_addr);
+					std::memcpy(target_addr, src_addr, length * sizeof(cell));
+					storage.push_back(std::make_tuple(target_addr, src_addr, length));
+
+					amx_Push(my_amx, amx_addr);
+				} else {
+					amx_Push(my_amx, param);
+				}
+				break;
+			}
 			case 's':
 			{
 				if(amx != my_amx)
