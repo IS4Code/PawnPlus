@@ -231,7 +231,7 @@ namespace Natives
 		return pawn_call<false>(amx, params);
 	}
 
-	// native callback:pawn_register_callback(const callback[], const function[], const additional_format[], AnyTag:...);
+	// native CallbackHandler:pawn_register_callback(const callback[], const function[], const additional_format[], AnyTag:...);
 	static cell AMX_NATIVE_CALL pawn_register_callback(AMX *amx, cell *params)
 	{
 		char *callback;
@@ -254,13 +254,13 @@ namespace Natives
 		return ret;
 	}
 
-	// native pawn_unregister_callback(callback:id);
+	// native pawn_unregister_callback(CallbackHandler:id);
 	static cell AMX_NATIVE_CALL pawn_unregister_callback(AMX *amx, cell *params)
 	{
 		return static_cast<cell>(events::remove_callback(amx, params[1]));
 	}
 
-	// native hook:pawn_native_filter(const function[], const format[], bool:output=false, const handler[], const additional_format[], AnyTag:...);
+	// native NativeHook:pawn_native_filter(const function[], const format[], bool:output=false, const handler[], const additional_format[], AnyTag:...);
 	static cell AMX_NATIVE_CALL pawn_native_filter(AMX *amx, cell *params)
 	{
 		char *native;
@@ -288,7 +288,7 @@ namespace Natives
 		return ret;
 	}
 
-	// native pawn_remove_hook(hook:id);
+	// native pawn_remove_hook(NativeHook:id);
 	static cell AMX_NATIVE_CALL pawn_remove_hook(AMX *amx, cell *params)
 	{
 		return static_cast<cell>(amxhook::remove_hook(amx, params[1]));

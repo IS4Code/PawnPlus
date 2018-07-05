@@ -44,6 +44,15 @@
 #endif
 #define AnyTag {AnyTags}
 
+#if defined PP_SYNTAX
+#define PP_SYNTAX_AMX_FORKED
+#define PP_SYNTAX_@
+#define PP_SYNTAX_@@
+#define PP_SYNTAX_AWAIT
+#define PP_SYNTAX_YIELD
+#define PP_SYNTAX_THREADED
+#endif
+
 
 /*                 */
 /*  Configuration  */
@@ -72,10 +81,10 @@ native String:pp_entry_s();
 
 native pawn_call_native(const function[], const format[], AnyTag:...);
 native pawn_call_public(const function[], const format[], AnyTag:...);
-native callback:pawn_register_callback(const callback[], const handler[], const additional_format[]="", AnyTag:...);
-native pawn_unregister_callback(callback:id);
-native hook:pawn_native_filter(const function[], const format[], bool:output, const handler[], const additional_format[]="", AnyTag:...);
-native pawn_remove_hook(hook:id);
+native CallbackHandler:pawn_register_callback(const callback[], const handler[], const additional_format[]="", AnyTag:...);
+native pawn_unregister_callback(CallbackHandler:id);
+native NativeHook:pawn_native_filter(const function[], const format[], bool:output, const handler[], const additional_format[]="", AnyTag:...);
+native pawn_remove_hook(NativeHook:id);
 native Guard:pawn_guard(AnyTag:value, tag_id=tagof(value));
 native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 native bool:pawn_guard_valid(Guard:guard);
@@ -174,7 +183,7 @@ enum amx_err
     amx_err_general,
 };
 
-#if !defined PP_NO_ALIASES
+#if defined PP_SYNTAX_AMX_FORKED
 
 #define amx_forked(%0) for(new PP@af:_@pp_amx_forked=PP@af:amx_fork(%0);_@pp_amx_forked;_@pp_amx_forked=PP@af:amx_end_fork())
 stock operator~(PP@af:arr[], count)
@@ -248,13 +257,12 @@ native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
 native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
 native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,Float,_}:...);
 
-#if !defined PP_NO_ALIASES
-
+#if defined PP_SYNTAX_@
 #define @ str_new_static
-#if defined PP_MORE_ALIASES
-#define @@ str_val
 #endif
 
+#if defined PP_SYNTAX_@@
+#define @@ str_val
 #endif
 
 
@@ -717,11 +725,12 @@ native Task:task_all(Task:...);
 native task_await(Task:task);
 native task_yield(AnyTag:value);
 
-#if !defined PP_NO_ALIASES
-
+#if defined PP_SYNTAX_AWAIT
 #define await%9\32;%0; task_await(%0);
-#define yield%9\32;%0; task_yield(%0);
+#endif
 
+#if defined PP_SYNTAX_YIELD
+#define yield%9\32;%0; task_yield(%0);
 #endif
 
 
@@ -743,7 +752,7 @@ native thread_sleep(ms);
 native thread_id(id[], size=sizeof id);
 native String:thread_id_s();
 
-#if !defined PP_NO_ALIASES
+#if defined PP_SYNTAX_THREADED
 
 #define threaded(%0) for(new PP@ts:_@pp_thread_running=PP@ts:(thread_detach(%0)|1);_@pp_thread_running;_@pp_thread_running=PP@ts:(thread_attach()&0))
 stock operator~(PP@ts:arr[], count)
