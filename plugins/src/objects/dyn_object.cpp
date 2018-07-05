@@ -720,10 +720,19 @@ bool dyn_object::operator_eq_tagged(const dyn_object &obj, bool &result) const
 	if(!tag->inherits_from(tag_traits<TagType>::tag_uid)) return false;
 	typedef tag_traits<TagType> tag;
 
-	result = std::equal(begin(), end(), obj.begin(), obj.end(), [](cell v1, cell v2)
+	const cell *begin1 = begin();
+	const cell *end1 = end();
+	const cell *begin2 = obj.begin();
+	const cell *end2 = obj.end();
+	if(end2 - begin2 != end1 - begin1)
 	{
-		return *tag::conv_to(v1) == *tag::conv_to(v2);
-	});
+		result = false;
+	}else{
+		result = std::equal(begin(), end(), obj.begin(), [](cell v1, cell v2)
+		{
+			return *tag::conv_to(v1) == *tag::conv_to(v2);
+		});
+	}
 	return true;
 }
 
