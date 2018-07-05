@@ -1,4 +1,4 @@
-/** PawnPlus v0.6 by IllidanS4 **/
+/** PawnPlus v0.7 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 #if defined _inc_PawnPlus

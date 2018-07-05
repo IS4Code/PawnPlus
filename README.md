@@ -1,4 +1,4 @@
-PawnPlus v0.6
+PawnPlus v0.7
 ==========
 
 _PawnPlus_ extends the possibilities of the Pawn scripting language with new constructs, data types, and programming techniques.
@@ -14,9 +14,7 @@ Download the latest [release](//github.com/IllidanS4/PawnPlus/releases/latest) f
 Include [PawnPlus.inc](pawno/include/PawnPlus.inc) in your Pawn program and you are done.
 
 ## Configuration
-If you don't want to use aliases for native functions, define `PP_NO_ALIASES` before the inclusion. By default, the `@@` alias to `str_val` is disabled due to conflicts with other scripts, but you can enable it with `PP_MORE_ALIASES`.
-
-To disable automatic calling of `str_val` in concatenations and assignments, define `PP_NO_AUTO_STRINGS`.
+This plugin can optionally add a number of syntax features to Pawn like additional statements or operators. These are not available by default due to conflicts with other libraries, but you can use them all if you define `PP_SYNTAX`, or selectively via other definitions. If you are writing a library, it is recommended not to use any configuration definitions.
 
 ## Building
 Use Visual Studio to build the project on Windows, or `make` on Linux.
