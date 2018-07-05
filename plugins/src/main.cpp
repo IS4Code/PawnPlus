@@ -31,7 +31,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 	InitPluginApi(ppData);
 	RegisterPlugin("com.is4.pawnplus.api1", &capi::info);
 
-	Hooks::register_callback();
+	Hooks::Register();
 
 	amx::on_bottom(
 		[](AMX *amx){

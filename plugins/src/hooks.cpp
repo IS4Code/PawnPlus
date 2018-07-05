@@ -544,7 +544,7 @@ void RegisterAmxHook(subhook_t &hook, int index, Func *fnptr)
 	subhook_install(hook);
 }
 
-void Hooks::register_callback()
+void Hooks::Register()
 {
 	RegisterAmxHook(amx_Init_h, PLUGIN_AMX_EXPORT_Init, &Hooks::amx_Init);
 	RegisterAmxHook(amx_Exec_h, PLUGIN_AMX_EXPORT_Exec, &Hooks::amx_Exec);

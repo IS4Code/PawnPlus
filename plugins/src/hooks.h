@@ -10,7 +10,7 @@ int AMXAPI amx_FindPublicOrig(AMX *amx, const char *funcname, int *index);
 
 namespace Hooks
 {
-	void register_callback();
+	void Register();
 	void Unregister();
 	void ToggleStrLen(bool toggle);
 	void ToggleRefArgs(bool toggle);
