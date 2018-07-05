@@ -1,3 +1,4 @@
+#define _SCL_SECURE_NO_WARNINGS
 #include "dyn_object.h"
 #include "dyn_op.h"
 #include "../fixes/linux.h"
@@ -318,7 +319,7 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 		block = array_data + 1;
 		cell data_begin = this->begin() - block, data_end = this->end() - block;
 		begin = 0;
-		end = rank > 2 ? block[0] / sizeof(cell) : data_end;
+		end = rank >= 2 ? block[0] / sizeof(cell) : data_end;
 		for(cell i = 0; i < num_indices; i++)
 		{
 			cell index = indices[i];
@@ -369,7 +370,7 @@ cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices)
 
 	cell *block = array_data + 1;
 	cell data_begin = begin() - block, data_end = end() - block;
-	cell begin = 0, end = rank > 2 ? block[0] / sizeof(cell) : data_end;
+	cell begin = 0, end = rank >= 2 ? block[0] / sizeof(cell) : data_end;
 	for(cell i = 0; i < num_indices; i++)
 	{
 		cell index = indices[i];
@@ -409,7 +410,7 @@ const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) con
 
 	const cell *block = array_data + 1;
 	cell data_begin = begin() - block, data_end = end() - block;
-	cell begin = 0, end = rank > 2 ? block[0] / sizeof(cell) : data_end;
+	cell begin = 0, end = rank >= 2 ? block[0] / sizeof(cell) : data_end;
 	for(cell i = 0; i < num_indices; i++)
 	{
 		cell index = indices[i];
@@ -532,7 +533,7 @@ cell dyn_object::get_size(const cell *indices, cell num_indices) const
 
 	const cell *block = array_data + 1;
 	cell data_begin = begin() - block, data_end = end() - block;
-	cell begin = 0, end = block[0] / sizeof(cell);
+	cell begin = 0, end = rank >= 2 ? block[0] / sizeof(cell) : data_end;
 	bool cells = false;
 	for(cell i = 0; i < num_indices; i++)
 	{
