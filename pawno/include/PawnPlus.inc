@@ -1,4 +1,4 @@
-/** PawnPlus v0.7 by IllidanS4 **/
+/** PawnPlus v0.7.2 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 #if defined _inc_PawnPlus
@@ -124,7 +124,7 @@ enum fork_level
 {
     fork_exec = 0,
     fork_data = 1,
-    fork_script = 2,
+    fork_machine = 2,
 };
 
 native AMX:amx_this();
@@ -139,7 +139,7 @@ native amx_get(Var:var, index=0);
 native amx_sizeof(Var:var);
 native bool:amx_my(Var:var);
 native bool:amx_to_ref(Var:var, ref[1][]);
-native bool:amx_fork(fork_level:level=fork_script, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
+native bool:amx_fork(fork_level:level=fork_machine, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
 native amx_commit(bool:context=true);
 native amx_end_fork();
 /*
