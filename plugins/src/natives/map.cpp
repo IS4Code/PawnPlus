@@ -67,6 +67,20 @@ public:
 		}
 		return 0;
 	}
+
+	// native bool:map_has_key(Map:map, key, ...);
+	template <key_ftype KeyFactory>
+	static cell AMX_NATIVE_CALL map_has_key(AMX *amx, cell *params)
+	{
+		auto ptr = reinterpret_cast<map_t*>(params[1]);
+		if(!map_pool.contains(ptr)) return 0;
+		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
+		if(it != ptr->end())
+		{
+			return 1;
+		}
+		return 0;
+	}
 	
 	// native bool:map_set_cell(Map:map, key, offset, AnyTag:value, ...);
 	template <key_ftype KeyFactory, size_t TagIndex = 0>
@@ -811,6 +825,30 @@ namespace Natives
 		return key_at<2>::map_remove<dyn_func_var>(amx, params);
 	}
 
+	// native bool:map_has_key(Map:map, AnyTag:key, key_tag_id=tagof(key));
+	static cell AMX_NATIVE_CALL map_has_key(AMX *amx, cell *params)
+	{
+		return key_at<2, 3>::map_has_key<dyn_func>(amx, params);
+	}
+
+	// native bool:map_has_arr_key(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
+	static cell AMX_NATIVE_CALL map_has_arr_key(AMX *amx, cell *params)
+	{
+		return key_at<2, 3, 4>::map_has_key<dyn_func_arr>(amx, params);
+	}
+
+	// native bool:map_has_str_key(Map:map, const key[]);
+	static cell AMX_NATIVE_CALL map_has_str_key(AMX *amx, cell *params)
+	{
+		return key_at<2>::map_has_key<dyn_func_str>(amx, params);
+	}
+
+	// native bool:map_has_var_key(Map:map, VariantTag:key);
+	static cell AMX_NATIVE_CALL map_has_var_key(AMX *amx, cell *params)
+	{
+		return key_at<2>::map_has_key<dyn_func_var>(amx, params);
+	}
+
 	// native map_get(Map:map, AnyTag:key, offset=0, key_tag_id=tagof(key));
 	static cell AMX_NATIVE_CALL map_get(AMX *amx, cell *params)
 	{
@@ -1232,6 +1270,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_arr_remove),
 	AMX_DECLARE_NATIVE(map_str_remove),
 	AMX_DECLARE_NATIVE(map_var_remove),
+	AMX_DECLARE_NATIVE(map_has_key),
+	AMX_DECLARE_NATIVE(map_has_arr_key),
+	AMX_DECLARE_NATIVE(map_has_str_key),
+	AMX_DECLARE_NATIVE(map_has_var_key),
 	AMX_DECLARE_NATIVE(map_get),
 	AMX_DECLARE_NATIVE(map_get_arr),
 	AMX_DECLARE_NATIVE(map_get_var),

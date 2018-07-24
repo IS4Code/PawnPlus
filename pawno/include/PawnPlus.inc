@@ -510,6 +510,11 @@ native bool:map_arr_remove(Map:map, const AnyTag:key[], key_size=sizeof(key), ke
 native bool:map_str_remove(Map:map, const key[]);
 native bool:map_var_remove(Map:map, VariantTag:key);
 
+native bool:map_has_key(Map:map, AnyTag:key, key_tag_id=tagof(key));
+native bool:map_has_arr_key(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
+native bool:map_has_str_key(Map:map, const key[]);
+native bool:map_has_var_key(Map:map, VariantTag:key);
+
 native map_get(Map:map, AnyTag:key, offset=0, key_tag_id=tagof(key));
 native map_get_arr(Map:map, AnyTag:key, AnyTag:value[], value_size=sizeof(value), key_tag_id=tagof(key));
 native Variant:map_get_var(Map:map, AnyTag:key, key_tag_id=tagof(key));
