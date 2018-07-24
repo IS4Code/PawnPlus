@@ -11,7 +11,8 @@ cell variants::create(dyn_object &&obj)
 
 dyn_object variants::get(cell ptr)
 {
-	if(ptr != 0) return *reinterpret_cast<dyn_object*>(ptr);
+	auto obj = reinterpret_cast<dyn_object*>(ptr);
+	if(pool.contains(obj)) return *obj;
 	return dyn_object();
 }
 

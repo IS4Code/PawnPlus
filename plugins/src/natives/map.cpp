@@ -59,7 +59,7 @@ public:
 	{
 		auto ptr = reinterpret_cast<map_t*>(params[1]);
 		if(!map_pool.contains(ptr)) return 0;
-		auto it = ptr->find(KeyFactory(amx, KeyIndices...));
+		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
 			ptr->erase(it);
