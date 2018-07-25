@@ -721,14 +721,30 @@ native bool:task_valid(Task:task);
 native Task:task_keep(Task:task, bool:keep=true);
 native task_set_result(Task:task, AnyTag:result);
 native task_get_result(Task:task);
+native task_set_error(Task:task, amx_err:error);
+native amx_err:task_get_error(Task:task);
 native bool:task_completed(Task:task);
+native bool:task_faulted(Task:task);
+native task_state:task_state(Task:task);
 native task_reset(Task:task);
 native Task:task_ticks(ticks);
 native Task:task_ms(interval);
 native Task:task_any(Task:...);
 native Task:task_all(Task:...);
+native task_state:task_wait(Task:task);
+/*
 native task_await(Task:task);
+*/
+stock task_await(Task:task)
+{
+    task_wait(task);
+    return task_get_result(task);
+}
 native task_yield(AnyTag:value);
+
+#define task_state_default (task_state:0)
+#define task_state_completed (task_state:1)
+#define task_state_faulted (task_state:2)
 
 #if defined PP_SYNTAX_AWAIT
 #define await%9\32;%0; task_await(%0);

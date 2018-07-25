@@ -17,15 +17,16 @@ namespace tasks
 			friend class task;
 			friend void tick();
 
-			virtual void invoke(task &t) = 0;
+			virtual void set_completed(task &t) = 0;
+			virtual void set_faulted(task &t) = 0;
 
 		public:
 			virtual ~handler() = default;
 		};
 
 	private:
-		cell _result = 0;
-		bool _completed = false;
+		cell _value = 0;
+		unsigned char _state = 0;
 		bool _keep = false;
 		std::list<std::unique_ptr<handler>> handlers;
 
@@ -34,7 +35,7 @@ namespace tasks
 		{
 
 		}
-		task(cell result) : _completed(true), _result(result)
+		task(cell result) : _state(1), _value(result)
 		{
 
 		}
@@ -42,24 +43,53 @@ namespace tasks
 		{
 			_keep = keep;
 		}
-		cell result() const
+		bool faulted() const
 		{
-			return _result;
+			return _state == 2;
 		}
 		bool completed() const
 		{
-			return _completed;
+			return _state == 1;
+		}
+		cell result() const
+		{
+			if(completed()) return _value;
+			return 0;
+		}
+		cell error() const
+		{
+			if(faulted()) return _value;
+			return 0;
+		}
+		cell state() const
+		{
+			return _state;
+		}
+		bool result_or_error(AMX *amx, cell &result) const
+		{
+			if(completed())
+			{
+				result = _value;
+				return true;
+			}else if(faulted())
+			{
+				amx_RaiseError(amx, _value);
+				return false;
+			}else{
+				return false;
+			}
 		}
 		void reset()
 		{
-			_result = 0;
-			_completed = false;
+			_value = 0;
+			_state = 0;
 			handlers.clear();
 		}
 
 		typedef std::list<std::unique_ptr<handler>>::iterator handler_iterator;
 
 		void set_completed(cell result);
+		void set_faulted(cell error);
 		handler_iterator register_reset(amx::reset &&reset);
 		handler_iterator register_handler(const std::function<void(task&)> &func);
 		handler_iterator register_handler(std::function<void(task&)> &&func);
@@ -83,7 +113,8 @@ namespace tasks
 				owner = _reset.amx.lock();
 			}
 
-			virtual void invoke(task &t) override;
+			virtual void set_completed(task &t) override;
+			virtual void set_faulted(task &t) override;
 		};
 
 		class func_handler : public handler
@@ -101,7 +132,8 @@ namespace tasks
 
 			}
 
-			virtual void invoke(task &t) override;
+			virtual void set_completed(task &t) override;
+			virtual void set_faulted(task &t) override;
 		};
 
 		class task_handler : public handler
@@ -114,7 +146,8 @@ namespace tasks
 
 			}
 
-			virtual void invoke(task &t) override;
+			virtual void set_completed(task &t) override;
+			virtual void set_faulted(task &t) override;
 		};
 	};
 

@@ -27,7 +27,7 @@ namespace tasks
 		return pool.add();
 	}
 
-	void task::reset_handler::invoke(task &t)
+	void task::reset_handler::set_completed(task &t)
 	{
 		if(auto obj = _reset.amx.lock())
 		{
@@ -36,18 +36,30 @@ namespace tasks
 				AMX *amx = obj->get();
 
 				cell retval;
-				_reset.pri = t.result();
+				_reset.pri = t.state();
+				int old_error = amx->error;
 				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &_reset);
+				amx->error = old_error;
 			}
 		}
 	}
 
-	void task::func_handler::invoke(task &t)
+	void task::reset_handler::set_faulted(task &t)
+	{
+		set_completed(t);
+	}
+
+	void task::func_handler::set_completed(task &t)
 	{
 		_func(t);
 	}
 
-	void task::task_handler::invoke(task &t)
+	void task::func_handler::set_faulted(task &t)
+	{
+		_func(t);
+	}
+
+	void task::task_handler::set_completed(task &t)
 	{
 		if(auto task = _task.lock())
 		{
@@ -55,19 +67,45 @@ namespace tasks
 		}
 	}
 
+	void task::task_handler::set_faulted(task &t)
+	{
+		if(auto task = _task.lock())
+		{
+			task->set_faulted(t.error());
+		}
+	}
+
 	void task::set_completed(cell result)
 	{
-		_completed = true;
-		_result = result;
+		_state = 1;
+		_value = result;
 
 		auto handlers = std::move(this->handlers);
 
 		for(auto &handler : handlers)
 		{
-			handler->invoke(*this);
+			handler->set_completed(*this);
 		}
 
-		if(!_keep && _completed)
+		if(!_keep && _state)
+		{
+			pool.remove(this);
+		}
+	}
+
+	void task::set_faulted(cell error)
+	{
+		_state = 2;
+		_value = error;
+
+		auto handlers = std::move(this->handlers);
+
+		for(auto &handler : handlers)
+		{
+			handler->set_faulted(*this);
+		}
+
+		if(!_keep && _state)
 		{
 			pool.remove(this);
 		}
@@ -188,7 +226,7 @@ namespace tasks
 				{
 					auto handler = std::move(pair.second);
 					it = tick_handlers.erase(it);
-					handler->invoke(auto_result);
+					handler->set_completed(auto_result);
 				}else{
 					break;
 				}
@@ -210,7 +248,7 @@ namespace tasks
 				{
 					auto handler = std::move(pair.second);
 					it = timer_handlers.erase(it);
-					handler->invoke(auto_result);
+					handler->set_completed(auto_result);
 				}else{
 					it++;
 				}

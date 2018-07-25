@@ -83,7 +83,11 @@ namespace Natives
 		auto task = reinterpret_cast<tasks::task*>(params[1]);
 		if(tasks::contains(task))
 		{
-			return task->result();
+			cell result;
+			if(task->result_or_error(amx, result))
+			{
+				return result;
+			}
 		}
 		return 0;
 	}
@@ -100,6 +104,33 @@ namespace Natives
 		return 0;
 	}
 
+	// native task_set_error(Task:task, amx_err:error);
+	static cell AMX_NATIVE_CALL task_set_error(AMX *amx, cell *params)
+	{
+		if(params[2] == AMX_ERR_SLEEP || params[2] == AMX_ERR_NONE)
+		{
+			return 0;
+		}
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		if(tasks::contains(task))
+		{
+			task->set_faulted(params[2]);
+			return 1;
+		}
+		return 0;
+	}
+
+	// native amx_err:task_get_error(Task:task);
+	static cell AMX_NATIVE_CALL task_get_error(AMX *amx, cell *params)
+	{
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		if(tasks::contains(task))
+		{
+			return task->error();
+		}
+		return 0;
+	}
+
 	// native bool:task_completed(Task:task);
 	static cell AMX_NATIVE_CALL task_completed(AMX *amx, cell *params)
 	{
@@ -107,6 +138,28 @@ namespace Natives
 		if(tasks::contains(task))
 		{
 			return task->completed();
+		}
+		return 0;
+	}
+
+	// native bool:task_faulted(Task:task);
+	static cell AMX_NATIVE_CALL task_faulted(AMX *amx, cell *params)
+	{
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		if(tasks::contains(task))
+		{
+			return task->faulted();
+		}
+		return 0;
+	}
+
+	// native task_state:task_state(Task:task);
+	static cell AMX_NATIVE_CALL task_state(AMX *amx, cell *params)
+	{
+		auto task = reinterpret_cast<tasks::task*>(params[1]);
+		if(tasks::contains(task))
+		{
+			return task->state();
 		}
 		return 0;
 	}
@@ -191,14 +244,14 @@ namespace Natives
 		return reinterpret_cast<cell>(created.get());
 	}
 
-	// native task_await(Task:task);
-	static cell AMX_NATIVE_CALL task_await(AMX *amx, cell *params)
+	// native task_state:task_wait(Task:task);
+	static cell AMX_NATIVE_CALL task_wait(AMX *amx, cell *params)
 	{
 		auto task = reinterpret_cast<tasks::task*>(params[1]);
 		
 		if(auto lock = tasks::find(task))
 		{
-			if(!lock->completed())
+			if(!lock->completed() && !lock->faulted())
 			{
 				amx::object owner;
 				auto &info = tasks::get_extra(amx, owner);
@@ -207,7 +260,7 @@ namespace Natives
 				amx_RaiseError(amx, AMX_ERR_SLEEP);
 				return SleepReturnAwait;
 			}else{
-				return task->result();
+				return task->state();
 			}
 		}
 		return 0;
@@ -240,11 +293,15 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_get_result),
 	AMX_DECLARE_NATIVE(task_reset),
 	AMX_DECLARE_NATIVE(task_completed),
+	AMX_DECLARE_NATIVE(task_faulted),
+	AMX_DECLARE_NATIVE(task_state),
+	AMX_DECLARE_NATIVE(task_set_error),
+	AMX_DECLARE_NATIVE(task_get_error),
 	AMX_DECLARE_NATIVE(task_ticks),
 	AMX_DECLARE_NATIVE(task_ms),
 	AMX_DECLARE_NATIVE(task_any),
 	AMX_DECLARE_NATIVE(task_all),
-	AMX_DECLARE_NATIVE(task_await),
+	AMX_DECLARE_NATIVE(task_wait),
 	AMX_DECLARE_NATIVE(task_yield),
 };
 
