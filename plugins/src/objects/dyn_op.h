@@ -230,7 +230,7 @@ struct tag_traits<TagType[]>
 	static constexpr const cell tag_uid = tag_traits<TagType>::tag_uid;
 	static constexpr const char format_spec = 'a';
 
-	static auto conv_to(cell v)
+	static auto conv_to(cell v) -> decltype(tag_traits<TagType>::conv_to(v))
 	{
 		return tag_traits<TagType>::conv_to(v);
 	}
