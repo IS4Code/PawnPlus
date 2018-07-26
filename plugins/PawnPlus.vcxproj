@@ -135,6 +135,7 @@
     <ClCompile Include="src\amxinfo.cpp" />
     <ClCompile Include="src\capi.cpp" />
     <ClCompile Include="src\context.cpp" />
+    <ClCompile Include="src\exec.cpp" />
     <ClCompile Include="src\hooks.cpp" />
     <ClCompile Include="src\modules\amxhook.cpp" />
     <ClCompile Include="src\modules\amxutils.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="src\amxinfo.h" />
     <ClInclude Include="src\capi.h" />
     <ClInclude Include="src\context.h" />
+    <ClInclude Include="src\exec.h" />
     <ClInclude Include="src\fixes\linux.h" />
     <ClInclude Include="src\hooks.h" />
     <ClInclude Include="src\main.h" />

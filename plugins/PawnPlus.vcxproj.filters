@@ -109,6 +109,9 @@
     <ClCompile Include="src\modules\amxutils.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
+    <ClCompile Include="src\exec.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -244,6 +247,9 @@
     </ClInclude>
     <ClInclude Include="src\modules\amxutils.h">
       <Filter>src\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\exec.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

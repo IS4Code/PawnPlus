@@ -1,5 +1,6 @@
 #include "threads.h"
 #include "hooks.h"
+#include "exec.h"
 #include "objects/reset.h"
 #include "modules/tasks.h"
 #include "utils/thread.h"
