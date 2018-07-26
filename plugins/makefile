@@ -3,7 +3,7 @@ GCC = gcc -m32 -Ilib -Isrc -fno-stack-protector -nodefaultlibs
 LINK = $(GCC)
 PP_OUTFILE = "./PawnPlus.so"
 
-COMPILE_FLAGS = -c -O3 -fpack-struct=1 -fPIC -w -DLINUX -pthread
+COMPILE_FLAGS = -c -O3 -fPIC -w -DLINUX -pthread
 
 PawnPlus = -D PawnPlus $(COMPILE_FLAGS)
 
