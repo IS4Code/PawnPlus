@@ -9,6 +9,7 @@
 #include "modules/events.h"
 #include "modules/tasks.h"
 #include "modules/amxutils.h"
+#include "fixes/linux.h"
 
 #include <cstring>
 
@@ -44,6 +45,13 @@ struct forked_context : public amx::extra
 		}
 	}
 };
+
+amx_code_info::amx_code_info(AMX *amx) : amx::extra(amx)
+{
+	auto amxhdr = (AMX_HEADER*)amx->base;
+	code = std::make_unique<unsigned char[]>(amxhdr->size - amxhdr->cod);
+	std::memcpy(code.get(), amx->base + amxhdr->cod, amxhdr->size - amxhdr->cod);
+}
 
 int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset, bool forked)
 {

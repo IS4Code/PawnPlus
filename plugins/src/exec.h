@@ -11,12 +11,7 @@ struct amx_code_info : public amx::extra
 {
 	std::unique_ptr<unsigned char[]> code;
 
-	amx_code_info(AMX *amx) : amx::extra(amx)
-	{
-		auto amxhdr = (AMX_HEADER*)amx->base;
-		code = std::make_unique<unsigned char[]>(amxhdr->size - amxhdr->cod);
-		std::memcpy(code.get(), amx->base + amxhdr->cod, amxhdr->size - amxhdr->cod);
-	}
+	amx_code_info(AMX *amx);
 };
 
 #endif
