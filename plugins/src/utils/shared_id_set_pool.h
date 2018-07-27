@@ -76,6 +76,11 @@ namespace aux
 			return reinterpret_cast<cell>(value);
 		}
 
+		cell get_id(const std::shared_ptr<Type> &value) const
+		{
+			return reinterpret_cast<cell>(value.get());
+		}
+
 		bool contains(const Type *value) const
 		{
 			return data.find(const_cast<Type*>(value)) != data.cend();

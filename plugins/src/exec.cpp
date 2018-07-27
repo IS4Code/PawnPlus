@@ -3,7 +3,6 @@
 #include "main.h"
 #include "context.h"
 #include "hooks.h"
-#include "pools.h"
 
 #include "modules/threads.h"
 #include "modules/events.h"
@@ -354,7 +353,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						{
 							var->fill(0);
 						}
-						amx->pri = reinterpret_cast<cell>(var);
+						amx->pri = amx_var_pool.get_id(var);
 					} else {
 						amx->pri = 0;
 					}

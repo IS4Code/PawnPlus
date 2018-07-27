@@ -2,7 +2,7 @@
 #define DYN_OP_H_INCLUDED
 
 #include "dyn_object.h"
-#include "pools.h"
+#include "modules/containers.h"
 #include "modules/variants.h"
 #include "modules/strings.h"
 #include "modules/tags.h"
@@ -401,12 +401,12 @@ struct tag_traits<list_t*>
 	static list_t *clone(list_t *v)
 	{
 		if(!list_pool.contains(v)) return nullptr;
-		list_t *l = list_pool.add();
+		auto l = list_pool.add();
 		for(auto &&obj : *v)
 		{
 			l->push_back(obj.clone());
 		}
-		return l;
+		return l.get();
 	}
 };
 
@@ -442,12 +442,12 @@ struct tag_traits<map_t*>
 	static map_t *clone(map_t *v)
 	{
 		if(!map_pool.contains(v)) return nullptr;
-		map_t *m = map_pool.add();
+		auto m = map_pool.add();
 		for(auto &&pair : *v)
 		{
 			m->insert(std::make_pair(pair.first.clone(), pair.second.clone()));
 		}
-		return m;
+		return m.get();
 	}
 };
 

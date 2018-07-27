@@ -1,9 +1,7 @@
 #include "natives.h"
-#include "pools.h"
+#include "modules/containers.h"
 #include "modules/variants.h"
 #include <iterator>
-
-aux::id_set_pool<map_t> map_pool;
 
 template <size_t... KeyIndices>
 class key_at
@@ -430,7 +428,7 @@ namespace Natives
 	{
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) return 0;
-		map_t *m = map_pool.add();
+		auto m = map_pool.add();
 		for(auto &&pair : *ptr)
 		{
 			m->insert(std::make_pair(pair.first.clone(), pair.second.clone()));

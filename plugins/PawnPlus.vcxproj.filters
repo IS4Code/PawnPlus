@@ -112,6 +112,9 @@
     <ClCompile Include="src\exec.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\containers.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -233,9 +236,6 @@
     <ClInclude Include="src\utils\linear_pool.h">
       <Filter>src\utils</Filter>
     </ClInclude>
-    <ClInclude Include="src\pools.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="src\modules\guards.h">
       <Filter>src\modules</Filter>
     </ClInclude>
@@ -250,6 +250,9 @@
     </ClInclude>
     <ClInclude Include="src\utils\shared_id_set_pool.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\containers.h">
+      <Filter>src\modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,9 +1,7 @@
 #include "natives.h"
-#include "pools.h"
+#include "modules/containers.h"
 #include "modules/variants.h"
 #include <vector>
-
-aux::id_set_pool<list_t> list_pool;
 
 template <size_t... Indices>
 class value_at
@@ -175,7 +173,7 @@ namespace Natives
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) return 0;
-		list_t *l = list_pool.add();
+		auto l = list_pool.add();
 		for(auto &&obj : *ptr)
 		{
 			l->push_back(obj.clone());

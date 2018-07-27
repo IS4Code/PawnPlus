@@ -1,6 +1,8 @@
 #include "amxutils.h"
 #include <cstring>
 
+aux::id_set_pool<amx_var_info> amx_var_pool;
+
 cell amx_var_info::free()
 {
 	if(auto lock = _amx.lock())

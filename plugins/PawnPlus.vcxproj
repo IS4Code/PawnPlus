@@ -139,6 +139,7 @@
     <ClCompile Include="src\hooks.cpp" />
     <ClCompile Include="src\modules\amxhook.cpp" />
     <ClCompile Include="src\modules\amxutils.cpp" />
+    <ClCompile Include="src\modules\containers.cpp" />
     <ClCompile Include="src\modules\events.cpp" />
     <ClCompile Include="src\modules\guards.cpp" />
     <ClCompile Include="src\modules\strings.cpp" />
@@ -194,6 +195,7 @@
     <ClInclude Include="src\main.h" />
     <ClInclude Include="src\modules\amxhook.h" />
     <ClInclude Include="src\modules\amxutils.h" />
+    <ClInclude Include="src\modules\containers.h" />
     <ClInclude Include="src\modules\events.h" />
     <ClInclude Include="src\modules\guards.h" />
     <ClInclude Include="src\modules\strings.h" />
@@ -208,7 +210,6 @@
     <ClInclude Include="src\objects\reset.h" />
     <ClInclude Include="src\objects\stored_param.h" />
     <ClInclude Include="src\pluginapi.h" />
-    <ClInclude Include="src\pools.h" />
     <ClInclude Include="src\utils\func_pool.h" />
     <ClInclude Include="src\utils\optional.h" />
     <ClInclude Include="src\utils\linear_pool.h" />

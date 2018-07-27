@@ -4,8 +4,6 @@
 #include "modules/amxutils.h"
 #include "utils/id_set_pool.h"
 
-aux::id_set_pool<amx_var_info> amx_var_pool;
-
 namespace Natives
 {
 	// native AMX:amx_this();
