@@ -1,11 +1,11 @@
 #include "guards.h"
 #include "context.h"
 
-#include "utils/set_pool.h"
+#include "utils/id_set_pool.h"
 
 struct guards_extra : public amx::extra
 {
-	aux::set_pool<dyn_object> pool;
+	aux::id_set_pool<dyn_object> pool;
 
 	guards_extra(AMX *amx) : amx::extra(amx)
 	{
@@ -35,6 +35,19 @@ dyn_object *guards::add(AMX *amx, dyn_object &&obj)
 	auto &ctx = amx::get_context(amx, owner);
 	auto &guards = ctx.get_extra<guards_extra>();
 	return guards.pool.add(std::move(obj));
+}
+
+cell guards::get_id(AMX *amx, const dyn_object *obj)
+{
+	return reinterpret_cast<cell>(obj);
+}
+
+bool guards::get_by_id(AMX *amx, cell id, dyn_object *&obj)
+{
+	amx::object owner;
+	auto &ctx = amx::get_context(amx, owner);
+	auto &guards = ctx.get_extra<guards_extra>();
+	return guards.pool.get_by_id(id, obj);
 }
 
 bool guards::contains(AMX *amx, const dyn_object *obj)

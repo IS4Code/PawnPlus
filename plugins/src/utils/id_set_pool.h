@@ -1,7 +1,8 @@
-#ifndef SET_POOL_H_INCLUDED
-#define SET_POOL_H_INCLUDED
+#ifndef ID_SET_POOL_H_INCLUDED
+#define ID_SET_POOL_H_INCLUDED
 
 #include "fixes/linux.h"
+#include "sdk/amx/amx.h"
 #include <memory>
 #include <unordered_set>
 #include <exception>
@@ -9,7 +10,7 @@
 namespace aux
 {
 	template <class Type>
-	class set_pool
+	class id_set_pool
 	{
 		std::unordered_set<Type*> data;
 
@@ -74,6 +75,21 @@ namespace aux
 			return false;
 		}
 
+		bool get_by_id(cell id, Type *&value)
+		{
+			value = reinterpret_cast<Type*>(id);
+			if(data.find(value) != data.end())
+			{
+				return true;
+			}
+			return false;
+		}
+
+		cell get_id(const Type *value) const
+		{
+			return reinterpret_cast<cell>(value);
+		}
+
 		bool contains(const Type *value) const
 		{
 			return data.find(const_cast<Type*>(value)) != data.cend();
@@ -103,17 +119,17 @@ namespace aux
 			return std::unique_ptr<Type>(ptr);
 		}
 
-		set_pool()
+		id_set_pool()
 		{
 
 		}
 
-		set_pool(set_pool<Type> &&obj) : data(std::move(obj.data))
+		id_set_pool(id_set_pool<Type> &&obj) : data(std::move(obj.data))
 		{
 			obj.data.clear();
 		}
 
-		set_pool<Type> &operator=(set_pool<Type> &&obj)
+		id_set_pool<Type> &operator=(id_set_pool<Type> &&obj)
 		{
 			if(this != &obj)
 			{
@@ -123,7 +139,7 @@ namespace aux
 			return *this;
 		}
 
-		~set_pool()
+		~id_set_pool()
 		{
 			clear();
 		}

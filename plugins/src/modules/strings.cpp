@@ -204,8 +204,11 @@ void add_format(strings::cell_string &buf, const cell *begin, const cell *end, c
 		break;
 		case 'S':
 		{
-			auto str = reinterpret_cast<cell_string*>(*arg);
-			buf.append(&(*str)[0], str->size());
+			cell_string *str;
+			if(pool.get_by_id(*arg, str))
+			{
+				buf.append(&(*str)[0], str->size());
+			}
 		}
 		break;
 		case 'q':
@@ -217,8 +220,11 @@ void add_format(strings::cell_string &buf, const cell *begin, const cell *end, c
 		break;
 		case 'Q':
 		{
-			auto str = reinterpret_cast<cell_string*>(*arg);
-			add_query(buf, &(*str)[0], str->size());
+			cell_string *str;
+			if(pool.get_by_id(*arg, str))
+			{
+				add_query(buf, &(*str)[0], str->size());
+			}
 		}
 		break;
 		case 'd':

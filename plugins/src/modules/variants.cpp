@@ -6,13 +6,16 @@ object_pool<dyn_object> variants::pool;
 cell variants::create(dyn_object &&obj)
 {
 	if(obj.empty()) return 0;
-	return reinterpret_cast<cell>(pool.add(std::move(obj), true));
+	return pool.get_id(pool.add(std::move(obj), true));
 }
 
 dyn_object variants::get(cell ptr)
 {
-	auto obj = reinterpret_cast<dyn_object*>(ptr);
-	if(pool.contains(obj)) return *obj;
+	dyn_object *obj;
+	if(pool.get_by_id(ptr, obj))
+	{
+		return *obj;
+	}
 	return dyn_object();
 }
 
@@ -51,12 +54,13 @@ dyn_object dyn_func_str(AMX *amx, cell amx_addr)
 
 dyn_object dyn_func_str_s(AMX *amx, cell str)
 {
-	if(str == 0)
+	strings::cell_string *ptr;
+	if(strings::pool.get_by_id(str, ptr))
 	{
-		return dyn_object(&str, 1, tags::find_tag(tags::tag_char));
+		return dyn_object(ptr->data(), ptr->size() + 1, tags::find_tag(tags::tag_char));
 	}
-	auto ptr = reinterpret_cast<strings::cell_string*>(str);
-	return dyn_object(ptr->data(), ptr->size() + 1, tags::find_tag(tags::tag_char));
+	str = 0;
+	return dyn_object(&str, 1, tags::find_tag(tags::tag_char));
 }
 
 dyn_object dyn_func_var(AMX *amx, cell ptr)
@@ -169,7 +173,7 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj)
 	auto addr = obj.get_cell_addr(nullptr, 0);
 	if(addr)
 	{
-		return reinterpret_cast<cell>(strings::create(addr, true, false, false));
+		return strings::pool.get_id(strings::create(addr, true, false, false));
 	}else{
 		return 0;
 	}
@@ -181,7 +185,7 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_
 	auto addr = obj.get_cell_addr(offsets_addr, offsets_size);
 	if(addr)
 	{
-		return reinterpret_cast<cell>(strings::create(addr, true, false, false));
+		return strings::pool.get_id(strings::create(addr, true, false, false));
 	}else{
 		return 0;
 	}
@@ -193,7 +197,7 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell unused)
 	auto addr = obj.get_cell_addr(nullptr, 0);
 	if(addr)
 	{
-		return reinterpret_cast<cell>(strings::create(addr, true, false, false));
+		return strings::pool.get_id(strings::create(addr, true, false, false));
 	}else{
 		return 0;
 	}
@@ -206,7 +210,7 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_
 	auto addr = obj.get_cell_addr(offsets_addr, offsets_size);
 	if(addr)
 	{
-		return reinterpret_cast<cell>(strings::create(addr, true, false, false));
+		return strings::pool.get_id(strings::create(addr, true, false, false));
 	}else{
 		return 0;
 	}

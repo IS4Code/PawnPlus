@@ -2,9 +2,9 @@
 #include "amxinfo.h"
 #include "context.h"
 #include "modules/amxutils.h"
-#include "utils/set_pool.h"
+#include "utils/id_set_pool.h"
 
-aux::set_pool<amx_var_info> amx_var_pool;
+aux::id_set_pool<amx_var_info> amx_var_pool;
 
 namespace Natives
 {
@@ -17,20 +17,20 @@ namespace Natives
 	// native Var:amx_var(&AnyTag:var);
 	static cell AMX_NATIVE_CALL amx_var(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(amx_var_pool.add(amx_var_info(amx, params[1], 1)));
+		return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx, params[1], 1)));
 	}
 
 	// native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
 	static cell AMX_NATIVE_CALL amx_var_arr(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(amx_var_pool.add(amx_var_info(amx, params[1], params[2])));
+		return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx, params[1], params[2])));
 	}
 
 	// native amx_set(Var:var, AnyTag:value, index=0);
 	static cell AMX_NATIVE_CALL amx_set(AMX *amx, cell *params)
 	{
-		auto info = reinterpret_cast<amx_var_info*>(params[1]);
-		if(amx_var_pool.contains(info))
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(params[1], info))
 		{
 			return info->set(params[3], params[2]);
 		}
@@ -40,8 +40,8 @@ namespace Natives
 	// native amx_get(Var:var, index=0);
 	static cell AMX_NATIVE_CALL amx_get(AMX *amx, cell *params)
 	{
-		auto info = reinterpret_cast<amx_var_info*>(params[1]);
-		if(amx_var_pool.contains(info))
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(params[1], info))
 		{
 			return info->get(params[2]);
 		}
@@ -51,26 +51,26 @@ namespace Natives
 	// native bool:amx_valid(Var:var);
 	static cell AMX_NATIVE_CALL amx_valid(AMX *amx, cell *params)
 	{
-		auto info = reinterpret_cast<amx_var_info*>(params[1]);
-		if(amx_var_pool.contains(info))
-		{
-			return info->valid();
-		}
-		return 0;
+		amx_var_info *info;
+		return amx_var_pool.get_by_id(params[1], info);
 	}
 
 	// native bool:amx_delete(Var:var);
 	static cell AMX_NATIVE_CALL amx_delete(AMX *amx, cell *params)
 	{
-		auto info = reinterpret_cast<amx_var_info*>(params[1]);
-		return amx_var_pool.remove(info);
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(params[1], info))
+		{
+			return amx_var_pool.remove(info);
+		}
+		return 0;
 	}
 
 	// native amx_sizeof(Var:var);
 	static cell AMX_NATIVE_CALL amx_sizeof(AMX *amx, cell *params)
 	{
-		auto info = reinterpret_cast<amx_var_info*>(params[1]);
-		if(amx_var_pool.contains(info))
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(params[1], info))
 		{
 			return info->size();
 		}
@@ -80,8 +80,8 @@ namespace Natives
 	// native bool:amx_my(Var:var);
 	static cell AMX_NATIVE_CALL amx_my(AMX *amx, cell *params)
 	{
-		auto info = reinterpret_cast<amx_var_info*>(params[1]);
-		if(amx_var_pool.contains(info))
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(params[1], info))
 		{
 			return info->from_amx(amx);
 		}
@@ -91,8 +91,8 @@ namespace Natives
 	// native bool:amx_to_ref(Var:var, ref[1][]);
 	static cell AMX_NATIVE_CALL amx_to_ref(AMX *amx, cell *params)
 	{
-		auto info = reinterpret_cast<amx_var_info*>(params[1]);
-		if(amx_var_pool.contains(info) && info->from_amx(amx))
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(params[1], info) && info->from_amx(amx))
 		{
 			cell *addr;
 			amx_GetAddr(amx, params[2], &addr);
@@ -149,8 +149,8 @@ namespace Natives
 	// native bool:amx_free(Var:var);
 	static cell AMX_NATIVE_CALL amx_free(AMX *amx, cell *params)
 	{
-		auto info = reinterpret_cast<amx_var_info*>(params[1]);
-		if(amx_var_pool.contains(info))
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(params[1], info))
 		{
 			if(info->from_amx(amx))
 			{

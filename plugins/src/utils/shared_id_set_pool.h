@@ -1,14 +1,15 @@
-#ifndef SHARED_SET_POOL_H_INCLUDED
-#define SHARED_SET_POOL_H_INCLUDED
+#ifndef SHARED_ID_SET_POOL_H_INCLUDED
+#define SHARED_ID_SET_POOL_H_INCLUDED
 
 #include "fixes/linux.h"
+#include "sdk/amx/amx.h"
 #include <memory>
 #include <unordered_map>
 
 namespace aux
 {
 	template <class Type>
-	class shared_set_pool
+	class shared_id_set_pool
 	{
 		std::unordered_map<Type*, std::shared_ptr<Type>> data;
 
@@ -49,6 +50,32 @@ namespace aux
 			data.clear();
 		}
 
+		bool get_by_id(cell id, Type *&value)
+		{
+			value = reinterpret_cast<Type*>(id);
+			if(data.find(value) != data.end())
+			{
+				return true;
+			}
+			return false;
+		}
+
+		bool get_by_id(cell id, std::shared_ptr<Type> &value)
+		{
+			auto it = data.find(reinterpret_cast<Type*>(id));
+			if(it != data.end())
+			{
+				value = it->second;
+				return true;
+			}
+			return false;
+		}
+
+		cell get_id(const Type *value) const
+		{
+			return reinterpret_cast<cell>(value);
+		}
+
 		bool contains(const Type *value) const
 		{
 			return data.find(const_cast<Type*>(value)) != data.cend();
@@ -64,17 +91,17 @@ namespace aux
 			return {};
 		}
 
-		shared_set_pool()
+		shared_id_set_pool()
 		{
 
 		}
 
-		shared_set_pool(shared_set_pool<Type> &&obj) : data(std::move(obj.data))
+		shared_id_set_pool(shared_id_set_pool<Type> &&obj) : data(std::move(obj.data))
 		{
 			obj.data.clear();
 		}
 
-		shared_set_pool<Type> &operator=(shared_set_pool<Type> &&obj)
+		shared_id_set_pool<Type> &operator=(shared_id_set_pool<Type> &&obj)
 		{
 			if(this != &obj)
 			{

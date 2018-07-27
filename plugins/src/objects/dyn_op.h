@@ -318,12 +318,14 @@ struct tag_traits<strings::cell_string*>
 
 	static strings::cell_string *conv_to(cell v)
 	{
-		return reinterpret_cast<strings::cell_string*>(v);
+		strings::cell_string *ptr;
+		if(!strings::pool.get_by_id(v, ptr)) return nullptr;
+		return ptr;
 	}
 
 	static cell conv_from(strings::cell_string *v)
 	{
-		return reinterpret_cast<cell>(v);
+		return strings::pool.get_id(v);
 	}
 
 	static void free(strings::cell_string *v)
@@ -345,12 +347,14 @@ struct tag_traits<dyn_object*>
 
 	static dyn_object *conv_to(cell v)
 	{
-		return reinterpret_cast<dyn_object*>(v);
+		dyn_object *ptr;
+		if(!variants::pool.get_by_id(v, ptr)) return nullptr;
+		return ptr;
 	}
 
 	static cell conv_from(dyn_object *v)
 	{
-		return reinterpret_cast<cell>(v);
+		return variants::pool.get_id(v);
 	}
 
 	static void free(dyn_object *v)
@@ -374,12 +378,14 @@ struct tag_traits<list_t*>
 
 	static list_t *conv_to(cell v)
 	{
-		return reinterpret_cast<list_t*>(v);
+		list_t *ptr;
+		if(!list_pool.get_by_id(v, ptr)) return nullptr;
+		return ptr;
 	}
 
 	static cell conv_from(list_t *v)
 	{
-		return reinterpret_cast<cell>(v);
+		return list_pool.get_id(v);
 	}
 
 	static void free(list_t *v)
@@ -412,12 +418,14 @@ struct tag_traits<map_t*>
 
 	static map_t *conv_to(cell v)
 	{
-		return reinterpret_cast<map_t*>(v);
+		map_t *ptr;
+		if(!map_pool.get_by_id(v, ptr)) return nullptr;
+		return ptr;
 	}
 
 	static cell conv_from(map_t *v)
 	{
-		return reinterpret_cast<cell>(v);
+		return map_pool.get_id(v);
 	}
 
 	static void free(map_t *v)

@@ -3,7 +3,7 @@
 #include "modules/variants.h"
 #include <vector>
 
-aux::set_pool<list_t> list_pool;
+aux::id_set_pool<list_t> list_pool;
 
 template <size_t... Indices>
 class value_at
@@ -17,8 +17,8 @@ public:
 	static cell AMX_NATIVE_CALL list_add(AMX *amx, cell *params)
 	{
 		if(params[3] < -1) return -1;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return -1;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return -1;
 		if(params[3] == -1)
 		{
 			ptr->push_back(Factory(amx, params[Indices]...));
@@ -37,8 +37,8 @@ public:
 	static cell AMX_NATIVE_CALL list_set(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return 0;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		(*ptr)[params[2]] = Factory(amx, params[Indices]...);
 		return 1;
@@ -49,8 +49,8 @@ public:
 	static cell AMX_NATIVE_CALL list_get(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return 0;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return -1;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		return Factory(amx, (*ptr)[params[2]], params[Indices]...);
 	}
@@ -61,8 +61,8 @@ template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL list_set_cell(AMX *amx, cell *params)
 {
 	if(params[2] < 0 || params[3] < 0) return 0;
-	auto ptr = reinterpret_cast<list_t*>(params[1]);
-	if(!list_pool.contains(ptr)) return 0;
+	list_t *ptr;
+	if(!list_pool.get_by_id(params[1], ptr)) return -1;
 	if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 	auto &obj = (*ptr)[params[2]];
 	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
@@ -74,7 +74,7 @@ namespace Natives
 	// native List:list_new();
 	static cell AMX_NATIVE_CALL list_new(AMX *amx, cell *params)
 	{
-		return reinterpret_cast<cell>(list_pool.add());
+		return list_pool.get_id(list_pool.add());
 	}
 
 	// native List:list_new_arr(AnyTag:values[], size=sizeof(values), tag_id=tagof(values));
@@ -88,7 +88,7 @@ namespace Natives
 		{
 			ptr->push_back(dyn_object(amx, arr[i], params[3]));
 		}
-		return reinterpret_cast<cell>(ptr);
+		return list_pool.get_id(ptr);
 	}
 
 	// native List:list_new_args(tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...);
@@ -107,7 +107,7 @@ namespace Natives
 			}
 			ptr->push_back(dyn_object(amx, *addr, params[1]));
 		}
-		return reinterpret_cast<cell>(ptr);
+		return list_pool.get_id(ptr);
 	}
 
 	// native List:list_new_args_str(arg0[], ...);
@@ -121,7 +121,7 @@ namespace Natives
 			amx_GetAddr(amx, param, &addr);
 			ptr->push_back(dyn_object(amx, addr));
 		}
-		return reinterpret_cast<cell>(ptr);
+		return list_pool.get_id(ptr);
 	}
 
 	// native List:list_new_args_var(VariantTag:arg0, VariantTag:...);
@@ -140,28 +140,29 @@ namespace Natives
 			}
 			ptr->push_back(variants::get(*addr));
 		}
-		return reinterpret_cast<cell>(ptr);
+		return list_pool.get_id(ptr);
 	}
 
 	// native bool:list_valid(List:list);
 	static cell AMX_NATIVE_CALL list_valid(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		return list_pool.contains(ptr);
+		list_t *ptr;
+		return list_pool.get_by_id(params[1], ptr);
 	}
 
 	// native bool:list_delete(List:list);
 	static cell AMX_NATIVE_CALL list_delete(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		return list_pool.remove(ptr);
 	}
 
 	// native bool:list_delete_deep(List:list);
 	static cell AMX_NATIVE_CALL list_delete_deep(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return 0;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		for(auto &obj : *ptr)
 		{
 			obj.free();
@@ -172,29 +173,29 @@ namespace Natives
 	// native List:list_clone(List:list);
 	static cell AMX_NATIVE_CALL list_clone(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return 0;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		list_t *l = list_pool.add();
 		for(auto &&obj : *ptr)
 		{
 			l->push_back(obj.clone());
 		}
-		return reinterpret_cast<cell>(l);
+		return list_pool.get_id(l);
 	}
 
 	// native list_size(List:list);
 	static cell AMX_NATIVE_CALL list_size(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return -1;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return -1;
 		return static_cast<cell>(ptr->size());
 	}
 
 	// native list_clear(List:list);
 	static cell AMX_NATIVE_CALL list_clear(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return 0;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		ptr->clear();
 		return 1;
 	}
@@ -227,9 +228,10 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_add_list(AMX *amx, cell *params)
 	{
 		if(params[3] < -1) return -1;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		auto ptr2 = reinterpret_cast<list_t*>(params[2]);
-		if(!list_pool.contains(ptr) || !list_pool.contains(ptr2)) return -1;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return -1;
+		list_t *ptr2;
+		if(!list_pool.get_by_id(params[2], ptr2)) return -1;
 		if(params[3] == -1)
 		{
 			size_t index = ptr->size();
@@ -247,8 +249,8 @@ namespace Natives
 	// native list_add_args(tag_id=tagof(arg0), List:list, AnyTag:arg0, AnyTag:...);
 	static cell AMX_NATIVE_CALL list_add_args(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<list_t*>(params[2]);
-		if(!list_pool.contains(ptr)) return -1;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[2], ptr)) return -1;
 		cell numargs = (params[0] / sizeof(cell)) - 2;
 		for(cell arg = 0; arg < numargs; arg++)
 		{
@@ -267,8 +269,8 @@ namespace Natives
 	// native list_add_args_str(List:list, arg0[], ...);
 	static cell AMX_NATIVE_CALL list_add_args_str(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return -1;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 1;
 		for(cell arg = 0; arg < numargs; arg++)
 		{
@@ -282,8 +284,8 @@ namespace Natives
 	// native list_add_args_var(List:list, VariantTag:arg0, VariantTag:...);
 	static cell AMX_NATIVE_CALL list_add_args_var(AMX *amx, cell *params)
 	{
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return -1;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return -1;
 		cell numargs = params[0] / sizeof(cell) - 1;
 		for(cell arg = 0; arg < numargs; arg++)
 		{
@@ -303,8 +305,8 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_remove(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return 0;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		ptr->erase(ptr->begin() + params[1]);
 		return 1;
@@ -380,8 +382,8 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_tagof(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return 0;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
 		return obj.get_tag(amx);
@@ -391,8 +393,8 @@ namespace Natives
 	static cell AMX_NATIVE_CALL list_sizeof(AMX *amx, cell *params)
 	{
 		if(params[2] < 0) return 0;
-		auto ptr = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(ptr)) return 0;
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		auto &obj = (*ptr)[params[2]];
 		return obj.get_size();

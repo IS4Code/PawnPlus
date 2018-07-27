@@ -19,8 +19,8 @@ public:
 	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL var_get(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var)) return 0;
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		return Factory(amx, *var, params[Indices]...);
 	}
 };
@@ -78,8 +78,8 @@ namespace Natives
 	// native GlobalVariant:var_to_global(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_to_global(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var)) return 0;
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		variants::pool.move_to_global(var);
 		return params[1];
 	}
@@ -87,8 +87,8 @@ namespace Natives
 	// native Variant:var_to_local(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_to_local(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var)) return 0;
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		variants::pool.move_to_local(var);
 		return params[1];
 	}
@@ -96,15 +96,16 @@ namespace Natives
 	// native bool:var_delete(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_delete(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		return variants::pool.remove(var);
 	}
 
 	// native bool:var_delete_deep(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_delete_deep(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var)) return 0;
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		var->free();
 		return variants::pool.remove(var);
 	}
@@ -112,15 +113,16 @@ namespace Natives
 	// native bool:var_valid(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_valid(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		return variants::pool.contains(var);
+		dyn_object *var;
+		return variants::pool.get_by_id(params[1], var);
 	}
 
 	// native Variant:var_clone(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_clone(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		return reinterpret_cast<cell>(variants::pool.clone(var));
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		return variants::pool.get_id(variants::pool.clone(var));
 	}
 
 	// native var_get(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
@@ -168,8 +170,8 @@ namespace Natives
 	// native bool:var_set_cell(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
 	static cell AMX_NATIVE_CALL var_set_cell(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var)) return 0;
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		if(!var->is_array()) return 0;
 		cell offsets_size = params[4];
 		cell *offsets_addr = get_offsets(amx, params[3], offsets_size);
@@ -179,8 +181,8 @@ namespace Natives
 	// native bool:var_set_cell_safe(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), tag_id=tagof(value));
 	static cell AMX_NATIVE_CALL var_set_cell_safe(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var)) return 0;
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		if(!var->is_array()) return 0;
 		if(!var->tag_assignable(amx, params[5])) return 0;
 		cell offsets_size = params[4];
@@ -191,24 +193,24 @@ namespace Natives
 	// native var_tagof(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_tagof(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var)) return 0;
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		return var->get_tag(amx);
 	}
 
 	// native tag_uid:var_tag_uid(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_tag_uid(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var)) return 0;
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		return var->get_tag()->uid;
 	}
 
 	// native var_sizeof(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
 	static cell AMX_NATIVE_CALL var_sizeof(AMX *amx, cell *params)
 	{
-		auto var = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var)) return 0;
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
 		cell offsets_size = params[3];
 		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
 		return var->get_size(offsets_addr, offsets_size);
@@ -217,9 +219,8 @@ namespace Natives
 	// native bool:var_equal(VariantTag:var1, VariantTag:var2);
 	static cell AMX_NATIVE_CALL var_equal(AMX *amx, cell *params)
 	{
-		auto var1 = reinterpret_cast<dyn_object*>(params[1]);
-		auto var2 = reinterpret_cast<dyn_object*>(params[2]);
-		if((var1 != nullptr && !variants::pool.contains(var1)) || (var2 != nullptr && !variants::pool.contains(var2))) return 0;
+		dyn_object *var1, *var2;
+		if((!variants::pool.get_by_id(params[1], var1) && var1 != nullptr) || (!variants::pool.get_by_id(params[2], var2) && var2 != nullptr)) return 0;
 		if(var1 == nullptr || var1->empty()) return var2 == nullptr || var2->empty();
 		if(var2 == nullptr) return 0;
 		return *var1 == *var2;
@@ -229,10 +230,10 @@ namespace Natives
 	template <dyn_object (dyn_object::*op)(const dyn_object&) const>
 	static cell AMX_NATIVE_CALL var_op(AMX *amx, cell *params)
 	{
-		auto var1 = reinterpret_cast<dyn_object*>(params[1]);
-		if(!variants::pool.contains(var1)) return 0;
-		auto var2 = reinterpret_cast<dyn_object*>(params[2]);
-		if(!variants::pool.contains(var2)) return 0;
+		dyn_object *var1;
+		if(!variants::pool.get_by_id(params[1], var1)) return 0;
+		dyn_object *var2;
+		if(!variants::pool.get_by_id(params[2], var2)) return 0;
 		auto var = (var1->*op)(*var2);
 		if(var.empty()) return 0;
 		return variants::create(std::move(var));

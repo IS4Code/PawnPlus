@@ -163,6 +163,29 @@ void object_pool<ObjType>::clear_tmp()
 	tmp_object_list.clear();
 }
 
+
+template <class ObjType>
+bool object_pool<ObjType>::get_by_id(cell id, object_ptr &obj)
+{
+	obj = reinterpret_cast<object_ptr>(id);
+
+	if(tmp_object_list.find(obj) != tmp_object_list.end())
+	{
+		return true;
+	}
+	if(object_list.find(obj) != object_list.end())
+	{
+		return true;
+	}
+	return false;
+}
+
+template <class ObjType>
+cell object_pool<ObjType>::get_id(const_object_ptr obj) const
+{
+	return reinterpret_cast<cell>(obj);
+}
+
 template <class ObjType>
 bool object_pool<ObjType>::contains(const_object_ptr obj) const
 {

@@ -9,22 +9,20 @@
 
 namespace tasks
 {
+	class handler
+	{
+		friend class task;
+		friend void tick();
+
+		virtual void set_completed(task &t) = 0;
+		virtual void set_faulted(task &t) = 0;
+
+	public:
+		virtual ~handler() = default;
+	};
+
 	class task
 	{
-	public:
-		class handler
-		{
-			friend class task;
-			friend void tick();
-
-			virtual void set_completed(task &t) = 0;
-			virtual void set_faulted(task &t) = 0;
-
-		public:
-			virtual ~handler() = default;
-		};
-
-	private:
 		cell _value = 0;
 		unsigned char _state = 0;
 		bool _keep = false;
@@ -94,61 +92,6 @@ namespace tasks
 		handler_iterator register_handler(const std::function<void(task&)> &func);
 		handler_iterator register_handler(std::function<void(task&)> &&func);
 		void unregister_handler(const handler_iterator &it);
-
-		static std::shared_ptr<task> add();
-		static std::shared_ptr<task> add_tick_task(cell ticks);
-		static std::shared_ptr<task> add_timer_task(cell interval);
-		static void register_tick(cell ticks, amx::reset &&reset);
-		static void register_timer(cell interval, amx::reset &&reset);
-
-	private:
-		class reset_handler : public handler
-		{
-			amx::reset _reset;
-			amx::object owner;
-
-		public:
-			reset_handler(amx::reset &&reset) : _reset(std::move(reset))
-			{
-				owner = _reset.amx.lock();
-			}
-
-			virtual void set_completed(task &t) override;
-			virtual void set_faulted(task &t) override;
-		};
-
-		class func_handler : public handler
-		{
-			std::function<void(task&)> _func;
-
-		public:
-			func_handler(const std::function<void(task&)> &func) : _func(func)
-			{
-
-			}
-
-			func_handler(std::function<void(task&)> &&func) : _func(std::move(func))
-			{
-
-			}
-
-			virtual void set_completed(task &t) override;
-			virtual void set_faulted(task &t) override;
-		};
-
-		class task_handler : public handler
-		{
-			std::weak_ptr<task> _task;
-
-		public:
-			task_handler(std::weak_ptr<task> task) : _task(task)
-			{
-
-			}
-
-			virtual void set_completed(task &t) override;
-			virtual void set_faulted(task &t) override;
-		};
 	};
 
 	struct extra : amx::extra
@@ -163,6 +106,14 @@ namespace tasks
 		}
 	};
 
+	std::shared_ptr<task> add();
+	std::shared_ptr<task> add_tick_task(cell ticks);
+	std::shared_ptr<task> add_timer_task(cell interval);
+	cell get_id(const task *ptr);
+	bool get_by_id(cell id, task *&ptr);
+	bool get_by_id(cell id, std::shared_ptr<task> &ptr);
+	void register_tick(cell ticks, amx::reset &&reset);
+	void register_timer(cell interval, amx::reset &&reset);
 	bool contains(const task *ptr);
 	bool remove(task *ptr);
 

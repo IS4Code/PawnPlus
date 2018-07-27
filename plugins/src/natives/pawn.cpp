@@ -1,9 +1,11 @@
 #include "natives.h"
 #include "amxinfo.h"
 #include "hooks.h"
+#include "pools.h"
 #include "modules/events.h"
 #include "modules/amxhook.h"
 #include "modules/strings.h"
+#include "modules/variants.h"
 #include "modules/guards.h"
 #include "objects/dyn_object.h"
 #include <memory>
@@ -121,52 +123,74 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 				case 'S':
 				{
 					amx_GetAddr(amx, param, &addr);
-					auto ptr = reinterpret_cast<strings::cell_string*>(*addr);
-					size_t size = ptr->size();
-					amx_Allot(amx, size + 1, &param, &addr);
-					std::memcpy(addr, ptr->c_str(), size * sizeof(cell));
-					addr[size] = 0;
+					strings::cell_string *ptr;
+					if(strings::pool.get_by_id(*addr, ptr))
+					{
+						size_t size = ptr->size();
+						amx_Allot(amx, size + 1, &param, &addr);
+						std::memcpy(addr, ptr->c_str(), size * sizeof(cell));
+						addr[size] = 0;
+					}else{
+						amx_Allot(amx, 1, &param, &addr);
+						addr[0] = 0;
+					}
 					stack.push(param);
 					break;
 				}
 				case 'L':
 				{
 					amx_GetAddr(amx, param, &addr);
-					auto ptr = reinterpret_cast<std::vector<dyn_object>*>(*addr);
-					for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+					list_t *ptr;
+					if(list_pool.get_by_id(*addr, ptr))
 					{
-						cell addr = it->store(amx);
-						storage[&*it] = addr;
-						stack.push(addr);
+						for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+						{
+							cell addr = it->store(amx);
+							storage[&*it] = addr;
+							stack.push(addr);
+						}
+						cell fmt_value;
+						amx_Allot(amx, ptr->size() + 1, &fmt_value, &addr);
+						for(auto it = ptr->begin(); it != ptr->end(); it++)
+						{
+							*(addr++) = it->get_specifier();
+						}
+						*addr = 0;
+						stack.push(fmt_value);
+					}else{
+						cell fmt_value;
+						amx_Allot(amx, 1, &fmt_value, &addr);
+						addr[0] = 0;
+						stack.push(fmt_value);
 					}
-					cell fmt_value;
-					amx_Allot(amx, ptr->size() + 1, &fmt_value, &addr);
-					for(auto it = ptr->begin(); it != ptr->end(); it++)
-					{
-						*(addr++) = it->get_specifier();
-					}
-					*addr = 0;
-					stack.push(fmt_value);
 					break;
 				}
 				case 'l':
 				{
 					amx_GetAddr(amx, param, &addr);
-					auto ptr = reinterpret_cast<std::vector<dyn_object>*>(*addr);
-					for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+					list_t *ptr;
+					if(list_pool.get_by_id(*addr, ptr))
 					{
-						cell addr = it->store(amx);
-						storage[&*it] = addr;
-						stack.push(addr);
+						for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+						{
+							cell addr = it->store(amx);
+							storage[&*it] = addr;
+							stack.push(addr);
+						}
 					}
 					break;
 				}
 				case 'v':
 				{
 					amx_GetAddr(amx, param, &addr);
-					auto ptr = reinterpret_cast<dyn_object*>(*addr);
-					param = ptr->store(amx);
-					storage[ptr] = param;
+					dyn_object *ptr;
+					if(variants::pool.get_by_id(*addr, ptr))
+					{
+						param = ptr->store(amx);
+						storage[ptr] = param;
+					}else{
+						param = 0;
+					}
 					stack.push(param);
 					break;
 				}
@@ -302,7 +326,7 @@ namespace Natives
 		{
 			return 0;
 		}
-		return reinterpret_cast<cell>(guards::add(amx, std::move(obj)));
+		return guards::get_id(amx, guards::add(amx, std::move(obj)));
 	}
 
 	// native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
@@ -315,21 +339,25 @@ namespace Natives
 		{
 			return 0;
 		}
-		return reinterpret_cast<cell>(guards::add(amx, std::move(obj)));
+		return guards::get_id(amx, guards::add(amx, std::move(obj)));
 	}
 
 	// native bool:pawn_guard_valid(Guard:guard);
 	static cell AMX_NATIVE_CALL pawn_guard_valid(AMX *amx, cell *params)
 	{
-		auto obj = reinterpret_cast<dyn_object*>(params[1]);
-		return guards::contains(amx, obj);
+		dyn_object *obj;
+		return guards::get_by_id(amx, params[1], obj);
 	}
 
 	// native bool:pawn_guard_free(Guard:guard);
 	static cell AMX_NATIVE_CALL pawn_guard_free(AMX *amx, cell *params)
 	{
-		auto obj = reinterpret_cast<dyn_object*>(params[1]);
-		return guards::free(amx, obj);
+		dyn_object *obj;
+		if(guards::get_by_id(amx, params[1], obj))
+		{
+			return guards::free(amx, obj);
+		}
+		return 0;
 	}
 }
 

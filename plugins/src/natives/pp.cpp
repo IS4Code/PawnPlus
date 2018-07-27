@@ -82,17 +82,17 @@ namespace Natives
 		
 		if(index == AMX_EXEC_CONT)
 		{
-			return reinterpret_cast<cell>(strings::create("#cont", true));
+			return strings::pool.get_id(strings::create("#cont", true));
 		}else if(index == AMX_EXEC_MAIN)
 		{
-			return reinterpret_cast<cell>(strings::create("#main", true));
+			return strings::pool.get_id(strings::create("#main", true));
 		}else{
 			int len;
 			amx_NameLength(amx, &len);
 			char *func_name = static_cast<char*>(alloca(len + 1));
 			if(amx_GetPublic(amx, index, func_name) == AMX_ERR_NONE)
 			{
-				return reinterpret_cast<cell>(strings::create(std::string(func_name), true));
+				return strings::pool.get_id(strings::create(std::string(func_name), true));
 			}else{
 				return 0;
 			}

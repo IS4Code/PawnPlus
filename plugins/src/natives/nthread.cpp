@@ -51,7 +51,7 @@ namespace Natives
 	{
 		std::ostringstream buf;
 		buf << std::this_thread::get_id();
-		return reinterpret_cast<cell>(strings::create(buf.str(), true));
+		return strings::pool.get_id(strings::create(buf.str(), true));
 	}
 }
 

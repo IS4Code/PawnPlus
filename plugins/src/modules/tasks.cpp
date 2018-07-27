@@ -1,7 +1,7 @@
 #include "tasks.h"
 #include "exec.h"
 
-#include "utils/shared_set_pool.h"
+#include "utils/shared_id_set_pool.h"
 #include "sdk/amx/amx.h"
 #include <utility>
 #include <chrono>
@@ -10,11 +10,59 @@
 
 namespace tasks
 {
-	aux::shared_set_pool<task> pool;
+	class reset_handler : public handler
+	{
+		amx::reset _reset;
+		amx::object owner;
+
+	public:
+		reset_handler(amx::reset &&reset) : _reset(std::move(reset))
+		{
+			owner = _reset.amx.lock();
+		}
+
+		virtual void set_completed(task &t) override;
+		virtual void set_faulted(task &t) override;
+	};
+
+	class func_handler : public handler
+	{
+		std::function<void(task&)> _func;
+
+	public:
+		func_handler(const std::function<void(task&)> &func) : _func(func)
+		{
+
+		}
+
+		func_handler(std::function<void(task&)> &&func) : _func(std::move(func))
+		{
+
+		}
+
+		virtual void set_completed(task &t) override;
+		virtual void set_faulted(task &t) override;
+	};
+
+	class task_handler : public handler
+	{
+		std::weak_ptr<task> _task;
+
+	public:
+		task_handler(std::weak_ptr<task> task) : _task(task)
+		{
+
+		}
+
+		virtual void set_completed(task &t) override;
+		virtual void set_faulted(task &t) override;
+	};
+
+	aux::shared_id_set_pool<task> pool;
 
 	ucell tick_count = 0;
-	std::list<std::pair<ucell, std::unique_ptr<task::handler>>> tick_handlers;
-	std::list<std::pair<std::chrono::system_clock::time_point, std::unique_ptr<task::handler>>> timer_handlers;
+	std::list<std::pair<ucell, std::unique_ptr<handler>>> tick_handlers;
+	std::list<std::pair<std::chrono::system_clock::time_point, std::unique_ptr<handler>>> timer_handlers;
 
 	tasks::extra &get_extra(AMX *amx, amx::object &owner)
 	{
@@ -22,12 +70,12 @@ namespace tasks
 		return ctx.get_extra<extra>();
 	}
 
-	std::shared_ptr<task> task::add()
+	std::shared_ptr<task> add()
 	{
 		return pool.add();
 	}
 
-	void task::reset_handler::set_completed(task &t)
+	void reset_handler::set_completed(task &t)
 	{
 		if(auto obj = _reset.amx.lock())
 		{
@@ -44,22 +92,22 @@ namespace tasks
 		}
 	}
 
-	void task::reset_handler::set_faulted(task &t)
+	void reset_handler::set_faulted(task &t)
 	{
 		set_completed(t);
 	}
 
-	void task::func_handler::set_completed(task &t)
+	void func_handler::set_completed(task &t)
 	{
 		_func(t);
 	}
 
-	void task::func_handler::set_faulted(task &t)
+	void func_handler::set_faulted(task &t)
 	{
 		_func(t);
 	}
 
-	void task::task_handler::set_completed(task &t)
+	void task_handler::set_completed(task &t)
 	{
 		if(auto task = _task.lock())
 		{
@@ -67,7 +115,7 @@ namespace tasks
 		}
 	}
 
-	void task::task_handler::set_faulted(task &t)
+	void task_handler::set_faulted(task &t)
 	{
 		if(auto task = _task.lock())
 		{
@@ -149,7 +197,7 @@ namespace tasks
 		}
 	}
 
-	std::shared_ptr<task> task::add_tick_task(cell ticks)
+	std::shared_ptr<task> add_tick_task(cell ticks)
 	{
 		if(ticks == 0)
 		{
@@ -164,7 +212,7 @@ namespace tasks
 		return task;
 	}
 
-	std::shared_ptr<task> task::add_timer_task(cell interval)
+	std::shared_ptr<task> add_timer_task(cell interval)
 	{
 		if(interval == 0)
 		{
@@ -179,13 +227,28 @@ namespace tasks
 		return task;
 	}
 
-	void task::register_tick(cell ticks, amx::reset &&reset)
+	cell get_id(const task *ptr)
+	{
+		return pool.get_id(ptr);
+	}
+
+	bool get_by_id(cell id, task *&ptr)
+	{
+		return pool.get_by_id(id, ptr);
+	}
+
+	bool get_by_id(cell id, std::shared_ptr<task> &ptr)
+	{
+		return pool.get_by_id(id, ptr);
+	}
+
+	void register_tick(cell ticks, amx::reset &&reset)
 	{
 		ucell time = tick_count + (ucell)ticks;
 		insert_sorted(tick_handlers, time, std::unique_ptr<handler>(new reset_handler(std::move(reset))));
 	}
 
-	void task::register_timer(cell interval, amx::reset &&reset)
+	void register_timer(cell interval, amx::reset &&reset)
 	{
 		auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
 		insert_sorted(timer_handlers, time, std::unique_ptr<handler>(new reset_handler(std::move(reset))));

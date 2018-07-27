@@ -1,7 +1,7 @@
 #ifndef OBJECT_POOL_H_INCLUDED
 #define OBJECT_POOL_H_INCLUDED
 
-#include "utils/set_pool.h"
+#include "utils/id_set_pool.h"
 #include "sdk/amx/amx.h"
 #include <vector>
 #include <unordered_map>
@@ -17,7 +17,7 @@ public:
 	typedef decltype(&const_object_ptr()->operator[](0)) const_inner_ptr;
 
 private:
-	typedef aux::set_pool<ObjType> list_type;
+	typedef aux::id_set_pool<ObjType> list_type;
 	list_type object_list;
 	list_type tmp_object_list;
 	std::unordered_map<const_inner_ptr, const_object_ptr> inner_cache;
@@ -35,6 +35,8 @@ public:
 	bool remove(object_ptr obj);
 	object_ptr clone(const_object_ptr obj);
 	void clear_tmp();
+	bool get_by_id(cell id, object_ptr &obj);
+	cell get_id(const_object_ptr obj) const;
 	bool contains(const_object_ptr obj) const;
 	object_ptr get(AMX *amx, cell addr);
 	size_t local_size() const;

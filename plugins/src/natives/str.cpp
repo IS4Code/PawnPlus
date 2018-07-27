@@ -16,7 +16,7 @@ namespace Natives
 		amx_GetAddr(amx, params[1], &addr);
 		int flags = params[2];
 		auto str = strings::create(addr, true, flags & 1, flags & 2);
-		return reinterpret_cast<cell>(str);
+		return strings::pool.get_id(str);
 	}
 
 	// native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=str_preserve);
@@ -26,7 +26,7 @@ namespace Natives
 		amx_GetAddr(amx, params[1], &addr);
 		int flags = params[3];
 		auto str = strings::create(addr, true, static_cast<size_t>(params[2]), false, flags & 1, flags & 2);
-		return reinterpret_cast<cell>(str);
+		return strings::pool.get_id(str);
 	}
 
 	// native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
@@ -38,37 +38,37 @@ namespace Natives
 		cell size = (addr[0] & 0xFF000000) ? params[3] : params[3] - 1;
 		if(size < 0) size = 0;
 		auto str = strings::create(addr, true, static_cast<size_t>(size), true, flags & 1, flags & 2);
-		return reinterpret_cast<cell>(str);
+		return strings::pool.get_id(str);
 	}
 
 	// native String:str_new_buf(size);
 	static cell AMX_NATIVE_CALL str_new_buf(AMX *amx, cell *params)
 	{
 		cell size = params[1];
-		return reinterpret_cast<cell>(strings::pool.add(cell_string(size - 1, 0), true));
+		return strings::pool.get_id(strings::pool.add(cell_string(size - 1, 0), true));
 	}
 
 	// native AmxString:str_addr(StringTag:str);
 	static cell AMX_NATIVE_CALL str_addr(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(str != nullptr && !strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
 		return strings::pool.get_address(amx, str);
 	}
 
 	// native AmxStringBuffer:str_buf_addr(StringTag:str);
 	static cell AMX_NATIVE_CALL str_buf_addr(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(str != nullptr && !strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
 		return strings::pool.get_inner_address(amx, str);
 	}
 
 	// native GlobalString:str_to_global(StringTag:str);
 	static cell AMX_NATIVE_CALL str_to_global(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		strings::pool.move_to_global(str);
 		return params[1];
 	}
@@ -76,8 +76,8 @@ namespace Natives
 	// native String:str_to_local(StringTag:str);
 	static cell AMX_NATIVE_CALL str_to_local(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		strings::pool.move_to_local(str);
 		return params[1];
 	}
@@ -85,56 +85,57 @@ namespace Natives
 	// native bool:str_delete(StringTag:str);
 	static cell AMX_NATIVE_CALL str_delete(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		return strings::pool.remove(str);
 	}
 
 	// native bool:str_valid(StringTag:str);
 	static cell AMX_NATIVE_CALL str_valid(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		return strings::pool.contains(str);
+		cell_string *str;
+		return strings::pool.get_by_id(params[1], str);
 	}
 
 	// native String:str_clone(StringTag:str);
 	static cell AMX_NATIVE_CALL str_clone(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		return reinterpret_cast<cell>(strings::pool.clone(str));
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
+		return strings::pool.get_id(strings::pool.clone(str));
 	}
 
 
 	// native String:str_cat(StringTag:str1, StringTag:str2);
 	static cell AMX_NATIVE_CALL str_cat(AMX *amx, cell *params)
 	{
-		auto str1 = reinterpret_cast<cell_string*>(params[1]);
-		auto str2 = reinterpret_cast<cell_string*>(params[2]);
-		if((str1 != nullptr && !strings::pool.contains(str1)) || (str2 != nullptr && !strings::pool.contains(str2)))
+		cell_string *str1, *str2;
+		if((!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) || (!strings::pool.get_by_id(params[2], str2) && str2 != nullptr))
 		{
 			return 0;
 		}
 		if(str1 == nullptr && str2 == nullptr)
 		{
-			return reinterpret_cast<cell>(strings::pool.add(true));
+			return strings::pool.get_id(strings::pool.add(true));
 		}
 		if(str1 == nullptr)
 		{
-			return reinterpret_cast<cell>(strings::pool.add(cell_string(*str2), true));
+			return strings::pool.get_id(strings::pool.add(cell_string(*str2), true));
 		}
 		if(str2 == nullptr)
 		{
-			return reinterpret_cast<cell>(strings::pool.add(cell_string(*str1), true));
+			return strings::pool.get_id(strings::pool.add(cell_string(*str1), true));
 		}
 
 		auto str = *str1 + *str2;
-		return reinterpret_cast<cell>(strings::pool.add(std::move(str), true));
+		return strings::pool.get_id(strings::pool.add(std::move(str), true));
 	}
 
 	// native String:str_val(AnyTag:val, tag=tagof(value));
 	static cell AMX_NATIVE_CALL str_val(AMX *amx, cell *params)
 	{
 		dyn_object obj{amx, params[1], params[2]};
-		return reinterpret_cast<cell>(strings::pool.add(obj.to_string(), true));
+		return strings::pool.get_id(strings::pool.add(obj.to_string(), true));
 	}
 
 	// native String:str_val_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
@@ -143,7 +144,7 @@ namespace Natives
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
 		dyn_object obj{amx, addr, params[2], params[3]};
-		return reinterpret_cast<cell>(strings::pool.add(obj.to_string(), true));
+		return strings::pool.get_id(strings::pool.add(obj.to_string(), true));
 	}
 	static cell AMX_NATIVE_CALL str_split_base(AMX *amx, cell_string *str, const cell_string &delims)
 	{
@@ -175,14 +176,18 @@ namespace Natives
 			}
 		}
 
-		return reinterpret_cast<cell>(list);
+		return list_pool.get_id(list);
 	}
 
 	// native List:str_split(StringTag:str, const delims[]);
 	static cell AMX_NATIVE_CALL str_split(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
+		if(str == nullptr)
+		{
+			return list_pool.get_id(list_pool.add());
+		}
 		cell *addr;
 		amx_GetAddr(amx, params[2], &addr);
 		cell_string delims(addr);
@@ -192,10 +197,14 @@ namespace Natives
 	// native List:str_split_s(StringTag:str, StringTag:delims);
 	static cell AMX_NATIVE_CALL str_split_s(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
-		auto delims = reinterpret_cast<cell_string*>(params[2]);
-		if(delims != nullptr && !strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
+		cell_string *delims;
+		if(!strings::pool.get_by_id(params[2], delims) && delims != nullptr) return 0;
+		if(str == nullptr)
+		{
+			return list_pool.get_id(list_pool.add());
+		}
 		if(delims == nullptr)
 		{
 			return str_split_base(amx, str, cell_string());
@@ -219,14 +228,14 @@ namespace Natives
 			str->append(obj.to_string());
 		}
 
-		return reinterpret_cast<cell>(str);
+		return strings::pool.get_id(str);
 	}
 
 	// native String:str_join(List:list, const delim[]);
 	static cell AMX_NATIVE_CALL str_join(AMX *amx, cell *params)
 	{
-		auto list = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(list)) return 0;
+		list_t *list;
+		if(!list_pool.get_by_id(params[1], list)) return 0;
 		cell *addr;
 		amx_GetAddr(amx, params[2], &addr);
 		cell_string delim(addr);
@@ -236,10 +245,10 @@ namespace Natives
 	// native String:str_join_s(List:list, StringTag:delim);
 	static cell AMX_NATIVE_CALL str_join_s(AMX *amx, cell *params)
 	{
-		auto list = reinterpret_cast<list_t*>(params[1]);
-		if(!list_pool.contains(list)) return 0;
-		auto delim = reinterpret_cast<cell_string*>(params[2]);
-		if(delim != nullptr && !strings::pool.contains(delim)) return 0;
+		list_t *list;
+		if(!list_pool.get_by_id(params[1], list)) return 0;
+		cell_string *delim;
+		if(!strings::pool.get_by_id(params[1], delim) && delim != nullptr) return 0;
 		if(delim == nullptr)
 		{
 			return str_join_base(amx, list, cell_string());
@@ -251,8 +260,8 @@ namespace Natives
 	// native str_len(StringTag:str);
 	static cell AMX_NATIVE_CALL str_len(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		return static_cast<cell>(str->size());
 	}
 
@@ -264,8 +273,8 @@ namespace Natives
 		cell *addr;
 		amx_GetAddr(amx, params[2], &addr);
 
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(str != nullptr && !strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
 
 		if(str == nullptr)
 		{
@@ -296,8 +305,8 @@ namespace Natives
 	// native str_getc(StringTag:str, pos);
 	static cell AMX_NATIVE_CALL str_getc(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0xFFFFFF00;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0xFFFFFF00;
 
 		if(strings::clamp_pos(*str, params[2]))
 		{
@@ -309,8 +318,8 @@ namespace Natives
 	// native str_setc(StringTag:str, pos, value);
 	static cell AMX_NATIVE_CALL str_setc(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0xFFFFFF00;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0xFFFFFF00;
 
 		if(strings::clamp_pos(*str, params[2]))
 		{
@@ -324,10 +333,10 @@ namespace Natives
 	// native String:str_set(StringTag:target, StringTag:other);
 	static cell AMX_NATIVE_CALL str_set(AMX *amx, cell *params)
 	{
-		auto str1 = reinterpret_cast<cell_string*>(params[1]);
-		auto str2 = reinterpret_cast<cell_string*>(params[2]);
-		if(!strings::pool.contains(str1)) return 0;
-		if(str2 != nullptr && !strings::pool.contains(str2)) return 0;
+		cell_string *str1;
+		if(!strings::pool.get_by_id(params[1], str1)) return 0;
+		cell_string *str2;
+		if(!strings::pool.get_by_id(params[2], str2) && str2 != nullptr) return 0;
 
 		if(str2 == nullptr)
 		{
@@ -341,10 +350,10 @@ namespace Natives
 	// native String:str_append(StringTag:target, StringTag:other);
 	static cell AMX_NATIVE_CALL str_append(AMX *amx, cell *params)
 	{
-		auto str1 = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str1)) return 0;
-		auto str2 = reinterpret_cast<cell_string*>(params[2]);
-		if(str2 != nullptr && !strings::pool.contains(str2)) return 0;
+		cell_string *str1;
+		if(!strings::pool.get_by_id(params[1], str1)) return 0;
+		cell_string *str2;
+		if(!strings::pool.get_by_id(params[2], str2) && str2 != nullptr) return 0;
 		if(str2 != nullptr)
 		{
 			str1->append(*str2);
@@ -355,8 +364,8 @@ namespace Natives
 	// native String:str_del(StringTag:target, start=0, end=cellmax);
 	static cell AMX_NATIVE_CALL str_del(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 
 		if(strings::clamp_range(*str, params[2], params[3]))
 		{
@@ -371,14 +380,14 @@ namespace Natives
 	// native String:str_sub(StringTag:str, start=0, end=cellmax);
 	static cell AMX_NATIVE_CALL str_sub(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(str != nullptr && !strings::pool.contains(str)) return 0;
-		if(str == nullptr) return reinterpret_cast<cell>(strings::pool.add(true));
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
+		if(str == nullptr) return strings::pool.get_id(strings::pool.add(true));
 
 		if(strings::clamp_range(*str, params[2], params[3]))
 		{
 			auto substr = str->substr(params[2], params[3] - params[2]);
-			return reinterpret_cast<cell>(strings::pool.add(std::move(substr), true));
+			return strings::pool.get_id(strings::pool.add(std::move(substr), true));
 		}
 		return 0;
 	}
@@ -386,10 +395,10 @@ namespace Natives
 	// native bool:str_cmp(StringTag:str1, StringTag:str2);
 	static cell AMX_NATIVE_CALL str_cmp(AMX *amx, cell *params)
 	{
-		auto str1 = reinterpret_cast<cell_string*>(params[1]);
-		auto str2 = reinterpret_cast<cell_string*>(params[2]);
-		if(str1 != nullptr && !strings::pool.contains(str1)) return 0;
-		if(str2 != nullptr && !strings::pool.contains(str2)) return 0;
+		cell_string *str1;
+		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) return 0;
+		cell_string *str2;
+		if(!strings::pool.get_by_id(params[2], str2) && str2 != nullptr) return 0;
 
 		if(str1 == nullptr && str2 == nullptr) return 1;
 		if(str1 == nullptr)
@@ -406,8 +415,8 @@ namespace Natives
 	// native bool:str_empty(StringTag:str);
 	static cell AMX_NATIVE_CALL str_empty(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(str != nullptr && !strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
 		if(str == nullptr) return 1;
 		return str->empty();
 	}
@@ -415,10 +424,10 @@ namespace Natives
 	// native bool:str_equal(StringTag:str1, StringTag:str2);
 	static cell AMX_NATIVE_CALL str_equal(AMX *amx, cell *params)
 	{
-		auto str1 = reinterpret_cast<cell_string*>(params[1]);
-		auto str2 = reinterpret_cast<cell_string*>(params[2]);
-		if(str1 != nullptr && !strings::pool.contains(str1)) return 0;
-		if(str2 != nullptr && !strings::pool.contains(str2)) return 0;
+		cell_string *str1;
+		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) return 0;
+		cell_string *str2;
+		if(!strings::pool.get_by_id(params[2], str2) && str2 != nullptr) return 0;
 
 		if(str1 == nullptr && str2 == nullptr) return 1;
 		if(str1 == nullptr)
@@ -435,8 +444,8 @@ namespace Natives
 	// native str_findc(StringTag:str, value, offset=0);
 	static cell AMX_NATIVE_CALL str_findc(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(str != nullptr && !strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
 		if(str == nullptr) return -1;
 
 		strings::clamp_pos(*str, params[3]);
@@ -446,11 +455,10 @@ namespace Natives
 	// native str_find(StringTag:str, StringTag:value, offset=0);
 	static cell AMX_NATIVE_CALL str_find(AMX *amx, cell *params)
 	{
-		auto str1 = reinterpret_cast<cell_string*>(params[1]);
-		auto str2 = reinterpret_cast<cell_string*>(params[2]);
-		if(str1 != nullptr && !strings::pool.contains(str1)) return 0;
-		if(!strings::pool.contains(str2)) return 0;
-		if(str2 == nullptr) return -1;
+		cell_string *str1;
+		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) return 0;
+		cell_string *str2;
+		if(!strings::pool.get_by_id(params[2], str2)) return 0;
 		if(str1 == nullptr) return str2->empty() ? 0 : -1;
 
 		strings::clamp_pos(*str1, params[3]);
@@ -461,8 +469,8 @@ namespace Natives
 	// native String:str_clear(StringTag:str);
 	static cell AMX_NATIVE_CALL str_clear(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
 		str->clear();
 		return params[1];
 	}
@@ -470,8 +478,8 @@ namespace Natives
 	// native String:str_resize(StringTag:str, capacity, padding=0);
 	static cell AMX_NATIVE_CALL str_resize(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		str->resize(static_cast<size_t>(params[2]), params[3]);
 		return params[1];
 	}
@@ -486,27 +494,27 @@ namespace Natives
 
 		auto str = strings::pool.add(true);
 		strings::format(amx, *str, format, flen, params[0] - 1, params + 2);
-		return reinterpret_cast<cell>(str);
+		return strings::pool.get_id(str);
 	}
 
 	// native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
 	static cell AMX_NATIVE_CALL str_format_s(AMX *amx, cell *params)
 	{
-		auto strformat = reinterpret_cast<cell_string*>(params[1]);
-		if(strformat != nullptr && !strings::pool.contains(strformat)) return 0;
+		cell_string *strformat;
+		if(!strings::pool.get_by_id(params[1], strformat) && strformat != nullptr) return 0;
 		auto str = strings::pool.add(true);
 		if(strformat != nullptr)
 		{
 			strings::format(amx, *str, &(*strformat)[0], strformat->size(), params[0] / sizeof(cell) - 1, params + 2);
 		}
-		return reinterpret_cast<cell>(str);
+		return strings::pool.get_id(str);
 	}
 
 	// native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
 	static cell AMX_NATIVE_CALL str_set_format(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		str->clear();
 
 		cell *format;
@@ -522,12 +530,12 @@ namespace Natives
 	// native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,Float,_}:...);
 	static cell AMX_NATIVE_CALL str_set_format_s(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		str->clear();
-
-		auto strformat = reinterpret_cast<cell_string*>(params[2]);
-		if(strformat != nullptr && !strings::pool.contains(strformat)) return 0;
+		
+		cell_string *strformat;
+		if(!strings::pool.get_by_id(params[2], strformat) && strformat != nullptr) return 0;
 		if(strformat != nullptr)
 		{
 			strings::format(amx, *str, &(*strformat)[0], strformat->size(), params[0] / sizeof(cell) - 2, params + 3);
@@ -550,28 +558,28 @@ namespace Natives
 	// native String:str_to_lower(StringTag:str);
 	static cell AMX_NATIVE_CALL str_to_lower(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		auto str2 = *str;
 		std::transform(str2.begin(), str2.end(), str2.begin(), to_lower);
-		return reinterpret_cast<cell>(strings::pool.add(std::move(str2), true));
+		return strings::pool.get_id(strings::pool.add(std::move(str2), true));
 	}
 
 	// native String:str_to_upper(StringTag:str);
 	static cell AMX_NATIVE_CALL str_to_upper(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		auto str2 = *str;
 		std::transform(str2.begin(), str2.end(), str2.begin(), to_upper);
-		return reinterpret_cast<cell>(strings::pool.add(std::move(str2), true));
+		return strings::pool.get_id(strings::pool.add(std::move(str2), true));
 	}
 
 	// native String:str_set_to_lower(StringTag:str);
 	static cell AMX_NATIVE_CALL str_set_to_lower(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		std::transform(str->begin(), str->end(), str->begin(), to_lower);
 		return params[1];
 	}
@@ -579,8 +587,8 @@ namespace Natives
 	// native String:str_set_to_upper(StringTag:str);
 	static cell AMX_NATIVE_CALL str_set_to_upper(AMX *amx, cell *params)
 	{
-		auto str = reinterpret_cast<cell_string*>(params[1]);
-		if(!strings::pool.contains(str)) return 0;
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		std::transform(str->begin(), str->end(), str->begin(), to_upper);
 		return params[1];
 	}

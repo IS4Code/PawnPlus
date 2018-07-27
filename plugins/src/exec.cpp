@@ -122,7 +122,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
 					if(retval != nullptr) *retval = info.result;
-					tasks::task::register_tick(ticks, amx::reset(amx, true));
+					tasks::register_tick(ticks, amx::reset(amx, true));
 				}
 				break;
 				case SleepReturnWaitMs:
@@ -131,7 +131,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
 					if(retval != nullptr) *retval = info.result;
-					tasks::task::register_timer(interval, amx::reset(amx, true));
+					tasks::register_timer(interval, amx::reset(amx, true));
 				}
 				break;
 				case SleepReturnWaitInf:
