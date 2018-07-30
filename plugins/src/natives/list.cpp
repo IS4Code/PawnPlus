@@ -306,7 +306,7 @@ namespace Natives
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
-		ptr->erase(ptr->begin() + params[1]);
+		ptr->erase(ptr->begin() + params[2]);
 		return 1;
 	}
 

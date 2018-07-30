@@ -1,5 +1,7 @@
 #include "object_pool.h"
 #include "dyn_object.h"
+#include "modules/strings.h"
+#include "modules/containers.h"
 #include <string>
 
 template <class ObjType>
@@ -15,6 +17,17 @@ auto object_pool<ObjType>::add(bool temp) -> object_ptr
 
 template <class ObjType>
 auto object_pool<ObjType>::add(ObjType &&obj, bool temp) -> object_ptr
+{
+	if(temp)
+	{
+		return tmp_object_list.add(std::move(obj));
+	}else{
+		return object_list.add(std::move(obj));
+	}
+}
+
+template <class ObjType>
+auto object_pool<ObjType>::add(std::unique_ptr<ObjType> &&obj, bool temp) -> object_ptr
 {
 	if(temp)
 	{
@@ -204,5 +217,6 @@ size_t object_pool<ObjType>::global_size() const
 	return object_list.size();
 }
 
-template class object_pool<std::basic_string<cell>>;
+template class object_pool<strings::cell_string>;
 template class object_pool<dyn_object>;
+template class object_pool<dyn_iterator>;

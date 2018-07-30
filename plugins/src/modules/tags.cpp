@@ -13,11 +13,10 @@ std::vector<tag_info*> tag_list = {
 	new tag_info(6, "Variant", nullptr),
 	new tag_info(7, "List", nullptr),
 	new tag_info(8, "Map", nullptr),
-	new tag_info(9, "ListIterator", nullptr),
-	new tag_info(10, "MapIterator", nullptr),
-	new tag_info(11, "Ref", nullptr),
-	new tag_info(12, "Task", nullptr),
-	new tag_info(13, "Guard", nullptr),
+	new tag_info(9, "Iterator", nullptr),
+	new tag_info(10, "Ref", nullptr),
+	new tag_info(11, "Task", nullptr),
+	new tag_info(12, "Guard", nullptr),
 };
 
 struct tag_map_info : public amx::extra

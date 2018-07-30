@@ -1,6 +1,7 @@
 #define _SCL_SECURE_NO_WARNINGS
 #include "dyn_object.h"
 #include "dyn_op.h"
+#include "modules/containers.h"
 #include "../fixes/linux.h"
 #include <cmath>
 #include <type_traits>
@@ -667,7 +668,7 @@ bool dyn_object::free_tagged() const
 void dyn_object::free() const
 {
 	free_tagged<cell_string*>() || free_tagged<dyn_object*>() ||
-		free_tagged<std::vector<dyn_object>*>() || free_tagged<std::unordered_map<dyn_object, dyn_object>*>();
+		free_tagged<list_t*>() || free_tagged<map_t*>();
 }
 
 template <class TagType>
@@ -687,7 +688,7 @@ bool dyn_object::clone_tagged(dyn_object &copy) const
 dyn_object dyn_object::clone() const
 {
 	dyn_object copy(*this);
-	clone_tagged<cell_string*>(copy) || clone_tagged<dyn_object*>(copy) || clone_tagged<std::vector<dyn_object>*>(copy) || clone_tagged<std::unordered_map<dyn_object, dyn_object>*>(copy);
+	clone_tagged<cell_string*>(copy) || clone_tagged<dyn_object*>(copy) || clone_tagged<list_t*>(copy) || clone_tagged<map_t*>(copy);
 	return copy;
 }
 

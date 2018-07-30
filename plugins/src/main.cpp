@@ -10,6 +10,7 @@
 #include "modules/threads.h"
 #include "modules/strings.h"
 #include "modules/variants.h"
+#include "modules/containers.h"
 #include "modules/tags.h"
 
 #include "sdk/amx/amx.h"
@@ -37,6 +38,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 		[](AMX *amx){
 			strings::pool.clear_tmp();
 			variants::pool.clear_tmp();
+			iter_pool.clear_tmp();
 			Threads::StartThreads();
 		}
 	);

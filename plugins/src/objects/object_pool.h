@@ -25,6 +25,7 @@ private:
 public:
 	object_ptr add(bool temp);
 	object_ptr add(ObjType &&obj, bool temp);
+	object_ptr add(std::unique_ptr<ObjType> &&obj, bool temp);
 	cell get_address(AMX *amx, const_object_ptr obj) const;
 	cell get_inner_address(AMX *amx, const_object_ptr obj) const;
 	bool is_null_address(AMX *amx, cell addr) const;

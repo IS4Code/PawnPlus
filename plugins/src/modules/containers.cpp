@@ -2,3 +2,4 @@
 
 aux::shared_id_set_pool<list_t> list_pool;
 aux::shared_id_set_pool<map_t> map_pool;
+object_pool<dyn_iterator> iter_pool;
