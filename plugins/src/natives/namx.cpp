@@ -24,6 +24,25 @@ namespace Natives
 		return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx, params[1], params[2])));
 	}
 
+	// native Var:amx_public_var(AMX:amx, const name[]);
+	static cell AMX_NATIVE_CALL amx_public_var(AMX *amx, cell *params)
+	{
+		if(auto lock = amx::load_lock(reinterpret_cast<AMX*>(params[1])))
+		{
+			auto amx2 = lock->get();
+
+			char *name;
+			amx_StrParam(amx2, params[2], name);
+
+			cell amx_addr;
+			if(amx_FindPubVar(amx2, name, &amx_addr) != AMX_ERR_NONE)
+			{
+				return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx2, amx_addr, 1)));
+			}
+		}
+		return 0;
+	}
+
 	// native amx_set(Var:var, AnyTag:value, index=0);
 	static cell AMX_NATIVE_CALL amx_set(AMX *amx, cell *params)
 	{
@@ -60,6 +79,28 @@ namespace Natives
 		if(amx_var_pool.get_by_id(params[1], info))
 		{
 			return amx_var_pool.remove(info);
+		}
+		return 0;
+	}
+
+	// native bool:amx_linked(Var:var);
+	static cell AMX_NATIVE_CALL amx_linked(AMX *amx, cell *params)
+	{
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(params[1], info))
+		{
+			return info->valid();
+		}
+		return 0;
+	}
+
+	// native bool:amx_inside(Var:var);
+	static cell AMX_NATIVE_CALL amx_inside(AMX *amx, cell *params)
+	{
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(params[1], info))
+		{
+			return info->inside();
 		}
 		return 0;
 	}
@@ -169,10 +210,13 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_this),
 	AMX_DECLARE_NATIVE(amx_var),
 	AMX_DECLARE_NATIVE(amx_var_arr),
+	AMX_DECLARE_NATIVE(amx_public_var),
 	AMX_DECLARE_NATIVE(amx_set),
 	AMX_DECLARE_NATIVE(amx_get),
 	AMX_DECLARE_NATIVE(amx_valid),
 	AMX_DECLARE_NATIVE(amx_delete),
+	AMX_DECLARE_NATIVE(amx_linked),
+	AMX_DECLARE_NATIVE(amx_inside),
 	AMX_DECLARE_NATIVE(amx_alloc),
 	AMX_DECLARE_NATIVE(amx_free),
 	AMX_DECLARE_NATIVE(amx_sizeof),

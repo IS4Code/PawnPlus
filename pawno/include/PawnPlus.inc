@@ -137,8 +137,11 @@ enum fork_level
 native AMX:amx_this();
 native Var:amx_var(&AnyTag:var);
 native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
+native Var:amx_public_var(AMX:amx, const name[]);
 native bool:amx_valid(Var:var);
 native bool:amx_delete(Var:var);
+native bool:amx_linked(Var:var);
+native bool:amx_inside(Var:var);
 native Var:amx_alloc(size, bool:zero=true);
 native bool:amx_free(Var:var);
 native amx_set(Var:var, AnyTag:value, index=0);

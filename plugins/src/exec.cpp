@@ -187,7 +187,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						if(amx->error == AMX_ERR_SLEEP && (amx->pri & SleepReturnTypeMask) == SleepReturnForkCommit)
 						{
 
-						} else {
+						}else{
 							amx->cip = cip;
 							amx->stk = stk;
 							amx->hea = hea;
@@ -199,7 +199,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 							if(result_var) *result_var = result;
 							if(error_var) *error_var = error;
 						}
-					} else if(method == 1)
+					}else if(method == 1)
 					{
 						amx::reset reset(amx, true);
 
@@ -224,11 +224,11 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 								amx::pop(amx);
 								reset.context.remove_extra<forked_context>();
 								reset.restore();
-							} else {
+							}else{
 								amx::pop(amx);
 								reset.restore();
 							}
-						} else {
+						}else{
 							reset.restore();
 							if(flags & SleepReturnForkFlagsCopyData)
 							{
@@ -244,7 +244,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						{
 							delete[] orig_data;
 						}
-					} else if(method == 2)
+					}else if(method == 2)
 					{
 						AMX *amx_fork = new AMX();
 						auto lock = amx::clone_lock(amx, amx_fork);
@@ -292,7 +292,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 								reset.context.remove_extra<forked_context>();
 								reset.amx = owner;
 								reset.restore();
-							} else {
+							}else{
 								amx::reset reset(amx_fork, false);
 								amx::pop(amx_fork);
 								reset.amx = owner;
@@ -319,11 +319,11 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						if(ctx.has_extra<forked_context>())
 						{
 							logwarn(amx, "[PP] amx_commit: the original context is no longer present.");
-						} else {
+						}else{
 							logwarn(amx, "[PP] amx_commit was called from a non-forked code.");
 						}
 						continue;
-					} else {
+					}else{
 						return ret;
 					}
 				}
@@ -335,7 +335,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						amx->pri = 0;
 						logwarn(amx, "[PP] amx_fork_end was called from a non-forked code.");
 						continue;
-					} else {
+					}else{
 						if(retval != nullptr) *retval = info.result;
 						amx->error = ret = AMX_ERR_NONE;
 					}
@@ -354,7 +354,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 							var->fill(0);
 						}
 						amx->pri = amx_var_pool.get_id(var);
-					} else {
+					}else{
 						amx->pri = 0;
 					}
 					amx->error = ret = AMX_ERR_NONE;

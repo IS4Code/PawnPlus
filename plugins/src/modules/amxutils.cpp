@@ -44,10 +44,16 @@ bool amx_var_info::set(cell index, cell value)
 	{
 		if(lock->valid())
 		{
-			cell *addr;
-			if(amx_GetAddr(lock->get(), _addr + index, &addr) == AMX_ERR_NONE)
+			auto amx = lock->get();
+			cell amx_addr = _addr + index;
+			if((amx_addr >= 0 && amx_addr < amx->hea) || (amx_addr >= amx->stk && amx_addr < amx->stp))
 			{
-				*addr = value;
+				cell *addr;
+				if(amx_GetAddr(amx, amx_addr, &addr) == AMX_ERR_NONE)
+				{
+					*addr = value;
+					return true;
+				}
 			}
 		}
 	}
@@ -61,14 +67,40 @@ cell amx_var_info::get(cell index)
 	{
 		if(lock->valid())
 		{
-			cell *addr;
-			if(amx_GetAddr(lock->get(), _addr + index, &addr) == AMX_ERR_NONE)
+			auto amx = lock->get();
+			cell amx_addr = _addr + index;
+			if((amx_addr >= 0 && amx_addr < amx->hea) || (amx_addr >= amx->stk && amx_addr < amx->stp))
 			{
-				return *addr;
+				cell *addr;
+				if(amx_GetAddr(amx, amx_addr, &addr) == AMX_ERR_NONE)
+				{
+					return *addr;
+				}
 			}
 		}
 	}
 	return 0;
+}
+
+bool amx_var_info::inside()
+{
+	if(auto lock = _amx.lock())
+	{
+		if(lock->valid())
+		{
+			auto amx = lock->get();
+			cell amx_addr1 = _addr;
+			cell amx_addr2 = _addr + _size - 1;
+			if((amx_addr1 >= 0 && amx_addr1 < amx->hea) || (amx_addr1 >= amx->stk && amx_addr1 < amx->stp))
+			{
+				if((amx_addr2 >= 0 && amx_addr2 < amx->hea) || (amx_addr2 >= amx->stk && amx_addr2 < amx->stp))
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 bool amx_var_info::fill(unsigned char value)

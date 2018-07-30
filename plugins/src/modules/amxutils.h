@@ -43,6 +43,7 @@ public:
 	bool from_amx(AMX *amx);
 	bool set(cell index, cell value);
 	cell get(cell index);
+	bool inside();
 	bool fill(unsigned char value);
 };
 
