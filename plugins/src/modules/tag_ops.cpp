@@ -710,7 +710,7 @@ struct map_operations : public null_operations
 
 struct iter_operations : public null_operations
 {
-	iter_operations() : null_operations(tags::tag_iterator)
+	iter_operations() : null_operations(tags::tag_iter)
 	{
 
 	}

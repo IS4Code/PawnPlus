@@ -61,7 +61,7 @@ namespace tags
 	constexpr const cell tag_variant = 6;
 	constexpr const cell tag_list = 7;
 	constexpr const cell tag_map = 8;
-	constexpr const cell tag_iterator = 9;
+	constexpr const cell tag_iter = 9;
 	constexpr const cell tag_ref = 10;
 	constexpr const cell tag_task = 11;
 	constexpr const cell tag_guard = 12;

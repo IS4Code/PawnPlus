@@ -18,9 +18,9 @@
 #define GlobalVariant Variant@Global
 #define List<%0> List@%0
 #define Map<%0,%1> Map@%0@%1
-#define GlobalIterator Iterator@Global
-#define Iterator<%0> Iterator@%0
-#define PairIterator<%0,%1> Iterator@%1@%0
+#define GlobalIter Iter@Global
+#define Iter<%0> Iter@%0
+#define PairIter<%0,%1> Iter@%1@%0
 
 #define PP_TAG_PREFIX@String<%0> %0@String
 #define PP_TAG_PREFIX@Variant<%0> %0@Variant
@@ -30,17 +30,17 @@
 #define PP_TAG_PREFIX@GlobalVariant<%0> %0@Variant@Global
 #define PP_TAG_PREFIX@List<%0> %0@List
 #define PP_TAG_PREFIX@Map<%0> %0@Map
-#define PP_TAG_PREFIX@Iterator<%0> %0@Iterator
-#define PP_TAG_PREFIX@Iterator@Global<%0> %0@Iterator@Global
-#define PP_TAG_PREFIX@GlobalIterator<%0> %0@Iterator@Global
+#define PP_TAG_PREFIX@Iter<%0> %0@Iter
+#define PP_TAG_PREFIX@Iter@Global<%0> %0@Iter@Global
+#define PP_TAG_PREFIX@GlobalIter<%0> %0@Iter@Global
 #define Ref<%0> PP_TAG_PREFIX@%0<Ref>
 
 #define StringTags String,GlobalString
 #define StringTag {StringTags}
 #define VariantTags Variant,GlobalVariant
 #define VariantTag {VariantTags}
-#define IteratorTags Iterator,GlobalIterator
-#define IteratorTag {IteratorTags}
+#define IterTags Iter,GlobalIter
+#define IterTag {IterTags}
 
 #define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map
 #if defined PP_ADDITIONAL_TAGS
@@ -118,7 +118,7 @@ native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
 #define tag_uid_variant (tag_uid:6)
 #define tag_uid_list (tag_uid:7)
 #define tag_uid_map (tag_uid:8)
-#define tag_uid_iterator (tag_uid:9)
+#define tag_uid_iter (tag_uid:9)
 #define tag_uid_ref (tag_uid:10)
 #define tag_uid_task (tag_uid:11)
 #define tag_uid_guard (tag_uid:12)
@@ -366,7 +366,7 @@ native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, tag_id=ta
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);
 
-native Iterator:list_iter(List:list);
+native Iter:list_iter(List:list);
 
 #define list_new<%0> list_new@%0
 #define list_new_arr<%0> list_new_arr@%0
@@ -422,15 +422,15 @@ native bool:list_set_cell<%0>(List<%0>:l,i,o,%0:v)=list_set_cell;\
 native list_sizeof<%0>(List<%0>:l,i)=list_sizeof;\
 forward List:operator=(List<%0>:l);\
 forward List<%0>:operator=(List:l);\
-native Iterator<%0>:list_iter<%0>(List<%0>:l)=list_iter;\
-forward Iterator<%0>:operator=(Iterator:i);\
-native iter_get<%0>(Iterator<%0>:i,o=0)=iter_get;\
-native iter_get_arr<%0>(Iterator<%0>:i,%0:v[],s=sizeof(v))=iter_get_arr;\
-native bool:iter_set<%0>(Iterator<%0>:i,%0:v,t=(tagof(%0:)))=iter_set;\
-native bool:iter_set_arr<%0>(Iterator<%0>:i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=iter_set_arr;\
-native bool:iter_set_cell<%0>(Iterator<%0>:i,o,%0:v)=iter_set_cell;\
-native bool:iter_insert<%0>(Iterator<%0>:i,%0:v,t=(tagof(%0:)))=iter_insert;\
-native bool:iter_insert_arr<%0>(Iterator<%0>:i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=iter_insert_arr
+native Iter<%0>:list_iter<%0>(List<%0>:l)=list_iter;\
+forward Iter<%0>:operator=(Iter:i);\
+native iter_get<%0>(Iter<%0>:i,o=0)=iter_get;\
+native iter_get_arr<%0>(Iter<%0>:i,%0:v[],s=sizeof(v))=iter_get_arr;\
+native bool:iter_set<%0>(Iter<%0>:i,%0:v,t=(tagof(%0:)))=iter_set;\
+native bool:iter_set_arr<%0>(Iter<%0>:i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=iter_set_arr;\
+native bool:iter_set_cell<%0>(Iter<%0>:i,o,%0:v)=iter_set_cell;\
+native bool:iter_insert<%0>(Iter<%0>:i,%0:v,t=(tagof(%0:)))=iter_insert;\
+native bool:iter_insert_arr<%0>(Iter<%0>:i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=iter_insert_arr
 
 
 /*                 */
@@ -567,7 +567,7 @@ native map_str_sizeof(Map:map, const key[]);
 native map_var_tagof(Map:map, VariantTag:key);
 native map_var_sizeof(Map:map, VariantTag:key);
 
-native Iterator:map_iter(Map:map);
+native Iter:map_iter(Map:map);
 
 #define map_new<%0,%1> map_new@%0@%1
 #define map_new_args_t<%0,%1> map_new_args_t@%0@%1
@@ -647,72 +647,72 @@ native map_sizeof<%0,%1>(Map<%0,%1>:m,%0:k,kt=(tagof(%0:)))=map_sizeof;\
 native map_arr_sizeof<%0,%1>(Map<%0,%1>:m,const %0:k[],ks=sizeof(k),kt=(tagof(%0:)))=map_arr_sizeof;\
 forward Map:operator=(Map<%0,%1>:m);\
 forward Map<%0,%1>:operator=(Map:m);\
-native PairIterator<%0,%1>:map_iter<%0,%1>(Map<%0,%1>:m)=map_iter;\
-forward PairIterator<%0,%1>:operator=(Iterator:i);\
-forward PairIterator<%0,%1>:operator=(Iterator<%0>:i);\
-native %0:iter_get_key<%0,%1>(PairIterator<%0,%1>:i,o=0)=iter_get_key;\
-native iter_get_key_arr<%0,%1>(PairIterator<%0,%1>:i,%0:v[],s=sizeof(v))=iter_get_key_arr;\
-native %1:iter_get_value<%0,%1>(PairIterator<%0,%1>:i,o=0)=iter_get;\
-native iter_get_value_arr<%0,%1>(PairIterator<%0,%1>:i,%1:v[],s=sizeof(v))=iter_get_arr;\
-native bool:iter_set_value<%0,%1>(PairIterator<%0,%1>:i,%1:v,t=(tagof(%0:)))=iter_set;\
-native bool:iter_set_value_arr<%0,%1>(PairIterator<%0,%1>:i,const %1:v[],s=sizeof(v),t=tagof(v))=iter_set_arr;\
-native bool:iter_set_value_cell<%0,%1>(PairIterator<%0,%1>:i,o,%1:v)=iter_set_cell
+native PairIter<%0,%1>:map_iter<%0,%1>(Map<%0,%1>:m)=map_iter;\
+forward PairIter<%0,%1>:operator=(Iter:i);\
+forward PairIter<%0,%1>:operator=(Iter<%0>:i);\
+native %0:iter_get_key<%0,%1>(PairIter<%0,%1>:i,o=0)=iter_get_key;\
+native iter_get_key_arr<%0,%1>(PairIter<%0,%1>:i,%0:v[],s=sizeof(v))=iter_get_key_arr;\
+native %1:iter_get_value<%0,%1>(PairIter<%0,%1>:i,o=0)=iter_get;\
+native iter_get_value_arr<%0,%1>(PairIter<%0,%1>:i,%1:v[],s=sizeof(v))=iter_get_arr;\
+native bool:iter_set_value<%0,%1>(PairIter<%0,%1>:i,%1:v,t=(tagof(%0:)))=iter_set;\
+native bool:iter_set_value_arr<%0,%1>(PairIter<%0,%1>:i,const %1:v[],s=sizeof(v),t=tagof(v))=iter_set_arr;\
+native bool:iter_set_value_cell<%0,%1>(PairIter<%0,%1>:i,o,%1:v)=iter_set_cell
 
 /*                 */
 /*    Iterators    */
 /*                 */
 
-native bool:iter_valid(IteratorTag:iter);
-native GlobalIterator:iter_to_global(IteratorTag:iter);
-native Iterator:iter_to_local(IteratorTag:iter);
-native bool:iter_delete(IteratorTag:iter);
-native bool:iter_linked(IteratorTag:iter);
-native bool:iter_inside(IteratorTag:iter);
-native Iterator:iter_erase(IteratorTag:iter);
-native Iterator:iter_reset(IteratorTag:iter);
-native Iterator:iter_clone(IteratorTag:iter);
-native Iterator:iter_move_next(IteratorTag:iter);
-native Iterator:iter_move_previous(IteratorTag:iter);
-native Iterator:iter_to_first(IteratorTag:iter);
-native Iterator:iter_to_last(IteratorTag:iter);
-native bool:iter_equal(IteratorTag:iter1, IteratorTag:iter2);
+native bool:iter_valid(IterTag:iter);
+native GlobalIter:iter_to_global(IterTag:iter);
+native Iter:iter_to_local(IterTag:iter);
+native bool:iter_delete(IterTag:iter);
+native bool:iter_linked(IterTag:iter);
+native bool:iter_inside(IterTag:iter);
+native Iter:iter_erase(IterTag:iter);
+native Iter:iter_reset(IterTag:iter);
+native Iter:iter_clone(IterTag:iter);
+native Iter:iter_move_next(IterTag:iter);
+native Iter:iter_move_previous(IterTag:iter);
+native Iter:iter_to_first(IterTag:iter);
+native Iter:iter_to_last(IterTag:iter);
+native bool:iter_equal(IterTag:iter1, IterTag:iter2);
 
-native iter_get(IteratorTag:iter, offset=0);
-native iter_get_arr(IteratorTag:iter, AnyTag:value[], size=sizeof(value));
-native Variant:iter_get_var(IteratorTag:iter);
-native bool:iter_get_safe(IteratorTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
-native iter_get_arr_safe(IteratorTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native iter_get(IterTag:iter, offset=0);
+native iter_get_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
+native Variant:iter_get_var(IterTag:iter);
+native bool:iter_get_safe(IterTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+native iter_get_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 
-native bool:iter_set(IteratorTag:iter, AnyTag:value, tag_id=tagof(value));
-native bool:iter_set_arr(IteratorTag:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-native bool:iter_set_str(IteratorTag:iter, const value[]);
-native bool:iter_set_var(IteratorTag:iter, VariantTag:value);
-native bool:iter_set_cell(IteratorTag:iter, offset, AnyTag:value);
-native bool:iter_set_cell_safe(IteratorTag:iter, offset, AnyTag:value, tag_id=tagof(value));
+native bool:iter_set(IterTag:iter, AnyTag:value, tag_id=tagof(value));
+native bool:iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native bool:iter_set_str(IterTag:iter, const value[]);
+native bool:iter_set_var(IterTag:iter, VariantTag:value);
+native bool:iter_set_cell(IterTag:iter, offset, AnyTag:value);
+native bool:iter_set_cell_safe(IterTag:iter, offset, AnyTag:value, tag_id=tagof(value));
 
-native bool:iter_insert(IteratorTag:iter, AnyTag:value, tag_id=tagof(value));
-native bool:iter_insert_arr(IteratorTag:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-native bool:iter_insert_str(IteratorTag:iter, const value[]);
-native bool:iter_insert_var(IteratorTag:iter, VariantTag:value);
+native bool:iter_insert(IterTag:iter, AnyTag:value, tag_id=tagof(value));
+native bool:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native bool:iter_insert_str(IterTag:iter, const value[]);
+native bool:iter_insert_var(IterTag:iter, VariantTag:value);
 
-native iter_get_key(IteratorTag:iter, offset=0);
-native iter_get_key_arr(IteratorTag:iter, AnyTag:value[], size=sizeof(value));
-native Variant:iter_get_key_var(IteratorTag:iter);
-native bool:iter_get_key_safe(IteratorTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
-native iter_get_key_arr_safe(IteratorTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+native iter_get_key(IterTag:iter, offset=0);
+native iter_get_key_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
+native Variant:iter_get_key_var(IterTag:iter);
+native bool:iter_get_key_safe(IterTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+native iter_get_key_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 
-native iter_get_value(IteratorTag:iter, offset=0) = iter_get;
-native iter_get_value_arr(IteratorTag:iter, AnyTag:value[], size=sizeof(value)) = iter_get_arr;
-native Variant:iter_get_value_var(IteratorTag:iter) = iter_get_var;
-native bool:iter_get_value_safe(IteratorTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value)) = iter_get_safe;
-native iter_get_value_arr_safe(IteratorTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value)) = iter_get_arr_safe;
+native iter_get_value(IterTag:iter, offset=0) = iter_get;
+native iter_get_value_arr(IterTag:iter, AnyTag:value[], size=sizeof(value)) = iter_get_arr;
+native Variant:iter_get_value_var(IterTag:iter) = iter_get_var;
+native bool:iter_get_value_safe(IterTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value)) = iter_get_safe;
+native iter_get_value_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value)) = iter_get_arr_safe;
 
-native bool:iter_set_value(IteratorTag:iter, AnyTag:value, value_tag_id=tagof(value)) = iter_set;
-native bool:iter_set_value_arr(IteratorTag:iter, const AnyTag:value[], size=sizeof(value), value_tag_id=tagof(value)) = iter_set_arr;
-native bool:iter_set_value_str(IteratorTag:iter, const value[]) = iter_set_str;
-native bool:iter_set_value_var(IteratorTag:iter, VariantTag:value) = iter_set_var;
-native bool:iter_set_value_cell(IteratorTag:iter, offset, AnyTag:value) = iter_set_cell;
-native bool:iter_set_value_cell_safe(IteratorTag:iter, offset, AnyTag:value, value_tag_id=tagof(value)) = iter_set_cell_safe;
+native bool:iter_set_value(IterTag:iter, AnyTag:value, value_tag_id=tagof(value)) = iter_set;
+native bool:iter_set_value_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), value_tag_id=tagof(value)) = iter_set_arr;
+native bool:iter_set_value_str(IterTag:iter, const value[]) = iter_set_str;
+native bool:iter_set_value_var(IterTag:iter, VariantTag:value) = iter_set_var;
+native bool:iter_set_value_cell(IterTag:iter, offset, AnyTag:value) = iter_set_cell;
+native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, value_tag_id=tagof(value)) = iter_set_cell_safe;
 
 #define iter_get<%0> iter_get@%0
 #define iter_get_arr<%0> iter_get_arr@%0
@@ -730,13 +730,13 @@ native bool:iter_set_value_cell_safe(IteratorTag:iter, offset, AnyTag:value, val
 #define iter_set_value_cell<%0,%1> iter_set_value_cell@%0@%1
 
 #if defined PP_SYNTAX_FOR_LIST
-#define for_list(%0:%1) for(new Iterator:%0=list_iter(%1);iter_inside(%0);iter_move_next(%0))
-#define for_list_of<%2>(%0:%1) for(new Iterator<%2>:%0=list_iter<%2>(%1);iter_inside(Iterator:%0);iter_move_next(Iterator:%0))
+#define for_list(%0:%1) for(new Iter:%0=list_iter(%1);iter_inside(%0);iter_move_next(%0))
+#define for_list_of<%2>(%0:%1) for(new Iter<%2>:%0=list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
 #endif
 
 #if defined PP_SYNTAX_FOR_MAP
-#define for_map(%0:%1) for(new Iterator:%0=map_iter(%1);iter_inside(%0);iter_move_next(%0))
-#define for_map_of<%2,%3>(%0:%1) for(new PairIterator<%2,%3>:%0=map_iter<%2,%3>(%1);iter_inside(Iterator:%0);iter_move_next(Iterator:%0))
+#define for_map(%0:%1) for(new Iter:%0=map_iter(%1);iter_inside(%0);iter_move_next(%0))
+#define for_map_of<%2,%3>(%0:%1) for(new PairIter<%2,%3>:%0=map_iter<%2,%3>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
 #endif
 
 /*                 */
@@ -936,14 +936,14 @@ stock bool:operator!=(Variant:arg1, GlobalVariant:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalVariant:arg1, Variant:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalVariant:arg1, GlobalVariant:arg2) return !(arg1 == arg2);
 
-native bool:operator==(Iterator:arg1, Iterator:arg2) = iter_equal;
-native bool:operator==(Iterator:arg1, GlobalIterator:arg2) = iter_equal;
-native bool:operator==(GlobalIterator:arg1, Iterator:arg2) = iter_equal;
-native bool:operator==(GlobalIterator:arg1, GlobalIterator:arg2) = iter_equal;
-stock bool:operator!=(Iterator:arg1, Iterator:arg2) return !(arg1 == arg2);
-stock bool:operator!=(Iterator:arg1, GlobalIterator:arg2) return !(arg1 == arg2);
-stock bool:operator!=(GlobalIterator:arg1, Iterator:arg2) return !(arg1 == arg2);
-stock bool:operator!=(GlobalIterator:arg1, GlobalIterator:arg2) return !(arg1 == arg2);
+native bool:operator==(Iter:arg1, Iter:arg2) = iter_equal;
+native bool:operator==(Iter:arg1, GlobalIter:arg2) = iter_equal;
+native bool:operator==(GlobalIter:arg1, Iter:arg2) = iter_equal;
+native bool:operator==(GlobalIter:arg1, GlobalIter:arg2) = iter_equal;
+stock bool:operator!=(Iter:arg1, Iter:arg2) return !(arg1 == arg2);
+stock bool:operator!=(Iter:arg1, GlobalIter:arg2) return !(arg1 == arg2);
+stock bool:operator!=(GlobalIter:arg1, Iter:arg2) return !(arg1 == arg2);
+stock bool:operator!=(GlobalIter:arg1, GlobalIter:arg2) return !(arg1 == arg2);
 
 stock String:operator=(Ref<String>:arg) return String:arg;
 stock GlobalString:operator=(Ref<GlobalString>:arg) return GlobalString:arg;
@@ -951,8 +951,8 @@ stock Variant:operator=(Ref<Variant>:arg) return Variant:arg;
 stock GlobalVariant:operator=(Ref<GlobalVariant>:arg) return GlobalVariant:arg;
 stock List:operator=(Ref<List>:arg) return List:arg;
 stock Map:operator=(Ref<Map>:arg) return Map:arg;
-stock Iterator:operator=(Ref<Iterator>:arg) return Iterator:arg;
-stock GlobalIterator:operator=(Ref<GlobalIterator>:arg) return GlobalIterator:arg;
+stock Iter:operator=(Ref<Iter>:arg) return Iter:arg;
+stock GlobalIter:operator=(Ref<GlobalIter>:arg) return GlobalIter:arg;
 
 stock Ref<String>:operator=(String:arg) return Ref<String>:arg;
 stock Ref<GlobalString>:operator=(GlobalString:arg) return Ref<GlobalString>:arg;
@@ -960,8 +960,8 @@ stock Ref<Variant>:operator=(Variant:arg) return Ref<Variant>:arg;
 stock Ref<GlobalVariant>:operator=(GlobalVariant:arg) return Ref<GlobalVariant>:arg;
 stock Ref<List>:operator=(List:arg) return Ref<List>:arg;
 stock Ref<Map>:operator=(Map:arg) return Ref<Map>:arg;
-stock Ref<Iterator>:operator=(Iterator:arg) return Ref<Iterator>:arg;
-stock Ref<GlobalIterator>:operator=(GlobalIterator:arg) return Ref<GlobalIterator>:arg;
+stock Ref<Iter>:operator=(Iter:arg) return Ref<Iter>:arg;
+stock Ref<GlobalIter>:operator=(GlobalIter:arg) return Ref<GlobalIter>:arg;
 
 stock Ref:operator=(Ref<String>:arg) return Ref:arg;
 stock Ref:operator=(Ref<GlobalString>:arg) return Ref:arg;
@@ -969,8 +969,8 @@ stock Ref:operator=(Ref<Variant>:arg) return Ref:arg;
 stock Ref:operator=(Ref<GlobalVariant>:arg) return Ref:arg;
 stock Ref:operator=(Ref<List>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Map>:arg) return Ref:arg;
-stock Ref:operator=(Ref<Iterator>:arg) return Ref:arg;
-stock Ref:operator=(Ref<GlobalIterator>:arg) return Ref:arg;
+stock Ref:operator=(Ref<Iter>:arg) return Ref:arg;
+stock Ref:operator=(Ref<GlobalIter>:arg) return Ref:arg;
 
 stock operator~(Guard:arr[], size)
 {
