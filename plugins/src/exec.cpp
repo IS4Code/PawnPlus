@@ -71,9 +71,16 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 	}
 
 	amx::reset *old = nullptr;
-	if(restore && amx::has_context(amx))
+	bool restore_context = false;
+	if(restore)
 	{
-		old = new amx::reset(amx, true);
+		if(amx::has_context(amx))
+		{
+			restore_context = true;
+			old = new amx::reset(amx, true);
+		}else{
+			old = new amx::reset(amx, false);
+		}
 	}
 
 	amx::push(amx, index);
@@ -92,6 +99,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 	int ret;
 	while(true)
 	{
+		cell old_hea = amx->hea, old_stk = amx->stk;
 		ret = amx_ExecOrig(amx, retval, index);
 		if(ret == AMX_ERR_SLEEP || amx->error == AMX_ERR_SLEEP)
 		{
@@ -101,8 +109,15 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 			auto &ctx = amx::get_context(amx, owner);
 			tasks::extra info = tasks::get_extra(amx, owner);
 
+			bool handled = true;
+
 			switch(amx->pri & SleepReturnTypeMask)
 			{
+				default:
+				{
+					handled = false;
+				}
+				break;
 				case SleepReturnAwait:
 				{
 					amx->pri = 0;
@@ -370,13 +385,24 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				}
 				break;
 			}
+
+			if(handled)
+			{
+				amx->stk = old_stk;
+				amx->hea = old_hea;
+			}
 		}
 		break;
 	}
 	amx::pop(amx);
 	if(old != nullptr)
 	{
-		old->restore();
+		if(restore_context)
+		{
+			old->restore();
+		}else{
+			old->restore_no_context();
+		}
 		delete old;
 	}
 	if(!forked)

@@ -79,6 +79,7 @@ class thread_state
 		cell retval;
 		while(true)
 		{
+			cell old_hea = amx->hea, old_stk = amx->stk;
 			int ret = amx_ExecOrig(amx, &retval, AMX_EXEC_CONT);
 			if(ret == AMX_ERR_SLEEP)
 			{
@@ -108,6 +109,8 @@ class thread_state
 						amx->callback = orig_callback;
 						return;
 				}
+				amx->hea = old_hea;
+				amx->stk = old_stk;
 			}
 		}
 	}
