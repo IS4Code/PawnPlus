@@ -318,6 +318,7 @@ native Variant:var_sub(VariantTag:var1, VariantTag:var2);
 native Variant:var_mul(VariantTag:var1, VariantTag:var2);
 native Variant:var_div(VariantTag:var1, VariantTag:var2);
 native Variant:var_mod(VariantTag:var1, VariantTag:var2);
+native Variant:var_neg(VariantTag:var);
 
 
 /*                 */
@@ -902,19 +903,27 @@ stock String:operator%(Float:arg1, GlobalString:arg2) return str_cat(str_float(a
 
 #endif
 
-#define PP_VARIANT_OP(%0,%1) \
+#define PP_VARIANT_BIN_OP(%0,%1) \
     native Variant:operator%0(Variant:arg1, Variant:arg2) = %1; \
     native Variant:operator%0(Variant:arg1, GlobalVariant:arg2) = %1; \
     native Variant:operator%0(GlobalVariant:arg1, Variant:arg2) = %1; \
     native Variant:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1
 
-PP_VARIANT_OP(+, var_add);
-PP_VARIANT_OP(-, var_sub);
-PP_VARIANT_OP(*, var_mul);
-PP_VARIANT_OP(/, var_div);
-PP_VARIANT_OP(%, var_mod);
+PP_VARIANT_BIN_OP(+, var_add);
+PP_VARIANT_BIN_OP(-, var_sub);
+PP_VARIANT_BIN_OP(*, var_mul);
+PP_VARIANT_BIN_OP(/, var_div);
+PP_VARIANT_BIN_OP(%, var_mod);
 
-#undef PP_VARIANT_OP
+#undef PP_VARIANT_BIN_OP
+
+#define PP_VARIANT_UN_OP(%0,%1) \
+    native Variant:operator%0(Variant:arg) = %1; \
+    native Variant:operator%0(GlobalVariant:arg) = %1
+
+PP_VARIANT_UN_OP(-, var_neg);
+
+#undef PP_VARIANT_UN_OP
     
 native GlobalVariant:operator=(Variant:arg) = var_to_global;
 stock Variant:operator=(GlobalVariant:arg) return Variant:arg;

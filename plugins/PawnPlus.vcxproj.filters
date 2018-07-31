@@ -61,9 +61,6 @@
     <ClCompile Include="src\objects\dyn_object.cpp">
       <Filter>src\objects</Filter>
     </ClCompile>
-    <ClCompile Include="src\objects\dyn_op.cpp">
-      <Filter>src\objects</Filter>
-    </ClCompile>
     <ClCompile Include="src\objects\stored_param.cpp">
       <Filter>src\objects</Filter>
     </ClCompile>
@@ -113,6 +110,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\modules\containers.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\tag_ops.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
   </ItemGroup>
@@ -192,9 +192,6 @@
       <Filter>src\objects</Filter>
     </ClInclude>
     <ClInclude Include="src\objects\dyn_object.h">
-      <Filter>src\objects</Filter>
-    </ClInclude>
-    <ClInclude Include="src\objects\dyn_op.h">
       <Filter>src\objects</Filter>
     </ClInclude>
     <ClInclude Include="src\objects\object_pool.h">

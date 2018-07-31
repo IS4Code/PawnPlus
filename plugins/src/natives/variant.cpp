@@ -268,6 +268,16 @@ namespace Natives
 	{
 		return var_op<&dyn_object::operator% >(amx, params);
 	}
+
+	// native Variant:var_neg(VariantTag:var);
+	static cell AMX_NATIVE_CALL var_neg(AMX *amx, cell *params)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		auto result = -(*var);
+		if(result.empty()) return 0;
+		return variants::create(std::move(result));
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -307,6 +317,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_mul),
 	AMX_DECLARE_NATIVE(var_div),
 	AMX_DECLARE_NATIVE(var_mod),
+	AMX_DECLARE_NATIVE(var_neg),
 };
 
 int RegisterVariantNatives(AMX *amx)

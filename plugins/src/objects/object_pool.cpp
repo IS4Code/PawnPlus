@@ -135,18 +135,18 @@ auto object_pool<ObjType>::clone(const_object_ptr obj) -> object_ptr
 	return nullptr;
 }
 
-template <>
-auto object_pool<dyn_object>::clone(const_object_ptr obj) -> object_ptr
+template <class ObjType>
+auto object_pool<ObjType>::clone(const_object_ptr obj, const std::function<ObjType(const ObjType&)> &cloning) -> object_ptr
 {
 	auto it = object_list.find(obj);
 	if(it != object_list.end())
 	{
-		return add(obj->clone(), false);
+		return add(cloning(*obj), false);
 	}
 	it = tmp_object_list.find(obj);
 	if(it != tmp_object_list.end())
 	{
-		return add(obj->clone(), true);
+		return add(cloning(*obj), true);
 	}
 	return nullptr;
 }

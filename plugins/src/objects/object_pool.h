@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <functional>
 
 template <class ObjType>
 class object_pool
@@ -35,6 +36,7 @@ public:
 	object_ptr find_cache(const_inner_ptr ptr);
 	bool remove(object_ptr obj);
 	object_ptr clone(const_object_ptr obj);
+	object_ptr clone(const_object_ptr obj, const std::function<ObjType(const ObjType&)> &cloning);
 	void clear_tmp();
 	bool get_by_id(cell id, object_ptr &obj);
 	cell get_id(const_object_ptr obj) const;

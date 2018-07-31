@@ -245,13 +245,11 @@ namespace Natives
 	// native bool:iter_equal(IteratorTag:iter1, IteratorTag:iter2);
 	static cell AMX_NATIVE_CALL iter_equal(AMX *amx, cell *params)
 	{
-		if(params[1] == params[2]) return 1;
-		dyn_iterator *iter1, *iter2;
-		if(iter_pool.get_by_id(params[1], iter1) && iter_pool.get_by_id(params[2], iter2))
-		{
-			return *iter1 == *iter2;
-		}
-		return 0;
+		dyn_iterator *iter1;
+		if(!iter_pool.get_by_id(params[1], iter1)) return 0;
+		dyn_iterator *iter2;
+		if(!iter_pool.get_by_id(params[2], iter2)) return 0;
+		return *iter1 == *iter2;
 	}
 
 	// native Iterator:iter_move_next(IteratorTag:iter);

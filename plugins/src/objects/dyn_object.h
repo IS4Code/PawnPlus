@@ -74,32 +74,17 @@ public:
 	dyn_object operator*(const dyn_object &obj) const;
 	dyn_object operator/(const dyn_object &obj) const;
 	dyn_object operator%(const dyn_object &obj) const;
+	dyn_object operator-() const;
 	dyn_object &operator=(const dyn_object &obj);
 	dyn_object &operator=(dyn_object &&obj);
 
 	~dyn_object();
 
 private:
-	template <class TagType>
-	bool get_specifier_tagged(char &result) const;
-	template <class TagType>
-	bool get_hash_tagged(size_t &result) const;
-	template <class TagType>
-	bool operator_eq_tagged(const dyn_object &obj, bool &result) const;
-	template <template <class T> class OpType, class TagType>
-	bool operator_func_tagged(const dyn_object &obj, dyn_object &result) const;
-	template <template <class T> class OpType>
+	template <cell(tag_operations::*OpFunc)(tag_ptr, cell, cell) const>
 	dyn_object operator_func(const dyn_object &obj) const;
-	template <template <class T> class OpType, class TagType>
-	bool operator_func_tagged(dyn_object &result) const;
-	template <template <class T> class OpType>
+	template <cell(tag_operations::*OpFunc)(tag_ptr, cell) const>
 	dyn_object operator_func() const;
-	template <class TagType>
-	bool to_string_tagged(std::basic_string<cell> &result) const;
-	template <class TagType>
-	bool free_tagged() const;
-	template <class TagType>
-	bool clone_tagged(dyn_object &result) const;
 };
 
 namespace std
