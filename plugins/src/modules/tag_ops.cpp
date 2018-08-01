@@ -128,7 +128,7 @@ struct null_operations : public tag_operations
 
 	virtual cell copy(tag_ptr tag, cell arg) const override
 	{
-		return arg;
+		return 0;
 	}
 
 	virtual cell clone(tag_ptr tag, cell arg) const override
@@ -192,6 +192,11 @@ struct cell_operations : public null_operations
 	virtual bool equals(tag_ptr tag, const cell *a, const cell *b, cell size) const override
 	{
 		return !std::memcmp(a, b, size * sizeof(cell));
+	}
+
+	virtual cell copy(tag_ptr tag, cell arg) const override
+	{
+		return arg;
 	}
 };
 
@@ -769,6 +774,11 @@ struct ref_operations : public null_operations
 		}else{
 			null_operations::append_string(tag, arg, str);
 		}
+	}
+
+	virtual cell copy(tag_ptr tag, cell arg) const override
+	{
+		return arg;
 	}
 };
 
