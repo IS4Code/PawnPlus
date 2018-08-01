@@ -120,11 +120,15 @@ tag_ptr tags::new_tag(const char *name, cell base_id)
 		base = nullptr;
 	}
 	tag_name.append(name);
-	tag_name.append(1, '@');
+	tag_name.append(1, '+');
 
 	cell id = ::tag_list.size();
 	auto tag = new tag_info(id, std::move(tag_name), base);
 	tag->name.append(std::to_string(reinterpret_cast<std::uintptr_t>(tag)));
+	while(find_existing_tag(tag->name.c_str())->uid != tag_unknown)
+	{
+		tag->name.append(1, '_');
+	}
 	::tag_list.push_back(tag);
 	return tag;
 }

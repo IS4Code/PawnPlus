@@ -141,8 +141,7 @@ struct null_operations : public tag_operations
 		return std::hash<cell>()(arg);
 	}
 
-protected:
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const
+	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		str.append(strings::convert(std::to_string(arg)));
 	}
@@ -203,7 +202,6 @@ struct bool_operations : public cell_operations
 
 	}
 
-protected:
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		static auto str_true = strings::convert("true");
@@ -251,7 +249,6 @@ struct char_operations : public cell_operations
 		return arr ? 's' : 'c';
 	}
 
-protected:
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		str.append({arg});
@@ -316,7 +313,6 @@ struct float_operations : public cell_operations
 		return arr ? 'a' : 'f';
 	}
 
-protected:
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		str.append(strings::convert(std::to_string(amx_ctof(arg))));
@@ -428,7 +424,6 @@ struct string_operations : public null_operations
 		return null_operations::hash(tag, arg);
 	}
 
-protected:
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		cell_string *ptr;
@@ -559,7 +554,6 @@ struct variant_operations : public null_operations
 		return null_operations::hash(tag, arg);
 	}
 
-protected:
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		str.append({'('});
@@ -765,7 +759,6 @@ struct ref_operations : public null_operations
 
 	}
 	
-protected:
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		auto base = tags::find_tag(tag_uid);
@@ -945,7 +938,9 @@ public:
 		{
 			return it->second.invoke(tag, a, b);
 		}
-		return 0;
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
+		return base->call_op(tag, op, a, b);
 	}
 
 	cell op_un(tag_ptr tag, op_type op, cell a) const
@@ -955,7 +950,9 @@ public:
 		{
 			return it->second.invoke(tag, a);
 		}
-		return 0;
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
+		return base->call_op(tag, op, a, 0);
 	}
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
@@ -1000,7 +997,12 @@ public:
 
 	virtual bool free(tag_ptr tag, cell arg) const override
 	{
-		return op_un(tag, op_type::free, arg);
+		auto it = dyn_ops.find(op_type::free);
+		if(it != dyn_ops.end())
+		{
+			return it->second.invoke(tag, arg);
+		}
+		return del(tag, arg);
 	}
 
 	virtual cell copy(tag_ptr tag, cell arg) const override
@@ -1010,7 +1012,12 @@ public:
 
 	virtual cell clone(tag_ptr tag, cell arg) const override
 	{
-		return op_un(tag, op_type::clone, arg);
+		auto it = dyn_ops.find(op_type::clone);
+		if(it != dyn_ops.end())
+		{
+			return it->second.invoke(tag, arg);
+		}
+		return copy(tag, arg);
 	}
 
 	virtual size_t hash(tag_ptr tag, cell arg) const override
@@ -1037,7 +1044,28 @@ public:
 		return true;
 	}
 
-protected:
+	virtual cell_string to_string(tag_ptr tag, cell arg) const override
+	{
+		if(dyn_ops.find(op_type::string) != dyn_ops.end())
+		{
+			return null_operations::to_string(tags::find_tag(tag_uid), arg);
+		}
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
+		return base->get_ops().to_string(tag, arg);
+	}
+
+	virtual cell_string to_string(tag_ptr tag, const cell *arg, cell size) const override
+	{
+		if(dyn_ops.find(op_type::string) != dyn_ops.end())
+		{
+			return null_operations::to_string(tags::find_tag(tag_uid), arg, size);
+		}
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
+		return base->get_ops().to_string(tag, arg, size);
+	}
+
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		auto it = dyn_ops.find(op_type::string);
@@ -1051,7 +1079,9 @@ protected:
 			}
 			return;
 		}
-		return null_operations::append_string(tag, arg, str);
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
+		base->get_ops().append_string(tag, arg, str);
 	}
 };
 
@@ -1064,4 +1094,40 @@ tag_control *tag_info::get_control() const
 	}
 	auto op = std::make_unique<dynamic_operations>(uid);
 	return static_cast<dynamic_operations*>((op_map[uid] = std::move(op)).get());
+}
+
+cell tag_info::call_op(tag_ptr tag, op_type type, cell a, cell b) const
+{
+	const tag_operations &ops = get_ops();
+	switch(type)
+	{
+		case op_type::add:
+			return ops.add(tag, a, b);
+		case op_type::sub:
+			return ops.sub(tag, a, b);
+		case op_type::mul:
+			return ops.mul(tag, a, b);
+		case op_type::div:
+			return ops.div(tag, a, b);
+		case op_type::mod:
+			return ops.mod(tag, a, b);
+		case op_type::neg:
+			return ops.neg(tag, a);
+		case op_type::string:
+			return strings::pool.get_id(strings::pool.add(ops.to_string(tag, a), true));
+		case op_type::equals:
+			return ops.equals(tag, a, b);
+		case op_type::del:
+			return ops.del(tag, a);
+		case op_type::free:
+			return ops.free(tag, a);
+		case op_type::copy:
+			return ops.copy(tag, a);
+		case op_type::clone:
+			return ops.clone(tag, a);
+		case op_type::hash:
+			return ops.hash(tag, a);
+		default:
+			return 0;
+	}
 }

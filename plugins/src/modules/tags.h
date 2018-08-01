@@ -19,6 +19,7 @@ public:
 	virtual cell neg(tag_ptr tag, cell a) const = 0;
 	virtual std::basic_string<cell> to_string(tag_ptr tag, cell arg) const = 0;
 	virtual std::basic_string<cell> to_string(tag_ptr tag, const cell *arg, cell size) const = 0;
+	virtual void append_string(tag_ptr tag, cell arg, std::basic_string<cell> &str) const = 0;
 	virtual bool equals(tag_ptr tag, cell a, cell b) const = 0;
 	virtual bool equals(tag_ptr tag, const cell *a, const cell *b, cell size) const = 0;
 	virtual char format_spec(tag_ptr tag, bool arr) const = 0;
@@ -74,6 +75,7 @@ struct tag_info
 	tag_ptr find_top_base() const;
 	bool same_base(tag_ptr tag) const;
 	cell get_id(AMX *amx) const;
+	cell call_op(tag_ptr tag, op_type type, cell a, cell b) const;
 	const tag_operations &get_ops() const;
 	tag_control *get_control() const;
 };

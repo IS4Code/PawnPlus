@@ -90,6 +90,13 @@ namespace Natives
 		if(ctl == nullptr) return 0;
 		return ctl->lock();
 	}
+
+	// native bool:tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:arg1, AnyTag:arg2=0);
+	static cell AMX_NATIVE_CALL tag_call_op(AMX *amx, cell *params)
+	{
+		auto tag = tags::find_tag(params[1]);
+		return tag->call_op(tag, static_cast<op_type>(params[2]), params[3], params[4]);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -103,6 +110,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(tag_find),
 	AMX_DECLARE_NATIVE(tag_new),
 	AMX_DECLARE_NATIVE(tag_set_op),
+	AMX_DECLARE_NATIVE(tag_call_op),
 	AMX_DECLARE_NATIVE(tag_lock),
 };
 
