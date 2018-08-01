@@ -47,6 +47,49 @@ namespace Natives
 	{
 		return tags::find_tag(params[1])->inherits_from(tags::find_tag(params[2]));
 	}
+
+	// native tag_uid:tag_find(const name[]);
+	static cell AMX_NATIVE_CALL tag_find(AMX *amx, cell *params)
+	{
+		char *name;
+		amx_StrParam(amx, params[1], name);
+		return tags::find_existing_tag(name)->uid;
+	}
+
+	// native tag_uid:tag_new(const name[], tag_uid:base=tag_uid_unknown);
+	static cell AMX_NATIVE_CALL tag_new(AMX *amx, cell *params)
+	{
+		char *name;
+		amx_StrParam(amx, params[1], name);
+
+		return tags::new_tag(name, params[2])->uid;
+	}
+
+	// native bool:tag_set_op(tag_uid:tag_uid, tag_op:tag_op, const handler[], const additional_format[]="", AnyTag:...);
+	static cell AMX_NATIVE_CALL tag_set_op(AMX *amx, cell *params)
+	{
+		tag_control *ctl = tags::find_tag(params[1])->get_control();
+		if(ctl == nullptr) return 0;
+
+		char *handler;
+		amx_StrParam(amx, params[3], handler);
+
+		char *add_format;
+		amx_StrParam(amx, params[4], add_format);
+
+		cell *args = params + 5;
+		int numargs = (params[0] / sizeof(cell)) - 4;
+
+		return ctl->set_op(static_cast<op_type>(params[2]), amx, handler, add_format, args, numargs);
+	}
+
+	// native bool:tag_lock(tag_uid:tag_uid);
+	static cell AMX_NATIVE_CALL tag_lock(AMX *amx, cell *params)
+	{
+		tag_control *ctl = tags::find_tag(params[1])->get_control();
+		if(ctl == nullptr) return 0;
+		return ctl->lock();
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -57,6 +100,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(tag_name_s),
 	AMX_DECLARE_NATIVE(tag_base),
 	AMX_DECLARE_NATIVE(tag_derived_from),
+	AMX_DECLARE_NATIVE(tag_find),
+	AMX_DECLARE_NATIVE(tag_new),
+	AMX_DECLARE_NATIVE(tag_set_op),
+	AMX_DECLARE_NATIVE(tag_lock),
 };
 
 int RegisterTagNatives(AMX *amx)

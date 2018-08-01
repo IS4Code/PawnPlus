@@ -30,6 +30,33 @@ public:
 	virtual ~tag_operations() = default;
 };
 
+enum class op_type
+{
+	add = 1,
+	sub = 2,
+	mul = 3,
+	div = 4,
+	mod = 5,
+	neg = 6,
+	string = 7,
+	equals = 8,
+	del = 9,
+	free = 10,
+	copy = 11,
+	clone = 12,
+	hash = 13,
+};
+
+class tag_control
+{
+protected:
+	tag_control() = default;
+public:
+	virtual bool set_op(op_type type, AMX *amx, const char *handler, const char *add_format, const cell *args, int numargs) = 0;
+	virtual bool lock() = 0;
+	virtual ~tag_control() = default;
+};
+
 struct tag_info
 {
 	cell uid;
@@ -47,7 +74,8 @@ struct tag_info
 	tag_ptr find_top_base() const;
 	bool same_base(tag_ptr tag) const;
 	cell get_id(AMX *amx) const;
-	const class tag_operations &get_ops() const;
+	const tag_operations &get_ops() const;
+	tag_control *get_control() const;
 };
 
 namespace tags
@@ -64,11 +92,12 @@ namespace tags
 	constexpr const cell tag_iter = 9;
 	constexpr const cell tag_ref = 10;
 	constexpr const cell tag_task = 11;
-	constexpr const cell tag_guard = 12;
 
 	tag_ptr find_tag(const char *name, size_t sublen=-1);
 	tag_ptr find_tag(AMX *amx, cell tag_id);
 	tag_ptr find_tag(cell tag_uid);
+	tag_ptr find_existing_tag(const char *name, size_t sublen = -1);
+	tag_ptr new_tag(const char *name, cell base_id);
 }
 
 #endif

@@ -2,6 +2,7 @@
 #include "amxinfo.h"
 #include <unordered_map>
 #include <vector>
+#include <cstdint>
 
 std::vector<tag_info*> tag_list = {
 	new tag_info(0, " ", nullptr),
@@ -16,7 +17,6 @@ std::vector<tag_info*> tag_list = {
 	new tag_info(9, "Iter", nullptr),
 	new tag_info(10, "Ref", nullptr),
 	new tag_info(11, "Task", nullptr),
-	new tag_info(12, "Guard", nullptr),
 };
 
 struct tag_map_info : public amx::extra
@@ -70,8 +70,25 @@ tag_ptr tags::find_tag(const char *name, size_t sublen)
 	return ::tag_list[id];
 }
 
+tag_ptr tags::find_existing_tag(const char *name, size_t sublen)
+{
+	std::string tag_name = sublen == -1 ? std::string(name) : std::string(name, sublen);
+
+	for(auto &tag : ::tag_list)
+	{
+		if(tag->name == tag_name) return tag;
+	}
+
+	return ::tag_list[tag_unknown];
+}
+
 tag_ptr tags::find_tag(AMX *amx, cell tag_id)
 {
+	if(tag_id != 0 && (tag_id & 0x80000000) == 0)
+	{
+		auto tag = find_tag(tag_id);
+		if(tag->uid != tag_unknown) return tag;
+	}
 	tag_id &= 0x7FFFFFFF;
 	if(tag_id == 0) return ::tag_list[tag_cell];
 
@@ -89,6 +106,27 @@ tag_ptr tags::find_tag(cell tag_uid)
 {
 	if(tag_uid < 0 || (ucell)tag_uid >= ::tag_list.size()) return ::tag_list[tag_unknown];
 	return ::tag_list[tag_uid];
+}
+
+tag_ptr tags::new_tag(const char *name, cell base_id)
+{
+	std::string tag_name;
+	tag_ptr base = tags::find_tag(base_id);
+	if(base->uid != 0)
+	{
+		tag_name.append(base->name);
+		tag_name.append(1, '@');
+	}else{
+		base = nullptr;
+	}
+	tag_name.append(name);
+	tag_name.append(1, '@');
+
+	cell id = ::tag_list.size();
+	auto tag = new tag_info(id, std::move(tag_name), base);
+	tag->name.append(std::to_string(reinterpret_cast<std::uintptr_t>(tag)));
+	::tag_list.push_back(tag);
+	return tag;
 }
 
 bool tag_info::strong() const

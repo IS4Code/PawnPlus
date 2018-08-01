@@ -750,7 +750,7 @@ std::basic_string<cell> dyn_object::to_string() const
 	{
 		const cell *begin = this->begin();
 		return ops.to_string(tag, begin, end() - begin);
-	} else {
+	}else{
 		return ops.to_string(tag, cell_value);
 	}
 }

@@ -42,6 +42,9 @@
 #define IterTags Iter,GlobalIter
 #define IterTag {IterTags}
 
+#define TagTags _,tag_uid
+#define TagTag {TagTags}
+
 #define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map
 #if defined PP_ADDITIONAL_TAGS
 #define AnyTags PP_ALL_TAGS,PP_ADDITIONAL_TAGS
@@ -102,13 +105,6 @@ native bool:pawn_guard_free(Guard:guard);
 /*      Tags       */
 /*                 */
 
-native tag_uid:tag_uid(tag_id);
-native tag_id(tag_uid:tag_uid);
-native tag_name(tag_uid:tag_uid, name[], size=sizeof(name));
-native String:tag_name_s(tag_uid:tag_uid);
-native tag_base(tag_uid:tag_uid);
-native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
-
 #define tag_uid_unknown (tag_uid:0)
 #define tag_uid_cell (tag_uid:1)
 #define tag_uid_bool (tag_uid:2)
@@ -121,7 +117,34 @@ native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
 #define tag_uid_iter (tag_uid:9)
 #define tag_uid_ref (tag_uid:10)
 #define tag_uid_task (tag_uid:11)
-#define tag_uid_guard (tag_uid:12)
+
+native tag_uid:tag_uid(tag_id);
+native tag_id(tag_uid:tag_uid);
+native tag_name(tag_uid:tag_uid, name[], size=sizeof(name));
+native String:tag_name_s(tag_uid:tag_uid);
+native tag_base(tag_uid:tag_uid);
+native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
+native tag_uid:tag_find(const name[]);
+native tag_uid:tag_new(const name[], tag_uid:base=tag_uid_unknown);
+native bool:tag_set_op(tag_uid:tag_uid, tag_op:tag_op, const handler[], const additional_format[]="", AnyTag:...);
+native bool:tag_lock(tag_uid:tag_uid);
+
+enum tag_op
+{
+    tag_op_add = 1,
+    tag_op_sub = 2,
+    tag_op_mul = 3,
+    tag_op_div = 4,
+    tag_op_mod = 5,
+    tag_op_neg = 6,
+    tag_op_string = 7,
+    tag_op_equals = 8,
+    tag_op_delete = 9,
+    tag_op_free = 10,
+    tag_op_copy = 11,
+    tag_op_clone = 12,
+    tag_op_hash = 13,
+}
 
 /*                 */
 /*       AMX       */
@@ -282,11 +305,11 @@ native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,F
 
 #define VAR_NULL (GlobalVariant:0)
 
-native Variant:var_new(AnyTag:value, tag_id=tagof(value));
-native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-native Variant:var_new_arr_2d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), tag_id=tagof(value));
-native Variant:var_new_arr_3d(const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), tag_id=tagof(value));
-native Variant:var_new_buf(size, tag_id=0);
+native Variant:var_new(AnyTag:value, TagTag:tag_id=tagof(value));
+native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native Variant:var_new_arr_2d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
+native Variant:var_new_arr_3d(const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
+native Variant:var_new_buf(size, TagTag:tag_id=0);
 native Variant:var_new_str(const value[]);
 native Variant:var_new_str_s(StringTag:value);
 native Variant:var_new_var(VariantTag:value);
