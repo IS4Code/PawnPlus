@@ -421,8 +421,8 @@ namespace Natives
 		return str->empty();
 	}
 
-	// native bool:str_equal(StringTag:str1, StringTag:str2);
-	static cell AMX_NATIVE_CALL str_equal(AMX *amx, cell *params)
+	// native bool:str_eq(StringTag:str1, StringTag:str2);
+	static cell AMX_NATIVE_CALL str_eq(AMX *amx, cell *params)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) return 0;
@@ -613,7 +613,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_setc),
 	AMX_DECLARE_NATIVE(str_cmp),
 	AMX_DECLARE_NATIVE(str_empty),
-	AMX_DECLARE_NATIVE(str_equal),
+	AMX_DECLARE_NATIVE(str_eq),
 	AMX_DECLARE_NATIVE(str_findc),
 	AMX_DECLARE_NATIVE(str_find),
 

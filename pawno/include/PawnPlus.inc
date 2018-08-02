@@ -127,7 +127,7 @@ native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
 native tag_uid:tag_find(const name[]);
 native tag_uid:tag_new(const name[], tag_uid:base=tag_uid_unknown);
 native bool:tag_set_op(tag_uid:tag_uid, tag_op:tag_op, const handler[], const additional_format[]="", AnyTag:...);
-native bool:tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:arg1, AnyTag:arg2=0);
+native tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:arg1, AnyTag:arg2=0);
 native bool:tag_lock(tag_uid:tag_uid);
 
 enum tag_op
@@ -138,13 +138,23 @@ enum tag_op
     tag_op_div = 4,
     tag_op_mod = 5,
     tag_op_neg = 6,
-    tag_op_string = 7,
-    tag_op_equals = 8,
-    tag_op_delete = 9,
-    tag_op_free = 10,
-    tag_op_copy = 11,
-    tag_op_clone = 12,
-    tag_op_hash = 13,
+    tag_op_inc = 7,
+    tag_op_dec = 8,
+    
+    tag_op_eq = 10,
+    tag_op_neq = 11,
+    tag_op_lt = 12,
+    tag_op_gt = 13,
+    tag_op_lte = 14,
+    tag_op_gte = 15,
+    tag_op_not = 16,
+    
+    tag_op_string = 20,
+    tag_op_delete = 21,
+    tag_op_free = 22,
+    tag_op_copy = 23,
+    tag_op_clone = 24,
+    tag_op_hash = 25,
 }
 
 /*                 */
@@ -263,7 +273,7 @@ native str_getc(StringTag:str, pos);
 native str_setc(StringTag:str, pos, value);
 native str_cmp(StringTag:str1, StringTag:str2);
 native bool:str_empty(StringTag:str);
-native bool:str_equal(StringTag:str1, StringTag:str2);
+native bool:str_eq(StringTag:str1, StringTag:str2);
 native str_findc(StringTag:str, value, offset=0);
 native str_find(StringTag:str, StringTag:value, offset=0);
 
@@ -336,13 +346,21 @@ native bool:var_set_cell_safe(VariantTag:var, AnyTag:value, const offsets[]={cel
 native var_tagof(VariantTag:var);
 native tag_uid:var_tag_uid(VariantTag:var);
 native var_sizeof(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-native bool:var_equal(VariantTag:var1, VariantTag:var2);
 native Variant:var_add(VariantTag:var1, VariantTag:var2);
 native Variant:var_sub(VariantTag:var1, VariantTag:var2);
 native Variant:var_mul(VariantTag:var1, VariantTag:var2);
 native Variant:var_div(VariantTag:var1, VariantTag:var2);
 native Variant:var_mod(VariantTag:var1, VariantTag:var2);
 native Variant:var_neg(VariantTag:var);
+native Variant:var_inc(VariantTag:var);
+native Variant:var_dec(VariantTag:var);
+native bool:var_eq(VariantTag:var1, VariantTag:var2);
+native bool:var_neq(VariantTag:var1, VariantTag:var2);
+native bool:var_lt(VariantTag:var1, VariantTag:var2);
+native bool:var_gt(VariantTag:var1, VariantTag:var2);
+native bool:var_lte(VariantTag:var1, VariantTag:var2);
+native bool:var_gte(VariantTag:var1, VariantTag:var2);
+native bool:var_not(VariantTag:var);
 
 
 /*                 */
@@ -699,7 +717,7 @@ native Iter:iter_move_next(IterTag:iter);
 native Iter:iter_move_previous(IterTag:iter);
 native Iter:iter_to_first(IterTag:iter);
 native Iter:iter_to_last(IterTag:iter);
-native bool:iter_equal(IterTag:iter1, IterTag:iter2);
+native bool:iter_eq(IterTag:iter1, IterTag:iter2);
 
 native iter_get(IterTag:iter, offset=0);
 native iter_get_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
@@ -897,10 +915,10 @@ native String:operator+(String:arg1, String:arg2) = str_cat;
 native String:operator+(String:arg1, GlobalString:arg2) = str_cat;
 native String:operator+(GlobalString:arg1, String:arg2) = str_cat;
 native String:operator+(GlobalString:arg1, GlobalString:arg2) = str_cat;
-native bool:operator==(String:arg1, String:arg2) = str_equal;
-native bool:operator==(String:arg1, GlobalString:arg2) = str_equal;
-native bool:operator==(GlobalString:arg1, String:arg2) = str_equal;
-native bool:operator==(GlobalString:arg1, GlobalString:arg2) = str_equal;
+native bool:operator==(String:arg1, String:arg2) = str_eq;
+native bool:operator==(String:arg1, GlobalString:arg2) = str_eq;
+native bool:operator==(GlobalString:arg1, String:arg2) = str_eq;
+native bool:operator==(GlobalString:arg1, GlobalString:arg2) = str_eq;
 stock bool:operator!=(String:arg1, String:arg2) return !(arg1 == arg2);
 stock bool:operator!=(String:arg1, GlobalString:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalString:arg1, String:arg2) return !(arg1 == arg2);
@@ -927,43 +945,52 @@ stock String:operator%(Float:arg1, GlobalString:arg2) return str_cat(str_float(a
 
 #endif
 
+native GlobalVariant:operator=(Variant:arg) = var_to_global;
+stock Variant:operator=(GlobalVariant:arg) return Variant:arg;
+
 #define PP_VARIANT_BIN_OP(%0,%1) \
     native Variant:operator%0(Variant:arg1, Variant:arg2) = %1; \
     native Variant:operator%0(Variant:arg1, GlobalVariant:arg2) = %1; \
     native Variant:operator%0(GlobalVariant:arg1, Variant:arg2) = %1; \
     native Variant:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1
 
+#define PP_VARIANT_UN_OP(%0,%1) \
+    native Variant:operator%0(Variant:arg) = %1; \
+    native Variant:operator%0(GlobalVariant:arg) = %1
+
+#define PP_VARIANT_LOG_BIN_OP(%0,%1) \
+    native bool:operator%0(Variant:arg1, Variant:arg2) = %1; \
+    native bool:operator%0(Variant:arg1, GlobalVariant:arg2) = %1; \
+    native bool:operator%0(GlobalVariant:arg1, Variant:arg2) = %1; \
+    native bool:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1
+
+#define PP_VARIANT_LOG_UN_OP(%0,%1) \
+    native bool:operator%0(Variant:arg) = %1; \
+    native bool:operator%0(GlobalVariant:arg) = %1
+
 PP_VARIANT_BIN_OP(+, var_add);
 PP_VARIANT_BIN_OP(-, var_sub);
 PP_VARIANT_BIN_OP(*, var_mul);
 PP_VARIANT_BIN_OP(/, var_div);
 PP_VARIANT_BIN_OP(%, var_mod);
+PP_VARIANT_UN_OP(-, var_neg);
+PP_VARIANT_LOG_BIN_OP(==, var_eq);
+PP_VARIANT_LOG_BIN_OP(!=, var_neq);
+PP_VARIANT_LOG_BIN_OP(<, var_lt);
+PP_VARIANT_LOG_BIN_OP(>, var_gt);
+PP_VARIANT_LOG_BIN_OP(<=, var_lte);
+PP_VARIANT_LOG_BIN_OP(>=, var_gte);
+PP_VARIANT_LOG_UN_OP(!, var_not);
 
 #undef PP_VARIANT_BIN_OP
-
-#define PP_VARIANT_UN_OP(%0,%1) \
-    native Variant:operator%0(Variant:arg) = %1; \
-    native Variant:operator%0(GlobalVariant:arg) = %1
-
-PP_VARIANT_UN_OP(-, var_neg);
-
 #undef PP_VARIANT_UN_OP
-    
-native GlobalVariant:operator=(Variant:arg) = var_to_global;
-stock Variant:operator=(GlobalVariant:arg) return Variant:arg;
-native bool:operator==(Variant:arg1, Variant:arg2) = var_equal;
-native bool:operator==(Variant:arg1, GlobalVariant:arg2) = var_equal;
-native bool:operator==(GlobalVariant:arg1, Variant:arg2) = var_equal;
-native bool:operator==(GlobalVariant:arg1, GlobalVariant:arg2) = var_equal;
-stock bool:operator!=(Variant:arg1, Variant:arg2) return !(arg1 == arg2);
-stock bool:operator!=(Variant:arg1, GlobalVariant:arg2) return !(arg1 == arg2);
-stock bool:operator!=(GlobalVariant:arg1, Variant:arg2) return !(arg1 == arg2);
-stock bool:operator!=(GlobalVariant:arg1, GlobalVariant:arg2) return !(arg1 == arg2);
+#undef PP_VARIANT_LOG_BIN_OP
+#undef PP_VARIANT_LOG_UN_OP
 
-native bool:operator==(Iter:arg1, Iter:arg2) = iter_equal;
-native bool:operator==(Iter:arg1, GlobalIter:arg2) = iter_equal;
-native bool:operator==(GlobalIter:arg1, Iter:arg2) = iter_equal;
-native bool:operator==(GlobalIter:arg1, GlobalIter:arg2) = iter_equal;
+native bool:operator==(Iter:arg1, Iter:arg2) = iter_eq;
+native bool:operator==(Iter:arg1, GlobalIter:arg2) = iter_eq;
+native bool:operator==(GlobalIter:arg1, Iter:arg2) = iter_eq;
+native bool:operator==(GlobalIter:arg1, GlobalIter:arg2) = iter_eq;
 stock bool:operator!=(Iter:arg1, Iter:arg2) return !(arg1 == arg2);
 stock bool:operator!=(Iter:arg1, GlobalIter:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalIter:arg1, Iter:arg2) return !(arg1 == arg2);

@@ -133,6 +133,11 @@ tag_ptr tags::new_tag(const char *name, cell base_id)
 	return tag;
 }
 
+tag_info::tag_info(cell uid, std::string &&name, tag_ptr base) : uid(uid), name(std::move(name)), base(base)
+{
+
+}
+
 bool tag_info::strong() const
 {
 	if(name.size() == 0) return false;

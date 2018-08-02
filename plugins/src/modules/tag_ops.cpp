@@ -58,6 +58,65 @@ struct null_operations : public tag_operations
 		return 0;
 	}
 
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
+	{
+		return a == b;
+	}
+
+	virtual bool eq(tag_ptr tag, const cell *a, const cell *b, cell size) const override
+	{
+		for(cell i = 0; i < size; i++)
+		{
+			if(!eq(tag, a[i], b[i]))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	virtual bool neq(tag_ptr tag, cell a, cell b) const override
+	{
+		return !eq(tag, a, b);
+	}
+
+	virtual bool neq(tag_ptr tag, const cell *a, const cell *b, cell size) const override
+	{
+		for(cell i = 0; i < size; i++)
+		{
+			if(neq(tag, a[i], b[i]))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	virtual bool lt(tag_ptr tag, cell a, cell b) const override
+	{
+		return false;
+	}
+
+	virtual bool gt(tag_ptr tag, cell a, cell b) const override
+	{
+		return false;
+	}
+
+	virtual bool lte(tag_ptr tag, cell a, cell b) const override
+	{
+		return false;
+	}
+
+	virtual bool gte(tag_ptr tag, cell a, cell b) const override
+	{
+		return false;
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		return a == 0;
+	}
+
 	virtual cell_string to_string(tag_ptr tag, cell arg) const override
 	{
 		cell_string str;
@@ -93,24 +152,7 @@ struct null_operations : public tag_operations
 		str.append({'}'});
 		return str;
 	}
-
-	virtual bool equals(tag_ptr tag, cell a, cell b) const override
-	{
-		return a == b;
-	}
-
-	virtual bool equals(tag_ptr tag, const cell *a, const cell *b, cell size) const override
-	{
-		for(cell i = 0; i < size; i++)
-		{
-			if(!equals(tag, a[i], b[i]))
-			{
-				return false;
-			}
-		}
-		return true;
-	}
-
+	
 	virtual char format_spec(tag_ptr tag, bool arr) const override
 	{
 		return arr ? 'a' : 'i';
@@ -171,11 +213,13 @@ struct cell_operations : public null_operations
 
 	virtual cell div(tag_ptr tag, cell a, cell b) const override
 	{
+		if(b == 0) return 0;
 		return a / b;
 	}
 
 	virtual cell mod(tag_ptr tag, cell a, cell b) const override
 	{
+		if(b == 0) return 0;
 		return a % b;
 	}
 
@@ -184,14 +228,49 @@ struct cell_operations : public null_operations
 		return -a;
 	}
 
-	virtual bool equals(tag_ptr tag, cell a, cell b) const override
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
 		return a == b;
 	}
 
-	virtual bool equals(tag_ptr tag, const cell *a, const cell *b, cell size) const override
+	virtual bool eq(tag_ptr tag, const cell *a, const cell *b, cell size) const override
 	{
 		return !std::memcmp(a, b, size * sizeof(cell));
+	}
+
+	virtual bool neq(tag_ptr tag, cell a, cell b) const override
+	{
+		return a != b;
+	}
+
+	virtual bool neq(tag_ptr tag, const cell *a, const cell *b, cell size) const override
+	{
+		return !!std::memcmp(a, b, size * sizeof(cell));
+	}
+
+	virtual bool lt(tag_ptr tag, cell a, cell b) const override
+	{
+		return a < b;
+	}
+
+	virtual bool gt(tag_ptr tag, cell a, cell b) const override
+	{
+		return a > b;
+	}
+
+	virtual bool lte(tag_ptr tag, cell a, cell b) const override
+	{
+		return a <= b;
+	}
+
+	virtual bool gte(tag_ptr tag, cell a, cell b) const override
+	{
+		return a >= b;
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		return !a;
 	}
 
 	virtual cell copy(tag_ptr tag, cell arg) const override
@@ -303,14 +382,49 @@ struct float_operations : public cell_operations
 		return amx_ftoc(result);
 	}
 
-	virtual bool equals(tag_ptr tag, cell a, cell b) const override
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
 		return amx_ctof(a) == amx_ctof(b);
 	}
 
-	virtual bool equals(tag_ptr tag, const cell *a, const cell *b, cell size) const override
+	virtual bool eq(tag_ptr tag, const cell *a, const cell *b, cell size) const override
 	{
-		return null_operations::equals(tag, a, b, size);
+		return null_operations::eq(tag, a, b, size);
+	}
+
+	virtual bool neq(tag_ptr tag, cell a, cell b) const override
+	{
+		return amx_ctof(a) != amx_ctof(b);
+	}
+
+	virtual bool neq(tag_ptr tag, const cell *a, const cell *b, cell size) const override
+	{
+		return null_operations::neq(tag, a, b, size);
+	}
+
+	virtual bool lt(tag_ptr tag, cell a, cell b) const override
+	{
+		return amx_ctof(a) < amx_ctof(b);
+	}
+
+	virtual bool gt(tag_ptr tag, cell a, cell b) const override
+	{
+		return amx_ctof(a) > amx_ctof(b);
+	}
+
+	virtual bool lte(tag_ptr tag, cell a, cell b) const override
+	{
+		return amx_ctof(a) <= amx_ctof(b);
+	}
+
+	virtual bool gte(tag_ptr tag, cell a, cell b) const override
+	{
+		return amx_ctof(a) >= amx_ctof(b);
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		return !amx_ctof(a);
 	}
 
 	virtual char format_spec(tag_ptr tag, bool arr) const override
@@ -360,7 +474,7 @@ struct string_operations : public null_operations
 		return add(tag, a, b);
 	}
 
-	virtual bool equals(tag_ptr tag, cell a, cell b) const override
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(a, str1) && str1 != nullptr) return false;
@@ -377,6 +491,12 @@ struct string_operations : public null_operations
 			return str1->size() == 0;
 		}
 		return *str1 == *str2;
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		cell_string *str;
+		return !strings::pool.get_by_id(a, str);
 	}
 
 	virtual char format_spec(tag_ptr tag, bool arr) const override
@@ -492,17 +612,71 @@ struct variant_operations : public null_operations
 		return variants::create(std::move(result));
 	}
 
-	virtual bool equals(tag_ptr tag, cell a, cell b) const override
+	template <bool(dyn_object::*op)(const dyn_object&) const>
+	bool AMX_NATIVE_CALL log_op(tag_ptr tag, cell a, cell b) const
 	{
-		dyn_object *var1;
-		if(!variants::pool.get_by_id(a, var1) && var1 != nullptr) return false;
-		dyn_object *var2;
-		if(!variants::pool.get_by_id(b, var2) && var2 != nullptr) return false;
-		if(var1 == nullptr || var1->empty()) return var2 == nullptr || var2->empty();
-		if(var2 == nullptr) return false;
-		return *var1 == *var2;
+		dyn_object *var1, *var2;
+		if((!variants::pool.get_by_id(a, var1) && var1 != nullptr) || (!variants::pool.get_by_id(b, var2) && var2 != nullptr)) return false;
+		bool init1 = false, init2 = false;
+		if(var1 == nullptr)
+		{
+			var1 = new dyn_object();
+			init1 = true;
+		}
+		if(var2 == nullptr)
+		{
+			var2 = new dyn_object();
+			init2 = false;
+		}
+		bool result = (var1->*op)(*var2);
+		if(init1)
+		{
+			delete var1;
+		}
+		if(init2)
+		{
+			delete var2;
+		}
+		return result;
 	}
 
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
+	{
+		return log_op<&dyn_object::operator==>(tag, a, b);
+	}
+
+	virtual bool neq(tag_ptr tag, cell a, cell b) const override
+	{
+		return log_op<&dyn_object::operator!=>(tag, a, b);
+	}
+
+	virtual bool lt(tag_ptr tag, cell a, cell b) const override
+	{
+		return log_op<&dyn_object::operator<>(tag, a, b);
+	}
+
+	virtual bool gt(tag_ptr tag, cell a, cell b) const override
+	{
+		return log_op<(&dyn_object::operator>)>(tag, a, b);
+	}
+
+	virtual bool lte(tag_ptr tag, cell a, cell b) const override
+	{
+		return log_op<&dyn_object::operator<=>(tag, a, b);
+	}
+
+	virtual bool gte(tag_ptr tag, cell a, cell b) const override
+	{
+		return log_op<&dyn_object::operator>=>(tag, a, b);
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(a, var)) return true;
+		return !(*var);
+	}
+	
 	virtual char format_spec(tag_ptr tag, bool arr) const override
 	{
 		return arr ? 'a' : 'V';
@@ -578,9 +752,15 @@ struct list_operations : public null_operations
 
 	}
 
-	virtual bool equals(tag_ptr tag, cell a, cell b) const override
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
 		return a == b;
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		list_t *l;
+		return !list_pool.get_by_id(a, l);
 	}
 
 	virtual char format_spec(tag_ptr tag, bool arr) const override
@@ -647,9 +827,15 @@ struct map_operations : public null_operations
 
 	}
 
-	virtual bool equals(tag_ptr tag, cell a, cell b) const override
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
 		return a == b;
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		map_t *m;
+		return !map_pool.get_by_id(a, m);
 	}
 
 	virtual char format_spec(tag_ptr tag, bool arr) const override
@@ -717,13 +903,19 @@ struct iter_operations : public null_operations
 
 	}
 
-	virtual bool equals(tag_ptr tag, cell a, cell b) const override
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
 		dyn_iterator *iter1;
 		if(!iter_pool.get_by_id(a, iter1)) return 0;
 		dyn_iterator *iter2;
 		if(!iter_pool.get_by_id(b, iter2)) return 0;
 		return *iter1 == *iter2;
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		dyn_iterator *iter;
+		return !iter_pool.get_by_id(a, iter);
 	}
 
 	virtual bool del(tag_ptr tag, cell arg) const override
@@ -787,6 +979,12 @@ struct task_operations : public null_operations
 	task_operations() : null_operations(tags::tag_task)
 	{
 
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		tasks::task *task;
+		return !tasks::get_by_id(a, task);
 	}
 
 	virtual bool del(tag_ptr tag, cell arg) const override
@@ -995,9 +1193,9 @@ public:
 		return op_un(tag, op_type::neg, a);
 	}
 
-	virtual bool equals(tag_ptr tag, cell a, cell b) const override
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
-		return op_bin(tag, op_type::equals, a, b);
+		return op_bin(tag, op_type::eq, a, b);
 	}
 
 	virtual bool del(tag_ptr tag, cell arg) const override
@@ -1125,8 +1323,8 @@ cell tag_info::call_op(tag_ptr tag, op_type type, cell a, cell b) const
 			return ops.neg(tag, a);
 		case op_type::string:
 			return strings::pool.get_id(strings::pool.add(ops.to_string(tag, a), true));
-		case op_type::equals:
-			return ops.equals(tag, a, b);
+		case op_type::eq:
+			return ops.eq(tag, a, b);
 		case op_type::del:
 			return ops.del(tag, a);
 		case op_type::free:

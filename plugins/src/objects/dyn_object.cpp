@@ -641,27 +641,97 @@ bool dyn_object::struct_compatible(const dyn_object &obj) const
 	return true;
 }
 
-bool operator==(const dyn_object &a, const dyn_object &b)
+bool dyn_object::operator==(const dyn_object &obj) const
 {
-	if(!a.tag_compatible(b) || !a.struct_compatible(b)) return false;
-	const cell *begin1 = a.begin();
-	const cell *end1 = a.end();
-	const cell *begin2 = b.begin();
-	const cell *end2 = b.end();
+	if(!tag_compatible(obj) || !struct_compatible(obj)) return false;
+	const cell *begin1 = begin();
+	const cell *end1 = end();
+	const cell *begin2 = obj.begin();
+	const cell *end2 = obj.end();
 	if(end2 - begin2 != end1 - begin1)
 	{
 		return false;
 	}else{
-		const auto &ops = a.tag->get_ops();
-		return ops.equals(a.tag, begin1, begin2, end1 - begin1);
+		const auto &ops = tag->get_ops();
+		return ops.eq(tag, begin1, begin2, end1 - begin1);
+	}
+}
+
+bool dyn_object::operator!=(const dyn_object &obj) const
+{
+	if(!tag_compatible(obj) || !struct_compatible(obj)) return true;
+	const cell *begin1 = begin();
+	const cell *end1 = end();
+	const cell *begin2 = obj.begin();
+	const cell *end2 = obj.end();
+	if(end2 - begin2 != end1 - begin1)
+	{
+		return true;
+	}else{
+		const auto &ops = tag->get_ops();
+		return ops.neq(tag, begin1, begin2, end1 - begin1);
+	}
+}
+
+template <bool(tag_operations::*OpFunc)(tag_ptr, cell, cell) const>
+bool dyn_object::operator_log_func(const dyn_object &obj) const
+{
+	if(!tag_compatible(obj) || !struct_compatible(obj)) return false;
+	const cell *begin1 = begin();
+	const cell *end1 = end();
+	const cell *begin2 = obj.begin();
+	const cell *end2 = obj.end();
+	if(end2 - begin2 != end1 - begin1)
+	{
+		return true;
+	}else{
+		const auto &ops = tag->get_ops();
+		cell size = end1 - begin1;
+		for(cell i = 0; i < size; i++)
+		{
+			if(!(ops.*OpFunc)(tag, begin1[i], begin2[i]))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+}
+
+bool dyn_object::operator<(const dyn_object &obj) const
+{
+	return operator_log_func<&tag_operations::lt>(obj);
+}
+
+bool dyn_object::operator>(const dyn_object &obj) const
+{
+	return operator_log_func<&tag_operations::gt>(obj);
+}
+
+bool dyn_object::operator<=(const dyn_object &obj) const
+{
+	return operator_log_func<&tag_operations::lte>(obj);
+}
+
+bool dyn_object::operator>=(const dyn_object &obj) const
+{
+	return operator_log_func<&tag_operations::gte>(obj);
+}
+
+bool dyn_object::operator!() const
+{
+	if(empty()) return true;
+	const cell *begin1 = begin();
+	const cell *end1 = end();
+	const auto &ops = tag->get_ops();
+	cell size = end1 - begin1;
+	for(cell i = 0; i < size; i++)
+	{
+		if(!ops.not(tag, begin1[i])) return false;
 	}
 	return true;
 }
 
-bool operator!=(const dyn_object &a, const dyn_object &b)
-{
-	return !(a == b);
-}
 
 template <cell (tag_operations::*OpFunc)(tag_ptr, cell, cell) const>
 dyn_object dyn_object::operator_func(const dyn_object &obj) const

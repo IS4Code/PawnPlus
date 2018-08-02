@@ -66,8 +66,6 @@ public:
 
 	cell &operator[](cell index);
 	const cell &operator[](cell index) const;
-	friend bool operator==(const dyn_object &a, const dyn_object &b);
-	friend bool operator!=(const dyn_object &a, const dyn_object &b);
 	std::basic_string<cell> to_string() const;
 	dyn_object operator+(const dyn_object &obj) const;
 	dyn_object operator-(const dyn_object &obj) const;
@@ -75,6 +73,13 @@ public:
 	dyn_object operator/(const dyn_object &obj) const;
 	dyn_object operator%(const dyn_object &obj) const;
 	dyn_object operator-() const;
+	bool operator==(const dyn_object &obj) const;
+	bool operator!=(const dyn_object &obj) const;
+	bool operator<(const dyn_object &obj) const;
+	bool operator>(const dyn_object &obj) const;
+	bool operator<=(const dyn_object &obj) const;
+	bool operator>=(const dyn_object &obj) const;
+	bool operator!() const;
 	dyn_object &operator=(const dyn_object &obj);
 	dyn_object &operator=(dyn_object &&obj);
 
@@ -85,6 +90,8 @@ private:
 	dyn_object operator_func(const dyn_object &obj) const;
 	template <cell(tag_operations::*OpFunc)(tag_ptr, cell) const>
 	dyn_object operator_func() const;
+	template <bool(tag_operations::*OpFunc)(tag_ptr, cell, cell) const>
+	bool operator_log_func(const dyn_object &obj) const;
 };
 
 namespace std

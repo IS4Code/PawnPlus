@@ -91,7 +91,7 @@ namespace Natives
 		return ctl->lock();
 	}
 
-	// native bool:tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:arg1, AnyTag:arg2=0);
+	// native tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:arg1, AnyTag:arg2=0);
 	static cell AMX_NATIVE_CALL tag_call_op(AMX *amx, cell *params)
 	{
 		auto tag = tags::find_tag(params[1]);

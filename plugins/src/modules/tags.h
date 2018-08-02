@@ -17,11 +17,19 @@ public:
 	virtual cell div(tag_ptr tag, cell a, cell b) const = 0;
 	virtual cell mod(tag_ptr tag, cell a, cell b) const = 0;
 	virtual cell neg(tag_ptr tag, cell a) const = 0;
+	virtual bool eq(tag_ptr tag, cell a, cell b) const = 0;
+	virtual bool eq(tag_ptr tag, const cell *a, const cell *b, cell size) const = 0;
+	virtual bool neq(tag_ptr tag, cell a, cell b) const = 0;
+	virtual bool neq(tag_ptr tag, const cell *a, const cell *b, cell size) const = 0;
+	virtual bool lt(tag_ptr tag, cell a, cell b) const = 0;
+	virtual bool gt(tag_ptr tag, cell a, cell b) const = 0;
+	virtual bool lte(tag_ptr tag, cell a, cell b) const = 0;
+	virtual bool gte(tag_ptr tag, cell a, cell b) const = 0;
+	virtual bool not(tag_ptr tag, cell a) const = 0;
+
 	virtual std::basic_string<cell> to_string(tag_ptr tag, cell arg) const = 0;
 	virtual std::basic_string<cell> to_string(tag_ptr tag, const cell *arg, cell size) const = 0;
 	virtual void append_string(tag_ptr tag, cell arg, std::basic_string<cell> &str) const = 0;
-	virtual bool equals(tag_ptr tag, cell a, cell b) const = 0;
-	virtual bool equals(tag_ptr tag, const cell *a, const cell *b, cell size) const = 0;
 	virtual char format_spec(tag_ptr tag, bool arr) const = 0;
 	virtual bool del(tag_ptr tag, cell arg) const = 0;
 	virtual bool free(tag_ptr tag, cell arg) const = 0;
@@ -39,13 +47,23 @@ enum class op_type
 	div = 4,
 	mod = 5,
 	neg = 6,
-	string = 7,
-	equals = 8,
-	del = 9,
-	free = 10,
-	copy = 11,
-	clone = 12,
-	hash = 13,
+	inc = 7,
+	dec = 8,
+
+	eq = 10,
+	neq = 11,
+	lt = 12,
+	gt = 13,
+	lte = 14,
+	gte = 15,
+	not = 16,
+
+	string = 20,
+	del = 21,
+	free = 22,
+	copy = 23,
+	clone = 24,
+	hash = 25,
 };
 
 class tag_control
@@ -64,10 +82,7 @@ struct tag_info
 	std::string name;
 	tag_ptr base;
 
-	tag_info(cell uid, std::string &&name, tag_ptr base) : uid(uid), name(std::move(name)), base(base)
-	{
-
-	}
+	tag_info(cell uid, std::string &&name, tag_ptr base);
 
 	bool strong() const;
 	bool inherits_from(cell parent) const;

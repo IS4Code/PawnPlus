@@ -242,8 +242,8 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:iter_equal(IteratorTag:iter1, IteratorTag:iter2);
-	static cell AMX_NATIVE_CALL iter_equal(AMX *amx, cell *params)
+	// native bool:iter_eq(IteratorTag:iter1, IteratorTag:iter2);
+	static cell AMX_NATIVE_CALL iter_eq(AMX *amx, cell *params)
 	{
 		dyn_iterator *iter1;
 		if(!iter_pool.get_by_id(params[1], iter1)) return 0;
@@ -432,7 +432,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_erase),
 	AMX_DECLARE_NATIVE(iter_reset),
 	AMX_DECLARE_NATIVE(iter_clone),
-	AMX_DECLARE_NATIVE(iter_equal),
+	AMX_DECLARE_NATIVE(iter_eq),
 	AMX_DECLARE_NATIVE(iter_move_next),
 	AMX_DECLARE_NATIVE(iter_move_previous),
 	AMX_DECLARE_NATIVE(iter_to_first),
