@@ -122,7 +122,7 @@ native tag_uid:tag_uid(tag_id);
 native tag_id(tag_uid:tag_uid);
 native tag_name(tag_uid:tag_uid, name[], size=sizeof(name));
 native String:tag_name_s(tag_uid:tag_uid);
-native tag_base(tag_uid:tag_uid);
+native tag_uid:tag_base(tag_uid:tag_uid);
 native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
 native tag_uid:tag_find(const name[]);
 native tag_uid:tag_new(const name[], tag_uid:base=tag_uid_unknown);

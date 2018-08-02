@@ -34,7 +34,7 @@ namespace Natives
 		return strings::pool.get_id(strings::create(tag->name, true));
 	}
 
-	// native tag_base(tag_uid:tag_uid);
+	// native tag_uid:tag_base(tag_uid:tag_uid);
 	static cell AMX_NATIVE_CALL tag_base(AMX *amx, cell *params)
 	{
 		auto base = tags::find_tag(params[1])->base;
