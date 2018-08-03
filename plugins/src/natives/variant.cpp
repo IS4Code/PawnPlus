@@ -122,7 +122,7 @@ namespace Natives
 	{
 		dyn_object *var;
 		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		return variants::pool.get_id(variants::pool.clone(var));
+		return variants::pool.get_id(variants::pool.clone(var, [](const dyn_object &obj) {return obj.clone(); }));
 	}
 
 	// native var_get(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
