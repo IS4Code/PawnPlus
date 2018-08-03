@@ -151,7 +151,7 @@ enum tag_op
     
     tag_op_string = 20,
     tag_op_delete = 21,
-    tag_op_free = 22,
+    tag_op_delete_deep = 22,
     tag_op_copy = 23,
     tag_op_clone = 24,
     tag_op_hash = 25,
