@@ -1350,7 +1350,7 @@ cell tag_info::call_op(tag_ptr tag, op_type type, cell a, cell b) const
 		case op_type::free:
 			return ops.free(tag, a);
 		case op_type::collect:
-			return ops.collect(tag, &a, 1);
+			return 0;
 		case op_type::copy:
 			return ops.copy(tag, a);
 		case op_type::clone:
