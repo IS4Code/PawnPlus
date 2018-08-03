@@ -36,9 +36,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 
 	amx::on_bottom(
 		[](AMX *amx){
-			strings::pool.clear_tmp();
-			variants::pool.clear_tmp();
-			iter_pool.clear_tmp();
+			gc_collect();
 			Threads::StartThreads();
 		}
 	);
@@ -73,4 +71,11 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 {
 	tasks::tick();
 	Threads::SyncThreads();
+}
+
+void gc_collect()
+{
+	strings::pool.clear_tmp();
+	variants::pool.clear_tmp();
+	iter_pool.clear_tmp();
 }

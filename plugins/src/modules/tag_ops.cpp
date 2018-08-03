@@ -168,6 +168,11 @@ struct null_operations : public tag_operations
 		return del(tag, arg);
 	}
 
+	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const override
+	{
+		return false;
+	}
+
 	virtual cell copy(tag_ptr tag, cell arg) const override
 	{
 		return 0;
@@ -1213,6 +1218,21 @@ public:
 		return del(tag, arg);
 	}
 
+	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const override
+	{
+		auto it = dyn_ops.find(op_type::collect);
+		if(it != dyn_ops.end())
+		{
+			bool ok = false;
+			for(cell i = 0; i < size; i++)
+			{
+				if(it->second.invoke(tag, arg[i])) ok = true;
+			}
+			return ok;
+		}
+		return false;
+	}
+
 	virtual cell copy(tag_ptr tag, cell arg) const override
 	{
 		return op_un(tag, op_type::copy, arg);
@@ -1329,6 +1349,8 @@ cell tag_info::call_op(tag_ptr tag, op_type type, cell a, cell b) const
 			return ops.del(tag, a);
 		case op_type::free:
 			return ops.free(tag, a);
+		case op_type::collect:
+			return ops.collect(tag, &a, 1);
 		case op_type::copy:
 			return ops.copy(tag, a);
 		case op_type::clone:

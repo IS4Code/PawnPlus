@@ -173,7 +173,8 @@ template <class ObjType>
 void object_pool<ObjType>::clear_tmp()
 {
 	inner_cache.clear();
-	tmp_object_list.clear();
+	auto tmp = std::move(tmp_object_list);
+	tmp.clear();
 }
 
 

@@ -1,4 +1,5 @@
 #include "natives.h"
+#include "main.h"
 #include "hooks.h"
 #include "context.h"
 #include "modules/tasks.h"
@@ -98,6 +99,25 @@ namespace Natives
 			}
 		}
 	}
+
+	// native pp_num_local_iters();
+	static cell AMX_NATIVE_CALL pp_num_local_iters(AMX *amx, cell *params)
+	{
+		return iter_pool.local_size();
+	}
+
+	// native pp_num_global_iters();
+	static cell AMX_NATIVE_CALL pp_num_global_iters(AMX *amx, cell *params)
+	{
+		return iter_pool.global_size();
+	}
+
+	// native pp_collect();
+	static cell AMX_NATIVE_CALL pp_collect(AMX *amx, cell *params)
+	{
+		gc_collect();
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -112,7 +132,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_num_lists),
 	AMX_DECLARE_NATIVE(pp_num_maps),
 	AMX_DECLARE_NATIVE(pp_num_guards),
+	AMX_DECLARE_NATIVE(pp_num_local_iters),
+	AMX_DECLARE_NATIVE(pp_num_global_iters),
 	AMX_DECLARE_NATIVE(pp_entry_s),
+	AMX_DECLARE_NATIVE(pp_collect),
 };
 
 int RegisterConfigNatives(AMX *amx)

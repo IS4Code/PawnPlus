@@ -197,10 +197,11 @@ dyn_object::dyn_object(dyn_object &&obj) : rank(obj.rank), tag(obj.tag)
 	if(is_array())
 	{
 		array_data = obj.array_data;
-		obj.array_data = nullptr;
 	}else{
 		cell_value = obj.cell_value;
 	}
+	obj.array_data = nullptr;
+	obj.rank = 1;
 }
 
 bool dyn_object::tag_assignable(AMX *amx, cell tag_id) const
@@ -862,18 +863,36 @@ dyn_object &dyn_object::operator=(dyn_object &&obj)
 	if(is_array())
 	{
 		array_data = obj.array_data;
-		obj.array_data = nullptr;
-	} else {
+	}else{
 		cell_value = obj.cell_value;
 	}
+	obj.array_data = nullptr;
+	obj.rank = 1;
 	return *this;
 }
 
 dyn_object::~dyn_object()
 {
-	if(is_array() && array_data != nullptr)
+	if(!empty())
 	{
-		delete[] array_data;
+		const tag_operations &ops = tag->get_ops();
+		if(is_array())
+		{
+			cell *begin = this->begin();
+			cell *end = this->end();
+			cell *data = array_data;
+			rank = 1;
+			array_data = nullptr;
+			ops.collect(tag, begin, end - begin);
+			delete[] data;
+		}else{
+			cell value = cell_value;
+			rank = 1;
+			array_data = nullptr;
+			ops.collect(tag, &value, 1);
+		}
+	}else{
+		rank = 1;
 		array_data = nullptr;
 	}
 }

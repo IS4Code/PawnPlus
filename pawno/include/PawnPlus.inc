@@ -85,6 +85,9 @@ native pp_num_lists();
 native pp_num_maps();
 native pp_num_guards();
 native String:pp_entry_s();
+native pp_num_local_iters();
+native pp_num_global_iters();
+native pp_collect();
 
 /*                 */
 /*      Pawn       */
@@ -152,9 +155,10 @@ enum tag_op
     tag_op_string = 20,
     tag_op_delete = 21,
     tag_op_delete_deep = 22,
-    tag_op_copy = 23,
-    tag_op_clone = 24,
-    tag_op_hash = 25,
+    tag_op_collect = 23,
+    tag_op_copy = 24,
+    tag_op_clone = 25,
+    tag_op_hash = 26,
 }
 
 /*                 */

@@ -20,4 +20,6 @@ void logwarn(AMX *amx, const char *format, Args&&... args)
 	logprintf(format, std::forward<Args>(args)...);
 }
 
+void gc_collect();
+
 #endif

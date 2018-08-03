@@ -33,6 +33,7 @@ public:
 	virtual char format_spec(tag_ptr tag, bool arr) const = 0;
 	virtual bool del(tag_ptr tag, cell arg) const = 0;
 	virtual bool free(tag_ptr tag, cell arg) const = 0;
+	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const = 0;
 	virtual cell copy(tag_ptr tag, cell arg) const = 0;
 	virtual cell clone(tag_ptr tag, cell arg) const = 0;
 	virtual size_t hash(tag_ptr tag, cell arg) const = 0;
@@ -61,9 +62,10 @@ enum class op_type
 	string = 20,
 	del = 21,
 	free = 22,
-	copy = 23,
-	clone = 24,
-	hash = 25,
+	collect = 23,
+	copy = 24,
+	clone = 25,
+	hash = 26,
 };
 
 class tag_control
