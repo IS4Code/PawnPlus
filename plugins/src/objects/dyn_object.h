@@ -81,6 +81,8 @@ public:
 	~dyn_object();
 
 private:
+	dyn_object(cell value, tag_ptr tag, bool assign);
+	dyn_object(const dyn_object &obj, bool assign);
 	cell *begin();
 	cell *end();
 	const cell *begin() const;

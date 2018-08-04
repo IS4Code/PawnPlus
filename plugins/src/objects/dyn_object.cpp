@@ -161,9 +161,17 @@ dyn_object::dyn_object(AMX *amx, const cell *str) : rank(1), tag(tags::find_tag(
 	array_data[size + 1] = 0;
 }
 
-dyn_object::dyn_object(cell value, tag_ptr tag) : rank(0), cell_value(value), tag(tag)
+dyn_object::dyn_object(cell value, tag_ptr tag) : dyn_object(value, tag, true)
 {
-	assign_op();
+
+}
+
+dyn_object::dyn_object(cell value, tag_ptr tag, bool assign) : rank(0), cell_value(value), tag(tag)
+{
+	if(assign)
+	{
+		assign_op();
+	}
 }
 
 dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(tag)
@@ -179,7 +187,12 @@ dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(t
 	assign_op();
 }
 
-dyn_object::dyn_object(const dyn_object &obj) : rank(obj.rank), tag(obj.tag)
+dyn_object::dyn_object(const dyn_object &obj) : dyn_object(obj, true)
+{
+
+}
+
+dyn_object::dyn_object(const dyn_object &obj, bool assign) : rank(obj.rank), tag(obj.tag)
 {
 	if(is_array())
 	{
@@ -194,7 +207,10 @@ dyn_object::dyn_object(const dyn_object &obj) : rank(obj.rank), tag(obj.tag)
 	}else{
 		cell_value = obj.cell_value;
 	}
-	assign_op();
+	if(assign)
+	{
+		assign_op();
+	}
 }
 
 dyn_object::dyn_object(dyn_object &&obj) : rank(obj.rank), tag(obj.tag)
@@ -777,7 +793,7 @@ dyn_object dyn_object::operator_func(const dyn_object &obj) const
 	{
 		if(!struct_compatible(obj)) return dyn_object();
 
-		result = dyn_object(*this);
+		result = dyn_object(*this, false);
 		auto it = obj.begin();
 		for(cell &c : result)
 		{
@@ -787,20 +803,20 @@ dyn_object dyn_object::operator_func(const dyn_object &obj) const
 		}
 	}else if(is_array())
 	{
-		result = dyn_object(*this);
+		result = dyn_object(*this, false);
 		for(cell &c : result)
 		{
 			c = (ops.*OpFunc)(tag, c, obj.cell_value);
 		}
 	}else if(obj.is_array())
 	{
-		result = dyn_object(obj);
+		result = dyn_object(obj, false);
 		for(cell &c : result)
 		{
 			c = (ops.*OpFunc)(tag, cell_value, c);
 		}
 	}else{
-		result = dyn_object((ops.*OpFunc)(tag, cell_value, obj.cell_value), tag);
+		result = dyn_object((ops.*OpFunc)(tag, cell_value, obj.cell_value), tag, false);
 	}
 	return result;
 }
@@ -833,7 +849,7 @@ dyn_object dyn_object::operator%(const dyn_object &obj) const
 template <cell(tag_operations::*OpFunc)(tag_ptr, cell) const>
 dyn_object dyn_object::operator_func() const
 {
-	dyn_object result = dyn_object(*this);
+	dyn_object result = dyn_object(*this, false);
 	const auto &ops = tag->get_ops();
 	for(cell &c : result)
 	{
