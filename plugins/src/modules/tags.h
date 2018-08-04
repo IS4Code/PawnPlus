@@ -36,6 +36,7 @@ public:
 	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const = 0;
 	virtual cell copy(tag_ptr tag, cell arg) const = 0;
 	virtual cell clone(tag_ptr tag, cell arg) const = 0;
+	virtual bool assign(tag_ptr tag, cell *arg, cell size) const = 0;
 	virtual size_t hash(tag_ptr tag, cell arg) const = 0;
 	virtual ~tag_operations() = default;
 };
@@ -65,7 +66,8 @@ enum class op_type
 	collect = 23,
 	copy = 24,
 	clone = 25,
-	hash = 26,
+	assign = 26,
+	hash = 27,
 };
 
 class tag_control

@@ -183,6 +183,11 @@ struct null_operations : public tag_operations
 		return copy(tag, arg);
 	}
 
+	virtual bool assign(tag_ptr tag, cell *arg, cell size) const override
+	{
+		return false;
+	}
+
 	virtual size_t hash(tag_ptr tag, cell arg) const override
 	{
 		return std::hash<cell>()(arg);
@@ -1253,6 +1258,25 @@ public:
 		return copy(tag, arg);
 	}
 
+	virtual bool assign(tag_ptr tag, cell *arg, cell size) const override
+	{
+		auto it = dyn_ops.find(op_type::assign);
+		if(it != dyn_ops.end())
+		{
+			for(cell i = 0; i < size; i++)
+			{
+				arg[i] = it->second.invoke(tag, arg[i]);
+			}
+			return true;
+		}
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base != nullptr)
+		{
+			return base->get_ops().assign(tag, arg, size);
+		}
+		return false;
+	}
+
 	virtual size_t hash(tag_ptr tag, cell arg) const override
 	{
 		return op_un(tag, op_type::hash, arg);
@@ -1360,6 +1384,8 @@ cell tag_info::call_op(tag_ptr tag, op_type type, cell a, cell b) const
 			return ops.copy(tag, a);
 		case op_type::clone:
 			return ops.clone(tag, a);
+		case op_type::assign:
+			return ops.assign(tag, &a, 1);
 		case op_type::hash:
 			return ops.hash(tag, a);
 		default:

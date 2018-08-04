@@ -158,7 +158,8 @@ enum tag_op
     tag_op_collect = 23,
     tag_op_copy = 24,
     tag_op_clone = 25,
-    tag_op_hash = 26,
+    tag_op_assign = 26,
+    tag_op_hash = 27,
 }
 
 /*                 */

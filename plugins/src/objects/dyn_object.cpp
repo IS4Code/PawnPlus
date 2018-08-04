@@ -19,7 +19,7 @@ dyn_object::dyn_object() : rank(1), array_data(nullptr), tag(tags::find_tag(tags
 
 dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : rank(0), cell_value(value), tag(tags::find_tag(amx, tag_id))
 {
-
+	assign_op();
 }
 
 dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : rank(1), tag(tags::find_tag(amx, tag_id))
@@ -32,6 +32,7 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : rank
 		array_data = new cell[size + 1]();
 	}
 	array_data[0] = size + 1;
+	assign_op();
 }
 
 void find_array_end(AMX *amx, const cell *&ptr)
@@ -99,6 +100,7 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell ta
 		}
 		array_data[0] = length + 1;
 	}
+	assign_op();
 }
 
 dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id) : rank(3), tag(tags::find_tag(amx, tag_id))
@@ -134,6 +136,7 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell si
 		}
 		array_data[0] = length + 1;
 	}
+	assign_op();
 }
 
 dyn_object::dyn_object(AMX *amx, const cell *str) : rank(1), tag(tags::find_tag(tags::tag_char))
@@ -160,7 +163,7 @@ dyn_object::dyn_object(AMX *amx, const cell *str) : rank(1), tag(tags::find_tag(
 
 dyn_object::dyn_object(cell value, tag_ptr tag) : rank(0), cell_value(value), tag(tag)
 {
-
+	assign_op();
 }
 
 dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(tag)
@@ -173,6 +176,7 @@ dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(t
 		array_data = new cell[size + 1]();
 	}
 	array_data[0] = size + 1;
+	assign_op();
 }
 
 dyn_object::dyn_object(const dyn_object &obj) : rank(obj.rank), tag(obj.tag)
@@ -190,6 +194,7 @@ dyn_object::dyn_object(const dyn_object &obj) : rank(obj.rank), tag(obj.tag)
 	}else{
 		cell_value = obj.cell_value;
 	}
+	assign_op();
 }
 
 dyn_object::dyn_object(dyn_object &&obj) : rank(obj.rank), tag(obj.tag)
@@ -273,6 +278,7 @@ bool dyn_object::get_cell(const cell *indices, cell num_indices, cell &value) co
 	if(addr)
 	{
 		value = *addr;
+		assign_op(&value, 1);
 		return true;
 	}
 	return false;
@@ -289,6 +295,7 @@ bool dyn_object::set_cell(const cell *indices, cell num_indices, cell value)
 	if(addr)
 	{
 		*addr = value;
+		assign_op(addr, 1);
 		return true;
 	}
 	return false;
@@ -353,6 +360,7 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 	cell size = end - begin;
 	if(maxsize > size) maxsize = size;
 	std::memcpy(arr, block + begin, maxsize * sizeof(cell));
+	assign_op(arr, maxsize);
 	return size;
 }
 
@@ -449,9 +457,14 @@ cell dyn_object::store(AMX *amx) const
 		cell amx_addr, *addr;
 		amx_Allot(amx, size, &amx_addr, &addr);
 		std::memcpy(addr, array_data + 1, size * sizeof(cell));
+
+		cell begin = array_start() - 1;
+		assign_op(addr + begin, data_size() - begin);
 		return amx_addr;
 	}else{
-		return cell_value;
+		cell value = cell_value;
+		assign_op(&value, 1);
+		return value;
 	}
 }
 
@@ -463,6 +476,8 @@ void dyn_object::load(AMX *amx, cell amx_addr)
 		cell *addr;
 		amx_GetAddr(amx, amx_addr, &addr);
 		std::memcpy(array_data + 1, addr, size * sizeof(cell));
+
+		assign_op();
 	}
 }
 
@@ -616,6 +631,22 @@ dyn_object dyn_object::clone() const
 		*it = ops.clone(tag, *it);
 	}
 	return copy;
+}
+
+bool dyn_object::assign_op()
+{
+	if(!empty())
+	{
+		cell *begin = this->begin();
+		return assign_op(begin, end() - begin);
+	}
+	return false;
+}
+
+bool dyn_object::assign_op(cell *start, cell size) const
+{
+	const auto &ops = tag->get_ops();
+	return ops.assign(tag, start, size);
 }
 
 cell &dyn_object::operator[](cell index)
@@ -848,6 +879,7 @@ dyn_object &dyn_object::operator=(const dyn_object &obj)
 	}else{
 		cell_value = obj.cell_value;
 	}
+	assign_op();
 	return *this;
 }
 
