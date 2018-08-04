@@ -1230,6 +1230,11 @@ public:
 			}
 			return ok;
 		}
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base != nullptr)
+		{
+			return base->get_ops().collect(tag, arg, size);
+		}
 		return false;
 	}
 
