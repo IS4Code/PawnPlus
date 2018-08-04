@@ -294,8 +294,10 @@ bool dyn_object::set_cell(const cell *indices, cell num_indices, cell value)
 	auto addr = get_cell_addr(indices, num_indices);
 	if(addr)
 	{
+		const auto &ops = tag->get_ops();
+		ops.collect(tag, addr, 1);
 		*addr = value;
-		assign_op(addr, 1);
+		ops.assign(tag, addr, 1);
 		return true;
 	}
 	return false;
