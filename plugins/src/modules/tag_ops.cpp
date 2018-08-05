@@ -197,6 +197,11 @@ struct null_operations : public tag_operations
 	{
 		str.append(strings::convert(std::to_string(arg)));
 	}
+
+	virtual cell call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const override
+	{
+		return 0;
+	}
 };
 
 struct cell_operations : public null_operations
@@ -1086,7 +1091,7 @@ class dynamic_operations : public null_operations, public tag_control
 			}
 		}
 
-		cell invoke(tag_ptr tag, cell arg1, cell arg2) const
+		cell invoke(tag_ptr tag, cell *args, size_t numargs) const
 		{
 			if(auto lock = _amx.lock())
 			{
@@ -1096,8 +1101,10 @@ class dynamic_operations : public null_operations, public tag_control
 					int pub;
 					if(amx_FindPublic(amx, _handler.c_str(), &pub) == AMX_ERR_NONE)
 					{
-						amx_Push(amx, arg2);
-						amx_Push(amx, arg1);
+						for(size_t i = 1; i <= numargs; i++)
+						{
+							amx_Push(amx, args[numargs - i]);
+						}
 						for(auto it = _args.rbegin(); it != _args.rend(); it++)
 						{
 							it->push(amx, static_cast<int>(_type));
@@ -1113,30 +1120,15 @@ class dynamic_operations : public null_operations, public tag_control
 			return 0;
 		}
 
+		cell invoke(tag_ptr tag, cell arg1, cell arg2) const
+		{
+			cell args[2] = {arg1, arg2};
+			return invoke(tag, args, 2);
+		}
+
 		cell invoke(tag_ptr tag, cell arg) const
 		{
-			if(auto lock = _amx.lock())
-			{
-				if(lock->valid())
-				{
-					auto amx = lock->get();
-					int pub;
-					if(amx_FindPublic(amx, _handler.c_str(), &pub) == AMX_ERR_NONE)
-					{
-						amx_Push(amx, arg);
-						for(auto it = _args.rbegin(); it != _args.rend(); it++)
-						{
-							it->push(amx, static_cast<int>(_type));
-						}
-						cell ret;
-						if(amx_Exec(amx, &ret, pub) == AMX_ERR_NONE)
-						{
-							return ret;
-						}
-					}
-				}
-			}
-			return 0;
+			return invoke(tag, &arg, 1);
 		}
 	};
 
@@ -1158,7 +1150,8 @@ public:
 		}
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
-		return base->call_op(tag, op, a, b);
+		cell args[2] = {a, b};
+		return base->call_op(tag, op, args, 2);
 	}
 
 	cell op_un(tag_ptr tag, op_type op, cell a) const
@@ -1170,7 +1163,7 @@ public:
 		}
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
-		return base->call_op(tag, op, a, 0);
+		return base->call_op(tag, op, &a, 1);
 	}
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
@@ -1340,6 +1333,18 @@ public:
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
 		base->get_ops().append_string(tag, arg, str);
 	}
+
+	virtual cell tag_operations::call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const override
+	{
+		auto it = dyn_ops.find(type);
+		if(it != dyn_ops.end())
+		{
+			return it->second.invoke(tag, args, numargs);
+		}
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
+		return base->call_op(tag, type, args, numargs);
+	}
 };
 
 tag_control *tag_info::get_control() const
@@ -1353,42 +1358,46 @@ tag_control *tag_info::get_control() const
 	return static_cast<dynamic_operations*>((op_map[uid] = std::move(op)).get());
 }
 
-cell tag_info::call_op(tag_ptr tag, op_type type, cell a, cell b) const
+cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const
 {
-	const tag_operations &ops = get_ops();
 	switch(type)
 	{
 		case op_type::add:
-			return ops.add(tag, a, b);
+			return numargs >= 2 ? add(tag, args[0], args[1]) : 0;
 		case op_type::sub:
-			return ops.sub(tag, a, b);
+			return numargs >= 2 ? sub(tag, args[0], args[1]) : 0;
 		case op_type::mul:
-			return ops.mul(tag, a, b);
+			return numargs >= 2 ? mul(tag, args[0], args[1]) : 0;
 		case op_type::div:
-			return ops.div(tag, a, b);
+			return numargs >= 2 ? div(tag, args[0], args[1]) : 0;
 		case op_type::mod:
-			return ops.mod(tag, a, b);
+			return numargs >= 2 ? mod(tag, args[0], args[1]) : 0;
 		case op_type::neg:
-			return ops.neg(tag, a);
+			return numargs >= 1 ? neg(tag, args[0]) : 0;
 		case op_type::string:
-			return strings::pool.get_id(strings::pool.add(ops.to_string(tag, a), true));
+			return numargs >= 1 ? strings::pool.get_id(strings::pool.add(to_string(tag, args[0]), true)) : 0;
 		case op_type::eq:
-			return ops.eq(tag, a, b);
+			return numargs >= 2 ? eq(tag, args[0], args[1]) : 0;
 		case op_type::del:
-			return ops.del(tag, a);
+			return numargs >= 1 ? del(tag, args[0]) : 0;
 		case op_type::free:
-			return ops.free(tag, a);
+			return numargs >= 1 ? free(tag, args[0]) : 0;
 		case op_type::collect:
 			return 0;
 		case op_type::copy:
-			return ops.copy(tag, a);
+			return numargs >= 1 ? copy(tag, args[0]) : 0;
 		case op_type::clone:
-			return ops.clone(tag, a);
+			return numargs >= 1 ? clone(tag, args[0]) : 0;
 		case op_type::assign:
-			return ops.assign(tag, &a, 1);
+			return numargs >= 1 ? assign(tag, &args[0], 1) : 0;
 		case op_type::hash:
-			return ops.hash(tag, a);
+			return numargs >= 1 ? hash(tag, args[0]) : 0;
 		default:
-			return 0;
+			return call_dyn_op(tag, type, args, numargs);
 	}
+}
+
+cell tag_info::call_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const
+{
+	return get_ops().call_op(tag, type, args, numargs);
 }

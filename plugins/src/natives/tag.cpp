@@ -91,11 +91,23 @@ namespace Natives
 		return ctl->lock();
 	}
 
-	// native tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:arg1, AnyTag:arg2=0);
+	// native tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:...);
 	static cell AMX_NATIVE_CALL tag_call_op(AMX *amx, cell *params)
 	{
 		auto tag = tags::find_tag(params[1]);
-		return tag->call_op(tag, static_cast<op_type>(params[2]), params[3], params[4]);
+		size_t numargs = (params[0] / sizeof(cell)) - 2;
+		cell *args = new cell[numargs];
+		for(size_t i = 0; i < numargs; i++)
+		{
+			cell *addr;
+			if(amx_GetAddr(amx, params[3 + i], &addr) == AMX_ERR_NONE)
+			{
+				args[i] = *addr;
+			}
+		}
+		cell result = tag->call_op(tag, static_cast<op_type>(params[2]), args, numargs);
+		delete[] args;
+		return result;
 	}
 }
 

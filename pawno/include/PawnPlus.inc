@@ -130,7 +130,7 @@ native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
 native tag_uid:tag_find(const name[]);
 native tag_uid:tag_new(const name[], tag_uid:base=tag_uid_unknown);
 native bool:tag_set_op(tag_uid:tag_uid, tag_op:tag_op, const handler[], const additional_format[]="", AnyTag:...);
-native tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:arg1, AnyTag:arg2=0);
+native tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:...);
 native bool:tag_lock(tag_uid:tag_uid);
 
 enum tag_op
@@ -366,6 +366,8 @@ native bool:var_gt(VariantTag:var1, VariantTag:var2);
 native bool:var_lte(VariantTag:var1, VariantTag:var2);
 native bool:var_gte(VariantTag:var1, VariantTag:var2);
 native bool:var_not(VariantTag:var);
+native Variant:var_call_op(VariantTag:var, tag_op:tag_op, AnyTag:...);
+native Variant:var_call_op_raw(VariantTag:var, tag_op:tag_op, AnyTag:...);
 
 
 /*                 */

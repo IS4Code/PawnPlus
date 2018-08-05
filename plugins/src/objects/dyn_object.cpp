@@ -4,6 +4,7 @@
 #include "../fixes/linux.h"
 #include <cmath>
 #include <string>
+#include <cstring>
 #include <type_traits>
 #include <algorithm>
 
@@ -649,6 +650,26 @@ dyn_object dyn_object::clone() const
 		*it = ops.clone(tag, *it);
 	}
 	return copy;
+}
+
+dyn_object dyn_object::call_op(op_type type, cell *args, size_t numargs, bool wrap) const
+{
+	dyn_object result = dyn_object(*this, false);
+	const auto &ops = tag->get_ops();
+	cell *args_copy = new cell[numargs + 1];
+	std::memcpy(args_copy + 1, args, numargs * sizeof(cell));
+	numargs += 1;
+	for(cell &c : result)
+	{
+		args_copy[0] = c;
+		c = ops.call_op(tag, type, args_copy, numargs);
+	}
+	delete[] args_copy;
+	if(!wrap)
+	{
+		result.tag = tags::find_tag(tags::tag_cell);
+	}
+	return result;
 }
 
 bool dyn_object::assign_op()

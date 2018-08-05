@@ -58,6 +58,7 @@ public:
 	size_t get_hash() const;
 	void free() const;
 	dyn_object clone() const;
+	dyn_object call_op(op_type type, cell *args, size_t numargs, bool wrap) const;
 
 	cell &operator[](cell index);
 	const cell &operator[](cell index) const;

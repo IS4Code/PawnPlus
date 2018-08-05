@@ -341,6 +341,48 @@ namespace Natives
 		if(!variants::pool.get_by_id(params[1], var)) return 1;
 		return !(*var);
 	}
+
+	// native Variant:var_call_op(VariantTag:var, tag_op:tag_op, AnyTag:...);
+	static cell AMX_NATIVE_CALL var_call_op(AMX *amx, cell *params)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		size_t numargs = (params[0] / sizeof(cell)) - 2;
+		cell *args = new cell[numargs];
+		for(size_t i = 0; i < numargs; i++)
+		{
+			cell *addr;
+			if(amx_GetAddr(amx, params[3 + i], &addr) == AMX_ERR_NONE)
+			{
+				args[i] = *addr;
+			}
+		}
+		auto result = var->call_op(static_cast<op_type>(params[2]), args, numargs, true);
+		delete[] args;
+		if(result.empty()) return 0;
+		return variants::create(std::move(result));
+	}
+
+	// native Variant:var_call_op_raw(VariantTag:var, tag_op:tag_op, AnyTag:...);
+	static cell AMX_NATIVE_CALL var_call_op_raw(AMX *amx, cell *params)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		size_t numargs = (params[0] / sizeof(cell)) - 2;
+		cell *args = new cell[numargs];
+		for(size_t i = 0; i < numargs; i++)
+		{
+			cell *addr;
+			if(amx_GetAddr(amx, params[3 + i], &addr) == AMX_ERR_NONE)
+			{
+				args[i] = *addr;
+			}
+		}
+		auto result = var->call_op(static_cast<op_type>(params[2]), args, numargs, false);
+		delete[] args;
+		if(result.empty()) return 0;
+		return variants::create(std::move(result));
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -387,6 +429,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_lte),
 	AMX_DECLARE_NATIVE(var_gte),
 	AMX_DECLARE_NATIVE(var_not),
+	AMX_DECLARE_NATIVE(var_call_op),
+	AMX_DECLARE_NATIVE(var_call_op_raw),
 };
 
 int RegisterVariantNatives(AMX *amx)

@@ -6,11 +6,43 @@
 
 typedef const struct tag_info *tag_ptr;
 
+enum class op_type
+{
+	add = 1,
+	sub = 2,
+	mul = 3,
+	div = 4,
+	mod = 5,
+	neg = 6,
+	inc = 7,
+	dec = 8,
+
+	eq = 10,
+	neq = 11,
+	lt = 12,
+	gt = 13,
+	lte = 14,
+	gte = 15,
+	not = 16,
+
+	string = 20,
+	del = 21,
+	free = 22,
+	collect = 23,
+	copy = 24,
+	clone = 25,
+	assign = 26,
+	hash = 27,
+};
+
 class tag_operations
 {
 protected:
 	tag_operations() = default;
 public:
+	cell call_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const;
+	virtual cell call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const = 0;
+
 	virtual cell add(tag_ptr tag, cell a, cell b) const = 0;
 	virtual cell sub(tag_ptr tag, cell a, cell b) const = 0;
 	virtual cell mul(tag_ptr tag, cell a, cell b) const = 0;
@@ -41,35 +73,6 @@ public:
 	virtual ~tag_operations() = default;
 };
 
-enum class op_type
-{
-	add = 1,
-	sub = 2,
-	mul = 3,
-	div = 4,
-	mod = 5,
-	neg = 6,
-	inc = 7,
-	dec = 8,
-
-	eq = 10,
-	neq = 11,
-	lt = 12,
-	gt = 13,
-	lte = 14,
-	gte = 15,
-	not = 16,
-
-	string = 20,
-	del = 21,
-	free = 22,
-	collect = 23,
-	copy = 24,
-	clone = 25,
-	assign = 26,
-	hash = 27,
-};
-
 class tag_control
 {
 protected:
@@ -94,7 +97,7 @@ struct tag_info
 	tag_ptr find_top_base() const;
 	bool same_base(tag_ptr tag) const;
 	cell get_id(AMX *amx) const;
-	cell call_op(tag_ptr tag, op_type type, cell a, cell b) const;
+	cell call_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const;
 	const tag_operations &get_ops() const;
 	tag_control *get_control() const;
 };
