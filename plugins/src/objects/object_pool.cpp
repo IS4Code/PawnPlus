@@ -170,6 +170,16 @@ auto object_pool<ObjType>::get(AMX *amx, cell addr) -> object_ptr
 }
 
 template <class ObjType>
+void object_pool<ObjType>::clear()
+{
+	inner_cache.clear();
+	auto tmp = std::move(tmp_object_list);
+	tmp.clear();
+	auto list = std::move(object_list);
+	list.clear();
+}
+
+template <class ObjType>
 void object_pool<ObjType>::clear_tmp()
 {
 	inner_cache.clear();

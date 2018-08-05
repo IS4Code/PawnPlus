@@ -116,6 +116,7 @@ namespace tasks
 	void register_timer(cell interval, amx::reset &&reset);
 	bool contains(const task *ptr);
 	bool remove(task *ptr);
+	void clear();
 
 	std::shared_ptr<task> find(task *ptr);
 

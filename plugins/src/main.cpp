@@ -48,6 +48,13 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 
 PLUGIN_EXPORT void PLUGIN_CALL Unload()
 {
+	variants::pool.clear();
+	list_pool.clear();
+	map_pool.clear();
+	iter_pool.clear();
+	tasks::clear();
+	strings::pool.clear();
+
 	Hooks::Unregister();
 
 	logprintf(" PawnPlus v0.8 unloaded");
@@ -75,7 +82,7 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
 
 void gc_collect()
 {
-	strings::pool.clear_tmp();
 	variants::pool.clear_tmp();
 	iter_pool.clear_tmp();
+	strings::pool.clear_tmp();
 }

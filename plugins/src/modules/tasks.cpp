@@ -318,4 +318,11 @@ namespace tasks
 			}
 		}
 	}
+
+	void clear()
+	{
+		tick_handlers.clear();
+		timer_handlers.clear();
+		pool.clear();
+	}
 }
