@@ -32,7 +32,8 @@ enum class op_type
 	copy = 24,
 	clone = 25,
 	assign = 26,
-	hash = 27,
+	init = 27,
+	hash = 28,
 };
 
 class tag_operations
@@ -69,6 +70,7 @@ public:
 	virtual cell copy(tag_ptr tag, cell arg) const = 0;
 	virtual cell clone(tag_ptr tag, cell arg) const = 0;
 	virtual bool assign(tag_ptr tag, cell *arg, cell size) const = 0;
+	virtual bool init(tag_ptr tag, cell *arg, cell size) const = 0;
 	virtual size_t hash(tag_ptr tag, cell arg) const = 0;
 	virtual ~tag_operations() = default;
 };

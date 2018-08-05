@@ -88,6 +88,7 @@ private:
 	cell *end();
 	const cell *begin() const;
 	const cell *end() const;
+	bool init_op();
 	bool assign_op();
 	bool assign_op(cell *start, cell size) const;
 	template <cell(tag_operations::*OpFunc)(tag_ptr, cell, cell) const>

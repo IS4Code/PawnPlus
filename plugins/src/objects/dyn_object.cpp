@@ -20,7 +20,7 @@ dyn_object::dyn_object() : rank(1), array_data(nullptr), tag(tags::find_tag(tags
 
 dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : rank(0), cell_value(value), tag(tags::find_tag(amx, tag_id))
 {
-	assign_op();
+	init_op();
 }
 
 dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : rank(1), tag(tags::find_tag(amx, tag_id))
@@ -33,7 +33,7 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : rank
 		array_data = new cell[size + 1]();
 	}
 	array_data[0] = size + 1;
-	assign_op();
+	init_op();
 }
 
 void find_array_end(AMX *amx, const cell *&ptr)
@@ -101,7 +101,7 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell ta
 		}
 		array_data[0] = length + 1;
 	}
-	assign_op();
+	init_op();
 }
 
 dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id) : rank(3), tag(tags::find_tag(amx, tag_id))
@@ -137,7 +137,7 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell si
 		}
 		array_data[0] = length + 1;
 	}
-	assign_op();
+	init_op();
 }
 
 dyn_object::dyn_object(AMX *amx, const cell *str) : rank(1), tag(tags::find_tag(tags::tag_char))
@@ -171,7 +171,7 @@ dyn_object::dyn_object(cell value, tag_ptr tag, bool assign) : rank(0), cell_val
 {
 	if(assign)
 	{
-		assign_op();
+		init_op();
 	}
 }
 
@@ -185,7 +185,7 @@ dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(t
 		array_data = new cell[size + 1]();
 	}
 	array_data[0] = size + 1;
-	assign_op();
+	init_op();
 }
 
 dyn_object::dyn_object(const dyn_object &obj) : dyn_object(obj, true)
@@ -477,8 +477,8 @@ cell dyn_object::store(AMX *amx) const
 		amx_Allot(amx, size, &amx_addr, &addr);
 		std::memcpy(addr, array_data + 1, size * sizeof(cell));
 
-		cell begin = array_start() - 1;
-		assign_op(addr + begin, data_size() - begin);
+		/*cell begin = array_start() - 1;
+		assign_op(addr + begin, data_size() - begin);*/
 		return amx_addr;
 	}else{
 		cell value = cell_value;
@@ -670,6 +670,17 @@ dyn_object dyn_object::call_op(op_type type, cell *args, size_t numargs, bool wr
 		result.tag = tags::find_tag(tags::tag_cell);
 	}
 	return result;
+}
+
+bool dyn_object::init_op()
+{
+	if(!empty())
+	{
+		const auto &ops = tag->get_ops();
+		cell *begin = this->begin();
+		return ops.init(tag, begin, end() - begin);
+	}
+	return false;
 }
 
 bool dyn_object::assign_op()
