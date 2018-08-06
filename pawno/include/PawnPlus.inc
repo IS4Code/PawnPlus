@@ -62,6 +62,7 @@
 #define PP_SYNTAX_THREADED
 #define PP_SYNTAX_FOR_LIST
 #define PP_SYNTAX_FOR_MAP
+#define PP_SYNTAX_STRING_OP
 #endif
 
 
@@ -936,20 +937,20 @@ native String:operator%(String:arg1, String:arg2) = str_cat;
 native String:operator%(GlobalString:arg1, String:arg2) = str_cat;
 native String:operator%(GlobalString:arg1, GlobalString:arg2) = str_cat;
 
-#if !defined PP_NO_AUTO_STRINGS
+#if defined PP_SYNTAX_STRING_OP
 
-native String:operator=(arg) = str_int;
-native String:operator=(Float:arg) = str_float;
-stock GlobalString:operator=(arg) return str_to_global(str_int(arg));
-stock GlobalString:operator=(Float:arg) return str_to_global(str_float(arg));
-stock String:operator%(String:arg1, arg2) return str_cat(arg1, str_int(arg2));
-stock String:operator%(GlobalString:arg1, arg2) return str_cat(arg1, str_int(arg2));
-stock String:operator%(arg1, String:arg2) return str_cat(str_int(arg1), arg2);
-stock String:operator%(arg1, GlobalString:arg2) return str_cat(str_int(arg1), arg2);
-stock String:operator%(String:arg1, Float:arg2) return str_cat(arg1, str_float(arg2));
-stock String:operator%(GlobalString:arg1, Float:arg2) return str_cat(arg1, str_float(arg2));
-stock String:operator%(Float:arg1, String:arg2) return str_cat(str_float(arg1), arg2);
-stock String:operator%(Float:arg1, GlobalString:arg2) return str_cat(str_float(arg1), arg2);
+stock String:operator=(arg) return str_val(arg);
+stock String:operator=(Float:arg) return str_val(arg);
+stock GlobalString:operator=(arg) return str_to_global(str_val(arg));
+stock GlobalString:operator=(Float:arg) return str_to_global(str_val(arg));
+stock String:operator%(String:arg1, arg2) return str_cat(arg1, str_val(arg2));
+stock String:operator%(GlobalString:arg1, arg2) return str_cat(arg1, str_val(arg2));
+stock String:operator%(arg1, String:arg2) return str_cat(str_val(arg1), arg2);
+stock String:operator%(arg1, GlobalString:arg2) return str_cat(str_val(arg1), arg2);
+stock String:operator%(String:arg1, Float:arg2) return str_cat(arg1, str_val(arg2));
+stock String:operator%(GlobalString:arg1, Float:arg2) return str_cat(arg1, str_val(arg2));
+stock String:operator%(Float:arg1, String:arg2) return str_cat(str_val(arg1), arg2);
+stock String:operator%(Float:arg1, GlobalString:arg2) return str_cat(str_val(arg1), arg2);
 
 #endif
 
