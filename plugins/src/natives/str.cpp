@@ -361,6 +361,21 @@ namespace Natives
 		return params[1];
 	}
 
+	// native String:str_ins(StringTag:target, StringTag:other, pos);
+	static cell AMX_NATIVE_CALL str_ins(AMX *amx, cell *params)
+	{
+		cell_string *str1;
+		if(!strings::pool.get_by_id(params[1], str1)) return 0;
+		cell_string *str2;
+		if(!strings::pool.get_by_id(params[2], str2) && str2 != nullptr) return 0;
+		if(str2 != nullptr)
+		{
+			strings::clamp_pos(*str1, params[3]);
+			str1->insert(params[3], *str2);
+		}
+		return params[1];
+	}
+
 	// native String:str_del(StringTag:target, start=0, end=cellmax);
 	static cell AMX_NATIVE_CALL str_del(AMX *amx, cell *params)
 	{
@@ -630,6 +645,7 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(str_set),
 	AMX_DECLARE_NATIVE(str_append),
+	AMX_DECLARE_NATIVE(str_ins),
 	AMX_DECLARE_NATIVE(str_del),
 	AMX_DECLARE_NATIVE(str_clear),
 	AMX_DECLARE_NATIVE(str_resize),
