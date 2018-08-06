@@ -57,10 +57,9 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 	if(index <= -3)
 	{
 		auto name = events::invoke_callback(-3 - index, amx, retval);
-		if(name != nullptr)
+		if(name == nullptr || amx_FindPublicOrig(amx, name, &index) != AMX_ERR_NONE)
 		{
-			int err = amx_FindPublicOrig(amx, name, &index);
-			if(err) return err;
+			return amx->error;
 		}
 	}
 
