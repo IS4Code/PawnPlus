@@ -101,11 +101,10 @@ public:
 	bool insert_dyn(iterator position, const std::type_info &type, const void *value, iterator &result);
 
 	template <class InputIterator>
-	iterator insert(iterator position, InputIterator first, InputIterator last)
+	void insert(iterator position, InputIterator first, InputIterator last)
 	{
-		auto it = data.insert(position, first, last);
+		data.insert(position, first, last);
 		++revision;
-		return it;
 	}
 };
 
@@ -168,6 +167,28 @@ protected:
 	virtual bool insert_dyn(const std::type_info &type, void *value);
 	virtual bool insert_dyn(const std::type_info &type, const void *value);
 };
+
+namespace impl
+{
+	template <class Base>
+	struct move_previous
+	{
+		bool operator()(typename Base::iterator &it)
+		{
+			--it;
+			return true;
+		}
+	};
+
+	template <>
+	struct move_previous<map_t>
+	{
+		bool operator()(typename map_t::iterator &it)
+		{
+			return false;
+		}
+	};
+}
 
 template <class Base>
 class iterator_impl : public dyn_iterator
@@ -276,8 +297,7 @@ public:
 				_inside = false;
 				return false;
 			}
-			--_position;
-			return true;
+			return impl::move_previous<Base>()(_position);
 		}
 		return false;
 	}
@@ -305,9 +325,11 @@ public:
 			_position = source->end();
 			if(_position != source->begin())
 			{
-				--_position;
-				_inside = true;
-				return true;
+				if(impl::move_previous<Base>()(_position))
+				{
+					_inside = true;
+					return true;
+				}
 			}
 		}
 		return false;
