@@ -14,8 +14,8 @@ namespace tasks
 		friend class task;
 		friend void tick();
 
-		virtual void set_completed(task &t) = 0;
-		virtual void set_faulted(task &t) = 0;
+		virtual void set_completed(class task &t) = 0;
+		virtual void set_faulted(class task &t) = 0;
 
 	public:
 		virtual ~handler() = default;

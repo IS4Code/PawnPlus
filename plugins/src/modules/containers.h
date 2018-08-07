@@ -59,14 +59,14 @@ public:
 		++revision;
 	}
 
-	iterator erase(const_iterator position)
+	iterator erase(iterator position)
 	{
 		auto it = data.erase(position);
 		++revision;
 		return it;
 	}
 
-	iterator erase(const_iterator first, const_iterator last)
+	iterator erase(iterator first, iterator last)
 	{
 		auto it = data.erase(first, last);
 		++revision;
@@ -95,13 +95,13 @@ public:
 	dyn_object &operator[](size_t index);
 	void push_back(dyn_object &&value);
 	void push_back(const dyn_object &value);
-	iterator insert(const_iterator position, dyn_object &&value);
-	iterator insert(const_iterator position, const dyn_object &value);
-	bool insert_dyn(const_iterator position, const std::type_info &type, void *value, iterator &result);
-	bool insert_dyn(const_iterator position, const std::type_info &type, const void *value, iterator &result);
+	iterator insert(iterator position, dyn_object &&value);
+	iterator insert(iterator position, const dyn_object &value);
+	bool insert_dyn(iterator position, const std::type_info &type, void *value, iterator &result);
+	bool insert_dyn(iterator position, const std::type_info &type, const void *value, iterator &result);
 
 	template <class InputIterator>
-	iterator insert(const_iterator position, InputIterator first, InputIterator last)
+	iterator insert(iterator position, InputIterator first, InputIterator last)
 	{
 		auto it = data.insert(position, first, last);
 		++revision;
@@ -116,9 +116,9 @@ public:
 	std::pair<iterator, bool> insert(std::pair<dyn_object, dyn_object> &&value);
 	iterator find(const dyn_object &key);
 	size_t erase(const dyn_object &key);
-	iterator erase(const_iterator position);
-	bool insert_dyn(const_iterator position, const std::type_info &type, void *value, iterator &result);
-	bool insert_dyn(const_iterator position, const std::type_info &type, const void *value, iterator &result);
+	iterator erase(iterator position);
+	bool insert_dyn(iterator position, const std::type_info &type, void *value, iterator &result);
+	bool insert_dyn(iterator position, const std::type_info &type, const void *value, iterator &result);
 
 	template <class InputIterator>
 	void insert(InputIterator first, InputIterator last)

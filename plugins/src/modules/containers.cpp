@@ -32,21 +32,21 @@ void list_t::push_back(const dyn_object &value)
 	++revision;
 }
 
-auto list_t::insert(const_iterator position, dyn_object &&value) -> iterator
+auto list_t::insert(iterator position, dyn_object &&value) -> iterator
 {
 	auto it = data.insert(position, std::move(value));
 	++revision;
 	return it;
 }
 
-auto list_t::insert(const_iterator position, const dyn_object &value) -> iterator
+auto list_t::insert(iterator position, const dyn_object &value) -> iterator
 {
 	auto it = data.insert(position, value);
 	++revision;
 	return it;
 }
 
-bool list_t::insert_dyn(const_iterator position, const std::type_info &type, void *value, iterator &result)
+bool list_t::insert_dyn(iterator position, const std::type_info &type, void *value, iterator &result)
 {
 	if(type == typeid(dyn_object))
 	{
@@ -56,7 +56,7 @@ bool list_t::insert_dyn(const_iterator position, const std::type_info &type, voi
 	return false;
 }
 
-bool list_t::insert_dyn(const_iterator position, const std::type_info &type, const void *value, iterator &result)
+bool list_t::insert_dyn(iterator position, const std::type_info &type, const void *value, iterator &result)
 {
 	if(type == typeid(dyn_object))
 	{
@@ -95,17 +95,17 @@ size_t map_t::erase(const dyn_object &key)
 	return size;
 }
 
-auto map_t::erase(const_iterator position) -> iterator
+auto map_t::erase(iterator position) -> iterator
 {
 	return collection_base<std::unordered_map<dyn_object, dyn_object>>::erase(position);
 }
 
-bool map_t::insert_dyn(const_iterator position, const std::type_info &type, void *value, iterator &result)
+bool map_t::insert_dyn(iterator position, const std::type_info &type, void *value, iterator &result)
 {
 	return false;
 }
 
-bool map_t::insert_dyn(const_iterator position, const std::type_info &type, const void *value, iterator &result)
+bool map_t::insert_dyn(iterator position, const std::type_info &type, const void *value, iterator &result)
 {
 	return false;
 }

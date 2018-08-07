@@ -36,6 +36,19 @@ enum class op_type
 	hash = 28,
 };
 
+namespace std
+{
+	template <>
+	struct hash<op_type>
+	{
+		size_t operator()(const op_type &t) const
+		{
+			return static_cast<size_t>(t);
+		}
+	};
+}
+
+
 class tag_operations
 {
 protected:

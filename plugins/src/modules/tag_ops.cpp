@@ -586,14 +586,14 @@ struct variant_operations : public null_operations
 
 	}
 
-	template <dyn_object(dyn_object::*op)(const dyn_object&) const>
+	template <dyn_object(dyn_object::*op_type)(const dyn_object&) const>
 	cell op(tag_ptr tag, cell a, cell b) const
 	{
 		dyn_object *var1;
 		if(!variants::pool.get_by_id(a, var1)) return 0;
 		dyn_object *var2;
 		if(!variants::pool.get_by_id(b, var2)) return 0;
-		auto var = (var1->*op)(*var2);
+		auto var = (var1->*op_type)(*var2);
 		if(var.empty()) return 0;
 		return variants::create(std::move(var));
 	}
@@ -1368,7 +1368,7 @@ public:
 		base->get_ops().append_string(tag, arg, str);
 	}
 
-	virtual cell tag_operations::call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const override
+	virtual cell call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const override
 	{
 		auto it = dyn_ops.find(type);
 		if(it != dyn_ops.end())
