@@ -90,31 +90,15 @@ class list_t : public collection_base<std::vector<dyn_object>>
 {
 public:
 	typedef typename std::vector<dyn_object>::reverse_iterator reverse_iterator;
-	reverse_iterator rbegin()
-	{
-		return data.rbegin();
-	}
-	reverse_iterator rend()
-	{
-		return data.rend();
-	}
-
-	dyn_object &operator[](size_t index)
-	{
-		return data[index];
-	}
-
-	void push_back(dyn_object &&value)
-	{
-		data.push_back(std::move(value));
-		++revision;
-	}
-
-	void push_back(const dyn_object &value)
-	{
-		data.push_back(value);
-		++revision;
-	}
+	reverse_iterator rbegin();
+	reverse_iterator rend();
+	dyn_object &operator[](size_t index);
+	void push_back(dyn_object &&value);
+	void push_back(const dyn_object &value);
+	iterator insert(const_iterator position, dyn_object &&value);
+	iterator insert(const_iterator position, const dyn_object &value);
+	bool insert_dyn(const_iterator position, const std::type_info &type, void *value, iterator &result);
+	bool insert_dyn(const_iterator position, const std::type_info &type, const void *value, iterator &result);
 
 	template <class InputIterator>
 	iterator insert(const_iterator position, InputIterator first, InputIterator last)
@@ -123,59 +107,18 @@ public:
 		++revision;
 		return it;
 	}
-
-	iterator insert(const_iterator position, dyn_object &&value)
-	{
-		auto it = data.insert(position, std::move(value));
-		++revision;
-		return it;
-	}
-
-	iterator insert(const_iterator position, const dyn_object &value)
-	{
-		auto it = data.insert(position, value);
-		++revision;
-		return it;
-	}
-
-	bool insert_dyn(const_iterator position, const std::type_info &type, void *value, iterator &result)
-	{
-		if(type == typeid(dyn_object))
-		{
-			result = insert(position, std::move(*reinterpret_cast<dyn_object*>(value)));
-			return true;
-		}
-		return false;
-	}
-
-	bool insert_dyn(const_iterator position, const std::type_info &type, const void *value, iterator &result)
-	{
-		if(type == typeid(dyn_object))
-		{
-			result = insert(position, *reinterpret_cast<const dyn_object*>(value));
-			return true;
-		}
-		return false;
-	}
 };
 
 class map_t : public collection_base<std::unordered_map<dyn_object, dyn_object>>
 {
 public:
-	dyn_object &operator[](const dyn_object &key)
-	{
-		return data[key];
-	}
-
-	std::pair<iterator, bool> insert(std::pair<dyn_object, dyn_object> &&value)
-	{
-		auto pair = data.insert(std::move(value));
-		if(pair.second)
-		{
-			++revision;
-		}
-		return pair;
-	}
+	dyn_object &operator[](const dyn_object &key);
+	std::pair<iterator, bool> insert(std::pair<dyn_object, dyn_object> &&value);
+	iterator find(const dyn_object &key);
+	size_t erase(const dyn_object &key);
+	iterator erase(const_iterator position);
+	bool insert_dyn(const_iterator position, const std::type_info &type, void *value, iterator &result);
+	bool insert_dyn(const_iterator position, const std::type_info &type, const void *value, iterator &result);
 
 	template <class InputIterator>
 	void insert(InputIterator first, InputIterator last)
@@ -183,96 +126,29 @@ public:
 		data.insert(first, last);
 		++revision;
 	}
-
-	iterator find(const dyn_object &key)
-	{
-		return data.find(key);
-	}
-
-	size_t erase(const dyn_object &key)
-	{
-		size_t size = data.erase(key);
-		++revision;
-		return size;
-	}
-	iterator erase(const_iterator position)
-	{
-		return collection_base<std::unordered_map<dyn_object, dyn_object>>::erase(position);
-	}
-
-	bool insert_dyn(const_iterator position, const std::type_info &type, void *value, iterator &result)
-	{
-		return false;
-	}
-
-	bool insert_dyn(const_iterator position, const std::type_info &type, const void *value, iterator &result)
-	{
-		return false;
-	}
 };
 
 class dyn_iterator
 {
 public:
-	virtual bool expired() const
-	{
-		return true;
-	}
-
-	virtual bool valid() const
-	{
-		return false;
-	}
-
-	virtual bool move_next()
-	{
-		return false;
-	}
-
-	virtual bool move_previous()
-	{
-		return false;
-	}
-
-	virtual bool set_to_first()
-	{
-		return false;
-	}
-
-	virtual bool set_to_last()
-	{
-		return false;
-	}
-
-	virtual bool reset()
-	{
-		return false;
-	}
-
-	virtual bool erase()
-	{
-		return false;
-	}
-
-	virtual std::unique_ptr<dyn_iterator> clone() const
-	{
-		return nullptr;
-	}
-
-	virtual size_t get_hash() const
-	{
-		return 0;
-	}
+	virtual bool expired() const;
+	virtual bool valid() const;
+	virtual bool move_next();
+	virtual bool move_previous();
+	virtual bool set_to_first();
+	virtual bool set_to_last();
+	virtual bool reset();
+	virtual bool erase();
+	virtual std::unique_ptr<dyn_iterator> clone() const;
+	virtual size_t get_hash() const;
+	virtual bool operator==(const dyn_iterator &obj) const;
+	int &operator[](size_t index) const;
+	virtual ~dyn_iterator() = default;
 
 	template <class Type>
 	bool extract(Type *&value) const
 	{
 		return extract_dyn(typeid(Type), reinterpret_cast<void*&>(value));
-	}
-
-	virtual bool operator==(const dyn_iterator &obj) const
-	{
-		return false;
 	}
 
 	template <class Type>
@@ -287,29 +163,10 @@ public:
 		return insert_dyn(typeid(Type), &value);
 	}
 
-	int &operator[](size_t index) const
-	{
-		static int unused;
-		return unused;
-	}
-
-	virtual ~dyn_iterator() = default;
-
 protected:
-	virtual bool extract_dyn(const std::type_info &type, void *&value) const
-	{
-		return false;
-	}
-
-	virtual bool insert_dyn(const std::type_info &type, void *value)
-	{
-		return false;
-	}
-
-	virtual bool insert_dyn(const std::type_info &type, const void *value)
-	{
-		return false;
-	}
+	virtual bool extract_dyn(const std::type_info &type, void *&value) const;
+	virtual bool insert_dyn(const std::type_info &type, void *value);
+	virtual bool insert_dyn(const std::type_info &type, const void *value);
 };
 
 template <class Base>
@@ -499,7 +356,7 @@ public:
 
 	virtual std::unique_ptr<dyn_iterator> clone() const
 	{
-		return std::make_unique<iterator_impl<Base>>();
+		return std::make_unique<iterator_impl<Base>>(*this);
 	}
 
 	virtual bool operator==(const dyn_iterator &obj) const

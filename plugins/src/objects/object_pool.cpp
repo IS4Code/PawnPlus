@@ -152,6 +152,22 @@ auto object_pool<ObjType>::clone(const_object_ptr obj, const std::function<ObjTy
 }
 
 template <class ObjType>
+auto object_pool<ObjType>::clone(const_object_ptr obj, const std::function<std::unique_ptr<ObjType>(const ObjType&)> &cloning) -> object_ptr
+{
+	auto it = object_list.find(obj);
+	if(it != object_list.end())
+	{
+		return add(cloning(*obj), false);
+	}
+	it = tmp_object_list.find(obj);
+	if(it != tmp_object_list.end())
+	{
+		return add(cloning(*obj), true);
+	}
+	return nullptr;
+}
+
+template <class ObjType>
 auto object_pool<ObjType>::get(AMX *amx, cell addr) -> object_ptr
 {
 	object_ptr obj = reinterpret_cast<object_ptr>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + addr);

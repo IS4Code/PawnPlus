@@ -237,7 +237,7 @@ namespace Natives
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
 		{
-			return iter_pool.get_id(iter_pool.clone(iter));
+			return iter_pool.get_id(iter_pool.clone(iter, [](const dyn_iterator &iter) {return iter.clone(); }));
 		}
 		return 0;
 	}

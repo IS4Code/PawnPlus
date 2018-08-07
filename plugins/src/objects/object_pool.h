@@ -37,6 +37,7 @@ public:
 	bool remove(object_ptr obj);
 	object_ptr clone(const_object_ptr obj);
 	object_ptr clone(const_object_ptr obj, const std::function<ObjType(const ObjType&)> &cloning);
+	object_ptr clone(const_object_ptr obj, const std::function<std::unique_ptr<ObjType>(const ObjType&)> &cloning);
 	void clear();
 	void clear_tmp();
 	bool get_by_id(cell id, object_ptr &obj);

@@ -958,7 +958,7 @@ struct iter_operations : public null_operations
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(arg, iter))
 		{
-			return iter_pool.get_id(iter_pool.clone(iter));
+			return iter_pool.get_id(iter_pool.clone(iter, [](const dyn_iterator &iter) {return iter.clone(); }));
 		}
 		return 0;
 	}
