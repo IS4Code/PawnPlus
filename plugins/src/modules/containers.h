@@ -13,6 +13,7 @@
 #include <memory>
 #include <exception>
 #include <typeinfo>
+#include <functional>
 
 template <class Type>
 class collection_base
@@ -258,6 +259,11 @@ public:
 		return nullptr;
 	}
 
+	virtual size_t get_hash() const
+	{
+		return 0;
+	}
+
 	template <class Type>
 	bool extract(Type *&value) const
 	{
@@ -460,6 +466,21 @@ public:
 			return true;
 		}
 		return false;
+	}
+
+	virtual size_t get_hash() const override
+	{
+		if(auto source = _source.lock())
+		{
+			if(source->get_revision() == _revision)
+			{
+				return std::hash<decltype(&*_position)>()(&*_position);
+			}else if(!_inside)
+			{
+				return std::hash<Base*>()(source.get());
+			}
+		}
+		return 0;
 	}
 
 	virtual bool erase() override

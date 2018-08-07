@@ -967,6 +967,16 @@ struct iter_operations : public null_operations
 	{
 		return copy(tag, arg);
 	}
+
+	virtual size_t hash(tag_ptr tag, cell arg) const override
+	{
+		dyn_iterator *iter;
+		if(iter_pool.get_by_id(arg, iter))
+		{
+			return iter->get_hash();
+		}
+		return null_operations::hash(tag, arg);
+	}
 };
 
 struct ref_operations : public null_operations
