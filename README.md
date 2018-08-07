@@ -1,4 +1,4 @@
-PawnPlus v0.7
+PawnPlus v0.8
 ==========
 
 _PawnPlus_ extends the possibilities of the Pawn scripting language with new constructs, data types, and programming techniques.
