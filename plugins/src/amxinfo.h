@@ -153,6 +153,7 @@ namespace amx
 	void register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number);
 	AMX_NATIVE find_native(AMX *amx, const char *name);
 	AMX_NATIVE find_native(AMX *amx, const std::string &name);
+	size_t num_natives(AMX *amx);
 
 	template <class... Args>
 	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, cell arg, Args&&... args)

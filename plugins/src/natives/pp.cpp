@@ -118,6 +118,12 @@ namespace Natives
 		gc_collect();
 		return 0;
 	}
+
+	// native pp_num_natives();
+	static cell AMX_NATIVE_CALL pp_num_natives(AMX *amx, cell *params)
+	{
+		return amx::num_natives(amx);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -136,6 +142,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_num_global_iters),
 	AMX_DECLARE_NATIVE(pp_entry_s),
 	AMX_DECLARE_NATIVE(pp_collect),
+	AMX_DECLARE_NATIVE(pp_num_natives),
 };
 
 int RegisterConfigNatives(AMX *amx)

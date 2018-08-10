@@ -109,3 +109,10 @@ AMX_NATIVE amx::find_native(AMX *amx, const std::string &name)
 	}
 	return nullptr;
 }
+
+size_t amx::num_natives(AMX *amx)
+{
+	auto obj = load_lock(amx);
+	auto &natives = obj->get_extra<natives_extra>().natives;
+	return natives.size();
+}
