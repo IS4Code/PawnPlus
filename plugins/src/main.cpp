@@ -41,7 +41,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 		}
 	);
 
-	logprintf(" PawnPlus v0.8.1 loaded");
+	logprintf(" PawnPlus v0.9 loaded");
 	logprintf(" Created by IllidanS4");
 	return true;
 }
