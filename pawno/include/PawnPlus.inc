@@ -98,7 +98,7 @@ native pawn_call_native(const function[], const format[], AnyTag:...);
 native pawn_call_public(const function[], const format[], AnyTag:...);
 native CallbackHandler:pawn_register_callback(const callback[], const handler[], const additional_format[]="", AnyTag:...);
 native pawn_unregister_callback(CallbackHandler:id);
-native NativeHook:pawn_native_filter(const function[], const format[], bool:output, const handler[], const additional_format[]="", AnyTag:...);
+native NativeHook:pawn_add_hook(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
 native pawn_remove_hook(NativeHook:id);
 native Guard:pawn_guard(AnyTag:value, TagTag:tag_id=tagof(value));
 native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));

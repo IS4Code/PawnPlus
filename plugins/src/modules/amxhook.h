@@ -5,8 +5,8 @@
 
 namespace amxhook
 {
-	int register_hook(AMX *amx, bool post, const char *native, const char *native_format, const char *handler, const char *format, const cell *params, int numargs);
-	bool remove_hook(AMX *amx, int index);
+	cell register_hook(AMX *amx, const char *native, const char *func_format, const char *handler, const char *format, const cell *params, int numargs);
+	bool remove_hook(AMX *amx, cell id);
 }
 
 #endif

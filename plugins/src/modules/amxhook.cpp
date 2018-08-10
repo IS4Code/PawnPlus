@@ -8,13 +8,14 @@
 #include <array>
 #include <unordered_map>
 #include <algorithm>
+#include <exception>
+#include <memory>
 #include <string>
 #include <cstring>
 #include <tuple>
 
 class hook_handler
 {
-	size_t index;
 	amx::handle amx;
 	std::string handler;
 	std::string format;
@@ -22,195 +23,198 @@ class hook_handler
 
 public:
 	hook_handler() = default;
-	hook_handler(size_t index, AMX *amx, const char *func_format, const char *function, const char *format, const cell *args, size_t numargs);
+	hook_handler(AMX *amx, const char *func_format, const char *function, const char *format, const cell *args, size_t numargs);
 	bool invoke(const class hooked_func &parent, AMX *amx, cell *params, cell &result) const;
-	size_t get_index() { return index; }
+	bool valid() const;
 };
 
 class hooked_func
 {
-	std::string native;
+	std::string name;
+	AMX_NATIVE native;
 	size_t index;
 	subhook_t hook = nullptr;
-	std::vector<hook_handler> pre_handlers;
-	std::vector<hook_handler> post_handlers;
+	std::vector<std::unique_ptr<hook_handler>> handlers;
+	size_t handler_level = -1;
+	std::vector<cell> removed_handlers;
 
-	void free_hook();
 public:
-	hooked_func() = default;
-	hooked_func(AMX *amx, const std::string &native);
-	hooked_func(hooked_func &&obj);
+	hooked_func(std::string name, AMX_NATIVE native, AMX_NATIVE hook, size_t index);
 	hooked_func(const hooked_func &) = delete;
-	~hooked_func();
-	hooked_func &operator=(hooked_func &&obj);
 	hooked_func &operator=(hooked_func &) = delete;
+	~hooked_func();
 
+	cell add_handler(AMX *amx, const char *func_format, const char *handler, const char *format, const cell *params, int numargs);
+	bool remove_handler(cell id);
+	cell invoke(AMX *amx, cell *params);
+	bool empty() const { return handlers.empty(); }
+	bool running() const { return handler_level != -1; }
+	std::string get_name() const { return name; }
+	AMX_NATIVE get_native() const { return native; }
 	size_t get_index() const { return index; }
-
-	void add_handler(size_t index, bool post, AMX *amx, const char *func_format, const char *handler, const char *format, const cell *params, int numargs);
-	bool remove_handler(size_t index);
-	cell invoke(AMX *amx, cell *params) const;
-	bool empty() const { return pre_handlers.empty() && post_handlers.empty(); }
-	const std::string &name() const { return native; }
 };
 
 constexpr const size_t max_hooked_funcs = 256;
-std::array<hooked_func, max_hooked_funcs> native_hooks;
-std::unordered_map<std::string, size_t> hooks_map;
-aux::linear_pool<size_t> hooks;
+std::array<std::unique_ptr<hooked_func>, max_hooked_funcs> native_hooks;
+std::unordered_map<AMX_NATIVE, size_t> hooks_map;
+std::unordered_map<cell, size_t> hook_handlers;
 
 cell native_hook_handler(size_t index, AMX *amx, cell *params)
 {
 	auto &hook = native_hooks[index];
-	return hook.invoke(amx, params);
+	if(hook)
+	{
+		return hook->invoke(amx, params);
+	}
+	throw std::logic_error("[PP] Hook was not properly unregistered.");
 }
 
 using func_pool = aux::func<cell(AMX*, cell*)>::pool<max_hooked_funcs, native_hook_handler>;
 
-int amxhook::register_hook(AMX *amx, bool post, const char *native, const char *func_format, const char *handler, const char *format, const cell *params, int numargs)
+cell amxhook::register_hook(AMX *amx, const char *native, const char *func_format, const char *handler, const char *format, const cell *params, int numargs)
 {
-	std::string str(native);
+	std::string name(native);
+	AMX_NATIVE func = amx::find_native(amx, name);
 
-	auto it = hooks_map.find(str);
+	auto it = hooks_map.find(func);
 	if(it == hooks_map.end())
 	{
-		hooked_func hook(amx, str);
-		size_t index = hook.get_index();
+		auto p = func_pool::add();
+		size_t index = p.first;
 		if(index == -1)
 		{
 			logerror(amx, "[PP] Hook pool full. Adjust max_hooked_funcs (currently %d) and recompile.", max_hooked_funcs);
 			return -1;
 		}
-		native_hooks[index] = std::move(hook);
-		it = hooks_map.emplace(std::move(str), index).first;
+		native_hooks[index] = std::make_unique<hooked_func>(name, func, p.second, index);
+		it = hooks_map.emplace(func, index).first;
 	}
 
-	hooked_func &hook = native_hooks[it->second];
-	size_t index = hooks.add(hook.get_index());
+	hooked_func &hook = *native_hooks[it->second];
+	size_t index = hook.get_index();
 	try{
-		hook.add_handler(index, post, amx, func_format, handler, format, params, numargs);
+		cell id = hook.add_handler(amx, func_format, handler, format, params, numargs);
+		hook_handlers[id] = index;
+		return id;
 	}catch(nullptr_t)
 	{
-		hooks.remove(index);
-		if(hook.empty())
+		if(hook.empty() && !hook.running())
 		{
 			hooks_map.erase(it);
-			native_hooks[hook.get_index()] = {};
+			native_hooks[index] = nullptr;
+			func_pool::remove(index);
 		}
 		return -1;
 	}
-	return index;
 }
 
-bool amxhook::remove_hook(AMX *amx, int index)
+bool amxhook::remove_hook(AMX *amx, cell id)
 {
-	size_t *ptr = hooks.get(index);
-	if(ptr == nullptr) return false;
-	auto &hook = native_hooks[*ptr];
-	hooks.remove(index);
-	if(!hook.remove_handler(index)) return false;
-	if(hook.empty())
+	auto it = hook_handlers.find(id);
+	if(it == hook_handlers.end()) return false;
+
+	size_t index = it->second;
+	hook_handlers.erase(it);
+	hooked_func &hook = *native_hooks[index];
+	if(!hook.remove_handler(id)) return false;
+
+	if(hook.empty() && !hook.running())
 	{
-		hooks_map.erase(hook.name());
-		native_hooks[hook.get_index()] = {};
+		hooks_map.erase(hook.get_native());
+		size_t index = hook.get_index();
+		native_hooks[index] = nullptr;
+		func_pool::remove(index);
 	}
 	return true;
 }
 
-hooked_func::hooked_func(AMX *amx, const std::string &native) : native(native)
+hooked_func::hooked_func(std::string name, AMX_NATIVE native, AMX_NATIVE hook, size_t index) : name(name), native(native), index(index)
 {
-	auto p = func_pool::add();
-	index = p.first;
-	if(index == -1) return;
-	auto f = amx::find_native(amx, native);
-	hook = subhook_new(reinterpret_cast<void*>(f), reinterpret_cast<void*>(p.second), {});
-	subhook_install(hook);
-}
-
-hooked_func::hooked_func(hooked_func &&obj) : pre_handlers(std::move(obj.pre_handlers)), post_handlers(std::move(obj.post_handlers)), native(std::move(obj.native)), index(obj.index), hook(obj.hook)
-{
-	obj.hook = nullptr;
+	this->hook = subhook_new(reinterpret_cast<void*>(native), reinterpret_cast<void*>(hook), {});
+	subhook_install(this->hook);
 }
 
 hooked_func::~hooked_func()
-{
-	free_hook();
-}
-
-void hooked_func::free_hook()
 {
 	if(hook != nullptr)
 	{
 		subhook_remove(hook);
 		subhook_free(hook);
 		hook = nullptr;
-		func_pool::remove(index);
 	}
 }
 
-hooked_func &hooked_func::operator=(hooked_func &&obj)
+cell hooked_func::add_handler(AMX *amx, const char *func_format, const char *handler, const char *format, const cell *params, int numargs)
 {
-	if(this == &obj) return *this;
-	free_hook();
-	pre_handlers = std::move(obj.pre_handlers);
-	post_handlers = std::move(obj.post_handlers);
-	native = std::move(obj.native);
-	index = obj.index;
-	hook = obj.hook;
-	obj.hook = nullptr;
-	return *this;
+	auto ptr = std::make_unique<hook_handler>(amx, func_format, handler, format, params, numargs);
+	cell id = reinterpret_cast<cell>(ptr.get());
+	handlers.push_back(std::move(ptr));
+	return id;
 }
 
-void hooked_func::add_handler(size_t index, bool post, AMX *amx, const char *func_format, const char *handler, const char *format, const cell *params, int numargs)
+bool hooked_func::remove_handler(cell id)
 {
-	auto &vect = post ? post_handlers : pre_handlers;
-	vect.emplace_back(index, amx, func_format, handler, format, params, numargs);
-}
+	auto test = reinterpret_cast<hook_handler*>(id);
 
-bool hooked_func::remove_handler(size_t index)
-{
-	auto it = std::find_if(pre_handlers.begin(), pre_handlers.end(), [=](hook_handler &hndl) {return hndl.get_index() == index; });
-	if(it != pre_handlers.end())
+	auto it = std::find_if(handlers.begin(), handlers.end(), [=](std::unique_ptr<hook_handler> &ptr) {return ptr.get() == test; });
+	if(it != handlers.end())
 	{
-		pre_handlers.erase(it);
-		return true;
-	}
-	it = std::find_if(post_handlers.begin(), post_handlers.end(), [=](hook_handler &hndl) {return hndl.get_index() == index; });
-	if(it != post_handlers.end())
-	{
-		post_handlers.erase(it);
+		if(handler_level != -1)
+		{
+			**it = {};
+		}else{
+			handlers.erase(it);
+		}
 		return true;
 	}
 	return false;
 }
 
-cell hooked_func::invoke(AMX *amx, cell *params) const
+cell hooked_func::invoke(AMX *amx, cell *params)
 {
-	cell result = 0;
+	cell result;
 
-	// we might get deleted at any time, be cautious
-	auto func = reinterpret_cast<AMX_NATIVE>(subhook_get_src(hook));
-	for(auto it = pre_handlers.rbegin(); it != pre_handlers.rend(); it++)
+	size_t old = handler_level;
+	if(handler_level == -1)
 	{
-		if(!it->invoke(*this, amx, params, result)) return result;
-		if(pre_handlers.size() == 0) break;
-	}
-	if(hook == nullptr)
-	{
-		result = func(amx, params);
-	}else{
-		result = reinterpret_cast<AMX_NATIVE>(subhook_get_trampoline(hook))(amx, params);
-	}
-	for(auto it = post_handlers.begin(); it != post_handlers.end(); it++)
-	{
-		if(!it->invoke(*this, amx, params, result)) return result;
-		if(post_handlers.size() == 0) break;
+		handler_level = handlers.size();
 	}
 
+	bool ok = false;
+	while(!ok)
+	{
+		if(handler_level == 0)
+		{
+			result = reinterpret_cast<AMX_NATIVE>(subhook_get_trampoline(hook))(amx, params);
+			ok = true;
+		}else{
+			handler_level--;
+			ok = handlers[handler_level]->invoke(*this, amx, params, result);
+		}
+	}
+
+	handler_level = old;
+	if(old == -1)
+	{
+		for(auto it = handlers.begin(); it != handlers.end(); ++it)
+		{
+			if(!(*it)->valid())
+			{
+				it = handlers.erase(it);
+			}
+		}
+		if(empty())
+		{
+			hooks_map.erase(native);
+			size_t index = this->index;
+			native_hooks[index] = nullptr;
+			func_pool::remove(index);
+		}
+	}
 	return result;
 }
 
-hook_handler::hook_handler(size_t index, AMX *amx, const char *func_format, const char *function, const char *format, const cell *args, size_t numargs) : index(index), amx(amx::load(amx)), handler(function)
+hook_handler::hook_handler(AMX *amx, const char *func_format, const char *function, const char *format, const cell *args, size_t numargs) : amx(amx::load(amx)), handler(function)
 {
 	if(func_format != nullptr)
 	{
@@ -227,17 +231,23 @@ hook_handler::hook_handler(size_t index, AMX *amx, const char *func_format, cons
 	}
 }
 
+bool hook_handler::valid() const
+{
+	if(auto amx_obj = this->amx.lock()) return amx_obj->valid();
+	return false;
+}
+
 bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cell &result) const
 {
 	auto amx_obj = this->amx.lock();
-	if(!amx_obj) return true;
+	if(!amx_obj || !amx_obj->valid()) return false;
 	auto &my_amx = *amx_obj;
 
 	int index;
 	if(amx_FindPublic(my_amx, handler.c_str(), &index) != AMX_ERR_NONE)
 	{
 		logwarn(amx, "[PP] Hook handler %s was not found.", handler.c_str());
-		return true;
+		return false;
 	}
 
 	cell numargs = params[0] / sizeof(cell);
@@ -252,17 +262,17 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 		char c = format[argi];
 		if(argi >= numargs)
 		{
-			logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') was not passed to the native function.", handler.c_str(), parent.name().c_str(), argi, c);
-			return true;
+			logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+			return false;
 		}
 		cell &param = params[1 + argi];
 		switch(c)
 		{
-			case '_':
+			case '_': //ignore
 			{
 				break;
 			}
-			case '*':
+			case '*': //by-ref cell
 			{
 				if(amx != my_amx)
 				{
@@ -279,7 +289,7 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 				}
 				break;
 			}
-			case 'a':
+			case 'a': //in array
 			{
 				if(amx != my_amx)
 				{
@@ -288,8 +298,30 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 
 					if(argi + 1 >= numargs)
 					{
-						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.name().c_str(), argi, c);
-						return true;
+						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+						return false;
+					}
+					int length = params[2 + argi];
+					amx_Allot(my_amx, length, &amx_addr, &target_addr);
+					std::memcpy(target_addr, src_addr, length * sizeof(cell));
+
+					amx_Push(my_amx, amx_addr);
+				} else {
+					amx_Push(my_amx, param);
+				}
+				break;
+			}
+			case 'A': //in-out array
+			{
+				if(amx != my_amx)
+				{
+					cell amx_addr, *src_addr, *target_addr;
+					amx_GetAddr(amx, param, &src_addr);
+
+					if(argi + 1 >= numargs)
+					{
+						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+						return false;
 					}
 					int length = params[2 + argi];
 					amx_Allot(my_amx, length, &amx_addr, &target_addr);
@@ -302,7 +334,29 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 				}
 				break;
 			}
-			case 's':
+			case 'o': //out array
+			{
+				if(amx != my_amx)
+				{
+					cell amx_addr, *src_addr, *target_addr;
+					amx_GetAddr(amx, param, &src_addr);
+
+					if(argi + 1 >= numargs)
+					{
+						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+						return false;
+					}
+					int length = params[2 + argi];
+					amx_Allot(my_amx, length, &amx_addr, &target_addr);
+					storage.push_back(std::make_tuple(target_addr, src_addr, length));
+
+					amx_Push(my_amx, amx_addr);
+				}else{
+					amx_Push(my_amx, param);
+				}
+				break;
+			}
+			case 's': //in string
 			{
 				if(amx != my_amx)
 				{
@@ -318,7 +372,6 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 					amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
 					std::memcpy(target_addr, src_addr, length * sizeof(cell));
 					target_addr[length] = 0;
-					storage.push_back(std::make_tuple(target_addr, src_addr, length));
 
 					amx_Push(my_amx, amx_addr);
 				}else{
@@ -326,35 +379,46 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 				}
 				break;
 			}
-			default:
+			case 'S': //in-out string
 			{
-				cell amx_addr, *phys_addr;
-				amx_Allot(my_amx, 1, &amx_addr, &phys_addr);
+				if(amx != my_amx)
+				{
+					cell amx_addr, *src_addr, *target_addr;
+					amx_GetAddr(amx, param, &src_addr);
+					int length;
+					amx_StrLen(src_addr, &length);
+					if(src_addr[0] & 0xFF000000)
+					{
+						length = 1 + ((length - 1) / sizeof(cell));
+					}
 
-				*phys_addr = param;
-				storage.push_back(std::make_tuple(phys_addr, &param, 1));
+					amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
+					std::memcpy(target_addr, src_addr, length * sizeof(cell));
+					target_addr[length] = 0;
+					storage.push_back(std::make_tuple(target_addr, src_addr, length + 1));
 
-				amx_Push(my_amx, amx_addr);
+					amx_Push(my_amx, amx_addr);
+				}else{
+					amx_Push(my_amx, param);
+				}
+				break;
+			}
+			default: //cell
+			{
+				amx_Push(my_amx, param);
 				break;
 			}
 		}
 	}
 
-	cell amx_addr, *phys_addr;
-	amx_Allot(my_amx, 1, &amx_addr, &phys_addr);
-	*phys_addr = result;
-	amx_Push(my_amx, amx_addr);
-	storage.push_back(std::make_tuple(phys_addr, &result, 1));
-
 	for(auto it = arg_values.rbegin(); it != arg_values.rend(); it++)
 	{
-		it->push(my_amx, this->index);
+		it->push(my_amx, reinterpret_cast<cell>(this));
 	}
 
-	amx_Push(my_amx, reinterpret_cast<cell>(amx));
+	//amx_Push(my_amx, reinterpret_cast<cell>(amx));
 	
-	cell retval;
-	amx_Exec(my_amx, &retval, index);
+	amx_Exec(my_amx, &result, index);
 
 	for(auto mem : storage)
 	{
@@ -363,5 +427,5 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 
 	amx_Release(my_amx, reset_hea);
 
-	return !!retval;
+	return true;
 }
