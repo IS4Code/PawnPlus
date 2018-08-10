@@ -250,24 +250,63 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 		return false;
 	}
 
-	cell numargs = params[0] / sizeof(cell);
+	int numargs = format.size();
+	if(format[numargs - 1] == '+')
+	{
+		numargs--;
+	}
+
+	if(params[0] < numargs * static_cast<int>(sizeof(cell)))
+	{
+		int argi = 1 + params[0] / sizeof(cell);
+		logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, format[argi]);
+		return false;
+	}
 
 	cell reset_hea, *tmp;
 	amx_Allot(my_amx, 0, &reset_hea, &tmp);
 
 	std::vector<std::tuple<cell*, cell*, size_t>> storage;
 
-	for(int argi = format.size() - 1; argi >= 0; argi--)
+	if(format[numargs] == '+')
+	{
+		for(int argi = (params[0] / sizeof(cell)) - 1; argi >= numargs; argi--)
+		{
+			cell &param = params[1 + argi];
+			if(amx != my_amx)
+			{
+				// assume a string (can copy too much memory, but not less than required)
+				cell amx_addr, *src_addr, *target_addr;
+				amx_GetAddr(amx, param, &src_addr);
+				int length;
+				amx_StrLen(src_addr, &length);
+				if(src_addr[0] & 0xFF000000)
+				{
+					length = 1 + ((length - 1) / sizeof(cell));
+				}
+
+				amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
+				std::memcpy(target_addr, src_addr, length * sizeof(cell));
+				target_addr[length] = 0;
+
+				amx_Push(my_amx, amx_addr);
+			}else{
+				amx_Push(my_amx, param);
+			}
+		}
+	}
+
+	for(int argi = numargs - 1; argi >= 0; argi--)
 	{
 		char c = format[argi];
-		if(argi >= numargs)
-		{
-			logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
-			return false;
-		}
 		cell &param = params[1 + argi];
 		switch(c)
 		{
+			case '+':
+			{
+				logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') must be at the end of the format string.", handler.c_str(), parent.get_name().c_str(), argi, c);
+				return false;
+			}
 			case '_': //ignore
 			{
 				break;
