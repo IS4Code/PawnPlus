@@ -497,6 +497,7 @@ protected:
 	iterator _position;
 	std::weak_ptr<dyn_object> _current;
 
+	virtual std::shared_ptr<linked_list_t> lock_same();
 	virtual std::shared_ptr<linked_list_t> lock_same() const;
 
 public:

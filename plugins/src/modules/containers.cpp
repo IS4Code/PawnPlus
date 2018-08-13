@@ -246,6 +246,19 @@ bool dyn_iterator::insert_dyn(const std::type_info &type, const void *value)
 
 
 
+std::shared_ptr<linked_list_t> linked_list_iterator_t::lock_same()
+{
+	if(auto source = _source.lock())
+	{
+		if(_current.expired())
+		{
+			_position = source->end();
+		}
+		return source;
+	}
+	return nullptr;
+}
+
 std::shared_ptr<linked_list_t> linked_list_iterator_t::lock_same() const
 {
 	if(auto source = _source.lock())
@@ -276,13 +289,16 @@ bool linked_list_iterator_t::move_next()
 {
 	if(auto source = lock_same())
 	{
-		++_position;
 		if(_position != source->end())
 		{
-			_current = *_position;
-			return true;
-		}else{
-			_current.reset();
+			++_position;
+			if(_position != source->end())
+			{
+				_current = *_position;
+				return true;
+			}else{
+				_current.reset();
+			}
 		}
 	}
 	return false;
@@ -296,6 +312,9 @@ bool linked_list_iterator_t::move_previous()
 		{
 			_position = source->end();
 			_current.reset();
+			return false;
+		}else if(_position == source->end())
+		{
 			return false;
 		}
 		--_position;
@@ -367,14 +386,17 @@ bool linked_list_iterator_t::erase()
 {
 	if(auto source = lock_same())
 	{
-		_position = source->erase(_position);
 		if(_position != source->end())
 		{
-			_current = *_position;
-		}else{
-			_current.reset();
+			_position = source->erase(_position);
+			if(_position != source->end())
+			{
+				_current = *_position;
+			}else{
+				_current.reset();
+			}
+			return true;
 		}
-		return true;
 	}
 	return false;
 }

@@ -62,6 +62,7 @@
 #define PP_SYNTAX_THREADED
 #define PP_SYNTAX_FOR_LIST
 #define PP_SYNTAX_FOR_MAP
+#define PP_SYNTAX_FOR_LINKED_LIST
 #define PP_SYNTAX_STRING_OP
 #endif
 
@@ -837,6 +838,10 @@ native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:
 #if defined PP_SYNTAX_FOR_MAP
 #define for_map(%0:%1) for(new Iter:%0=map_iter(%1);iter_inside(%0);iter_move_next(%0))
 #define for_map_of<%2,%3>(%0:%1) for(new PairIter<%2,%3>:%0=map_iter<%2,%3>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
+#endif
+
+#if defined PP_SYNTAX_FOR_LINKED_LIST
+#define for_linked_list(%0:%1) for(new Iter:%0=linked_list_iter(%1);iter_inside(%0);iter_move_next(%0))
 #endif
 
 /*                 */
