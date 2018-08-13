@@ -712,6 +712,53 @@ native bool:iter_set_value_arr<%0,%1>(PairIter<%0,%1>:i,const %1:v[],s=sizeof(v)
 native bool:iter_set_value_cell<%0,%1>(PairIter<%0,%1>:i,o,%1:v)=iter_set_cell
 
 /*                 */
+/*  Linked lists   */
+/*                 */
+
+native LinkedList:linked_list_new();
+native LinkedList:linked_list_new_arr(AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
+native LinkedList:linked_list_new_args_t(TagTag:tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) = linked_list_new_args;
+#define linked_list_new_args(%0) linked_list_new_args_t(_,%0)
+native LinkedList:linked_list_new_args_str(arg0[], ...);
+native LinkedList:linked_list_new_args_var(VariantTag:arg0, VariantTag:...);
+native bool:linked_list_valid(LinkedList:linked_list);
+native bool:linked_list_delete(LinkedList:linked_list);
+native bool:linked_list_delete_deep(LinkedList:linked_list);
+native linked_list_size(LinkedList:linked_list);
+native bool:linked_list_clear(LinkedList:linked_list);
+native LinkedList:linked_list_clone(LinkedList:linked_list);
+
+native linked_list_add(LinkedList:linked_list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
+native linked_list_add_arr(LinkedList:linked_list, const AnyTag:value[], index=-1, size=sizeof(value), TagTag:tag_id=tagof(value));
+native linked_list_add_str(LinkedList:linked_list, const value[], index=-1);
+native linked_list_add_var(LinkedList:linked_list, VariantTag:value, index=-1);
+native linked_list_add_linked_list(LinkedList:linked_list, LinkedList:range, index=-1);
+native linked_list_add_args_t(TagTag:tag_id=tagof(arg0), LinkedList:linked_list, AnyTag:arg0, AnyTag:...) = linked_list_add_args;
+#define linked_list_add_args(%0) linked_list_add_args_t(_,%0)
+native linked_list_add_args_str(LinkedList:linked_list, arg0[], ...);
+native linked_list_add_args_var(LinkedList:linked_list, VariantTag:arg0, VariantTag:...);
+
+native bool:linked_list_remove(LinkedList:linked_list, index);
+
+native linked_list_get(LinkedList:linked_list, index, offset=0);
+native linked_list_get_arr(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value));
+native Variant:linked_list_get_var(LinkedList:linked_list, index);
+native bool:linked_list_get_safe(LinkedList:linked_list, index, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
+native linked_list_get_arr_safe(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+
+native bool:linked_list_set(LinkedList:linked_list, index, AnyTag:value, TagTag:tag_id=tagof(value));
+native bool:linked_list_set_arr(LinkedList:linked_list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native bool:linked_list_set_str(LinkedList:linked_list, index, const value[]);
+native bool:linked_list_set_var(LinkedList:linked_list, index, VariantTag:value);
+native bool:linked_list_set_cell(LinkedList:linked_list, index, offset, AnyTag:value);
+native bool:linked_list_set_cell_safe(LinkedList:linked_list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
+
+native linked_list_tagof(LinkedList:linked_list, index);
+native linked_list_sizeof(LinkedList:linked_list, index);
+
+native Iter:linked_list_iter(LinkedList:linked_list);
+
+/*                 */
 /*    Iterators    */
 /*                 */
 

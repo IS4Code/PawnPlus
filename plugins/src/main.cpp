@@ -51,13 +51,14 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 	variants::pool.clear();
 	list_pool.clear();
 	map_pool.clear();
+	linked_list_pool.clear();
 	iter_pool.clear();
 	tasks::clear();
 	strings::pool.clear();
 
 	Hooks::Unregister();
 
-	logprintf(" PawnPlus v0.8.1 unloaded");
+	logprintf(" PawnPlus v0.9 unloaded");
 }
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) 

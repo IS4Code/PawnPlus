@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <list>
 #include <memory>
 #include <exception>
 #include <typeinfo>
@@ -127,6 +128,25 @@ public:
 	}
 };
 
+class linked_list_t : public collection_base<std::list<std::shared_ptr<dyn_object>>>
+{
+public:
+	dyn_object &operator[](size_t index);
+	void push_back(dyn_object &&value);
+	void push_back(const dyn_object &value);
+	iterator insert(iterator position, dyn_object &&value);
+	iterator insert(iterator position, const dyn_object &value);
+	bool insert_dyn(iterator position, const std::type_info &type, void *value, iterator &result);
+	bool insert_dyn(iterator position, const std::type_info &type, const void *value, iterator &result);
+
+	template <class InputIterator>
+	void insert(iterator position, InputIterator first, InputIterator last)
+	{
+		data.insert(position, first, last);
+		++revision;
+	}
+};
+
 class dyn_iterator
 {
 public:
@@ -168,28 +188,6 @@ protected:
 	virtual bool insert_dyn(const std::type_info &type, const void *value);
 };
 
-namespace impl
-{
-	template <class Base>
-	struct move_previous
-	{
-		bool operator()(typename Base::iterator &it)
-		{
-			--it;
-			return true;
-		}
-	};
-
-	template <>
-	struct move_previous<map_t>
-	{
-		bool operator()(typename map_t::iterator &it)
-		{
-			return false;
-		}
-	};
-}
-
 template <class Base>
 class iterator_impl : public dyn_iterator
 {
@@ -201,7 +199,7 @@ protected:
 	iterator _position;
 	bool _inside;
 
-	std::shared_ptr<Base> lock_same()
+	virtual std::shared_ptr<Base> lock_same()
 	{
 		if(auto source = _source.lock())
 		{
@@ -218,7 +216,7 @@ protected:
 		return nullptr;
 	}
 
-	std::shared_ptr<Base> lock_same() const
+	virtual std::shared_ptr<Base> lock_same() const
 	{
 		if(auto source = _source.lock())
 		{
@@ -284,24 +282,6 @@ public:
 		return false;
 	}
 
-	virtual bool move_previous() override
-	{
-		if(auto source = lock_same())
-		{
-			if(_position == source->end())
-			{
-				return false;
-			}else if(_position == source->begin())
-			{
-				_position = source->end();
-				_inside = false;
-				return false;
-			}
-			return impl::move_previous<Base>()(_position);
-		}
-		return false;
-	}
-
 	virtual bool set_to_first() override
 	{
 		if(auto source = _source.lock())
@@ -312,24 +292,6 @@ public:
 			{
 				_inside = true;
 				return true;
-			}
-		}
-		return false;
-	}
-
-	virtual bool set_to_last() override
-	{
-		if(auto source = _source.lock())
-		{
-			_revision = source->get_revision();
-			_position = source->end();
-			if(_position != source->begin())
-			{
-				if(impl::move_previous<Base>()(_position))
-				{
-					_inside = true;
-					return true;
-				}
 			}
 		}
 		return false;
@@ -376,11 +338,6 @@ public:
 		return false;
 	}
 
-	virtual std::unique_ptr<dyn_iterator> clone() const
-	{
-		return std::make_unique<iterator_impl<Base>>(*this);
-	}
-
 	virtual bool operator==(const dyn_iterator &obj) const
 	{
 		auto other = dynamic_cast<const iterator_impl<Base>*>(&obj);
@@ -392,7 +349,7 @@ public:
 	}
 
 protected:
-	virtual bool extract_dyn(const std::type_info &type, void *&value) const
+	virtual bool extract_dyn(const std::type_info &type, void *&value) const override
 	{
 		if(type == typeid(value_type) && valid())
 		{
@@ -429,11 +386,158 @@ protected:
 	}
 };
 
-typedef iterator_impl<list_t> list_iterator_t;
-typedef iterator_impl<map_t> map_iterator_t;
+class list_iterator_t : public iterator_impl<list_t>
+{
+public:
+	list_iterator_t()
+	{
+
+	}
+
+	list_iterator_t(const std::shared_ptr<list_t> source) : iterator_impl(source)
+	{
+
+	}
+
+	list_iterator_t(const std::shared_ptr<list_t> source, iterator position) : iterator_impl(source, position)
+	{
+
+	}
+
+	list_iterator_t(const list_iterator_t &iter) : iterator_impl(iter)
+	{
+
+	}
+
+	virtual bool move_previous() override
+	{
+		if(auto source = lock_same())
+		{
+			if(_position == source->end())
+			{
+				return false;
+			}else if(_position == source->begin())
+			{
+				_position = source->end();
+				_inside = false;
+				return false;
+			}
+			--_position;
+			return true;
+		}
+		return false;
+	}
+
+	virtual bool set_to_last() override
+	{
+		if(auto source = _source.lock())
+		{
+			_revision = source->get_revision();
+			_position = source->end();
+			if(_position != source->begin())
+			{
+				--_position;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	virtual std::unique_ptr<dyn_iterator> clone() const override
+	{
+		return std::make_unique<list_iterator_t>(*this);
+	}
+};
+
+class map_iterator_t : public iterator_impl<map_t>
+{
+public:
+	map_iterator_t()
+	{
+
+	}
+
+	map_iterator_t(const std::shared_ptr<map_t> source) : iterator_impl(source)
+	{
+
+	}
+
+	map_iterator_t(const std::shared_ptr<map_t> source, iterator position) : iterator_impl(source, position)
+	{
+
+	}
+
+	map_iterator_t(const map_iterator_t &iter) : iterator_impl(iter)
+	{
+
+	}
+
+	virtual bool move_previous() override
+	{
+		return false;
+	}
+
+	virtual bool set_to_last() override
+	{
+		return false;
+	}
+
+	virtual std::unique_ptr<dyn_iterator> clone() const override
+	{
+		return std::make_unique<map_iterator_t>(*this);
+	}
+};
+
+class linked_list_iterator_t : public dyn_iterator
+{
+protected:
+	typedef typename linked_list_t::iterator iterator;
+	typedef typename linked_list_t::value_type value_type;
+	std::weak_ptr<linked_list_t> _source;
+	iterator _position;
+	std::weak_ptr<dyn_object> _current;
+
+	virtual std::shared_ptr<linked_list_t> lock_same() const;
+
+public:
+	linked_list_iterator_t()
+	{
+
+	}
+
+	linked_list_iterator_t(const std::shared_ptr<linked_list_t> source) : linked_list_iterator_t(source, source->begin())
+	{
+
+	}
+
+	linked_list_iterator_t(const std::shared_ptr<linked_list_t> source, iterator position) : _source(source), _position(position), _current(position != source->end() ? *position : nullptr)
+	{
+
+	}
+
+	linked_list_iterator_t(const linked_list_iterator_t &iter) = default;
+
+	virtual bool expired() const override;
+	virtual bool valid() const override;
+	virtual bool move_next() override;
+	virtual bool move_previous() override;
+	virtual bool set_to_first() override;
+	virtual bool set_to_last() override;
+	virtual bool reset() override;
+	virtual size_t get_hash() const override;
+	virtual bool erase() override;
+	virtual std::unique_ptr<dyn_iterator> clone() const override;
+	virtual bool operator==(const dyn_iterator &obj) const override;
+
+protected:
+	virtual bool extract_dyn(const std::type_info &type, void *&value) const override;
+	virtual bool insert_dyn(const std::type_info &type, void *value) override;
+	virtual bool insert_dyn(const std::type_info &type, const void *value) override;
+};
 
 extern aux::shared_id_set_pool<list_t> list_pool;
 extern aux::shared_id_set_pool<map_t> map_pool;
+extern aux::shared_id_set_pool<linked_list_t> linked_list_pool;
 extern object_pool<dyn_iterator> iter_pool;
 
 #endif
