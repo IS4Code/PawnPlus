@@ -27,16 +27,16 @@ struct tag_map_info : public amx::extra
 	{
 		int len;
 		amx_NameLength(amx, &len);
-		char *tag_name = static_cast<char*>(alloca(len + 1));
+		char *tagname = static_cast<char*>(alloca(len + 1));
 
 		int num;
 		amx_NumTags(amx, &num);
 		for(int i = 0; i < num; i++)
 		{
 			cell tag_id;
-			if(!amx_GetTag(amx, i, tag_name, &tag_id))
+			if(!amx_GetTag(amx, i, tagname, &tag_id))
 			{
-				auto info = tags::find_tag(tag_name, -1);
+				auto info = tags::find_tag(tagname, -1);
 				tag_map[tag_id & 0x7FFFFFFF] = info;
 			}
 		}
@@ -98,6 +98,13 @@ tag_ptr tags::find_tag(AMX *amx, cell tag_id)
 	if(it != map.end())
 	{
 		return it->second;
+	}
+	int len;
+	amx_NameLength(amx, &len);
+	char *tagname = static_cast<char*>(alloca(len + 1));
+	if(amx_FindTagId(amx, tag_id, tagname) == AMX_ERR_NONE)
+	{
+		return tags::find_tag(tagname, -1);
 	}
 	return ::tag_list[tag_unknown];
 }
