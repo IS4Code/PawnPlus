@@ -6,6 +6,7 @@
 #include "objects/stored_param.h"
 #include "fixes/linux.h"
 #include <vector>
+#include <algorithm>
 #include <unordered_map>
 #include <cmath>
 #include <cstring>
@@ -345,6 +346,11 @@ struct char_operations : public cell_operations
 	virtual cell_string to_string(tag_ptr tag, const cell *arg, cell size) const override
 	{
 		cell_string str(arg, size);
+		size_t null = str.find(0);
+		if(null != cell_string::npos)
+		{
+			str.resize(null, 0);
+		}
 		return str;
 	}
 

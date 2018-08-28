@@ -146,6 +146,7 @@ namespace Natives
 		dyn_object obj{amx, addr, params[2], params[3]};
 		return strings::pool.get_id(strings::pool.add(obj.to_string(), true));
 	}
+
 	static cell AMX_NATIVE_CALL str_split_base(AMX *amx, cell_string *str, const cell_string &delims)
 	{
 		auto list = list_pool.add();
@@ -153,7 +154,15 @@ namespace Natives
 		cell_string::size_type last_pos = 0;
 		while(last_pos != cell_string::npos)
 		{
-			auto pos = str->find_first_of(delims, last_pos);
+			auto it = std::find_first_of(str->begin() + last_pos, str->end(), delims.begin(), delims.end());
+
+			size_t pos;
+			if(it == str->end())
+			{
+				pos = cell_string::npos;
+			}else{
+				pos = std::distance(str->begin(), it);
+			}
 
 			auto sub = &(*str)[last_pos];
 			cell_string::size_type size;

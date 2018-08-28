@@ -385,6 +385,7 @@ native List:list_new_args_t(TagTag:tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) 
 #define list_new_args(%0) list_new_args_t(_,%0)
 native List:list_new_args_str(arg0[], ...);
 native List:list_new_args_var(VariantTag:arg0, VariantTag:...);
+native List:list_var_args(const format[], bool:byref=false, level=0);
 native bool:list_valid(List:list);
 native bool:list_delete(List:list);
 native bool:list_delete_deep(List:list);
