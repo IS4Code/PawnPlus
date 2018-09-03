@@ -35,7 +35,7 @@ namespace Natives
 			amx_StrParam(amx2, params[2], name);
 
 			cell amx_addr;
-			if(amx_FindPubVar(amx2, name, &amx_addr) != AMX_ERR_NONE)
+			if(amx_FindPubVar(amx2, name, &amx_addr) == AMX_ERR_NONE)
 			{
 				return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx2, amx_addr, 1)));
 			}
