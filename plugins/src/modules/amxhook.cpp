@@ -251,7 +251,7 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 	}
 
 	int numargs = format.size();
-	if(format[numargs - 1] == '+')
+	if(format[numargs - 1] == '+' || format[numargs - 1] == '-')
 	{
 		numargs--;
 	}
@@ -277,22 +277,33 @@ bool hook_handler::invoke(const hooked_func &parent, AMX *amx, cell *params, cel
 			{
 				// assume a string (can copy too much memory, but not less than required)
 				cell amx_addr, *src_addr, *target_addr;
-				amx_GetAddr(amx, param, &src_addr);
-				int length;
-				amx_StrLen(src_addr, &length);
-				if(src_addr[0] & 0xFF000000)
+				if(amx_GetAddr(amx, param, &src_addr) != AMX_ERR_NONE)
 				{
-					length = 1 + ((length - 1) / sizeof(cell));
+					amx_Push(my_amx, param);
+				}else{
+					int length;
+					amx_StrLen(src_addr, &length);
+					if(src_addr[0] & 0xFF000000)
+					{
+						length = 1 + ((length - 1) / sizeof(cell));
+					}
+
+					amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
+					std::memcpy(target_addr, src_addr, length * sizeof(cell));
+					target_addr[length] = 0;
+
+					amx_Push(my_amx, amx_addr);
 				}
-
-				amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
-				std::memcpy(target_addr, src_addr, length * sizeof(cell));
-				target_addr[length] = 0;
-
-				amx_Push(my_amx, amx_addr);
 			}else{
 				amx_Push(my_amx, param);
 			}
+		}
+	}else if(format[numargs] == '-')
+	{
+		for(int argi = (params[0] / sizeof(cell)) - 1; argi >= numargs; argi--)
+		{
+			cell &param = params[1 + argi];
+			amx_Push(my_amx, param);
 		}
 	}
 
