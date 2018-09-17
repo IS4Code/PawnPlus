@@ -130,6 +130,9 @@ namespace tasks
 
 		auto handlers = std::move(this->handlers);
 
+		// prevent deletion of the task inside a continuation
+		auto handle = pool.get(this);
+
 		for(auto &handler : handlers)
 		{
 			handler->set_completed(*this);
