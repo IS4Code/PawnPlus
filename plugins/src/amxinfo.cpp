@@ -32,7 +32,7 @@ amx::object amx::load_lock(AMX *amx)
 	{
 		return it->second;
 	}
-	auto ptr = std::shared_ptr<instance>(new instance(amx));
+	auto ptr = std::make_shared<instance>(amx);
 	amx_map.insert(std::make_pair(amx, ptr));
 	return ptr;
 }
@@ -45,7 +45,7 @@ amx::handle amx::clone(AMX *amx, AMX *new_amx)
 amx::object amx::clone_lock(AMX *amx, AMX *new_amx)
 {
 	auto obj = load_lock(amx);
-	auto ptr = std::shared_ptr<instance>(new instance(*obj, new_amx));
+	auto ptr = std::make_shared<instance>(*obj, new_amx);
 	amx_map.insert(std::make_pair(new_amx, ptr));
 	return ptr;
 }

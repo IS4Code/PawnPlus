@@ -42,14 +42,20 @@ namespace amx
 		AMX *_amx;
 		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
 
-		explicit instance(AMX *amx) : _amx(amx)
+		void invalidate()
+		{
+			_amx = nullptr;
+		}
+
+	public:
+		instance() : _amx(nullptr)
 		{
 
 		}
 
-		void invalidate()
+		explicit instance(AMX *amx) : _amx(amx)
 		{
-			_amx = nullptr;
+
 		}
 
 		instance(const instance &obj, AMX *new_amx) : _amx(new_amx)
@@ -65,12 +71,6 @@ namespace amx
 					}
 				}
 			}
-		}
-
-	public:
-		instance() : _amx(nullptr)
-		{
-
 		}
 
 		instance(const instance &obj) = delete;

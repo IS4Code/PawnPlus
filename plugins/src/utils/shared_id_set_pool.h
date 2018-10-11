@@ -13,20 +13,21 @@ namespace aux
 	{
 		std::unordered_map<Type*, std::shared_ptr<Type>> data;
 
-		std::shared_ptr<Type> add(Type *value)
+		std::shared_ptr<Type> add(std::shared_ptr<Type> &&value)
 		{
-			return data[value] = std::shared_ptr<Type>(value);
+			auto ptr = value.get();
+			return data[ptr] = std::move(value);
 		}
 
 	public:
 		std::shared_ptr<Type> add()
 		{
-			return add(new Type());
+			return add(std::make_shared<Type>());
 		}
 
 		std::shared_ptr<Type> add(Type&& value)
 		{
-			return add(new Type(std::move(value)));
+			return add(std::make_shared<Type>(std::move(value)));
 		}
 
 		size_t size() const

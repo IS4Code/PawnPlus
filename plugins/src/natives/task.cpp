@@ -185,7 +185,7 @@ namespace Natives
 	{
 		auto created = tasks::add();
 		cell num = params[0] / sizeof(cell);
-		auto list = std::shared_ptr<std::vector<std::pair<tasks::task::handler_iterator, std::weak_ptr<tasks::task>>>>(new std::vector<std::pair<tasks::task::handler_iterator, std::weak_ptr<tasks::task>>>());
+		auto list = std::make_shared<std::vector<std::pair<tasks::task::handler_iterator, std::weak_ptr<tasks::task>>>>();
 		for(cell i = 1; i <= num; i++)
 		{
 			cell *addr;
@@ -219,7 +219,7 @@ namespace Natives
 	{
 		auto created = tasks::add();
 		cell num = params[0] / sizeof(cell);
-		auto list = std::shared_ptr<std::vector<std::weak_ptr<tasks::task>>>(new std::vector<std::weak_ptr<tasks::task>>());
+		auto list = std::make_shared<std::vector<std::weak_ptr<tasks::task>>>();
 		for(cell i = 1; i <= num; i++)
 		{
 			cell *addr;
