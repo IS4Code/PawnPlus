@@ -296,8 +296,8 @@ namespace Natives
 		char *fname;
 		amx_StrParam(amx, params[3], fname);
 
-		char *format;
-		amx_StrParam(amx, params[4], format);
+		const char *format;
+		amx_OptStrParam(amx, 4, format, "");
 
 		if(native == nullptr || fname == nullptr) return -1;
 

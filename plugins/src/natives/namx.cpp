@@ -49,7 +49,7 @@ namespace Natives
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))
 		{
-			return info->set(params[3], params[2]);
+			return info->set(optparam(3, 0), params[2]);
 		}
 		return 0;
 	}
@@ -60,7 +60,7 @@ namespace Natives
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))
 		{
-			return info->get(params[2]);
+			return info->get(optparam(2, 0));
 		}
 		return 0;
 	}
@@ -141,19 +141,19 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:amx_fork(fork_level:level=fork_script, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
+	// native bool:amx_fork(fork_level:level=fork_machine, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
 	static cell AMX_NATIVE_CALL amx_fork(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		cell flags = params[1] & SleepReturnForkFlagsMethodMask;
-		if(params[3])
+		cell flags = optparam(1, 2) & SleepReturnForkFlagsMethodMask;
+		if(optparam(3, 1))
 		{
 			flags |= SleepReturnForkFlagsCopyData;
 		}
 		amx::object owner;
 		auto &extra = amx::get_context(amx, owner).get_extra<fork_info_extra>();
-		extra.result_address = params[2];
-		extra.error_address = params[4];
+		extra.result_address = optparam(2, -1);
+		extra.error_address = optparam(4, -1);
 		return SleepReturnFork | flags;
 	}
 
@@ -161,7 +161,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL amx_commit(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return SleepReturnForkCommit | (SleepReturnValueMask & params[1]);
+		return SleepReturnForkCommit | (SleepReturnValueMask & optparam(1, 1));
 	}
 
 	// native amx_end_fork();
@@ -175,14 +175,14 @@ namespace Natives
 	static cell AMX_NATIVE_CALL amx_error(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, params[1]);
-		return params[2];
+		return optparam(2, 0);
 	}
 
 	// native Var:amx_alloc(size, bool:zero=true);
 	static cell AMX_NATIVE_CALL amx_alloc(AMX *amx, cell *params)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
-		return (params[2] ? SleepReturnAllocVarZero : SleepReturnAllocVar) | (SleepReturnValueMask & params[1]);
+		return (optparam(2, 1) ? SleepReturnAllocVarZero : SleepReturnAllocVar) | (SleepReturnValueMask & params[1]);
 	}
 
 	// native bool:amx_free(Var:var);

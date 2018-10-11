@@ -56,7 +56,7 @@ namespace Natives
 		task *task;
 		if(tasks::get_by_id(params[1], task))
 		{
-			task->keep(params[2]);
+			task->keep(optparam(2, 1));
 			return params[1];
 		}
 		return 0;

@@ -62,7 +62,7 @@ namespace Natives
 		char *name;
 		amx_StrParam(amx, params[1], name);
 
-		return tags::new_tag(name, params[2])->uid;
+		return tags::new_tag(name, optparam(2, 0))->uid;
 	}
 
 	// native bool:tag_set_op(tag_uid:tag_uid, tag_op:tag_op, const handler[], const additional_format[]="", AnyTag:...);
@@ -74,8 +74,8 @@ namespace Natives
 		char *handler;
 		amx_StrParam(amx, params[3], handler);
 
-		char *add_format;
-		amx_StrParam(amx, params[4], add_format);
+		const char *add_format;
+		amx_OptStrParam(amx, 4, add_format, "");
 
 		cell *args = params + 5;
 		int numargs = (params[0] / sizeof(cell)) - 4;

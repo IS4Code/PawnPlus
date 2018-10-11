@@ -2,8 +2,10 @@
 #include "modules/containers.h"
 #include "modules/strings.h"
 #include "objects/dyn_object.h"
+
 #include <cstring>
 #include <algorithm>
+#include <limits>
 
 typedef strings::cell_string cell_string;
 
@@ -14,7 +16,7 @@ namespace Natives
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
-		int flags = params[2];
+		int flags = optparam(2, 0);
 		auto str = strings::create(addr, true, flags & 1, flags & 2);
 		return strings::pool.get_id(str);
 	}
@@ -24,7 +26,7 @@ namespace Natives
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
-		int flags = params[3];
+		int flags = optparam(3, 0);
 		auto str = strings::create(addr, true, static_cast<size_t>(params[2]), false, flags & 1, flags & 2);
 		return strings::pool.get_id(str);
 	}
@@ -291,12 +293,15 @@ namespace Natives
 			return 0;
 		}
 
-		if(!strings::clamp_range(*str, params[4], params[5]))
+		cell start = optparam(4, 0);
+		cell end = optparam(5, std::numeric_limits<cell>::max());
+
+		if(!strings::clamp_range(*str, start, end))
 		{
 			return 0;
 		}
 
-		cell len = params[5] - params[4];
+		cell len = end - start;
 		if(len >= params[3])
 		{
 			len = params[3] - 1;
@@ -408,9 +413,12 @@ namespace Natives
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
 		if(str == nullptr) return strings::pool.get_id(strings::pool.add(true));
 
-		if(strings::clamp_range(*str, params[2], params[3]))
+		cell start = optparam(2, 0);
+		cell end = optparam(3, std::numeric_limits<cell>::max());
+
+		if(strings::clamp_range(*str, start, end))
 		{
-			auto substr = str->substr(params[2], params[3] - params[2]);
+			auto substr = str->substr(start, end - start);
 			return strings::pool.get_id(strings::pool.add(std::move(substr), true));
 		}
 		return 0;
@@ -472,8 +480,9 @@ namespace Natives
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
 		if(str == nullptr) return -1;
 
-		strings::clamp_pos(*str, params[3]);
-		return str->find(params[2], static_cast<size_t>(params[3]));
+		cell offset = optparam(3, 0);
+		strings::clamp_pos(*str, offset);
+		return str->find(params[2], static_cast<size_t>(offset));
 	}
 
 	// native str_find(StringTag:str, StringTag:value, offset=0);
@@ -485,9 +494,10 @@ namespace Natives
 		if(!strings::pool.get_by_id(params[2], str2)) return 0;
 		if(str1 == nullptr) return str2->empty() ? 0 : -1;
 
-		strings::clamp_pos(*str1, params[3]);
+		cell offset = optparam(3, 0);
+		strings::clamp_pos(*str1, offset);
 
-		return static_cast<cell>(str1->find(*str2, static_cast<size_t>(params[3])));
+		return static_cast<cell>(str1->find(*str2, static_cast<size_t>(offset)));
 	}
 
 	// native String:str_clear(StringTag:str);
@@ -504,7 +514,7 @@ namespace Natives
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
-		str->resize(static_cast<size_t>(params[2]), params[3]);
+		str->resize(static_cast<size_t>(params[2]), optparam(3, 0));
 		return params[1];
 	}
 
