@@ -357,6 +357,142 @@ namespace Natives
 		}
 		return 0;
 	}
+	
+	// native List:pawn_get_args(const format[], bool:byref=false, level=0);
+	static cell AMX_NATIVE_CALL pawn_get_args(AMX *amx, cell *params)
+	{
+		char *format;
+		amx_StrParam(amx, params[1], format);
+		size_t numargs = format == nullptr ? 0 : std::strlen(format);
+		if(numargs > 0 && format[numargs - 1] == '+')
+		{
+			numargs--;
+		}
+
+		bool byref = params[2];
+
+		auto hdr = (AMX_HEADER *)amx->base;
+		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+
+		cell level = optparam(3, 0);
+		cell frm = amx->frm;
+		for(cell i = 0; i < level; i++)
+		{
+			frm = *reinterpret_cast<cell*>(data + frm);
+		}
+		auto args = reinterpret_cast<cell*>(data + frm) + 2;
+
+		size_t nfuncargs = static_cast<size_t>(args[0] / sizeof(cell));
+		if(nfuncargs < numargs)
+		{
+			logerror(amx, "[PP] pawn_get_args: not enough arguments");
+			return 0;
+		}
+
+		auto ptr = list_pool.add();
+
+		if(format != nullptr) for(size_t i = 0; i <= numargs; i++)
+		{
+			tag_ptr tag = tags::find_tag(tags::tag_cell);
+
+			if(i == numargs)
+			{
+				if(format[i] == '+')
+				{
+					cell *addr;
+					for(size_t j = i; j < nfuncargs; j++)
+					{
+						if(amx_GetAddr(amx, args[1 + j], &addr) == AMX_ERR_NONE)
+						{
+							ptr->push_back(dyn_object(*addr, tag));
+						}else{
+							ptr->push_back(dyn_object());
+						}
+					}
+				}
+				break;
+			}
+
+			cell param = args[1 + i];
+			cell *addr;
+
+			switch(format[i])
+			{
+				case '*':
+				{
+					if(amx_GetAddr(amx, param, &addr) == AMX_ERR_NONE)
+					{
+						ptr->push_back(dyn_object(*addr, tag));
+					}else{
+						ptr->push_back(dyn_object());
+					}
+					continue;
+				}
+				case 'a':
+				{
+					if(++i < nfuncargs && amx_GetAddr(amx, param, &addr) == AMX_ERR_NONE)
+					{
+						cell len = args[1 + i], *lenaddr;
+						if(!byref || amx_GetAddr(amx, len, &lenaddr) == AMX_ERR_NONE)
+						{
+							if(byref)
+							{
+								len = *lenaddr;
+							}
+							ptr->push_back(dyn_object(addr, len, tag));
+							continue;
+						}
+					}
+					ptr->push_back(dyn_object());
+					continue;
+				}
+				case 's':
+				{
+					if(amx_GetAddr(amx, param, &addr) == AMX_ERR_NONE)
+					{
+						ptr->push_back(dyn_object(amx, addr));
+					}else{
+						ptr->push_back(dyn_object());
+					}
+					continue;
+				}
+				case '+':
+				{
+					logerror(amx, "[PP] pawn_get_args: + must be the last specifier");
+					list_pool.remove(ptr.get());
+					return 0;
+				}
+				case 'b':
+				{
+					tag = tags::find_tag(tags::tag_bool);
+					break;
+				}
+				case 'f':
+				{
+					tag = tags::find_tag(tags::tag_float);
+					break;
+				}
+				case 'S':
+				{
+					tag = tags::find_tag(tags::tag_string);
+					break;
+				}
+			}
+			if(byref)
+			{
+				if(amx_GetAddr(amx, param, &addr) == AMX_ERR_NONE)
+				{
+					param = *addr;
+				}else{
+					ptr->push_back(dyn_object());
+					continue;
+				}
+			}
+			ptr->push_back(dyn_object(param, tag));
+		}
+
+		return list_pool.get_id(ptr);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -371,6 +507,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_guard_arr),
 	AMX_DECLARE_NATIVE(pawn_guard_valid),
 	AMX_DECLARE_NATIVE(pawn_guard_free),
+	AMX_DECLARE_NATIVE(pawn_get_args),
 };
 
 int RegisterPawnNatives(AMX *amx)
