@@ -27,12 +27,12 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 		return pool.add(temp);
 	}else if(addr[0] & 0xFF000000)
 	{
-		const char *c;
+		const unsigned char *c;
 		size_t pos = -1;
 		do{
 			pos++;
 			size_t ipos = 3 - pos % 4;
-			c = reinterpret_cast<const char*>(addr) + pos / 4 + ipos;
+			c = reinterpret_cast<const unsigned char*>(addr) + pos / 4 + ipos;
 		}while(*c);
 
 		cell_string *str = pool.add(cell_string(pos, 0), temp);
@@ -41,7 +41,7 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 		do{
 			pos++;
 			size_t ipos = 3 - pos % 4;
-			c = reinterpret_cast<const char*>(addr) + pos / 4 + ipos;
+			c = reinterpret_cast<const unsigned char*>(addr) + pos / 4 + ipos;
 			(*str)[pos] = *c;
 		}while(*c);
 
@@ -89,7 +89,7 @@ cell_string *strings::create(const cell *addr, bool temp, size_t length, bool pa
 		size_t pos = 0;
 		do{
 			size_t ipos = pos / 4 * 4 + 3 - pos % 4;
-			cell c = reinterpret_cast<const char*>(addr)[ipos];
+			cell c = reinterpret_cast<const unsigned char*>(addr)[ipos];
 			if(fixnulls)
 			{
 				if(c == 0) c = 0x00FFFF00;

@@ -396,12 +396,15 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
 
-		if(strings::clamp_range(*str, params[2], params[3]))
+		cell start = optparam(2, 0);
+		cell end = optparam(3, std::numeric_limits<cell>::max());
+
+		if(strings::clamp_range(*str, start, end))
 		{
-			str->erase(params[2], params[3] - params[2]);
+			str->erase(start, end - start);
 		}else{
-			str->erase(params[2], -1);
-			str->erase(0, params[3]);
+			str->erase(start, -1);
+			str->erase(0, end);
 		}
 		return params[1];
 	}
