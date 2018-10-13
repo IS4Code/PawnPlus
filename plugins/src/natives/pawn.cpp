@@ -310,6 +310,34 @@ namespace Natives
 		return ret;
 	}
 
+	// native NativeHook:pawn_add_filter(const function[], const format[], filter_type:type, const handler[], const additional_format[]="", AnyTag:...);
+	static cell AMX_NATIVE_CALL pawn_add_filter(AMX *amx, cell *params)
+	{
+		char *native;
+		amx_StrParam(amx, params[1], native);
+
+		char *native_format;
+		amx_StrParam(amx, params[2], native_format);
+
+		bool output = !!params[3];
+
+		char *fname;
+		amx_StrParam(amx, params[4], fname);
+
+		char *format;
+		amx_OptStrParam(amx, 5, format, "");
+
+		if(native == nullptr || fname == nullptr) return -1;
+
+		int ret = amxhook::register_filter(amx, output, native, native_format, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
+		if(ret == -1)
+		{
+			logerror(amx, "[PP] pawn_add_filter: not enough arguments");
+			return 0;
+		}
+		return ret;
+	}
+
 	// native pawn_remove_hook(NativeHook:id);
 	static cell AMX_NATIVE_CALL pawn_remove_hook(AMX *amx, cell *params)
 	{
@@ -502,6 +530,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_register_callback),
 	AMX_DECLARE_NATIVE(pawn_unregister_callback),
 	AMX_DECLARE_NATIVE(pawn_add_hook),
+	AMX_DECLARE_NATIVE(pawn_add_filter),
 	AMX_DECLARE_NATIVE(pawn_remove_hook),
 	AMX_DECLARE_NATIVE(pawn_guard),
 	AMX_DECLARE_NATIVE(pawn_guard_arr),
