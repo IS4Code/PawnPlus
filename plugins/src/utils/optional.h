@@ -94,13 +94,24 @@ namespace aux
 			return present ? data : other;
 		}
 
-		constexpr T &value()
+		constexpr const T &value() const
 		{
-			if (!present) throw std::logic_error("Optional object does not have a value.");
+			if(!present) throw std::logic_error("Optional object does not have a value.");
 			return data;
 		}
 
-		constexpr T &operator*()
+		constexpr const T &operator*() const
+		{
+			return data;
+		}
+
+		T &value()
+		{
+			if(!present) throw std::logic_error("Optional object does not have a value.");
+			return data;
+		}
+
+		T &operator*()
 		{
 			return data;
 		}
