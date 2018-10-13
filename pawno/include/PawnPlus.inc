@@ -18,6 +18,7 @@
 #define GlobalVariant Variant@Global
 #define List<%0> List@%0
 #define Map<%0,%1> Map@%0@%1
+#define LinkedList<%0> LinkedList@%0
 #define GlobalIter Iter@Global
 #define Iter<%0> Iter@%0
 #define PairIter<%0,%1> Iter@%1@%0
@@ -30,6 +31,7 @@
 #define PP_TAG_PREFIX@GlobalVariant<%0> %0@Variant@Global
 #define PP_TAG_PREFIX@List<%0> %0@List
 #define PP_TAG_PREFIX@Map<%0> %0@Map
+#define PP_TAG_PREFIX@LinkedList<%0> %0@LinkedList
 #define PP_TAG_PREFIX@Iter<%0> %0@Iter
 #define PP_TAG_PREFIX@Iter@Global<%0> %0@Iter@Global
 #define PP_TAG_PREFIX@GlobalIter<%0> %0@Iter@Global
@@ -774,6 +776,62 @@ native linked_list_sizeof(LinkedList:linked_list, index);
 
 native Iter:linked_list_iter(LinkedList:linked_list);
 
+#define linked_list_new<%0> linked_list_new@%0
+#define linked_list_new_arr<%0> linked_list_new_arr@%0
+#define linked_list_new_args_t<%0> linked_list_new_args_t@%0
+#define linked_list_new_args_gen<%0>(%1) linked_list_new_args_t<%0>(_,%1)
+#define linked_list_valid<%0> linked_list_valid@%0
+#define linked_list_delete<%0> linked_list_delete@%0
+#define linked_list_delete_deep<%0> linked_list_delete_deep@%0
+#define linked_list_clone<%0> linked_list_clone@%0
+#define linked_list_size<%0> linked_list_size@%0
+#define linked_list_clear<%0> linked_list_clear@%0
+
+#define linked_list_add<%0> linked_list_add@%0
+#define linked_list_add_arr<%0> linked_list_add_arr@%0
+#define linked_list_add_list<%0> linked_list_add_list@%0
+#define linked_list_add_args_t<%0> linked_list_add_args_t@%0
+#define linked_list_add_args_gen<%0>(%1) linked_list_add_args_t<%0>(_,%1)
+
+#define linked_list_remove<%0> linked_list_remove@%0
+
+#define linked_list_get<%0> linked_list_get@%0
+#define linked_list_get_arr<%0> linked_list_get_arr@%0
+
+#define linked_list_set<%0> linked_list_set@%0
+#define linked_list_set_arr<%0> linked_list_set_arr@%0
+#define linked_list_set_cell<%0> linked_list_set_cell@%0
+
+#define linked_list_sizeof<%0> linked_list_sizeof@%0
+
+#define linked_list_iter<%0> linked_list_iter@%0
+
+#define @define_LinkedList<%0> \
+enum{Void:LinkedList<%0>};\
+native LinkedList<%0>:linked_list_new<%0>()=linked_list_new;\
+native LinkedList<%0>:linked_list_new_arr<%0>(%0:v[],s=sizeof(v),t=(tagof(%0:)))=linked_list_new_arr;\
+native LinkedList<%0>:linked_list_new_args_t<%0>(t=(tagof(%0:)),%0:a,%0:...)=linked_list_new_args;\
+native bool:linked_list_valid<%0>(LinkedList<%0>:l)=linked_list_valid;\
+native bool:linked_list_delete<%0>(LinkedList<%0>:l)=linked_list_delete;\
+native bool:linked_list_delete_deep<%0>(LinkedList<%0>:l)=linked_list_delete_deep;\
+native LinkedList<%0>:linked_list_clone<%0>(LinkedList<%0>:l)=linked_list_clone;\
+native linked_list_size<%0>(LinkedList<%0>:l)=linked_list_size;\
+native bool:linked_list_clear<%0>(LinkedList<%0>:l)=linked_list_clear;\
+native linked_list_add<%0>(LinkedList<%0>:l,%0:v,i=-1,t=(tagof(%0:)))=linked_list_add;\
+native linked_list_add_arr<%0>(LinkedList<%0>:l,const %0:v[],i=-1,s=sizeof(v),t=(tagof(%0:)))=linked_list_add_arr;\
+native linked_list_add_list<%0>(LinkedList<%0>:l,LinkedList<%0>:l2,i=-1)=linked_list_add_list;\
+native linked_list_add_args_t<%0>(t=(tagof(%0:)),%0:a,%0:...)=linked_list_add_args;\
+native bool:linked_list_remove<%0>(LinkedList<%0>:l,i)=linked_list_remove;\
+native %0:linked_list_get<%0>(LinkedList<%0>:l,i,o=0)=linked_list_get;\
+native linked_list_get_arr<%0>(LinkedList<%0>:l,i,%0:v[],s=sizeof(v))=linked_list_get_arr;\
+native bool:linked_list_set<%0>(LinkedList<%0>:l,i,%0:v,t=(tagof(%0:)))=linked_list_set;\
+native bool:linked_list_set_arr<%0>(LinkedList<%0>:l,i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=linked_list_set_arr;\
+native bool:linked_list_set_cell<%0>(LinkedList<%0>:l,i,o,%0:v)=linked_list_set_cell;\
+native linked_list_sizeof<%0>(LinkedList<%0>:l,i)=linked_list_sizeof;\
+forward LinkedList:operator=(LinkedList<%0>:l);\
+forward LinkedList<%0>:operator=(LinkedList:l);\
+native Iter<%0>:linked_list_iter<%0>(LinkedList<%0>:l)=linked_list_iter
+
 /*                 */
 /*    Iterators    */
 /*                 */
@@ -1080,6 +1138,7 @@ stock Variant:operator=(Ref<Variant>:arg) return Variant:arg;
 stock GlobalVariant:operator=(Ref<GlobalVariant>:arg) return GlobalVariant:arg;
 stock List:operator=(Ref<List>:arg) return List:arg;
 stock Map:operator=(Ref<Map>:arg) return Map:arg;
+stock LinkedList:operator=(Ref<LinkedList>:arg) return LinkedList:arg;
 stock Iter:operator=(Ref<Iter>:arg) return Iter:arg;
 stock GlobalIter:operator=(Ref<GlobalIter>:arg) return GlobalIter:arg;
 
@@ -1089,6 +1148,7 @@ stock Ref<Variant>:operator=(Variant:arg) return Ref<Variant>:arg;
 stock Ref<GlobalVariant>:operator=(GlobalVariant:arg) return Ref<GlobalVariant>:arg;
 stock Ref<List>:operator=(List:arg) return Ref<List>:arg;
 stock Ref<Map>:operator=(Map:arg) return Ref<Map>:arg;
+stock Ref<LinkedList>:operator=(LinkedList:arg) return Ref<LinkedList>:arg;
 stock Ref<Iter>:operator=(Iter:arg) return Ref<Iter>:arg;
 stock Ref<GlobalIter>:operator=(GlobalIter:arg) return Ref<GlobalIter>:arg;
 
@@ -1098,6 +1158,7 @@ stock Ref:operator=(Ref<Variant>:arg) return Ref:arg;
 stock Ref:operator=(Ref<GlobalVariant>:arg) return Ref:arg;
 stock Ref:operator=(Ref<List>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Map>:arg) return Ref:arg;
+stock Ref:operator=(Ref<LinkedList>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Iter>:arg) return Ref:arg;
 stock Ref:operator=(Ref<GlobalIter>:arg) return Ref:arg;
 
