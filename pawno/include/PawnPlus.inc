@@ -14,12 +14,29 @@
 /*      Setup      */
 /*                 */
 
+#if defined PP_SYNTAX
+#define PP_SYNTAX_AMX_FORKED
+#define PP_SYNTAX_@
+#define PP_SYNTAX_@@
+#define PP_SYNTAX_AWAIT
+#define PP_SYNTAX_YIELD
+#define PP_SYNTAX_THREADED
+#define PP_SYNTAX_FOR_LIST
+#define PP_SYNTAX_FOR_MAP
+#define PP_SYNTAX_FOR_LINKED_LIST
+#define PP_SYNTAX_STRING_OP
+#define PP_SYNTAX_GENERIC
+#endif
+
 #define GlobalString String@Global
 #define GlobalVariant Variant@Global
+#define GlobalIter Iter@Global
+
+#if defined PP_SYNTAX_GENERIC
+
 #define List<%0> List@%0
 #define Map<%0,%1> Map@%0@%1
 #define LinkedList<%0> LinkedList@%0
-#define GlobalIter Iter@Global
 #define Iter<%0> Iter@%0
 #define PairIter<%0,%1> Iter@%1@%0
 
@@ -36,6 +53,8 @@
 #define PP_TAG_PREFIX@Iter@Global<%0> %0@Iter@Global
 #define PP_TAG_PREFIX@GlobalIter<%0> %0@Iter@Global
 #define Ref<%0> PP_TAG_PREFIX@%0<Ref>
+
+#endif
 
 #define StringTags String,GlobalString
 #define StringTag {StringTags}
@@ -54,19 +73,6 @@
 #define AnyTags PP_ALL_TAGS
 #endif
 #define AnyTag {AnyTags}
-
-#if defined PP_SYNTAX
-#define PP_SYNTAX_AMX_FORKED
-#define PP_SYNTAX_@
-#define PP_SYNTAX_@@
-#define PP_SYNTAX_AWAIT
-#define PP_SYNTAX_YIELD
-#define PP_SYNTAX_THREADED
-#define PP_SYNTAX_FOR_LIST
-#define PP_SYNTAX_FOR_MAP
-#define PP_SYNTAX_FOR_LINKED_LIST
-#define PP_SYNTAX_STRING_OP
-#endif
 
 
 /*                 */
@@ -439,6 +445,8 @@ native list_sizeof(List:list, index);
 
 native Iter:list_iter(List:list);
 
+#if defined PP_SYNTAX_GENERIC
+
 #define list_new<%0> list_new@%0
 #define list_new_arr<%0> list_new_arr@%0
 #define list_new_args_t<%0> list_new_args_t@%0
@@ -502,6 +510,8 @@ native bool:iter_set_arr<%0>(Iter<%0>:i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))
 native bool:iter_set_cell<%0>(Iter<%0>:i,o,%0:v)=iter_set_cell;\
 native bool:iter_insert<%0>(Iter<%0>:i,%0:v,t=(tagof(%0:)))=iter_insert;\
 native bool:iter_insert_arr<%0>(Iter<%0>:i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=iter_insert_arr
+
+#endif
 
 
 /*                 */
@@ -640,6 +650,8 @@ native map_var_sizeof(Map:map, VariantTag:key);
 
 native Iter:map_iter(Map:map);
 
+#if defined PP_SYNTAX_GENERIC
+
 #define map_new<%0,%1> map_new@%0@%1
 #define map_new_args_t<%0,%1> map_new_args_t@%0@%1
 #define map_new_args_gen<%0,%1>(%2) map_new_args_t<%0,%1>(_,_,%2)
@@ -729,6 +741,9 @@ native bool:iter_set_value<%0,%1>(PairIter<%0,%1>:i,%1:v,t=(tagof(%0:)))=iter_se
 native bool:iter_set_value_arr<%0,%1>(PairIter<%0,%1>:i,const %1:v[],s=sizeof(v),t=tagof(v))=iter_set_arr;\
 native bool:iter_set_value_cell<%0,%1>(PairIter<%0,%1>:i,o,%1:v)=iter_set_cell
 
+#endif
+
+
 /*                 */
 /*  Linked lists   */
 /*                 */
@@ -775,6 +790,8 @@ native linked_list_tagof(LinkedList:linked_list, index);
 native linked_list_sizeof(LinkedList:linked_list, index);
 
 native Iter:linked_list_iter(LinkedList:linked_list);
+
+#if defined PP_SYNTAX_GENERIC
 
 #define linked_list_new<%0> linked_list_new@%0
 #define linked_list_new_arr<%0> linked_list_new_arr@%0
@@ -832,6 +849,9 @@ forward LinkedList:operator=(LinkedList<%0>:l);\
 forward LinkedList<%0>:operator=(LinkedList:l);\
 native Iter<%0>:linked_list_iter<%0>(LinkedList<%0>:l)=linked_list_iter
 
+#endif
+
+
 /*                 */
 /*    Iterators    */
 /*                 */
@@ -888,6 +908,8 @@ native bool:iter_set_value_var(IterTag:iter, VariantTag:value) = iter_set_var;
 native bool:iter_set_value_cell(IterTag:iter, offset, AnyTag:value) = iter_set_cell;
 native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:value_tag_id=tagof(value)) = iter_set_cell_safe;
 
+#if defined PP_SYNTAX_GENERIC
+
 #define iter_get<%0> iter_get@%0
 #define iter_get_arr<%0> iter_get_arr@%0
 #define iter_set<%0> iter_set@%0
@@ -904,18 +926,31 @@ native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:
 #define iter_set_value_cell<%0,%1> iter_set_value_cell@%0@%1
 
 #if defined PP_SYNTAX_FOR_LIST
-#define for_list(%0:%1) for(new Iter:%0=list_iter(%1);iter_inside(%0);iter_move_next(%0))
 #define for_list_of<%2>(%0:%1) for(new Iter<%2>:%0=list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
 #endif
 
 #if defined PP_SYNTAX_FOR_MAP
-#define for_map(%0:%1) for(new Iter:%0=map_iter(%1);iter_inside(%0);iter_move_next(%0))
 #define for_map_of<%2,%3>(%0:%1) for(new PairIter<%2,%3>:%0=map_iter<%2,%3>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
+#endif
+
+#if defined PP_SYNTAX_FOR_LINKED_LIST
+#define for_list_of<%2>(%0:%1) for(new Iter<%2>:%0=linked_list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
+#endif
+
+#endif
+
+#if defined PP_SYNTAX_FOR_LIST
+#define for_list(%0:%1) for(new Iter:%0=list_iter(%1);iter_inside(%0);iter_move_next(%0))
+#endif
+
+#if defined PP_SYNTAX_FOR_MAP
+#define for_map(%0:%1) for(new Iter:%0=map_iter(%1);iter_inside(%0);iter_move_next(%0))
 #endif
 
 #if defined PP_SYNTAX_FOR_LINKED_LIST
 #define for_linked_list(%0:%1) for(new Iter:%0=linked_list_iter(%1);iter_inside(%0);iter_move_next(%0))
 #endif
+
 
 /*                 */
 /* Tasks and async */
@@ -1132,6 +1167,8 @@ stock bool:operator!=(Iter:arg1, GlobalIter:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalIter:arg1, Iter:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalIter:arg1, GlobalIter:arg2) return !(arg1 == arg2);
 
+#if defined PP_SYNTAX_GENERIC
+
 stock String:operator=(Ref<String>:arg) return String:arg;
 stock GlobalString:operator=(Ref<GlobalString>:arg) return GlobalString:arg;
 stock Variant:operator=(Ref<Variant>:arg) return Variant:arg;
@@ -1161,6 +1198,8 @@ stock Ref:operator=(Ref<Map>:arg) return Ref:arg;
 stock Ref:operator=(Ref<LinkedList>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Iter>:arg) return Ref:arg;
 stock Ref:operator=(Ref<GlobalIter>:arg) return Ref:arg;
+
+#endif
 
 stock operator~(Guard:arr[], size)
 {
