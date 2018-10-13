@@ -255,7 +255,7 @@ namespace Natives
 		return pawn_call<false>(amx, params);
 	}
 
-	// native CallbackHandler:pawn_register_callback(const callback[], const function[], const additional_format[], AnyTag:...);
+	// native CallbackHandler:pawn_register_callback(const callback[], const function[], handler_flags:flags=handler_default, const additional_format[], AnyTag:...);
 	static cell AMX_NATIVE_CALL pawn_register_callback(AMX *amx, cell *params)
 	{
 		char *callback;
@@ -264,16 +264,22 @@ namespace Natives
 		char *fname;
 		amx_StrParam(amx, params[2], fname);
 
-		char *format;
-		amx_StrParam(amx, params[3], format);
+		cell flags = optparam(3, 0);
+
+		const char *format;
+		amx_OptStrParam(amx, 4, format, "");
 
 		if(callback == nullptr || fname == nullptr) return -1;
 
-		int ret = events::register_callback(callback, amx, fname, format, params + 4, (params[0] / static_cast<int>(sizeof(cell))) - 3);
-		if(ret == -1)
+		int ret = events::register_callback(callback, flags, amx, fname, format, params + 4, (params[0] / static_cast<int>(sizeof(cell))) - 3);
+		switch(ret)
 		{
-			logerror(amx, "[PP] pawn_register_callback: not enough arguments");
-			return 0;
+			case -1:
+				logerror(amx, "[PP] pawn_register_callback: not enough arguments");
+				return 0;
+			case -2:
+				logerror(amx, "[PP] pawn_register_callback: public function '%s' cannot be found", callback);
+				return 0;
 		}
 		return ret;
 	}
@@ -302,15 +308,19 @@ namespace Natives
 		if(native == nullptr || fname == nullptr) return -1;
 
 		int ret = amxhook::register_hook(amx, native, native_format, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
-		if(ret == -1)
+		switch(ret)
 		{
-			logerror(amx, "[PP] pawn_add_hook: not enough arguments");
-			return 0;
+			case -1:
+				logerror(amx, "[PP] pawn_add_hook: not enough arguments");
+				return 0;
+			case -2:
+				logerror(amx, "[PP] pawn_add_hook: native function '%s' cannot be found", native);
+				return 0;
 		}
 		return ret;
 	}
 
-	// native NativeHook:pawn_add_filter(const function[], const format[], filter_type:type, const handler[], const additional_format[]="", AnyTag:...);
+	// native NativeHook:pawn_add_filter(const function[], const format[], const handler[], filter_type:type=filter_in, const additional_format[]="", AnyTag:...);
 	static cell AMX_NATIVE_CALL pawn_add_filter(AMX *amx, cell *params)
 	{
 		char *native;
@@ -319,10 +329,10 @@ namespace Natives
 		char *native_format;
 		amx_StrParam(amx, params[2], native_format);
 
-		bool output = !!params[3];
-
 		char *fname;
-		amx_StrParam(amx, params[4], fname);
+		amx_StrParam(amx, params[3], fname);
+
+		bool output = !!optparam(4, 0);
 
 		char *format;
 		amx_OptStrParam(amx, 5, format, "");
@@ -330,10 +340,14 @@ namespace Natives
 		if(native == nullptr || fname == nullptr) return -1;
 
 		int ret = amxhook::register_filter(amx, output, native, native_format, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
-		if(ret == -1)
+		switch(ret)
 		{
-			logerror(amx, "[PP] pawn_add_filter: not enough arguments");
-			return 0;
+			case -1:
+				logerror(amx, "[PP] pawn_add_filter: not enough arguments");
+				return 0;
+			case -2:
+				logerror(amx, "[PP] pawn_add_filter: native function '%s' cannot be found", native);
+				return 0;
 		}
 		return ret;
 	}

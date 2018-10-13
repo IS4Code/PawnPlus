@@ -54,14 +54,7 @@ amx_code_info::amx_code_info(AMX *amx) : amx::extra(amx)
 
 int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset, bool forked)
 {
-	if(index <= -3 && index > -10000) //SAMPGDK
-	{
-		auto name = events::invoke_callback(-3 - index, amx, retval);
-		if(name == nullptr || amx_FindPublicOrig(amx, name, &index) != AMX_ERR_NONE)
-		{
-			return amx->error;
-		}
-	}
+	if(events::invoke_callbacks(amx, index, retval)) return AMX_ERR_NONE;
 
 	if(!forked)
 	{

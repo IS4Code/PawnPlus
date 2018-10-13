@@ -94,6 +94,8 @@ cell register_handler(AMX *amx, const char *native, std::unique_ptr<hook_handler
 	std::string name(native);
 	AMX_NATIVE func = amx::find_native(amx, name);
 
+	if(!func) return -2;
+
 	auto it = hooks_map.find(func);
 	if(it == hooks_map.end())
 	{
@@ -102,7 +104,7 @@ cell register_handler(AMX *amx, const char *native, std::unique_ptr<hook_handler
 		if(index == -1)
 		{
 			logerror(amx, "[PP] Hook pool full. Adjust max_hooked_funcs (currently %d) and recompile.", max_hooked_funcs);
-			return -1;
+			return 0;
 		}
 		native_hooks[index] = std::make_unique<hooked_func>(name, func, p.second, index);
 		it = hooks_map.emplace(func, index).first;

@@ -102,12 +102,19 @@ enum filter_type
     filter_out = 1,
 }
 
+enum handler_flags
+{
+    handler_default = 0,
+    handler_return = 1,
+    handler_args = 2,
+}
+
 native pawn_call_native(const function[], const format[], AnyTag:...);
 native pawn_call_public(const function[], const format[], AnyTag:...);
-native CallbackHandler:pawn_register_callback(const callback[], const handler[], const additional_format[]="", AnyTag:...);
+native CallbackHandler:pawn_register_callback(const callback[], const handler[], handler_flags:flags=handler_default, const additional_format[]="", AnyTag:...);
 native pawn_unregister_callback(CallbackHandler:id);
 native NativeHook:pawn_add_hook(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
-native NativeHook:pawn_add_filter(const function[], const format[], filter_type:type, const handler[], const additional_format[]="", AnyTag:...);
+native NativeHook:pawn_add_filter(const function[], const format[], const handler[], filter_type:type=filter_in, const additional_format[]="", AnyTag:...);
 native pawn_remove_hook(NativeHook:id);
 native Guard:pawn_guard(AnyTag:value, TagTag:tag_id=tagof(value));
 native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));

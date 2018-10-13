@@ -1,30 +1,35 @@
 #include "events.h"
 #include "amxinfo.h"
 #include "hooks.h"
+#include "main.h"
 #include "objects/stored_param.h"
+#include "utils/optional.h"
 
-#include <unordered_map>
 #include <cstring>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 class event_info
 {
+	cell flags;
 	bool active;
 	std::vector<stored_param> arg_values;
 	std::string handler;
+	aux::optional<int> index;
+	bool handler_index(AMX *amx, int &index);
+
 public:
-	event_info(AMX *amx, const char *function, const char *format, const cell *args, size_t numargs);
-	bool invoke(AMX *amx, cell *retval, int id) const;
-	void deactivate();
-	bool is_active() const;
+	event_info(cell flags, AMX *amx, const char *function, const char *format, const cell *args, size_t numargs);
+	bool invoke(AMX *amx, cell *retval, cell id);
 };
+
 
 class amx_info : public amx::extra
 {
 public:
-	std::unordered_multimap<std::string, event_info> registered_events;
-	std::vector<std::string> callback_ids;
+	std::vector<std::vector<std::unique_ptr<event_info>>> callback_handlers;
+	std::unordered_map<cell, size_t> handler_ids;
 
 	amx_info(AMX *amx) : amx::extra(amx)
 	{
@@ -38,87 +43,80 @@ amx_info &get_info(AMX *amx, amx::object &obj)
 	return obj->get_extra<amx_info>();
 }
 
-struct not_enough_parameters {};
-struct pool_empty {};
-
 namespace events
 {
-	int register_callback(const char *callback, AMX *amx, const char *function, const char *format, const cell *params, int numargs)
+	int register_callback(const char *callback, cell flags, AMX *amx, const char *function, const char *format, const cell *params, int numargs)
 	{
 		try{
 			amx::object obj;
-			auto &registered_events = get_info(amx, obj).registered_events;
-			auto it = registered_events.insert(std::make_pair(std::string(callback), event_info(amx, function, format, params, numargs)));
-			return std::distance(registered_events.begin(), it);
+			int index;
+			if(amx_FindPublic(amx, callback, &index) != AMX_ERR_NONE || index < 0)
+			{
+				return -2;
+			}
+			auto &info = get_info(amx, obj);
+			auto &callback_handlers = info.callback_handlers;
+			if((size_t)index >= callback_handlers.size())
+			{
+				callback_handlers.resize(index + 1);
+			}
+			auto &list = callback_handlers[index];
+			auto ptr = std::unique_ptr<event_info>(new event_info(flags, amx, function, format, params, numargs));
+			cell id = reinterpret_cast<cell>(ptr.get());
+			list.push_back(std::move(ptr));
+			info.handler_ids[id] = index;
+			return id;
 		}catch(std::nullptr_t)
 		{
 			return -1;
 		}
 	}
 
-	bool remove_callback(AMX *amx, int index)
-	{
-		amx::object obj;
-		auto &registered_events = get_info(amx, obj).registered_events;
-		auto it = registered_events.begin();
-		std::advance(it, index);
-		bool active = it->second.is_active();
-		it->second.deactivate();
-		return active;
-	}
-
-	int get_callback_id(AMX *amx, const char *callback)
+	bool remove_callback(AMX *amx, cell id)
 	{
 		amx::object obj;
 		auto &info = get_info(amx, obj);
-		auto &registered_events = info.registered_events;
-		auto &callback_ids = info.callback_ids;
-
-		std::string name(callback);
-		if(registered_events.find(name) != registered_events.end())
+		auto &handler_ids = info.handler_ids;
+		auto ptr = reinterpret_cast<event_info*>(id);
+		auto hit = handler_ids.find(id);
+		if(hit != handler_ids.end())
 		{
-			int id = callback_ids.size();
-			callback_ids.emplace_back(std::move(name));
-			return id;
+			auto &list = info.callback_handlers[hit->second];
+			for(auto it = list.begin(); it != list.end(); it++)
+			{
+				if(it->get() == ptr)
+				{
+					list.erase(it);
+					handler_ids.erase(hit);
+					return true;
+				}
+			}
 		}
-		return -1;
+		return false;
 	}
 
-	const char *invoke_callback(int id, AMX *amx, cell *retval)
+	bool invoke_callbacks(AMX *amx, int index, cell *retval)
 	{
 		amx::object obj;
-		auto &info = get_info(amx, obj);
-		auto &registered_events = info.registered_events;
-		auto &callback_ids = info.callback_ids;
-		if(id < 0 || static_cast<size_t>(id) >= callback_ids.size()) return nullptr;
-
-		auto range = registered_events.equal_range(callback_ids[id]);
-		bool ok = false;
-		while(range.first != range.second)
+		auto &callback_handlers = get_info(amx, obj).callback_handlers;
+		if(index < 0 || (size_t)index >= callback_handlers.size()) return false;
+		for(auto &handler : callback_handlers[index])
 		{
-			auto &ev = range.first->second;
-			std::ptrdiff_t eid = std::distance(registered_events.begin(), range.first);
-			if(ev.invoke(amx, retval, eid)) ok = true;
-			range.first++;
+			if(handler)
+			{
+				if(handler->invoke(amx, retval, reinterpret_cast<cell>(handler.get())))
+				{
+					return true;
+				}
+			}
 		}
 
-		return ok ? callback_ids[id].c_str() : nullptr;
-	}
-
-	bool get_name(int id, AMX *amx, char *funcname)
-	{
-		amx::object obj;
-		auto &info = get_info(amx, obj);
-		auto &registered_events = info.registered_events;
-		auto &callback_ids = info.callback_ids;
-		if(id < 0 || static_cast<size_t>(id) >= callback_ids.size()) return false;
-		std::strcpy(funcname, callback_ids[id].c_str());
-		return true;
+		return false;
 	}
 }
 
-event_info::event_info(AMX *amx, const char *function, const char *format, const cell *args, size_t numargs)
-	: handler(function)
+event_info::event_info(cell flags, AMX *amx, const char *function, const char *format, const cell *args, size_t numargs)
+	: flags(flags), handler(function)
 {
 	if(format != nullptr)
 	{
@@ -131,43 +129,93 @@ event_info::event_info(AMX *amx, const char *function, const char *format, const
 	}
 }
 
-void event_info::deactivate()
+bool event_info::handler_index(AMX *amx, int &index)
 {
-	active = false;
-	arg_values.clear();
-	handler.clear();
+	if(this->index.has_value())
+	{
+		index = this->index.value();
+
+		int len;
+		amx_NameLength(amx, &len);
+		char *funcname = static_cast<char*>(alloca(len + 1));
+
+		if(amx_GetPublic(amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(handler.c_str(), funcname))
+		{
+			return true;
+		}else if(amx_FindPublic(amx, handler.c_str(), &index) == AMX_ERR_NONE)
+		{
+			this->index = index;
+			return true;
+		}
+	}else if(amx_FindPublic(amx, handler.c_str(), &index) == AMX_ERR_NONE)
+	{
+		this->index = index;
+		return true;
+	}
+	logwarn(amx, "[PP] Callback handler %s was not found.", handler.c_str());
+	return false;
 }
 
-bool event_info::is_active() const
-{
-	return active;
-}
-
-bool event_info::invoke(AMX *amx, cell *retval, int id) const
+bool event_info::invoke(AMX *amx, cell *retval, cell id)
 {
 	if(!active) return false;
 	int index;
-	if(amx_FindPublicOrig(amx, handler.c_str(), &index)) return false;
+	if(!handler_index(amx, index)) return false;
 
-	cell *stk = reinterpret_cast<cell*>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + amx->stk);
-	std::vector<cell> oldargs(stk, stk + amx->paramcount);
+	int params = amx->paramcount;
+	cell stk = amx->stk;
+
+	cell flags = this->flags;
+
+	std::vector<cell> oldargs;
+	if(!(flags & 2))
+	{
+		cell *stk = reinterpret_cast<cell*>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + amx->stk);
+		oldargs = {stk, stk + amx->paramcount};
+	}
 
 	cell heap, *heap_addr;
 	amx_Allot(amx, 0, &heap, &heap_addr);
+
+	cell *retarg = nullptr;
+	if(flags & 1)
+	{
+		cell retaddr;
+		amx_Allot(amx, 1, &retaddr, &retarg);
+		amx_Push(amx, retaddr);
+		*retarg = *retval;
+	}
+
 	for(auto it = arg_values.rbegin(); it != arg_values.rend(); it++)
 	{
 		it->push(amx, id);
 	}
 
-	int err = amx_Exec(amx, retval, index);
+	cell handled = 0;
+	int err = amx_Exec(amx, &handled, index);
 
 	amx_Release(amx, heap);
-	for(auto it = oldargs.rbegin(); it != oldargs.rend(); it++)
+
+	if(flags & 2)
+	{
+		amx->paramcount = params;
+		amx->stk = stk;
+	}else for(auto it = oldargs.rbegin(); it != oldargs.rend(); it++)
 	{
 		amx_Push(amx, *it);
 	}
 
 	if(err) amx_RaiseError(amx, err);
 
-	return true;
+	if(handled)
+	{
+		if(retarg)
+		{
+			*retval = *retarg;
+		}else{
+			*retval = handled;
+		}
+		return true;
+	}
+	return false;
 }
