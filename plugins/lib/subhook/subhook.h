@@ -168,7 +168,7 @@ class Hook {
     return Install();
   }
 
-  bool remove_callback() {
+  bool Remove() {
     return subhook_remove(hook_) >= 0;
   }
 
@@ -192,7 +192,7 @@ class ScopedHookRemove {
  public:
   ScopedHookRemove(Hook *hook)
     : hook_(hook)
-    , removed_(hook_->remove_callback())
+    , removed_(hook_->Remove())
   {
   }
 
@@ -230,7 +230,7 @@ class ScopedHookInstall {
 
   ~ScopedHookInstall() {
     if (installed_) {
-      hook_->remove_callback();
+      hook_->Remove();
     }
   }
 
