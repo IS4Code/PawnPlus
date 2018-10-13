@@ -5,6 +5,7 @@
 #include "objects/stored_param.h"
 #include "utils/linear_pool.h"
 #include "subhook/subhook.h"
+#include "utils/optional.h"
 
 #include <array>
 #include <unordered_map>
@@ -18,16 +19,21 @@
 
 class hook_handler
 {
+private:
+	aux::optional<int> index;
+
 protected:
 	amx::handle amx;
 	std::string handler;
 	std::string format;
 	std::vector<stored_param> arg_values;
 
+	bool handler_index(AMX *&amx, int &index);
+
 public:
 	hook_handler() = default;
 	hook_handler(AMX *amx, const char *func_format, const char *function, const char *format, const cell *args, size_t numargs);
-	virtual bool invoke(class hooked_func &parent, AMX *amx, cell *params, cell &result) const;
+	virtual bool invoke(class hooked_func &parent, AMX *amx, cell *params, cell &result);
 	bool valid() const;
 };
 
@@ -37,7 +43,7 @@ class filter_handler : public hook_handler
 
 public:
 	filter_handler(AMX *amx, bool output, const char *func_format, const char *function, const char *format, const cell *args, size_t numargs);
-	virtual bool invoke(class hooked_func &parent, AMX *amx, cell *params, cell &result) const override;
+	virtual bool invoke(class hooked_func &parent, AMX *amx, cell *params, cell &result) override;
 };
 
 class hooked_func
@@ -263,18 +269,42 @@ bool hook_handler::valid() const
 	return false;
 }
 
-bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &result) const
+bool hook_handler::handler_index(AMX *&amx, int &index)
 {
 	auto amx_obj = this->amx.lock();
 	if(!amx_obj || !amx_obj->valid()) return false;
-	auto &my_amx = *amx_obj;
+	amx = *amx_obj;
 
-	int index;
-	if(amx_FindPublic(my_amx, handler.c_str(), &index) != AMX_ERR_NONE)
+	if(this->index.has_value())
 	{
-		logwarn(amx, "[PP] Hook handler %s was not found.", handler.c_str());
-		return false;
+		index = this->index.value();
+
+		int len;
+		amx_NameLength(amx, &len);
+		char *funcname = static_cast<char*>(alloca(len + 1));
+		
+		if(amx_GetPublic(amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(handler.c_str(), funcname))
+		{
+			return true;
+		}else if(amx_FindPublic(amx, handler.c_str(), &index) == AMX_ERR_NONE)
+		{
+			this->index = index;
+			return true;
+		}
+	}else if(amx_FindPublic(amx, handler.c_str(), &index) == AMX_ERR_NONE)
+	{
+		this->index = index;
+		return true;
 	}
+	logwarn(amx, "[PP] Hook handler %s was not found.", handler.c_str());
+	return false;
+}
+
+bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &result)
+{
+	AMX *my_amx;
+	int index;
+	if(!handler_index(my_amx, index)) return false;
 
 	int numargs = format.size();
 	if(format[numargs - 1] == '+' || format[numargs - 1] == '-')
@@ -506,18 +536,11 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 	return true;
 }
 
-bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &result) const
+bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &result)
 {
-	auto amx_obj = this->amx.lock();
-	if(!amx_obj || !amx_obj->valid()) return false;
-	auto &my_amx = *amx_obj;
-	
+	AMX *my_amx;
 	int index;
-	if(amx_FindPublic(my_amx, handler.c_str(), &index) != AMX_ERR_NONE)
-	{
-		logwarn(amx, "[PP] Hook handler %s was not found.", handler.c_str());
-		return false;
-	}
+	if(!handler_index(my_amx, index)) return false;
 
 	int numargs = format.size();
 	if(format[numargs - 1] == '+' || format[numargs - 1] == '-')
