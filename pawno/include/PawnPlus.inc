@@ -934,7 +934,7 @@ native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:
 #endif
 
 #if defined PP_SYNTAX_FOR_LINKED_LIST
-#define for_list_of<%2>(%0:%1) for(new Iter<%2>:%0=linked_list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
+#define for_linked_list_of<%2>(%0:%1) for(new Iter<%2>:%0=linked_list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
 #endif
 
 #endif
