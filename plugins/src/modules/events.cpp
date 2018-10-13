@@ -104,6 +104,17 @@ namespace events
 
 		return ok ? callback_ids[id].c_str() : nullptr;
 	}
+
+	bool get_name(int id, AMX *amx, char *funcname)
+	{
+		amx::object obj;
+		auto &info = get_info(amx, obj);
+		auto &registered_events = info.registered_events;
+		auto &callback_ids = info.callback_ids;
+		if(id < 0 || static_cast<size_t>(id) >= callback_ids.size()) return false;
+		std::strcpy(funcname, callback_ids[id].c_str());
+		return true;
+	}
 }
 
 event_info::event_info(AMX *amx, const char *function, const char *format, const cell *args, size_t numargs)

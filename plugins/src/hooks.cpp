@@ -18,6 +18,7 @@ subhook_t amx_Exec_h;
 subhook_t amx_GetAddr_h;
 subhook_t amx_StrLen_h;
 subhook_t amx_FindPublic_h;
+subhook_t amx_GetPublic_h;
 subhook_t amx_Register_h;
 
 bool hook_ref_args = false;
@@ -46,10 +47,19 @@ int AMXAPI amx_FindPublicOrig(AMX *amx, const char *funcname, int *index)
 {
 	if(subhook_is_installed(amx_FindPublic_h))
 	{
-		int ret = reinterpret_cast<decltype(&amx_FindPublicOrig)>(subhook_get_trampoline(amx_FindPublic_h))(amx, funcname, index);
-		return ret;
+		return reinterpret_cast<decltype(&amx_FindPublicOrig)>(subhook_get_trampoline(amx_FindPublic_h))(amx, funcname, index);
 	}else{
 		return amx_FindPublic(amx, funcname, index);
+	}
+}
+
+int AMXAPI amx_GetPublicOrig(AMX *amx, int index, char *funcname)
+{
+	if(subhook_is_installed(amx_FindPublic_h))
+	{
+		return reinterpret_cast<decltype(&amx_GetPublicOrig)>(subhook_get_trampoline(amx_GetPublic_h))(amx, index, funcname);
+	}else{
+		return amx_GetPublic(amx, index, funcname);
 	}
 }
 
@@ -140,6 +150,15 @@ namespace Hooks
 		return amx_FindPublicOrig(amx, funcname, index);
 	}
 
+	int AMXAPI amx_GetPublic(AMX *amx, int index, char *funcname)
+	{
+		if(index <= -3 && index > -10000) //SAMPGDK
+		{
+			if(events::get_name(-3 - index, amx, funcname)) return AMX_ERR_NONE;
+		}
+		return amx_GetPublicOrig(amx, index, funcname);
+	}
+
 	int AMXAPI amx_Register(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number)
 	{
 		int ret = reinterpret_cast<decltype(&amx_Register)>(subhook_get_trampoline(amx_Register_h))(amx, nativelist, number);
@@ -162,6 +181,7 @@ void Hooks::Register()
 	RegisterAmxHook(amx_GetAddr_h, PLUGIN_AMX_EXPORT_GetAddr, &Hooks::amx_GetAddr);
 	RegisterAmxHook(amx_StrLen_h, PLUGIN_AMX_EXPORT_StrLen, &Hooks::amx_StrLen);
 	RegisterAmxHook(amx_FindPublic_h, PLUGIN_AMX_EXPORT_FindPublic, &Hooks::amx_FindPublic);
+	RegisterAmxHook(amx_GetPublic_h, PLUGIN_AMX_EXPORT_GetPublic, &Hooks::amx_GetPublic);
 	RegisterAmxHook(amx_Register_h, PLUGIN_AMX_EXPORT_Register, &Hooks::amx_Register);
 }
 
@@ -178,6 +198,7 @@ void Hooks::Unregister()
 	UnregisterHook(amx_GetAddr_h);
 	UnregisterHook(amx_StrLen_h);
 	UnregisterHook(amx_FindPublic_h);
+	UnregisterHook(amx_GetPublic_h);
 	UnregisterHook(amx_Register_h);
 }
 

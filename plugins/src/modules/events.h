@@ -8,6 +8,7 @@ namespace events
 	int register_callback(const char *callback, AMX *amx, const char *function, const char *format, const cell *params, int numargs);
 	bool remove_callback(AMX *amx, int index);
 	int get_callback_id(AMX *amx, const char *callback);
+	bool get_name(int id, AMX *amx, char *funcname);
 	const char *invoke_callback(int id, AMX *amx, cell *retval);
 }
 
