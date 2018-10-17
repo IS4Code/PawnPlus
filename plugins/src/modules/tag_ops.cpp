@@ -10,6 +10,7 @@
 #include <unordered_map>
 #include <cmath>
 #include <cstring>
+#include <memory>
 
 using cell_string = strings::cell_string;
 
@@ -1069,6 +1070,8 @@ auto op_map([]()
 	m.insert(std::make_pair(tags::tag_iter, std::make_unique<iter_operations>()));
 	m.insert(std::make_pair(tags::tag_ref, std::make_unique<ref_operations>()));
 	m.insert(std::make_pair(tags::tag_task, std::make_unique<task_operations>()));
+	m.insert(std::make_pair(tags::tag_string, std::make_unique<string_operations>()));
+	m.insert(std::make_pair(tags::tag_variant, std::make_unique<variant_operations>()));
 	return m;
 }());
 
