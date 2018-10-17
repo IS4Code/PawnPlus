@@ -29,7 +29,9 @@
 #endif
 
 #define GlobalString String@Global
+#define ConstString String@Const
 #define GlobalVariant Variant@Global
+#define ConstVariant Variant@Const
 #define GlobalIter Iter@Global
 
 #if defined PP_SYNTAX_GENERIC
@@ -46,6 +48,10 @@
 #define PP_TAG_PREFIX@Variant@Global<%0> %0@Variant@Global
 #define PP_TAG_PREFIX@GlobalString<%0> %0@String@Global
 #define PP_TAG_PREFIX@GlobalVariant<%0> %0@Variant@Global
+#define PP_TAG_PREFIX@String@Const<%0> %0@String@Const
+#define PP_TAG_PREFIX@Variant@Const<%0> %0@Variant@Const
+#define PP_TAG_PREFIX@ConstString<%0> %0@String@Const
+#define PP_TAG_PREFIX@ConstVariant<%0> %0@Variant@Const
 #define PP_TAG_PREFIX@List<%0> %0@List
 #define PP_TAG_PREFIX@Map<%0> %0@Map
 #define PP_TAG_PREFIX@LinkedList<%0> %0@LinkedList
@@ -58,8 +64,12 @@
 
 #define StringTags String,GlobalString
 #define StringTag {StringTags}
+#define ConstStringTags ConstString,StringTags
+#define ConstStringTag {ConstStringTags}
 #define VariantTags Variant,GlobalVariant
 #define VariantTag {VariantTags}
+#define ConstVariantTags ConstVariant,VariantTags
+#define ConstVariantTag {ConstVariantTags}
 #define IterTags Iter,GlobalIter
 #define IterTag {IterTags}
 
@@ -296,29 +306,29 @@ native AmxStringBuffer:str_buf_addr(StringTag:str);
 native GlobalString:str_to_global(StringTag:str);
 native String:str_to_local(StringTag:str);
 native bool:str_delete(StringTag:str);
-native bool:str_valid(StringTag:str);
-native String:str_clone(StringTag:str);
+native bool:str_valid(ConstStringTag:str);
+native String:str_clone(ConstStringTag:str);
 
-native str_len(StringTag:str);
-native str_get(StringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
-native str_getc(StringTag:str, pos);
-native str_setc(StringTag:str, pos, value);
-native str_cmp(StringTag:str1, StringTag:str2);
-native bool:str_empty(StringTag:str);
-native bool:str_eq(StringTag:str1, StringTag:str2);
-native str_findc(StringTag:str, value, offset=0);
-native str_find(StringTag:str, StringTag:value, offset=0);
+native str_len(ConstStringTag:str);
+native str_get(ConstStringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
+native str_getc(ConstStringTag:str, pos);
+native str_setc(ConstStringTag:str, pos, value);
+native str_cmp(ConstStringTag:str1, ConstStringTag:str2);
+native bool:str_empty(ConstStringTag:str);
+native bool:str_eq(ConstStringTag:str1, ConstStringTag:str2);
+native str_findc(ConstStringTag:str, value, offset=0);
+native str_find(ConstStringTag:str, ConstStringTag:value, offset=0);
 
-native String:str_cat(StringTag:str1, StringTag:str2);
-native String:str_sub(StringTag:str, start=0, end=cellmax);
+native String:str_cat(ConstStringTag:str1, ConstStringTag:str2);
+native String:str_sub(ConstStringTag:str, start=0, end=cellmax);
 native String:str_val(AnyTag:value, TagTag:tag_id=tagof(value));
 native String:str_val_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-native List:str_split(StringTag:str, const delims[]);
-native List:str_split_s(StringTag:str, StringTag:delims);
+native List:str_split(ConstStringTag:str, const delims[]);
+native List:str_split_s(ConstStringTag:str, ConstStringTag:delims);
 native String:str_join(List:list, const delim[]);
-native String:str_join_s(List:list, StringTag:delim);
-native String:str_to_lower(StringTag:str);
-native String:str_to_upper(StringTag:str);
+native String:str_join_s(List:list, ConstStringTag:delim);
+native String:str_to_lower(ConstStringTag:str);
+native String:str_to_upper(ConstStringTag:str);
 
 native String:str_set(StringTag:target, StringTag:other);
 native String:str_append(StringTag:target, StringTag:other);
@@ -330,9 +340,9 @@ native String:str_set_to_lower(StringTag:str);
 native String:str_set_to_upper(StringTag:str);
 
 native String:str_format(const format[], {StringTags,Float,_}:...);
-native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
+native String:str_format_s(ConstStringTag:format, {StringTags,Float,_}:...);
 native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
-native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,Float,_}:...);
+native String:str_set_format_s(StringTag:target, ConstStringTag:format, {StringTags,Float,_}:...);
 
 #if defined PP_SYNTAX_@
 #define @ str_new_static
@@ -355,45 +365,45 @@ native Variant:var_new_arr_2d(const AnyTag:value[][], size=sizeof(value), size2=
 native Variant:var_new_arr_3d(const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
 native Variant:var_new_buf(size, TagTag:tag_id=0);
 native Variant:var_new_str(const value[]);
-native Variant:var_new_str_s(StringTag:value);
-native Variant:var_new_var(VariantTag:value);
+native Variant:var_new_str_s(ConstStringTag:value);
+native Variant:var_new_var(ConstVariantTag:value);
 native GlobalVariant:var_to_global(VariantTag:var);
 native Variant:var_to_local(VariantTag:var);
 native bool:var_delete(VariantTag:var);
 native bool:var_delete_deep(VariantTag:var);
-native bool:var_valid(VariantTag:var);
-native Variant:var_clone(VariantTag:var);
+native bool:var_valid(ConstVariantTag:var);
+native Variant:var_clone(ConstVariantTag:var);
 
-native var_get(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-native var_get_arr(VariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
-native var_get_str(VariantTag:var, value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets)) = var_get_arr;
-native String:var_get_str_s(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-native bool:var_get_safe(VariantTag:var, &AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
-native var_get_arr_safe(VariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
-native var_get_str_safe(VariantTag:var, value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
-native String:var_get_str_safe_s(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+native var_get(ConstVariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+native var_get_arr(ConstVariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
+native var_get_str(ConstVariantTag:var, value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets)) = var_get_arr;
+native String:var_get_str_s(ConstVariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+native bool:var_get_safe(ConstVariantTag:var, &AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+native var_get_arr_safe(ConstVariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+native var_get_str_safe(ConstVariantTag:var, value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
+native String:var_get_str_safe_s(ConstVariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
 
 native bool:var_set_cell(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
 native bool:var_set_cell_safe(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 
-native var_tagof(VariantTag:var);
-native tag_uid:var_tag_uid(VariantTag:var);
-native var_sizeof(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-native Variant:var_add(VariantTag:var1, VariantTag:var2);
-native Variant:var_sub(VariantTag:var1, VariantTag:var2);
-native Variant:var_mul(VariantTag:var1, VariantTag:var2);
-native Variant:var_div(VariantTag:var1, VariantTag:var2);
-native Variant:var_mod(VariantTag:var1, VariantTag:var2);
-native Variant:var_neg(VariantTag:var);
-native Variant:var_inc(VariantTag:var);
-native Variant:var_dec(VariantTag:var);
-native bool:var_eq(VariantTag:var1, VariantTag:var2);
-native bool:var_neq(VariantTag:var1, VariantTag:var2);
-native bool:var_lt(VariantTag:var1, VariantTag:var2);
-native bool:var_gt(VariantTag:var1, VariantTag:var2);
-native bool:var_lte(VariantTag:var1, VariantTag:var2);
-native bool:var_gte(VariantTag:var1, VariantTag:var2);
-native bool:var_not(VariantTag:var);
+native var_tagof(ConstVariantTag:var);
+native tag_uid:var_tag_uid(ConstVariantTag:var);
+native var_sizeof(ConstVariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+native Variant:var_add(ConstVariantTag:var1, ConstVariantTag:var2);
+native Variant:var_sub(ConstVariantTag:var1, ConstVariantTag:var2);
+native Variant:var_mul(ConstVariantTag:var1, ConstVariantTag:var2);
+native Variant:var_div(ConstVariantTag:var1, ConstVariantTag:var2);
+native Variant:var_mod(ConstVariantTag:var1, ConstVariantTag:var2);
+native Variant:var_neg(ConstVariantTag:var);
+native Variant:var_inc(ConstVariantTag:var);
+native Variant:var_dec(ConstVariantTag:var);
+native bool:var_eq(ConstVariantTag:var1, ConstVariantTag:var2);
+native bool:var_neq(ConstVariantTag:var1, ConstVariantTag:var2);
+native bool:var_lt(ConstVariantTag:var1, ConstVariantTag:var2);
+native bool:var_gt(ConstVariantTag:var1, ConstVariantTag:var2);
+native bool:var_lte(ConstVariantTag:var1, ConstVariantTag:var2);
+native bool:var_gte(ConstVariantTag:var1, ConstVariantTag:var2);
+native bool:var_not(ConstVariantTag:var);
 native Variant:var_call_op(VariantTag:var, tag_op:tag_op, AnyTag:...);
 native Variant:var_call_op_raw(VariantTag:var, tag_op:tag_op, AnyTag:...);
 
@@ -407,7 +417,7 @@ native List:list_new_arr(AnyTag:values[], size=sizeof(values), TagTag:tag_id=tag
 native List:list_new_args_t(TagTag:tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) = list_new_args;
 #define list_new_args(%0) list_new_args_t(_,%0)
 native List:list_new_args_str(arg0[], ...);
-native List:list_new_args_var(VariantTag:arg0, VariantTag:...);
+native List:list_new_args_var(ConstVariantTag:arg0, ConstVariantTag:...);
 native bool:list_valid(List:list);
 native bool:list_delete(List:list);
 native bool:list_delete_deep(List:list);
@@ -418,12 +428,12 @@ native List:list_clone(List:list);
 native list_add(List:list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
 native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), TagTag:tag_id=tagof(value));
 native list_add_str(List:list, const value[], index=-1);
-native list_add_var(List:list, VariantTag:value, index=-1);
+native list_add_var(List:list, ConstVariantTag:value, index=-1);
 native list_add_list(List:list, List:range, index=-1);
 native list_add_args_t(TagTag:tag_id=tagof(arg0), List:list, AnyTag:arg0, AnyTag:...) = list_add_args;
 #define list_add_args(%0) list_add_args_t(_,%0)
 native list_add_args_str(List:list, arg0[], ...);
-native list_add_args_var(List:list, VariantTag:arg0, VariantTag:...);
+native list_add_args_var(List:list, ConstVariantTag:arg0, ConstVariantTag:...);
 
 native bool:list_remove(List:list, index);
 
@@ -436,7 +446,7 @@ native list_get_arr_safe(List:list, index, AnyTag:value[], size=sizeof(value), T
 native bool:list_set(List:list, index, AnyTag:value, TagTag:tag_id=tagof(value));
 native bool:list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native bool:list_set_str(List:list, index, const value[]);
-native bool:list_set_var(List:list, index, VariantTag:value);
+native bool:list_set_var(List:list, index, ConstVariantTag:value);
 native bool:list_set_cell(List:list, index, offset, AnyTag:value);
 native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
@@ -523,16 +533,16 @@ native Map:map_new_args_t(TagTag:key_tag_id=tagof(arg0), TagTag:value_tag_id=tag
 #define map_new_args(%0) map_new_args_t(_,_,%0)
 native Map:map_new_args_str_t(TagTag:key_tag_id=tagof(arg0), AnyTag:arg0, arg1[], AnyTag:...) = map_new_args_str;
 #define map_new_args_str(%0) map_new_args_str_t(_,%0)
-native Map:map_new_args_var_t(TagTag:key_tag_id=tagof(arg0), AnyTag:arg0, VariantTag:arg1, AnyTag:...) = map_new_args_var;
+native Map:map_new_args_var_t(TagTag:key_tag_id=tagof(arg0), AnyTag:arg0, ConstVariantTag:arg1, AnyTag:...) = map_new_args_var;
 #define map_new_args_var(%0) map_new_args_var_t(_,%0)
 native Map:map_new_str_args_t(TagTag:value_tag_id=tagof(arg1), arg0[], AnyTag:arg1, AnyTag:...) = map_new_str_args;
 #define map_new_str_args(%0) map_new_str_args_t(_,%0)
 native Map:map_new_str_args_str(arg0[], arg1[], ...);
-native Map:map_new_str_args_var(arg0[], VariantTag:arg1, {_,VariantTags}:...);
-native Map:map_new_var_args_t(TagTag:value_tag_id=tagof(arg1), VariantTag:arg0, AnyTag:arg1, AnyTag:...) = map_new_var_args;
+native Map:map_new_str_args_var(arg0[], ConstVariantTag:arg1, {_,VariantTags}:...);
+native Map:map_new_var_args_t(TagTag:value_tag_id=tagof(arg1), ConstVariantTag:arg0, AnyTag:arg1, AnyTag:...) = map_new_var_args;
 #define map_new_var_args(%0) map_new_var_args_t(_,%0)
-native Map:map_new_var_args_str(VariantTag:arg0, arg1[], {_,VariantTags}:...);
-native Map:map_new_var_args_var(VariantTag:arg0, VariantTag:arg1, VariantTag:...);
+native Map:map_new_var_args_str(ConstVariantTag:arg0, arg1[], {_,VariantTags}:...);
+native Map:map_new_var_args_var(ConstVariantTag:arg0, ConstVariantTag:arg1, ConstVariantTag:...);
 native bool:map_valid(Map:map);
 native bool:map_delete(Map:map);
 native bool:map_delete_deep(Map:map);
@@ -542,44 +552,44 @@ native map_size(Map:map);
 native bool:map_add(Map:map, AnyTag:key, AnyTag:value, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_add_arr(Map:map, AnyTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_add_str(Map:map, AnyTag:key, const value[], TagTag:key_tag_id=tagof(key));
-native bool:map_add_var(Map:map, AnyTag:key, VariantTag:value, TagTag:key_tag_id=tagof(key));
+native bool:map_add_var(Map:map, AnyTag:key, ConstVariantTag:value, TagTag:key_tag_id=tagof(key));
 native bool:map_arr_add(Map:map, const AnyTag:key[], AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_arr_add_arr(Map:map, const AnyTag:key[], const AnyTag:value[], key_size=sizeof(key), value_size=sizeof(value), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_arr_add_str(Map:map, const AnyTag:key[], const value[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
-native bool:map_arr_add_var(Map:map, const AnyTag:key[], VariantTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native bool:map_arr_add_var(Map:map, const AnyTag:key[], ConstVariantTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native bool:map_str_add(Map:map, const key[], AnyTag:value, TagTag:value_tag_id=tagof(value));
 native bool:map_str_add_arr(Map:map, const key[], const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
 native bool:map_str_add_str(Map:map, const key[], const value[]);
-native bool:map_str_add_var(Map:map, const key[], VariantTag:value);
-native bool:map_var_add(Map:map, VariantTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
-native bool:map_var_add_arr(Map:map, VariantTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
-native bool:map_var_add_str(Map:map, VariantTag:key, const value[]);
-native bool:map_var_add_var(Map:map, VariantTag:key, VariantTag:value);
+native bool:map_str_add_var(Map:map, const key[], ConstVariantTag:value);
+native bool:map_var_add(Map:map, ConstVariantTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
+native bool:map_var_add_arr(Map:map, ConstVariantTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+native bool:map_var_add_str(Map:map, ConstVariantTag:key, const value[]);
+native bool:map_var_add_var(Map:map, ConstVariantTag:key, ConstVariantTag:value);
 native map_add_map(Map:map, Map:other, bool:overwrite);
 native map_add_args_t(TagTag:key_tag_id=tagof(arg0), TagTag:value_tag_id=tagof(arg1), Map:map, AnyTag:arg0, AnyTag:arg1, AnyTag:...) = map_add_args;
 #define map_add_args(%0) map_add_args_t(_,_,%0)
 native map_add_args_str_t(TagTag:key_tag_id=tagof(arg0), Map:map, AnyTag:arg0, arg1[], AnyTag:...) = map_add_args_str;
 #define map_add_args_str(%0) map_add_args_str_t(_,%0)
-native map_add_args_var_t(TagTag:key_tag_id=tagof(arg0), Map:map, AnyTag:arg0, VariantTag:arg1, AnyTag:...) = map_add_args_var;
+native map_add_args_var_t(TagTag:key_tag_id=tagof(arg0), Map:map, AnyTag:arg0, ConstVariantTag:arg1, AnyTag:...) = map_add_args_var;
 #define map_add_args_var(%0) map_add_args_var_t(_,%0)
 native map_add_str_args_t(TagTag:value_tag_id=tagof(arg1), Map:map, arg0[], AnyTag:arg1, AnyTag:...) = map_add_str_args;
 #define map_add_str_args(%0) map_add_str_args_t(_,%0)
 native map_add_str_args_str(Map:map, arg0[], arg1[], ...);
-native map_add_str_args_var(Map:map, arg0[], VariantTag:arg1, {_,VariantTags}:...);
-native map_add_var_args_t(TagTag:value_tag_id=tagof(arg1), Map:map, VariantTag:arg0, AnyTag:arg1, AnyTag:...) = map_add_var_args;
+native map_add_str_args_var(Map:map, arg0[], ConstVariantTag:arg1, {_,VariantTags}:...);
+native map_add_var_args_t(TagTag:value_tag_id=tagof(arg1), Map:map, ConstVariantTag:arg0, AnyTag:arg1, AnyTag:...) = map_add_var_args;
 #define map_add_var_args(%0) map_add_var_args_t(_,%0)
-native map_add_var_args_str(Map:map, VariantTag:arg0, arg1[], {_,VariantTags}:...);
-native map_add_var_args_var(Map:map, VariantTag:arg0, VariantTag:arg1, VariantTag:...);
+native map_add_var_args_str(Map:map, ConstVariantTag:arg0, arg1[], {_,VariantTags}:...);
+native map_add_var_args_var(Map:map, ConstVariantTag:arg0, ConstVariantTag:arg1, ConstVariantTag:...);
 
 native bool:map_remove(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native bool:map_arr_remove(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native bool:map_str_remove(Map:map, const key[]);
-native bool:map_var_remove(Map:map, VariantTag:key);
+native bool:map_var_remove(Map:map, ConstVariantTag:key);
 
 native bool:map_has_key(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native bool:map_has_arr_key(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native bool:map_has_str_key(Map:map, const key[]);
-native bool:map_has_var_key(Map:map, VariantTag:key);
+native bool:map_has_var_key(Map:map, ConstVariantTag:key);
 
 native map_get(Map:map, AnyTag:key, offset=0, TagTag:key_tag_id=tagof(key));
 native map_get_arr(Map:map, AnyTag:key, AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key));
@@ -596,36 +606,36 @@ native map_str_get_arr(Map:map, const key[], AnyTag:value[], value_size=sizeof(v
 native Variant:map_str_get_var(Map:map, const key[]);
 native bool:map_str_get_safe(Map:map, const key[], &AnyTag:value, offset=0, TagTag:value_tag_id=tagof(value));
 native map_str_get_arr_safe(Map:map, const key[], AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
-native map_var_get(Map:map, VariantTag:key, offset=0);
-native map_var_get_arr(Map:map, VariantTag:key, AnyTag:value[], value_size=sizeof(value));
-native Variant:map_var_get_var(Map:map, VariantTag:key);
-native bool:map_var_get_safe(Map:map, VariantTag:key, &AnyTag:value, offset=0, TagTag:value_tag_id=tagof(value));
-native map_var_get_arr_safe(Map:map, VariantTag:key, AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+native map_var_get(Map:map, ConstVariantTag:key, offset=0);
+native map_var_get_arr(Map:map, ConstVariantTag:key, AnyTag:value[], value_size=sizeof(value));
+native Variant:map_var_get_var(Map:map, ConstVariantTag:key);
+native bool:map_var_get_safe(Map:map, ConstVariantTag:key, &AnyTag:value, offset=0, TagTag:value_tag_id=tagof(value));
+native map_var_get_arr_safe(Map:map, ConstVariantTag:key, AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
 
 native bool:map_set(Map:map, AnyTag:key, AnyTag:value, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_set_arr(Map:map, AnyTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_set_str(Map:map, AnyTag:key, const value[], TagTag:key_tag_id=tagof(key));
-native bool:map_set_var(Map:map, AnyTag:key, VariantTag:value, TagTag:key_tag_id=tagof(key));
+native bool:map_set_var(Map:map, AnyTag:key, ConstVariantTag:value, TagTag:key_tag_id=tagof(key));
 native bool:map_set_cell(Map:map, AnyTag:key, offset, AnyTag:value, TagTag:key_tag_id=tagof(key));
 native bool:map_set_cell_safe(Map:map, AnyTag:key, offset, AnyTag:value, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_arr_set(Map:map, const AnyTag:key[], AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_arr_set_arr(Map:map, const AnyTag:key[], const AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_arr_set_str(Map:map, const AnyTag:key[], const value[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
-native bool:map_arr_set_var(Map:map, const AnyTag:key[], VariantTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native bool:map_arr_set_var(Map:map, const AnyTag:key[], ConstVariantTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native bool:map_arr_set_cell(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native bool:map_arr_set_cell_safe(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_str_set(Map:map, const key[], AnyTag:value, TagTag:value_tag_id=tagof(value));
 native bool:map_str_set_arr(Map:map, const key[], const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
 native bool:map_str_set_str(Map:map, const key[], const value[]);
-native bool:map_str_set_var(Map:map, const key[], VariantTag:value);
+native bool:map_str_set_var(Map:map, const key[], ConstVariantTag:value);
 native bool:map_str_set_cell(Map:map, const key[], offset, AnyTag:value);
 native bool:map_str_set_cell_safe(Map:map, const key[], offset, AnyTag:value, TagTag:value_tag_id=tagof(value));
-native bool:map_var_set(Map:map, VariantTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
-native bool:map_var_set_arr(Map:map, VariantTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
-native bool:map_var_set_str(Map:map, VariantTag:key, const value[]);
-native bool:map_var_set_var(Map:map, VariantTag:key, VariantTag:value);
-native bool:map_var_set_cell(Map:map, VariantTag:key, offset, AnyTag:value);
-native bool:map_var_set_cell_safe(Map:map, VariantTag:key, offset, AnyTag:value, TagTag:value_tag_id=tagof(value));
+native bool:map_var_set(Map:map, ConstVariantTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
+native bool:map_var_set_arr(Map:map, ConstVariantTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+native bool:map_var_set_str(Map:map, ConstVariantTag:key, const value[]);
+native bool:map_var_set_var(Map:map, ConstVariantTag:key, ConstVariantTag:value);
+native bool:map_var_set_cell(Map:map, ConstVariantTag:key, offset, AnyTag:value);
+native bool:map_var_set_cell_safe(Map:map, ConstVariantTag:key, offset, AnyTag:value, TagTag:value_tag_id=tagof(value));
 
 native map_key_at(Map:map, index, offset=0);
 native map_arr_key_at(Map:map, index, AnyTag:key[], key_size=sizeof(key));
@@ -645,8 +655,8 @@ native map_arr_tagof(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:k
 native map_arr_sizeof(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native map_str_tagof(Map:map, const key[]);
 native map_str_sizeof(Map:map, const key[]);
-native map_var_tagof(Map:map, VariantTag:key);
-native map_var_sizeof(Map:map, VariantTag:key);
+native map_var_tagof(Map:map, ConstVariantTag:key);
+native map_var_sizeof(Map:map, ConstVariantTag:key);
 
 native Iter:map_iter(Map:map);
 
@@ -753,7 +763,7 @@ native LinkedList:linked_list_new_arr(AnyTag:values[], size=sizeof(values), TagT
 native LinkedList:linked_list_new_args_t(TagTag:tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) = linked_list_new_args;
 #define linked_list_new_args(%0) linked_list_new_args_t(_,%0)
 native LinkedList:linked_list_new_args_str(arg0[], ...);
-native LinkedList:linked_list_new_args_var(VariantTag:arg0, VariantTag:...);
+native LinkedList:linked_list_new_args_var(ConstVariantTag:arg0, ConstVariantTag:...);
 native bool:linked_list_valid(LinkedList:linked_list);
 native bool:linked_list_delete(LinkedList:linked_list);
 native bool:linked_list_delete_deep(LinkedList:linked_list);
@@ -764,12 +774,12 @@ native LinkedList:linked_list_clone(LinkedList:linked_list);
 native linked_list_add(LinkedList:linked_list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
 native linked_list_add_arr(LinkedList:linked_list, const AnyTag:value[], index=-1, size=sizeof(value), TagTag:tag_id=tagof(value));
 native linked_list_add_str(LinkedList:linked_list, const value[], index=-1);
-native linked_list_add_var(LinkedList:linked_list, VariantTag:value, index=-1);
+native linked_list_add_var(LinkedList:linked_list, ConstVariantTag:value, index=-1);
 native linked_list_add_linked_list(LinkedList:linked_list, LinkedList:range, index=-1);
 native linked_list_add_args_t(TagTag:tag_id=tagof(arg0), LinkedList:linked_list, AnyTag:arg0, AnyTag:...) = linked_list_add_args;
 #define linked_list_add_args(%0) linked_list_add_args_t(_,%0)
 native linked_list_add_args_str(LinkedList:linked_list, arg0[], ...);
-native linked_list_add_args_var(LinkedList:linked_list, VariantTag:arg0, VariantTag:...);
+native linked_list_add_args_var(LinkedList:linked_list, ConstVariantTag:arg0, ConstVariantTag:...);
 
 native bool:linked_list_remove(LinkedList:linked_list, index);
 
@@ -782,7 +792,7 @@ native linked_list_get_arr_safe(LinkedList:linked_list, index, AnyTag:value[], s
 native bool:linked_list_set(LinkedList:linked_list, index, AnyTag:value, TagTag:tag_id=tagof(value));
 native bool:linked_list_set_arr(LinkedList:linked_list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native bool:linked_list_set_str(LinkedList:linked_list, index, const value[]);
-native bool:linked_list_set_var(LinkedList:linked_list, index, VariantTag:value);
+native bool:linked_list_set_var(LinkedList:linked_list, index, ConstVariantTag:value);
 native bool:linked_list_set_cell(LinkedList:linked_list, index, offset, AnyTag:value);
 native bool:linked_list_set_cell_safe(LinkedList:linked_list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
@@ -880,14 +890,14 @@ native iter_get_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), TagTa
 native bool:iter_set(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
 native bool:iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native bool:iter_set_str(IterTag:iter, const value[]);
-native bool:iter_set_var(IterTag:iter, VariantTag:value);
+native bool:iter_set_var(IterTag:iter, ConstVariantTag:value);
 native bool:iter_set_cell(IterTag:iter, offset, AnyTag:value);
 native bool:iter_set_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
 native bool:iter_insert(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
 native bool:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native bool:iter_insert_str(IterTag:iter, const value[]);
-native bool:iter_insert_var(IterTag:iter, VariantTag:value);
+native bool:iter_insert_var(IterTag:iter, ConstVariantTag:value);
 
 native iter_get_key(IterTag:iter, offset=0);
 native iter_get_key_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
@@ -904,7 +914,7 @@ native iter_get_value_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value),
 native bool:iter_set_value(IterTag:iter, AnyTag:value, TagTag:value_tag_id=tagof(value)) = iter_set;
 native bool:iter_set_value_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:value_tag_id=tagof(value)) = iter_set_arr;
 native bool:iter_set_value_str(IterTag:iter, const value[]) = iter_set_str;
-native bool:iter_set_value_var(IterTag:iter, VariantTag:value) = iter_set_var;
+native bool:iter_set_value_var(IterTag:iter, ConstVariantTag:value) = iter_set_var;
 native bool:iter_set_value_cell(IterTag:iter, offset, AnyTag:value) = iter_set_cell;
 native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:value_tag_id=tagof(value)) = iter_set_cell_safe;
 
@@ -1041,13 +1051,16 @@ stock operator~(PP@ts:arr[], count)
 
 PP_PROHIBIT_UNARY_OPERATORS(String);
 PP_PROHIBIT_UNARY_OPERATORS(GlobalString);
+PP_PROHIBIT_UNARY_OPERATORS(ConstString);
 PP_PROHIBIT_UNARY_OPERATORS(AmxString);
 PP_PROHIBIT_UNARY_OPERATORS(AmxStringBuffer);
 
 forward String:operator=(AmxString:arg);
 forward GlobalString:operator=(AmxString:arg);
+forward ConstString:operator=(AmxString:arg);
 forward String:operator=(AmxStringBuffer:arg);
 forward GlobalString:operator=(AmxStringBuffer:arg);
+forward ConstString:operator=(AmxStringBuffer:arg);
 
 #undef PP_PROHIBIT_UNARY_OPERATORS
     
@@ -1063,11 +1076,13 @@ forward GlobalString:operator=(AmxStringBuffer:arg);
     PP_PROHIBIT_BINARY_OPEARTORS(%0,Float); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,String); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,GlobalString); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,ConstString); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxString); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxStringBuffer)
 
 PP_PROHIBIT_BINARY_OPEARTORS2(String);
 PP_PROHIBIT_BINARY_OPEARTORS2(GlobalString);
+PP_PROHIBIT_BINARY_OPEARTORS2(ConstString);
 PP_PROHIBIT_BINARY_OPEARTORS2(AmxString);
 PP_PROHIBIT_BINARY_OPEARTORS2(AmxStringBuffer);
 
@@ -1075,6 +1090,10 @@ PP_PROHIBIT_BINARY_OPEARTORS2(AmxStringBuffer);
 
 native GlobalString:operator=(String:arg) = str_to_global;
 stock String:operator=(GlobalString:arg) return String:arg;
+stock ConstString:operator=(String:arg) return ConstString:arg;
+stock ConstString:operator=(GlobalString:arg) return ConstString:arg;
+forward String:operator=(ConstString:arg);
+forward GlobalString:operator=(ConstString:arg);
 native AmxString:operator=(String:arg) = str_addr;
 native AmxString:operator=(GlobalString:arg) = str_addr;
 native AmxStringBuffer:operator=(String:arg) = str_buf_addr;
@@ -1084,20 +1103,42 @@ stock AmxStringBuffer:operator+(AmxStringBuffer:arg1, arg2) return AmxStringBuff
 
 native String:operator+(String:arg1, String:arg2) = str_cat;
 native String:operator+(String:arg1, GlobalString:arg2) = str_cat;
+native String:operator+(String:arg1, ConstString:arg2) = str_cat;
 native String:operator+(GlobalString:arg1, String:arg2) = str_cat;
+native String:operator+(GlobalString:arg1, ConstString:arg2) = str_cat;
 native String:operator+(GlobalString:arg1, GlobalString:arg2) = str_cat;
+native String:operator+(ConstString:arg1, String:arg2) = str_cat;
+native String:operator+(ConstString:arg1, GlobalString:arg2) = str_cat;
+native String:operator+(ConstString:arg1, ConstString:arg2) = str_cat;
+
 native bool:operator==(String:arg1, String:arg2) = str_eq;
 native bool:operator==(String:arg1, GlobalString:arg2) = str_eq;
+native bool:operator==(String:arg1, ConstString:arg2) = str_eq;
 native bool:operator==(GlobalString:arg1, String:arg2) = str_eq;
 native bool:operator==(GlobalString:arg1, GlobalString:arg2) = str_eq;
+native bool:operator==(GlobalString:arg1, ConstString:arg2) = str_eq;
+native bool:operator==(ConstString:arg1, String:arg2) = str_eq;
+native bool:operator==(ConstString:arg1, GlobalString:arg2) = str_eq;
+native bool:operator==(ConstString:arg1, ConstString:arg2) = str_eq;
 stock bool:operator!=(String:arg1, String:arg2) return !(arg1 == arg2);
 stock bool:operator!=(String:arg1, GlobalString:arg2) return !(arg1 == arg2);
+stock bool:operator!=(String:arg1, ConstString:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalString:arg1, String:arg2) return !(arg1 == arg2);
 stock bool:operator!=(GlobalString:arg1, GlobalString:arg2) return !(arg1 == arg2);
+stock bool:operator!=(GlobalString:arg1, ConstString:arg2) return !(arg1 == arg2);
+stock bool:operator!=(ConstString:arg1, String:arg2) return !(arg1 == arg2);
+stock bool:operator!=(ConstString:arg1, GlobalString:arg2) return !(arg1 == arg2);
+stock bool:operator!=(ConstString:arg1, ConstString:arg2) return !(arg1 == arg2);
 
 native String:operator%(String:arg1, String:arg2) = str_cat;
+native String:operator%(String:arg1, GlobalString:arg2) = str_cat;
+native String:operator%(String:arg1, ConstString:arg2) = str_cat;
 native String:operator%(GlobalString:arg1, String:arg2) = str_cat;
 native String:operator%(GlobalString:arg1, GlobalString:arg2) = str_cat;
+native String:operator%(GlobalString:arg1, ConstString:arg2) = str_cat;
+native String:operator%(ConstString:arg1, String:arg2) = str_cat;
+native String:operator%(ConstString:arg1, GlobalString:arg2) = str_cat;
+native String:operator%(ConstString:arg1, ConstString:arg2) = str_cat;
 
 #if defined PP_SYNTAX_STRING_OP
 
@@ -1107,37 +1148,57 @@ stock GlobalString:operator=(arg) return str_to_global(str_val(arg));
 stock GlobalString:operator=(Float:arg) return str_to_global(str_val(arg));
 stock String:operator%(String:arg1, arg2) return str_cat(arg1, str_val(arg2));
 stock String:operator%(GlobalString:arg1, arg2) return str_cat(arg1, str_val(arg2));
+stock String:operator%(ConstString:arg1, arg2) return str_cat(arg1, str_val(arg2));
 stock String:operator%(arg1, String:arg2) return str_cat(str_val(arg1), arg2);
 stock String:operator%(arg1, GlobalString:arg2) return str_cat(str_val(arg1), arg2);
+stock String:operator%(arg1, ConstString:arg2) return str_cat(str_val(arg1), arg2);
 stock String:operator%(String:arg1, Float:arg2) return str_cat(arg1, str_val(arg2));
 stock String:operator%(GlobalString:arg1, Float:arg2) return str_cat(arg1, str_val(arg2));
+stock String:operator%(ConstString:arg1, Float:arg2) return str_cat(arg1, str_val(arg2));
 stock String:operator%(Float:arg1, String:arg2) return str_cat(str_val(arg1), arg2);
 stock String:operator%(Float:arg1, GlobalString:arg2) return str_cat(str_val(arg1), arg2);
+stock String:operator%(Float:arg1, ConstString:arg2) return str_cat(str_val(arg1), arg2);
 
 #endif
 
 native GlobalVariant:operator=(Variant:arg) = var_to_global;
 stock Variant:operator=(GlobalVariant:arg) return Variant:arg;
+stock ConstVariant:operator=(Variant:arg) return ConstVariant:arg;
+stock ConstVariant:operator=(GlobalVariant:arg) return ConstVariant:arg;
+forward Variant:operator=(ConstVariant:arg);
+forward GlobalVariant:operator=(ConstVariant:arg);
 
 #define PP_VARIANT_BIN_OP(%0,%1) \
     native Variant:operator%0(Variant:arg1, Variant:arg2) = %1; \
     native Variant:operator%0(Variant:arg1, GlobalVariant:arg2) = %1; \
+    native Variant:operator%0(Variant:arg1, ConstVariant:arg2) = %1; \
     native Variant:operator%0(GlobalVariant:arg1, Variant:arg2) = %1; \
-    native Variant:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1
+    native Variant:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1; \
+    native Variant:operator%0(GlobalVariant:arg1, ConstVariant:arg2) = %1; \
+    native Variant:operator%0(ConstVariant:arg1, Variant:arg2) = %1; \
+    native Variant:operator%0(ConstVariant:arg1, GlobalVariant:arg2) = %1; \
+    native Variant:operator%0(ConstVariant:arg1, ConstVariant:arg2) = %1
 
 #define PP_VARIANT_UN_OP(%0,%1) \
     native Variant:operator%0(Variant:arg) = %1; \
-    native Variant:operator%0(GlobalVariant:arg) = %1
+    native Variant:operator%0(GlobalVariant:arg) = %1; \
+    native Variant:operator%0(ConstVariant:arg) = %1
 
 #define PP_VARIANT_LOG_BIN_OP(%0,%1) \
     native bool:operator%0(Variant:arg1, Variant:arg2) = %1; \
     native bool:operator%0(Variant:arg1, GlobalVariant:arg2) = %1; \
+    native bool:operator%0(Variant:arg1, ConstVariant:arg2) = %1; \
     native bool:operator%0(GlobalVariant:arg1, Variant:arg2) = %1; \
-    native bool:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1
+    native bool:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1; \
+    native bool:operator%0(GlobalVariant:arg1, ConstVariant:arg2) = %1; \
+    native bool:operator%0(ConstVariant:arg1, Variant:arg2) = %1; \
+    native bool:operator%0(ConstVariant:arg1, GlobalVariant:arg2) = %1; \
+    native bool:operator%0(ConstVariant:arg1, ConstVariant:arg2) = %1
 
 #define PP_VARIANT_LOG_UN_OP(%0,%1) \
     native bool:operator%0(Variant:arg) = %1; \
-    native bool:operator%0(GlobalVariant:arg) = %1
+    native bool:operator%0(GlobalVariant:arg) = %1; \
+    native bool:operator%0(ConstVariant:arg) = %1
 
 PP_VARIANT_BIN_OP(+, var_add);
 PP_VARIANT_BIN_OP(-, var_sub);
@@ -1171,8 +1232,10 @@ stock bool:operator!=(GlobalIter:arg1, GlobalIter:arg2) return !(arg1 == arg2);
 
 stock String:operator=(Ref<String>:arg) return String:arg;
 stock GlobalString:operator=(Ref<GlobalString>:arg) return GlobalString:arg;
+stock ConstString:operator=(Ref<ConstString>:arg) return ConstString:arg;
 stock Variant:operator=(Ref<Variant>:arg) return Variant:arg;
 stock GlobalVariant:operator=(Ref<GlobalVariant>:arg) return GlobalVariant:arg;
+stock ConstVariant:operator=(Ref<ConstVariant>:arg) return ConstVariant:arg;
 stock List:operator=(Ref<List>:arg) return List:arg;
 stock Map:operator=(Ref<Map>:arg) return Map:arg;
 stock LinkedList:operator=(Ref<LinkedList>:arg) return LinkedList:arg;
@@ -1181,8 +1244,10 @@ stock GlobalIter:operator=(Ref<GlobalIter>:arg) return GlobalIter:arg;
 
 stock Ref<String>:operator=(String:arg) return Ref<String>:arg;
 stock Ref<GlobalString>:operator=(GlobalString:arg) return Ref<GlobalString>:arg;
+stock Ref<ConstString>:operator=(ConstString:arg) return Ref<ConstString>:arg;
 stock Ref<Variant>:operator=(Variant:arg) return Ref<Variant>:arg;
 stock Ref<GlobalVariant>:operator=(GlobalVariant:arg) return Ref<GlobalVariant>:arg;
+stock Ref<ConstVariant>:operator=(ConstVariant:arg) return Ref<ConstVariant>:arg;
 stock Ref<List>:operator=(List:arg) return Ref<List>:arg;
 stock Ref<Map>:operator=(Map:arg) return Ref<Map>:arg;
 stock Ref<LinkedList>:operator=(LinkedList:arg) return Ref<LinkedList>:arg;
@@ -1191,8 +1256,10 @@ stock Ref<GlobalIter>:operator=(GlobalIter:arg) return Ref<GlobalIter>:arg;
 
 stock Ref:operator=(Ref<String>:arg) return Ref:arg;
 stock Ref:operator=(Ref<GlobalString>:arg) return Ref:arg;
+stock Ref:operator=(Ref<ConstString>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Variant>:arg) return Ref:arg;
 stock Ref:operator=(Ref<GlobalVariant>:arg) return Ref:arg;
+stock Ref:operator=(Ref<ConstVariant>:arg) return Ref:arg;
 stock Ref:operator=(Ref<List>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Map>:arg) return Ref:arg;
 stock Ref:operator=(Ref<LinkedList>:arg) return Ref:arg;
