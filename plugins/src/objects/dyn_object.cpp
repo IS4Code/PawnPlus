@@ -895,6 +895,16 @@ dyn_object dyn_object::operator-() const
 	return operator_func<&tag_operations::neg>();
 }
 
+dyn_object dyn_object::inc() const
+{
+	return operator_func<&tag_operations::inc>();
+}
+
+dyn_object dyn_object::dec() const
+{
+	return operator_func<&tag_operations::dec>();
+}
+
 std::basic_string<cell> dyn_object::to_string() const
 {
 	const auto &ops = tag->get_ops();

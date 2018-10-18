@@ -218,7 +218,7 @@ namespace Natives
 	
 	// native Variant:var_op(VariantTag:var1, VariantTag:var2);
 	template <dyn_object (dyn_object::*op)(const dyn_object&) const>
-	static cell AMX_NATIVE_CALL var_op(AMX *amx, cell *params)
+	static cell AMX_NATIVE_CALL var_bin_op(AMX *amx, cell *params)
 	{
 		dyn_object *var1;
 		if(!variants::pool.get_by_id(params[1], var1)) return 0;
@@ -232,41 +232,60 @@ namespace Natives
 	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
 	static cell AMX_NATIVE_CALL var_add(AMX *amx, cell *params)
 	{
-		return var_op<&dyn_object::operator+>(amx, params);
+		return var_bin_op<&dyn_object::operator+>(amx, params);
 	}
 
 	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
 	static cell AMX_NATIVE_CALL var_sub(AMX *amx, cell *params)
 	{
-		return var_op<&dyn_object::operator- >(amx, params);
+		return var_bin_op<&dyn_object::operator- >(amx, params);
 	}
 
 	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
 	static cell AMX_NATIVE_CALL var_mul(AMX *amx, cell *params)
 	{
-		return var_op<&dyn_object::operator*>(amx, params);
+		return var_bin_op<&dyn_object::operator*>(amx, params);
 	}
 
 	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
 	static cell AMX_NATIVE_CALL var_div(AMX *amx, cell *params)
 	{
-		return var_op<&dyn_object::operator/>(amx, params);
+		return var_bin_op<&dyn_object::operator/>(amx, params);
 	}
 
 	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
 	static cell AMX_NATIVE_CALL var_mod(AMX *amx, cell *params)
 	{
-		return var_op<&dyn_object::operator% >(amx, params);
+		return var_bin_op<&dyn_object::operator% >(amx, params);
+	}
+	
+	// native Variant:var_op(VariantTag:var);
+	template <dyn_object (dyn_object::*op)() const>
+	static cell AMX_NATIVE_CALL var_un_op(AMX *amx, cell *params)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		auto result = (var->*op)();
+		if(result.empty()) return 0;
+		return variants::create(std::move(result));
 	}
 
 	// native Variant:var_neg(VariantTag:var);
 	static cell AMX_NATIVE_CALL var_neg(AMX *amx, cell *params)
 	{
-		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		auto result = -(*var);
-		if(result.empty()) return 0;
-		return variants::create(std::move(result));
+		return var_un_op<&dyn_object::operator- >(amx, params);
+	}
+
+	// native Variant:var_neg(VariantTag:var);
+	static cell AMX_NATIVE_CALL var_inc(AMX *amx, cell *params)
+	{
+		return var_un_op<&dyn_object::inc>(amx, params);
+	}
+
+	// native Variant:var_neg(VariantTag:var);
+	static cell AMX_NATIVE_CALL var_dec(AMX *amx, cell *params)
+	{
+		return var_un_op<&dyn_object::dec>(amx, params);
 	}
 
 	// native bool:var_log_op(VariantTag:var1, VariantTag:var2);
@@ -422,6 +441,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_div),
 	AMX_DECLARE_NATIVE(var_mod),
 	AMX_DECLARE_NATIVE(var_neg),
+	AMX_DECLARE_NATIVE(var_inc),
+	AMX_DECLARE_NATIVE(var_dec),
 	AMX_DECLARE_NATIVE(var_eq),
 	AMX_DECLARE_NATIVE(var_neq),
 	AMX_DECLARE_NATIVE(var_lt),

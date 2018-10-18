@@ -59,6 +59,16 @@ struct null_operations : public tag_operations
 		return 0;
 	}
 
+	virtual cell inc(tag_ptr tag, cell a) const override
+	{
+		return 0;
+	}
+
+	virtual cell dec(tag_ptr tag, cell a) const override
+	{
+		return 0;
+	}
+
 	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
 		return a == b;
@@ -249,6 +259,16 @@ struct cell_operations : public null_operations
 		return -a;
 	}
 
+	virtual cell inc(tag_ptr tag, cell a) const override
+	{
+		return a+1;
+	}
+
+	virtual cell dec(tag_ptr tag, cell a) const override
+	{
+		return a-1;
+	}
+
 	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
 		return a == b;
@@ -405,6 +425,18 @@ struct float_operations : public cell_operations
 	virtual cell neg(tag_ptr tag, cell a) const override
 	{
 		float result = -amx_ctof(a);
+		return amx_ftoc(result);
+	}
+
+	virtual cell inc(tag_ptr tag, cell a) const override
+	{
+		float result = amx_ctof(a) + 1.0f;
+		return amx_ftoc(result);
+	}
+
+	virtual cell dec(tag_ptr tag, cell a) const override
+	{
+		float result = amx_ctof(a) - 1.0f;
 		return amx_ftoc(result);
 	}
 
@@ -593,7 +625,7 @@ struct variant_operations : public null_operations
 	}
 
 	template <dyn_object(dyn_object::*op_type)(const dyn_object&) const>
-	cell op(tag_ptr tag, cell a, cell b) const
+	cell bin_op(tag_ptr tag, cell a, cell b) const
 	{
 		dyn_object *var1;
 		if(!variants::pool.get_by_id(a, var1)) return 0;
@@ -606,36 +638,52 @@ struct variant_operations : public null_operations
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
 	{
-		return op<&dyn_object::operator+>(tag, a, b);
+		return bin_op<&dyn_object::operator+>(tag, a, b);
 	}
 
 	virtual cell sub(tag_ptr tag, cell a, cell b) const override
 	{
-		return op<&dyn_object::operator- >(tag, a, b);
+		return bin_op<&dyn_object::operator- >(tag, a, b);
 	}
 
 	virtual cell mul(tag_ptr tag, cell a, cell b) const override
 	{
-		return op<&dyn_object::operator*>(tag, a, b);
+		return bin_op<&dyn_object::operator*>(tag, a, b);
 	}
 
 	virtual cell div(tag_ptr tag, cell a, cell b) const override
 	{
-		return op<&dyn_object::operator/>(tag, a, b);
+		return bin_op<&dyn_object::operator/>(tag, a, b);
 	}
 
 	virtual cell mod(tag_ptr tag, cell a, cell b) const override
 	{
-		return op<&dyn_object::operator% >(tag, a, b);
+		return bin_op<&dyn_object::operator% >(tag, a, b);
+	}
+
+	template <dyn_object(dyn_object::*op_type)() const>
+	cell un_op(tag_ptr tag, cell a) const
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(a, var)) return 0;
+		auto result = (var->*op_type)();
+		if(result.empty()) return 0;
+		return variants::create(std::move(result));
 	}
 
 	virtual cell neg(tag_ptr tag, cell a) const override
 	{
-		dyn_object *var;
-		if(!variants::pool.get_by_id(a, var)) return 0;
-		auto result = -(*var);
-		if(result.empty()) return 0;
-		return variants::create(std::move(result));
+		return un_op<&dyn_object::operator- >(tag, a);
+	}
+
+	virtual cell inc(tag_ptr tag, cell a) const override
+	{
+		return un_op<&dyn_object::inc>(tag, a);
+	}
+
+	virtual cell dec(tag_ptr tag, cell a) const override
+	{
+		return un_op<&dyn_object::dec>(tag, a);
 	}
 
 	template <bool(dyn_object::*op)(const dyn_object&) const>
@@ -1420,10 +1468,28 @@ cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numar
 			return numargs >= 2 ? mod(tag, args[0], args[1]) : 0;
 		case op_type::neg:
 			return numargs >= 1 ? neg(tag, args[0]) : 0;
-		case op_type::string:
-			return numargs >= 1 ? strings::pool.get_id(strings::pool.add(to_string(tag, args[0]), true)) : 0;
+		case op_type::inc:
+			return numargs >= 1 ? inc(tag, args[0]) : 0;
+		case op_type::dec:
+			return numargs >= 1 ? dec(tag, args[0]) : 0;
+
 		case op_type::eq:
 			return numargs >= 2 ? eq(tag, args[0], args[1]) : 0;
+		case op_type::neq:
+			return numargs >= 2 ? neq(tag, args[0], args[1]) : 0;
+		case op_type::lt:
+			return numargs >= 2 ? lt(tag, args[0], args[1]) : 0;
+		case op_type::gt:
+			return numargs >= 2 ? gt(tag, args[0], args[1]) : 0;
+		case op_type::lte:
+			return numargs >= 2 ? lte(tag, args[0], args[1]) : 0;
+		case op_type::gte:
+			return numargs >= 2 ? gte(tag, args[0], args[1]) : 0;
+		case op_type::not:
+			return numargs >= 1 ? not(tag, args[0]) : 0;
+
+		case op_type::string:
+			return numargs >= 1 ? strings::pool.get_id(strings::pool.add(to_string(tag, args[0]), true)) : 0;
 		case op_type::del:
 			return numargs >= 1 ? del(tag, args[0]) : 0;
 		case op_type::free:

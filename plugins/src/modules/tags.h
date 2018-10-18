@@ -63,6 +63,8 @@ public:
 	virtual cell div(tag_ptr tag, cell a, cell b) const = 0;
 	virtual cell mod(tag_ptr tag, cell a, cell b) const = 0;
 	virtual cell neg(tag_ptr tag, cell a) const = 0;
+	virtual cell inc(tag_ptr tag, cell a) const = 0;
+	virtual cell dec(tag_ptr tag, cell a) const = 0;
 	virtual bool eq(tag_ptr tag, cell a, cell b) const = 0;
 	virtual bool eq(tag_ptr tag, const cell *a, const cell *b, cell size) const = 0;
 	virtual bool neq(tag_ptr tag, cell a, cell b) const = 0;

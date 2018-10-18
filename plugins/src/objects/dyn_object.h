@@ -69,6 +69,8 @@ public:
 	dyn_object operator/(const dyn_object &obj) const;
 	dyn_object operator%(const dyn_object &obj) const;
 	dyn_object operator-() const;
+	dyn_object inc() const;
+	dyn_object dec() const;
 	bool operator==(const dyn_object &obj) const;
 	bool operator!=(const dyn_object &obj) const;
 	bool operator<(const dyn_object &obj) const;

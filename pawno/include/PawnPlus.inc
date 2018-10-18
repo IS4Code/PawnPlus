@@ -1049,6 +1049,8 @@ stock operator~(PP@ts:arr[], count)
 
 #define PP_PROHIBIT_UNARY_OPERATORS(%0) \
     forward operator-(%0:arg); \
+    forward operator++(%0:arg); \
+    forward operator--(%0:arg); \
     forward %0:operator=(_:arg); \
     forward %0:operator=(Float:arg)
 
@@ -1187,6 +1189,11 @@ forward GlobalVariant:operator=(ConstVariant:arg);
     native Variant:operator%0(GlobalVariant:arg) = %1; \
     native Variant:operator%0(ConstVariant:arg) = %1
 
+#define PP_VARIANT_UN_MOD_OP(%0,%1) \
+    native Variant:operator%0(Variant:arg) = %1; \
+    forward Variant:operator%0(GlobalVariant:arg); \
+    native Variant:operator%0(ConstVariant:arg) = %1
+
 #define PP_VARIANT_LOG_BIN_OP(%0,%1) \
     native bool:operator%0(Variant:arg1, Variant:arg2) = %1; \
     native bool:operator%0(Variant:arg1, GlobalVariant:arg2) = %1; \
@@ -1209,6 +1216,8 @@ PP_VARIANT_BIN_OP(*, var_mul);
 PP_VARIANT_BIN_OP(/, var_div);
 PP_VARIANT_BIN_OP(%, var_mod);
 PP_VARIANT_UN_OP(-, var_neg);
+PP_VARIANT_UN_MOD_OP(++, var_inc);
+PP_VARIANT_UN_MOD_OP(--, var_dec);
 PP_VARIANT_LOG_BIN_OP(==, var_eq);
 PP_VARIANT_LOG_BIN_OP(!=, var_neq);
 PP_VARIANT_LOG_BIN_OP(<, var_lt);
@@ -1219,6 +1228,7 @@ PP_VARIANT_LOG_UN_OP(!, var_not);
 
 #undef PP_VARIANT_BIN_OP
 #undef PP_VARIANT_UN_OP
+#undef PP_VARIANT_UN_MOD_OP
 #undef PP_VARIANT_LOG_BIN_OP
 #undef PP_VARIANT_LOG_UN_OP
 
