@@ -54,6 +54,10 @@ tag_ptr tags::find_tag(const char *name, size_t sublen)
 	{
 		base = find_tag(name, pos);
 	}
+	if(base == nullptr)
+	{
+		base = ::tag_list[tags::tag_unknown].get();
+	}
 	cell id = ::tag_list.size();
 	::tag_list.push_back(std::make_unique<tag_info>(id, std::move(tag_name), base, new_dynamic_ops(id)));
 	return ::tag_list[id].get();
@@ -112,8 +116,6 @@ tag_ptr tags::new_tag(const char *name, cell base_id)
 	{
 		tag_name.append(base->name);
 		tag_name.append(1, '@');
-	}else{
-		base = nullptr;
 	}
 	tag_name.append(name);
 	tag_name.append(1, '+');
