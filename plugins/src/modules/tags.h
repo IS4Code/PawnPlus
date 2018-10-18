@@ -103,8 +103,9 @@ struct tag_info
 	cell uid;
 	std::string name;
 	tag_ptr base;
+	std::unique_ptr<tag_operations> ops;
 
-	tag_info(cell uid, std::string &&name, tag_ptr base);
+	tag_info(cell uid, std::string &&name, tag_ptr base, std::unique_ptr<tag_operations> &&ops);
 
 	bool strong() const;
 	bool inherits_from(cell parent) const;
@@ -137,6 +138,8 @@ namespace tags
 	tag_ptr find_tag(cell tag_uid);
 	tag_ptr find_existing_tag(const char *name, size_t sublen = -1);
 	tag_ptr new_tag(const char *name, cell base_id);
+
+	std::unique_ptr<tag_operations> new_dynamic_ops(cell uid);
 }
 
 #endif

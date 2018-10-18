@@ -7,7 +7,6 @@
 #include "fixes/linux.h"
 #include <vector>
 #include <algorithm>
-#include <unordered_map>
 #include <cmath>
 #include <cstring>
 #include <memory>
@@ -1055,38 +1054,41 @@ struct task_operations : public null_operations
 	}
 };
 
-auto op_map([]()
+static const null_operations unknown_ops(tags::tag_unknown);
+
+std::vector<std::unique_ptr<tag_info>> tag_list([]()
 {
-	std::unordered_map<cell, std::unique_ptr<tag_operations>> m;
-	m.insert(std::make_pair(tags::tag_unknown, std::make_unique<null_operations>(tags::tag_unknown)));
-	m.insert(std::make_pair(tags::tag_cell, std::make_unique<cell_operations>(tags::tag_cell)));
-	m.insert(std::make_pair(tags::tag_bool, std::make_unique<bool_operations>()));
-	m.insert(std::make_pair(tags::tag_char, std::make_unique<char_operations>()));
-	m.insert(std::make_pair(tags::tag_float, std::make_unique<float_operations>()));
-	m.insert(std::make_pair(tags::tag_string, std::make_unique<string_operations>()));
-	m.insert(std::make_pair(tags::tag_variant, std::make_unique<variant_operations>()));
-	m.insert(std::make_pair(tags::tag_list, std::make_unique<list_operations>()));
-	m.insert(std::make_pair(tags::tag_map, std::make_unique<map_operations>()));
-	m.insert(std::make_pair(tags::tag_iter, std::make_unique<iter_operations>()));
-	m.insert(std::make_pair(tags::tag_ref, std::make_unique<ref_operations>()));
-	m.insert(std::make_pair(tags::tag_task, std::make_unique<task_operations>()));
-	m.insert(std::make_pair(tags::tag_string, std::make_unique<string_operations>()));
-	m.insert(std::make_pair(tags::tag_variant, std::make_unique<variant_operations>()));
-	return m;
+	std::vector<std::unique_ptr<tag_info>> v;
+	auto string_const = std::make_unique<tag_info>(12, "String@Const", nullptr, std::make_unique<string_operations>());
+	auto variant_const = std::make_unique<tag_info>(13, "Variant@Const", nullptr, std::make_unique<variant_operations>());
+	v.push_back(std::make_unique<tag_info>(0, " ", nullptr, std::make_unique<null_operations>(tags::tag_unknown)));
+	v.push_back(std::make_unique<tag_info>(1, "", nullptr, std::make_unique<cell_operations>(tags::tag_cell)));
+	v.push_back(std::make_unique<tag_info>(2, "bool", nullptr, std::make_unique<bool_operations>()));
+	v.push_back(std::make_unique<tag_info>(3, "char", nullptr, std::make_unique<char_operations>()));
+	v.push_back(std::make_unique<tag_info>(4, "Float", nullptr, std::make_unique<float_operations>()));
+	v.push_back(std::make_unique<tag_info>(5, "String", string_const.get(), nullptr));
+	v.push_back(std::make_unique<tag_info>(6, "Variant", variant_const.get(), nullptr));
+	v.push_back(std::make_unique<tag_info>(7, "List", nullptr, std::make_unique<list_operations>()));
+	v.push_back(std::make_unique<tag_info>(8, "Map", nullptr, std::make_unique<map_operations>()));
+	v.push_back(std::make_unique<tag_info>(9, "Iter", nullptr, std::make_unique<iter_operations>()));
+	v.push_back(std::make_unique<tag_info>(10, "Ref", nullptr, std::make_unique<ref_operations>()));
+	v.push_back(std::make_unique<tag_info>(11, "Task", nullptr, std::make_unique<task_operations>()));
+	v.push_back(std::move(string_const));
+	v.push_back(std::move(variant_const));
+	return v;
 }());
 
 const tag_operations &tag_info::get_ops() const
 {
-	auto it = op_map.find(uid);
-	if(it != op_map.end())
+	if(ops)
 	{
-		return *it->second;
+		return *ops;
 	}
 	if(base)
 	{
 		return base->get_ops();
 	}
-	return *op_map[tags::tag_unknown];
+	return unknown_ops;
 }
 
 class dynamic_operations : public null_operations, public tag_control
@@ -1390,15 +1392,14 @@ public:
 	}
 };
 
+std::unique_ptr<tag_operations> tags::new_dynamic_ops(cell uid)
+{
+	return std::make_unique<dynamic_operations>(uid);
+}
+
 tag_control *tag_info::get_control() const
 {
-	auto it = op_map.find(uid);
-	if(it != op_map.end())
-	{
-		return dynamic_cast<dynamic_operations*>(it->second.get());
-	}
-	auto op = std::make_unique<dynamic_operations>(uid);
-	return static_cast<dynamic_operations*>((op_map[uid] = std::move(op)).get());
+	return dynamic_cast<dynamic_operations*>(ops.get());
 }
 
 cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const

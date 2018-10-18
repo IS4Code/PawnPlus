@@ -6,27 +6,7 @@
 #include <cstdint>
 #include <memory>
 
-auto tag_list([]()
-{
-	std::vector<std::unique_ptr<tag_info>> v;
-	auto string_const = std::make_unique<tag_info>(12, "String@Const", nullptr);
-	auto variant_const = std::make_unique<tag_info>(13, "Variant@Const", nullptr);
-	v.push_back(std::make_unique<tag_info>(0, " ", nullptr));
-	v.push_back(std::make_unique<tag_info>(1, "", nullptr));
-	v.push_back(std::make_unique<tag_info>(2, "bool", nullptr));
-	v.push_back(std::make_unique<tag_info>(3, "char", nullptr));
-	v.push_back(std::make_unique<tag_info>(4, "Float", nullptr));
-	v.push_back(std::make_unique<tag_info>(5, "String", string_const.get()));
-	v.push_back(std::make_unique<tag_info>(6, "Variant", variant_const.get()));
-	v.push_back(std::make_unique<tag_info>(7, "List", nullptr));
-	v.push_back(std::make_unique<tag_info>(8, "Map", nullptr));
-	v.push_back(std::make_unique<tag_info>(9, "Iter", nullptr));
-	v.push_back(std::make_unique<tag_info>(10, "Ref", nullptr));
-	v.push_back(std::make_unique<tag_info>(11, "Task", nullptr));
-	v.push_back(std::move(string_const));
-	v.push_back(std::move(variant_const));
-	return v;
-}());
+extern std::vector<std::unique_ptr<tag_info>> tag_list;
 
 struct tag_map_info : public amx::extra
 {
@@ -75,7 +55,7 @@ tag_ptr tags::find_tag(const char *name, size_t sublen)
 		base = find_tag(name, pos);
 	}
 	cell id = ::tag_list.size();
-	::tag_list.push_back(std::make_unique<tag_info>(id, std::move(tag_name), base));
+	::tag_list.push_back(std::make_unique<tag_info>(id, std::move(tag_name), base, new_dynamic_ops(id)));
 	return ::tag_list[id].get();
 }
 
@@ -139,7 +119,7 @@ tag_ptr tags::new_tag(const char *name, cell base_id)
 	tag_name.append(1, '+');
 
 	cell id = ::tag_list.size();
-	auto tag = std::make_unique<tag_info>(id, std::move(tag_name), base);
+	auto tag = std::make_unique<tag_info>(id, std::move(tag_name), base, new_dynamic_ops(id));
 	tag->name.append(std::to_string(reinterpret_cast<std::uintptr_t>(tag.get())));
 	while(find_existing_tag(tag->name.c_str())->uid != tag_unknown)
 	{
@@ -150,7 +130,7 @@ tag_ptr tags::new_tag(const char *name, cell base_id)
 	return ptr;
 }
 
-tag_info::tag_info(cell uid, std::string &&name, tag_ptr base) : uid(uid), name(std::move(name)), base(base)
+tag_info::tag_info(cell uid, std::string &&name, tag_ptr base, std::unique_ptr<tag_operations> &&ops) : uid(uid), name(std::move(name)), base(base), ops(std::move(ops))
 {
 
 }
