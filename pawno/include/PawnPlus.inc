@@ -76,13 +76,16 @@
 #define TagTags _,tag_uid
 #define TagTag {TagTags}
 
+#if !defined PP_ALL_TAGS
 #define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map
 #if defined PP_ADDITIONAL_TAGS
-#define AnyTags PP_ALL_TAGS,PP_ADDITIONAL_TAGS
+#define AnyTag {PP_ALL_TAGS,PP_ADDITIONAL_TAGS}
 #else
-#define AnyTags PP_ALL_TAGS
+#define AnyTag {PP_ALL_TAGS}
 #endif
-#define AnyTag {AnyTags}
+#else
+#define AnyTag {PP_ALL_TAGS}
+#endif
 
 
 /*                 */
