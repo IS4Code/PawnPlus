@@ -1,10 +1,12 @@
 #include "tags.h"
+#include "main.h"
 #include "modules/strings.h"
 #include "modules/variants.h"
 #include "modules/containers.h"
 #include "modules/tasks.h"
 #include "objects/stored_param.h"
 #include "fixes/linux.h"
+#include "utils/optional.h"
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -1149,6 +1151,34 @@ class dynamic_operations : public null_operations, public tag_control
 		amx::handle _amx;
 		std::vector<stored_param> _args;
 		std::string _handler;
+		aux::optional<int> _index;
+
+		bool handler_index(AMX *amx, int &index)
+		{
+			if(this->_index.has_value())
+			{
+				index = this->_index.value();
+
+				int len;
+				amx_NameLength(amx, &len);
+				char *funcname = static_cast<char*>(alloca(len + 1));
+
+				if(amx_GetPublic(amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(_handler.c_str(), funcname))
+				{
+					return true;
+				}else if(amx_FindPublic(amx, _handler.c_str(), &index) == AMX_ERR_NONE)
+				{
+					this->_index = index;
+					return true;
+				}
+			}else if(amx_FindPublic(amx, _handler.c_str(), &index) == AMX_ERR_NONE)
+			{
+				this->_index = index;
+				return true;
+			}
+			logwarn(amx, "[PP] Tag operation handler %s was not found.", _handler.c_str());
+			return false;
+		}
 
 	public:
 		op_handler() = default;
@@ -1167,7 +1197,7 @@ class dynamic_operations : public null_operations, public tag_control
 			}
 		}
 
-		cell invoke(tag_ptr tag, cell *args, size_t numargs) const
+		cell invoke(tag_ptr tag, cell *args, size_t numargs)
 		{
 			if(auto lock = _amx.lock())
 			{
@@ -1175,7 +1205,7 @@ class dynamic_operations : public null_operations, public tag_control
 				{
 					auto amx = lock->get();
 					int pub;
-					if(amx_FindPublic(amx, _handler.c_str(), &pub) == AMX_ERR_NONE)
+					if(handler_index(amx, pub))
 					{
 						for(size_t i = 1; i <= numargs; i++)
 						{
@@ -1196,20 +1226,20 @@ class dynamic_operations : public null_operations, public tag_control
 			return 0;
 		}
 
-		cell invoke(tag_ptr tag, cell arg1, cell arg2) const
+		cell invoke(tag_ptr tag, cell arg1, cell arg2)
 		{
 			cell args[2] = {arg1, arg2};
 			return invoke(tag, args, 2);
 		}
 
-		cell invoke(tag_ptr tag, cell arg) const
+		cell invoke(tag_ptr tag, cell arg)
 		{
 			return invoke(tag, &arg, 1);
 		}
 	};
 
 	bool _locked = false;
-	std::unordered_map<op_type, op_handler> dyn_ops;
+	std::unordered_map<op_type, std::unique_ptr<op_handler>> dyn_ops;
 
 public:
 	dynamic_operations(cell tag_uid) : null_operations(tag_uid)
@@ -1220,9 +1250,9 @@ public:
 	cell op_bin(tag_ptr tag, op_type op, cell a, cell b) const
 	{
 		auto it = dyn_ops.find(op);
-		if(it != dyn_ops.end())
+		if(it != dyn_ops.end() && it->second)
 		{
-			return it->second.invoke(tag, a, b);
+			return it->second->invoke(tag, a, b);
 		}
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
@@ -1233,9 +1263,9 @@ public:
 	cell op_un(tag_ptr tag, op_type op, cell a) const
 	{
 		auto it = dyn_ops.find(op);
-		if(it != dyn_ops.end())
+		if(it != dyn_ops.end() && it->second)
 		{
-			return it->second.invoke(tag, a);
+			return it->second->invoke(tag, a);
 		}
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
@@ -1272,6 +1302,16 @@ public:
 		return op_un(tag, op_type::neg, a);
 	}
 
+	virtual cell inc(tag_ptr tag, cell a) const override
+	{
+		return op_un(tag, op_type::inc, a);
+	}
+
+	virtual cell dec(tag_ptr tag, cell a) const override
+	{
+		return op_un(tag, op_type::dec, a);
+	}
+
 	virtual bool eq(tag_ptr tag, cell a, cell b) const override
 	{
 		return op_bin(tag, op_type::eq, a, b);
@@ -1285,9 +1325,9 @@ public:
 	virtual bool free(tag_ptr tag, cell arg) const override
 	{
 		auto it = dyn_ops.find(op_type::free);
-		if(it != dyn_ops.end())
+		if(it != dyn_ops.end() && it->second)
 		{
-			return it->second.invoke(tag, arg);
+			return it->second->invoke(tag, arg);
 		}
 		return del(tag, arg);
 	}
@@ -1295,12 +1335,12 @@ public:
 	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const override
 	{
 		auto it = dyn_ops.find(op_type::collect);
-		if(it != dyn_ops.end())
+		if(it != dyn_ops.end() && it->second)
 		{
 			bool ok = false;
 			for(cell i = 0; i < size; i++)
 			{
-				if(it->second.invoke(tag, arg[i])) ok = true;
+				if(it->second->invoke(tag, arg[i])) ok = true;
 			}
 			return ok;
 		}
@@ -1320,9 +1360,9 @@ public:
 	virtual cell clone(tag_ptr tag, cell arg) const override
 	{
 		auto it = dyn_ops.find(op_type::clone);
-		if(it != dyn_ops.end())
+		if(it != dyn_ops.end() && it->second)
 		{
-			return it->second.invoke(tag, arg);
+			return it->second->invoke(tag, arg);
 		}
 		return copy(tag, arg);
 	}
@@ -1330,11 +1370,11 @@ public:
 	virtual bool assign(tag_ptr tag, cell *arg, cell size) const override
 	{
 		auto it = dyn_ops.find(op_type::assign);
-		if(it != dyn_ops.end())
+		if(it != dyn_ops.end() && it->second)
 		{
 			for(cell i = 0; i < size; i++)
 			{
-				arg[i] = it->second.invoke(tag, arg[i]);
+				arg[i] = it->second->invoke(tag, arg[i]);
 			}
 			return true;
 		}
@@ -1349,11 +1389,11 @@ public:
 	virtual bool init(tag_ptr tag, cell *arg, cell size) const override
 	{
 		auto it = dyn_ops.find(op_type::init);
-		if(it != dyn_ops.end())
+		if(it != dyn_ops.end() && it->second)
 		{
 			for(cell i = 0; i < size; i++)
 			{
-				arg[i] = it->second.invoke(tag, arg[i]);
+				arg[i] = it->second->invoke(tag, arg[i]);
 			}
 			return true;
 		}
@@ -1374,7 +1414,7 @@ public:
 	{
 		if(_locked) return false;
 		try {
-			dyn_ops[type] = op_handler(type, amx, handler, add_format, args, numargs);
+			dyn_ops[type] = std::make_unique<op_handler>(type, amx, handler, add_format, args, numargs);
 		}catch(std::nullptr_t)
 		{
 			return false;
@@ -1414,9 +1454,9 @@ public:
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		auto it = dyn_ops.find(op_type::string);
-		if(it != dyn_ops.end())
+		if(it != dyn_ops.end() && it->second)
 		{
-			cell result = it->second.invoke(tag, arg);
+			cell result = it->second->invoke(tag, arg);
 			cell_string *ptr;
 			if(strings::pool.get_by_id(result, ptr))
 			{
@@ -1432,9 +1472,9 @@ public:
 	virtual cell call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const override
 	{
 		auto it = dyn_ops.find(type);
-		if(it != dyn_ops.end())
+		if(it != dyn_ops.end() && it->second)
 		{
-			return it->second.invoke(tag, args, numargs);
+			return it->second->invoke(tag, args, numargs);
 		}
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
