@@ -72,8 +72,8 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 	amx_StrParam(amx, params[2], format);
 
 	if(fname == nullptr) return -1;
-
-	int numargs = format == nullptr ? 0 : std::strlen(format);
+	if(format == nullptr) format = "";
+	int numargs = std::strlen(format);
 	if(numargs > 0 && format[numargs - 1] == '+')
 	{
 		numargs--;
