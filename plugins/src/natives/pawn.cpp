@@ -244,19 +244,19 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 namespace Natives
 {
 	// native pawn_call_native(const function[], const format[], AnyTag:...);
-	static cell AMX_NATIVE_CALL pawn_call_native(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_call_native, 2)
 	{
 		return pawn_call<true>(amx, params);
 	}
 
 	// native pawn_call_public(const function[], const format[], AnyTag:...);
-	static cell AMX_NATIVE_CALL pawn_call_public(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_call_public, 2)
 	{
 		return pawn_call<false>(amx, params);
 	}
 
 	// native CallbackHandler:pawn_register_callback(const callback[], const function[], handler_flags:flags=handler_default, const additional_format[], AnyTag:...);
-	static cell AMX_NATIVE_CALL pawn_register_callback(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_register_callback, 2)
 	{
 		char *callback;
 		amx_StrParam(amx, params[1], callback);
@@ -285,13 +285,13 @@ namespace Natives
 	}
 
 	// native pawn_unregister_callback(CallbackHandler:id);
-	static cell AMX_NATIVE_CALL pawn_unregister_callback(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_unregister_callback, 1)
 	{
 		return static_cast<cell>(events::remove_callback(amx, params[1]));
 	}
 
 	// native NativeHook:pawn_add_hook(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
-	static cell AMX_NATIVE_CALL pawn_add_hook(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_add_hook, 3)
 	{
 		char *native;
 		amx_StrParam(amx, params[1], native);
@@ -321,7 +321,7 @@ namespace Natives
 	}
 
 	// native NativeHook:pawn_add_filter(const function[], const format[], const handler[], filter_type:type=filter_in, const additional_format[]="", AnyTag:...);
-	static cell AMX_NATIVE_CALL pawn_add_filter(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_add_filter, 3)
 	{
 		char *native;
 		amx_StrParam(amx, params[1], native);
@@ -353,13 +353,13 @@ namespace Natives
 	}
 
 	// native pawn_remove_hook(NativeHook:id);
-	static cell AMX_NATIVE_CALL pawn_remove_hook(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_remove_hook, 1)
 	{
 		return static_cast<cell>(amxhook::remove_hook(amx, params[1]));
 	}
 
 	// native Guard:pawn_guard(AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL pawn_guard(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_guard, 2)
 	{
 		auto obj = dyn_object(amx, params[1], params[2]);
 		if(obj.get_tag()->inherits_from(tags::tag_cell))
@@ -370,7 +370,7 @@ namespace Natives
 	}
 
 	// native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL pawn_guard_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_guard_arr, 3)
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
@@ -383,14 +383,14 @@ namespace Natives
 	}
 
 	// native bool:pawn_guard_valid(Guard:guard);
-	static cell AMX_NATIVE_CALL pawn_guard_valid(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_guard_valid, 1)
 	{
 		dyn_object *obj;
 		return guards::get_by_id(amx, params[1], obj);
 	}
 
 	// native bool:pawn_guard_free(Guard:guard);
-	static cell AMX_NATIVE_CALL pawn_guard_free(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_guard_free, 1)
 	{
 		dyn_object *obj;
 		if(guards::get_by_id(amx, params[1], obj))
@@ -401,7 +401,7 @@ namespace Natives
 	}
 	
 	// native List:pawn_get_args(const format[], bool:byref=false, level=0);
-	static cell AMX_NATIVE_CALL pawn_get_args(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pawn_get_args, 1)
 	{
 		char *format;
 		amx_StrParam(amx, params[1], format);
@@ -411,7 +411,7 @@ namespace Natives
 			numargs--;
 		}
 
-		bool byref = params[2];
+		bool byref = optparam(2, 0);
 
 		auto hdr = (AMX_HEADER *)amx->base;
 		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;

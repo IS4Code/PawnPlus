@@ -8,10 +8,16 @@ typedef void(*logprintf_t)(const char* format, ...);
 extern logprintf_t logprintf;
 
 template <class... Args>
-void logerror(AMX *amx, const char *format, Args&&... args)
+void logerror(AMX *amx, int error, const char *format, Args&&... args)
 {
 	logprintf(format, std::forward<Args>(args)...);
-	amx_RaiseError(amx, AMX_ERR_NATIVE);
+	amx_RaiseError(amx, error);
+}
+
+template <class... Args>
+void logerror(AMX *amx, const char *format, Args&&... args)
+{
+	return logerror(amx, AMX_ERR_NATIVE, format, std::forward<Args>(args)...);
 }
 
 template <class... Args>

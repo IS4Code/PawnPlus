@@ -7,35 +7,35 @@
 namespace Natives
 {
 	// native thread_detach(sync_flags:flags);
-	static cell AMX_NATIVE_CALL thread_detach(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(thread_detach, 1)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnDetach | (SleepReturnValueMask & params[1]);
 	}
 
 	// native thread_attach();
-	static cell AMX_NATIVE_CALL thread_attach(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(thread_attach, 0)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnAttach;
 	}
 
 	// native thread_sync();
-	static cell AMX_NATIVE_CALL thread_sync(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(thread_sync, 0)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnSync;
 	}
 
 	// native thread_sleep(ms);
-	static cell AMX_NATIVE_CALL thread_sleep(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(thread_sleep, 1)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(params[1]));
 		return 0;
 	}
 
 	// native thread_id(id[], size=sizeof id);
-	static cell AMX_NATIVE_CALL thread_id(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(thread_id, 2)
 	{
 		std::ostringstream buf;
 		buf << std::this_thread::get_id();
@@ -47,7 +47,7 @@ namespace Natives
 	}
 
 	// native String:thread_id_s();
-	static cell AMX_NATIVE_CALL thread_id_s(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(thread_id_s, 0)
 	{
 		std::ostringstream buf;
 		buf << std::this_thread::get_id();

@@ -12,7 +12,7 @@ typedef strings::cell_string cell_string;
 namespace Natives
 {
 	// native String:str_new(const str[], str_create_mode:mode=str_preserve);
-	static cell AMX_NATIVE_CALL str_new(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_new, 1)
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
@@ -22,7 +22,7 @@ namespace Natives
 	}
 
 	// native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=str_preserve);
-	static cell AMX_NATIVE_CALL str_new_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_new_arr, 2)
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
@@ -32,7 +32,7 @@ namespace Natives
 	}
 
 	// native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
-	static cell AMX_NATIVE_CALL str_new_static(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_new_static, 3)
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
@@ -44,14 +44,14 @@ namespace Natives
 	}
 
 	// native String:str_new_buf(size);
-	static cell AMX_NATIVE_CALL str_new_buf(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_new_buf, 1)
 	{
 		cell size = params[1];
 		return strings::pool.get_id(strings::pool.add(cell_string(size - 1, 0), true));
 	}
 
 	// native AmxString:str_addr(StringTag:str);
-	static cell AMX_NATIVE_CALL str_addr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_addr, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
@@ -59,7 +59,7 @@ namespace Natives
 	}
 
 	// native AmxStringBuffer:str_buf_addr(StringTag:str);
-	static cell AMX_NATIVE_CALL str_buf_addr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_buf_addr, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
@@ -67,7 +67,7 @@ namespace Natives
 	}
 
 	// native GlobalString:str_to_global(StringTag:str);
-	static cell AMX_NATIVE_CALL str_to_global(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_to_global, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -76,7 +76,7 @@ namespace Natives
 	}
 
 	// native String:str_to_local(StringTag:str);
-	static cell AMX_NATIVE_CALL str_to_local(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_to_local, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -85,7 +85,7 @@ namespace Natives
 	}
 
 	// native bool:str_delete(StringTag:str);
-	static cell AMX_NATIVE_CALL str_delete(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_delete, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -93,14 +93,14 @@ namespace Natives
 	}
 
 	// native bool:str_valid(StringTag:str);
-	static cell AMX_NATIVE_CALL str_valid(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_valid, 1)
 	{
 		cell_string *str;
 		return strings::pool.get_by_id(params[1], str);
 	}
 
 	// native String:str_clone(StringTag:str);
-	static cell AMX_NATIVE_CALL str_clone(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_clone, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -109,7 +109,7 @@ namespace Natives
 
 
 	// native String:str_cat(StringTag:str1, StringTag:str2);
-	static cell AMX_NATIVE_CALL str_cat(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_cat, 2)
 	{
 		cell_string *str1, *str2;
 		if((!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) || (!strings::pool.get_by_id(params[2], str2) && str2 != nullptr))
@@ -134,14 +134,14 @@ namespace Natives
 	}
 
 	// native String:str_val(AnyTag:val, tag=tagof(value));
-	static cell AMX_NATIVE_CALL str_val(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_val, 2)
 	{
 		dyn_object obj{amx, params[1], params[2]};
 		return strings::pool.get_id(strings::pool.add(obj.to_string(), true));
 	}
 
 	// native String:str_val_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL str_val_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_val_arr, 3)
 	{
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
@@ -191,7 +191,7 @@ namespace Natives
 	}
 
 	// native List:str_split(StringTag:str, const delims[]);
-	static cell AMX_NATIVE_CALL str_split(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_split, 2)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
@@ -206,7 +206,7 @@ namespace Natives
 	}
 
 	// native List:str_split_s(StringTag:str, StringTag:delims);
-	static cell AMX_NATIVE_CALL str_split_s(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_split_s, 2)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
@@ -243,7 +243,7 @@ namespace Natives
 	}
 
 	// native String:str_join(List:list, const delim[]);
-	static cell AMX_NATIVE_CALL str_join(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_join, 2)
 	{
 		list_t *list;
 		if(!list_pool.get_by_id(params[1], list)) return 0;
@@ -254,7 +254,7 @@ namespace Natives
 	}
 
 	// native String:str_join_s(List:list, StringTag:delim);
-	static cell AMX_NATIVE_CALL str_join_s(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_join_s, 2)
 	{
 		list_t *list;
 		if(!list_pool.get_by_id(params[1], list)) return 0;
@@ -269,7 +269,7 @@ namespace Natives
 	}
 
 	// native str_len(StringTag:str);
-	static cell AMX_NATIVE_CALL str_len(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_len, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -277,7 +277,7 @@ namespace Natives
 	}
 
 	// native str_get(StringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
-	static cell AMX_NATIVE_CALL str_get(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_get, 3)
 	{
 		if(params[3] == 0) return 0;
 
@@ -317,7 +317,7 @@ namespace Natives
 	}
 
 	// native str_getc(StringTag:str, pos);
-	static cell AMX_NATIVE_CALL str_getc(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_getc, 2)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0xFFFFFF00;
@@ -330,7 +330,7 @@ namespace Natives
 	}
 
 	// native str_setc(StringTag:str, pos, value);
-	static cell AMX_NATIVE_CALL str_setc(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_setc, 3)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0xFFFFFF00;
@@ -345,7 +345,7 @@ namespace Natives
 	}
 
 	// native String:str_set(StringTag:target, StringTag:other);
-	static cell AMX_NATIVE_CALL str_set(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_set, 2)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1)) return 0;
@@ -362,7 +362,7 @@ namespace Natives
 	}
 
 	// native String:str_append(StringTag:target, StringTag:other);
-	static cell AMX_NATIVE_CALL str_append(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_append, 2)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1)) return 0;
@@ -376,7 +376,7 @@ namespace Natives
 	}
 
 	// native String:str_ins(StringTag:target, StringTag:other, pos);
-	static cell AMX_NATIVE_CALL str_ins(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_ins, 3)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1)) return 0;
@@ -391,7 +391,7 @@ namespace Natives
 	}
 
 	// native String:str_del(StringTag:target, start=0, end=cellmax);
-	static cell AMX_NATIVE_CALL str_del(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_del, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -410,7 +410,7 @@ namespace Natives
 	}
 
 	// native String:str_sub(StringTag:str, start=0, end=cellmax);
-	static cell AMX_NATIVE_CALL str_sub(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_sub, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
@@ -428,7 +428,7 @@ namespace Natives
 	}
 
 	// native bool:str_cmp(StringTag:str1, StringTag:str2);
-	static cell AMX_NATIVE_CALL str_cmp(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_cmp, 2)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) return 0;
@@ -448,7 +448,7 @@ namespace Natives
 	}
 
 	// native bool:str_empty(StringTag:str);
-	static cell AMX_NATIVE_CALL str_empty(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_empty, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
@@ -457,7 +457,7 @@ namespace Natives
 	}
 
 	// native bool:str_eq(StringTag:str1, StringTag:str2);
-	static cell AMX_NATIVE_CALL str_eq(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_eq, 2)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) return 0;
@@ -477,7 +477,7 @@ namespace Natives
 	}
 
 	// native str_findc(StringTag:str, value, offset=0);
-	static cell AMX_NATIVE_CALL str_findc(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_findc, 2)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
@@ -489,7 +489,7 @@ namespace Natives
 	}
 
 	// native str_find(StringTag:str, StringTag:value, offset=0);
-	static cell AMX_NATIVE_CALL str_find(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_find, 2)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) return 0;
@@ -504,7 +504,7 @@ namespace Natives
 	}
 
 	// native String:str_clear(StringTag:str);
-	static cell AMX_NATIVE_CALL str_clear(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_clear, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
@@ -513,7 +513,7 @@ namespace Natives
 	}
 
 	// native String:str_resize(StringTag:str, capacity, padding=0);
-	static cell AMX_NATIVE_CALL str_resize(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_resize, 2)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -522,7 +522,7 @@ namespace Natives
 	}
 
 	// native String:str_format(const format[], {StringTags,Float,_}:...);
-	static cell AMX_NATIVE_CALL str_format(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_format, 1)
 	{
 		cell *format;
 		amx_GetAddr(amx, params[1], &format);
@@ -535,7 +535,7 @@ namespace Natives
 	}
 
 	// native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
-	static cell AMX_NATIVE_CALL str_format_s(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_format_s, 1)
 	{
 		cell_string *strformat;
 		if(!strings::pool.get_by_id(params[1], strformat) && strformat != nullptr) return 0;
@@ -548,7 +548,7 @@ namespace Natives
 	}
 
 	// native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
-	static cell AMX_NATIVE_CALL str_set_format(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_set_format, 2)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -565,7 +565,7 @@ namespace Natives
 	}
 
 	// native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,Float,_}:...);
-	static cell AMX_NATIVE_CALL str_set_format_s(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_set_format_s, 2)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -593,7 +593,7 @@ namespace Natives
 	}
 
 	// native String:str_to_lower(StringTag:str);
-	static cell AMX_NATIVE_CALL str_to_lower(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_to_lower, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -603,7 +603,7 @@ namespace Natives
 	}
 
 	// native String:str_to_upper(StringTag:str);
-	static cell AMX_NATIVE_CALL str_to_upper(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_to_upper, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -613,7 +613,7 @@ namespace Natives
 	}
 
 	// native String:str_set_to_lower(StringTag:str);
-	static cell AMX_NATIVE_CALL str_set_to_lower(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_set_to_lower, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
@@ -622,7 +622,7 @@ namespace Natives
 	}
 
 	// native String:str_set_to_upper(StringTag:str);
-	static cell AMX_NATIVE_CALL str_set_to_upper(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(str_set_to_upper, 1)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;

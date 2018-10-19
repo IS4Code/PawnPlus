@@ -14,21 +14,22 @@ public:
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL linked_list_add(AMX *amx, cell *params)
 	{
-		if(params[3] < -1) return -1;
+		cell index = optparam(3, -1);
+		if(index < -1) return -1;
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return -1;
-		if(params[3] == -1)
+		if(index == -1)
 		{
 			ptr->push_back(Factory(amx, params[Indices]...));
 			return static_cast<cell>(ptr->size() - 1);
-		}else if(static_cast<ucell>(params[3]) > ptr->size())
+		}else if(static_cast<ucell>(index) > ptr->size())
 		{
 			return -1;
 		}else{
 			auto it = ptr->begin();
-			std::advance(it, params[3]);
+			std::advance(it, index);
 			ptr->insert(it, Factory(amx, params[Indices]...));
-			return params[3];
+			return index;
 		}
 	}
 
@@ -72,13 +73,13 @@ static cell AMX_NATIVE_CALL linked_list_set_cell(AMX *amx, cell *params)
 namespace Natives
 {
 	// native LinkedList:linked_list_new();
-	static cell AMX_NATIVE_CALL linked_list_new(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_new, 0)
 	{
 		return linked_list_pool.get_id(linked_list_pool.add());
 	}
 
 	// native LinkedList:linked_list_new_arr(AnyTag:values[], size=sizeof(values), tag_id=tagof(values));
-	static cell AMX_NATIVE_CALL linked_list_new_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_new_arr, 3)
 	{
 		auto ptr = linked_list_pool.add();
 		cell *arr;
@@ -92,7 +93,7 @@ namespace Natives
 	}
 
 	// native LinkedList:linked_list_new_args(tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...);
-	static cell AMX_NATIVE_CALL linked_list_new_args(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_new_args, 0)
 	{
 		auto ptr = linked_list_pool.add();
 		cell numargs = (params[0] / sizeof(cell)) - 1;
@@ -111,7 +112,7 @@ namespace Natives
 	}
 
 	// native LinkedList:linked_list_new_args_str(arg0[], ...);
-	static cell AMX_NATIVE_CALL linked_list_new_args_str(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_new_args_str, 0)
 	{
 		auto ptr = linked_list_pool.add();
 		cell numargs = params[0] / sizeof(cell);
@@ -125,7 +126,7 @@ namespace Natives
 	}
 
 	// native LinkedList:linked_list_new_args_var(VariantTag:arg0, VariantTag:...);
-	static cell AMX_NATIVE_CALL linked_list_new_args_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_new_args_var, 0)
 	{
 		auto ptr = linked_list_pool.add();
 		cell numargs = params[0] / sizeof(cell);
@@ -144,14 +145,14 @@ namespace Natives
 	}
 
 	// native bool:linked_list_valid(LinkedList:linked_list);
-	static cell AMX_NATIVE_CALL linked_list_valid(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_valid, 1)
 	{
 		linked_list_t *ptr;
 		return linked_list_pool.get_by_id(params[1], ptr);
 	}
 
 	// native bool:linked_list_delete(LinkedList:linked_list);
-	static cell AMX_NATIVE_CALL linked_list_delete(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_delete, 1)
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return 0;
@@ -159,7 +160,7 @@ namespace Natives
 	}
 
 	// native bool:linked_list_delete_deep(LinkedList:linked_list);
-	static cell AMX_NATIVE_CALL linked_list_delete_deep(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_delete_deep, 1)
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return 0;
@@ -171,7 +172,7 @@ namespace Natives
 	}
 
 	// native LinkedList:linked_list_clone(LinkedList:linked_list);
-	static cell AMX_NATIVE_CALL linked_list_clone(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_clone, 1)
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return 0;
@@ -184,7 +185,7 @@ namespace Natives
 	}
 
 	// native linked_list_size(LinkedList:linked_list);
-	static cell AMX_NATIVE_CALL linked_list_size(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_size, 1)
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return -1;
@@ -192,7 +193,7 @@ namespace Natives
 	}
 
 	// native linked_list_clear(LinkedList:linked_list);
-	static cell AMX_NATIVE_CALL linked_list_clear(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_clear, 1)
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return 0;
@@ -201,31 +202,31 @@ namespace Natives
 	}
 
 	// native linked_list_add(LinkedList:linked_list, AnyTag:value, index=-1, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL linked_list_add(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_add, 4)
 	{
 		return value_at<2, 4>::linked_list_add<dyn_func>(amx, params);
 	}
 
 	// native linked_list_add_arr(LinkedList:linked_list, const AnyTag:value[], index=-1, size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL linked_list_add_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_add_arr, 5)
 	{
 		return value_at<2, 4, 5>::linked_list_add<dyn_func_arr>(amx, params);
 	}
 
 	// native linked_list_add_str(LinkedList:linked_list, const value[], index=-1);
-	static cell AMX_NATIVE_CALL linked_list_add_str(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_add_str, 2)
 	{
 		return value_at<2>::linked_list_add<dyn_func_str>(amx, params);
 	}
 
 	// native linked_list_add_var(LinkedList:linked_list, VariantTag:value, index=-1);
-	static cell AMX_NATIVE_CALL linked_list_add_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_add_var, 2)
 	{
 		return value_at<2>::linked_list_add<dyn_func_var>(amx, params);
 	}
 
 	// native linked_list_add_linked_list(LinkedList:linked_list, LinkedList:range, index=-1);
-	static cell AMX_NATIVE_CALL linked_list_add_linked_list(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_add_linked_list, 2)
 	{
 		if(params[3] < -1) return -1;
 		linked_list_t *ptr;
@@ -249,7 +250,7 @@ namespace Natives
 	}
 
 	// native linked_list_add_args(tag_id=tagof(arg0), LinkedList:linked_list, AnyTag:arg0, AnyTag:...);
-	static cell AMX_NATIVE_CALL linked_list_add_args(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_add_args, 2)
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[2], ptr)) return -1;
@@ -269,7 +270,7 @@ namespace Natives
 	}
 
 	// native linked_list_add_args_str(LinkedList:linked_list, arg0[], ...);
-	static cell AMX_NATIVE_CALL linked_list_add_args_str(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_add_args_str, 1)
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return -1;
@@ -284,7 +285,7 @@ namespace Natives
 	}
 
 	// native linked_list_add_args_var(LinkedList:linked_list, VariantTag:arg0, VariantTag:...);
-	static cell AMX_NATIVE_CALL linked_list_add_args_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_add_args_var, 1)
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return -1;
@@ -304,7 +305,7 @@ namespace Natives
 	}
 
 	// native bool:linked_list_remove(LinkedList:linked_list, index);
-	static cell AMX_NATIVE_CALL linked_list_remove(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_remove, 2)
 	{
 		if(params[2] < 0) return 0;
 		linked_list_t *ptr;
@@ -317,73 +318,73 @@ namespace Natives
 	}
 
 	// native linked_list_get(LinkedList:linked_list, index, offset=0);
-	static cell AMX_NATIVE_CALL linked_list_get(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_get, 3)
 	{
 		return value_at<3>::linked_list_get<dyn_func>(amx, params);
 	}
 
 	// native linked_list_get_arr(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value));
-	static cell AMX_NATIVE_CALL linked_list_get_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_get_arr, 4)
 	{
 		return value_at<3, 4>::linked_list_get<dyn_func_arr>(amx, params);
 	}
 
 	// native Variant:linked_list_get_var(LinkedList:linked_list, index);
-	static cell AMX_NATIVE_CALL linked_list_get_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_get_var, 2)
 	{
 		return value_at<>::linked_list_get<dyn_func_var>(amx, params);
 	}
 
 	// native bool:linked_list_get_safe(LinkedList:linked_list, index, &AnyTag:value, offset=0, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL linked_list_get_safe(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_get_safe, 5)
 	{
 		return value_at<3, 4, 5>::linked_list_get<dyn_func>(amx, params);
 	}
 
 	// native linked_list_get_arr_safe(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL linked_list_get_arr_safe(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_get_arr_safe, 5)
 	{
 		return value_at<3, 4, 5>::linked_list_get<dyn_func_arr>(amx, params);
 	}
 
 	// native linked_list_set(LinkedList:linked_list, index, AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL linked_list_set(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_set, 4)
 	{
 		return value_at<3, 4>::linked_list_set<dyn_func>(amx, params);
 	}
 
 	// native linked_list_set_arr(LinkedList:linked_list, index, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL linked_list_set_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_set_arr, 5)
 	{
 		return value_at<3, 4, 5>::linked_list_set<dyn_func_arr>(amx, params);
 	}
 
 	// native linked_list_set_str(LinkedList:linked_list, index, const value[]);
-	static cell AMX_NATIVE_CALL linked_list_set_str(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_set_str, 3)
 	{
 		return value_at<3>::linked_list_set<dyn_func_str>(amx, params);
 	}
 
 	// native linked_list_set_var(LinkedList:linked_list, index, VariantTag:value);
-	static cell AMX_NATIVE_CALL linked_list_set_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_set_var, 3)
 	{
 		return value_at<3>::linked_list_set<dyn_func_var>(amx, params);
 	}
 
 	// native linked_list_set_cell(LinkedList:linked_list, index, offset, AnyTag:value);
-	static cell AMX_NATIVE_CALL linked_list_set_cell(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_set_cell, 4)
 	{
 		return ::linked_list_set_cell(amx, params);
 	}
 
 	// native bool:linked_list_set_cell_safe(LinkedList:linked_list, index, offset, AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL linked_list_set_cell_safe(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_set_cell_safe, 5)
 	{
 		return ::linked_list_set_cell<5>(amx, params);
 	}
 
 	// native linked_list_tagof(LinkedList:linked_list, index);
-	static cell AMX_NATIVE_CALL linked_list_tagof(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_tagof, 2)
 	{
 		if(params[2] < 0) return 0;
 		linked_list_t *ptr;
@@ -394,7 +395,7 @@ namespace Natives
 	}
 
 	// native linked_list_sizeof(LinkedList:linked_list, index);
-	static cell AMX_NATIVE_CALL linked_list_sizeof(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_sizeof, 2)
 	{
 		if(params[2] < 0) return 0;
 		linked_list_t *ptr;

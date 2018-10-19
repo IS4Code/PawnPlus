@@ -11,69 +11,69 @@
 namespace Natives
 {
 	// native pp_hook_strlen(bool:hook);
-	static cell AMX_NATIVE_CALL pp_hook_strlen(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_hook_strlen, 1)
 	{
 		Hooks::ToggleStrLen(static_cast<bool>(params[1]));
 		return 1;
 	}
 
 	// native pp_hook_check_ref_args(bool:hook);
-	static cell AMX_NATIVE_CALL pp_hook_check_ref_args(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_hook_check_ref_args, 1)
 	{
 		Hooks::ToggleRefArgs(static_cast<bool>(params[1]));
 		return 1;
 	}
 
 	// native pp_num_tasks();
-	static cell AMX_NATIVE_CALL pp_num_tasks(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_tasks, 0)
 	{
 		return tasks::size();
 	}
 
 	// native pp_num_local_strings();
-	static cell AMX_NATIVE_CALL pp_num_local_strings(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_local_strings, 0)
 	{
 		return strings::pool.local_size();
 	}
 
 	// native pp_num_global_strings();
-	static cell AMX_NATIVE_CALL pp_num_global_strings(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_global_strings, 0)
 	{
 		return strings::pool.global_size();
 	}
 
 	// native pp_num_local_variants();
-	static cell AMX_NATIVE_CALL pp_num_local_variants(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_local_variants, 0)
 	{
 		return variants::pool.local_size();
 	}
 
 	// native pp_num_global_variants();
-	static cell AMX_NATIVE_CALL pp_num_global_variants(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_global_variants, 0)
 	{
 		return variants::pool.global_size();
 	}
 
 	// native pp_num_lists();
-	static cell AMX_NATIVE_CALL pp_num_lists(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_lists, 0)
 	{
 		return list_pool.size();
 	}
 
 	// native pp_num_maps();
-	static cell AMX_NATIVE_CALL pp_num_maps(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_maps, 0)
 	{
 		return map_pool.size();
 	}
 
 	// native pp_num_guards();
-	static cell AMX_NATIVE_CALL pp_num_guards(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_guards, 0)
 	{
 		return guards::count(amx);
 	}
 
 	// native String:pp_entry_s();
-	static cell AMX_NATIVE_CALL pp_entry_s(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_entry_s, 0)
 	{
 		if(!amx::has_context(amx)) return 0;
 
@@ -101,26 +101,26 @@ namespace Natives
 	}
 
 	// native pp_num_local_iters();
-	static cell AMX_NATIVE_CALL pp_num_local_iters(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_local_iters, 0)
 	{
 		return iter_pool.local_size();
 	}
 
 	// native pp_num_global_iters();
-	static cell AMX_NATIVE_CALL pp_num_global_iters(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_global_iters, 0)
 	{
 		return iter_pool.global_size();
 	}
 
 	// native pp_collect();
-	static cell AMX_NATIVE_CALL pp_collect(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_collect, 0)
 	{
 		gc_collect();
 		return 0;
 	}
 
 	// native pp_num_natives();
-	static cell AMX_NATIVE_CALL pp_num_natives(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(pp_num_natives, 0)
 	{
 		return amx::num_natives(amx);
 	}

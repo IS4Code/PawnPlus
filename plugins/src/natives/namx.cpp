@@ -7,25 +7,25 @@
 namespace Natives
 {
 	// native AMX:amx_this();
-	static cell AMX_NATIVE_CALL amx_this(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_this, 0)
 	{
 		return reinterpret_cast<cell>(amx);
 	}
 
 	// native Var:amx_var(&AnyTag:var);
-	static cell AMX_NATIVE_CALL amx_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_var, 1)
 	{
 		return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx, params[1], 1)));
 	}
 
 	// native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
-	static cell AMX_NATIVE_CALL amx_var_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_var_arr, 2)
 	{
 		return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx, params[1], params[2])));
 	}
 
 	// native Var:amx_public_var(AMX:amx, const name[]);
-	static cell AMX_NATIVE_CALL amx_public_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_public_var, 2)
 	{
 		if(auto lock = amx::load_lock(reinterpret_cast<AMX*>(params[1])))
 		{
@@ -44,7 +44,7 @@ namespace Natives
 	}
 
 	// native amx_set(Var:var, AnyTag:value, index=0);
-	static cell AMX_NATIVE_CALL amx_set(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_set, 2)
 	{
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))
@@ -55,7 +55,7 @@ namespace Natives
 	}
 
 	// native amx_get(Var:var, index=0);
-	static cell AMX_NATIVE_CALL amx_get(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_get, 1)
 	{
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))
@@ -66,14 +66,14 @@ namespace Natives
 	}
 
 	// native bool:amx_valid(Var:var);
-	static cell AMX_NATIVE_CALL amx_valid(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_valid, 1)
 	{
 		amx_var_info *info;
 		return amx_var_pool.get_by_id(params[1], info);
 	}
 
 	// native bool:amx_delete(Var:var);
-	static cell AMX_NATIVE_CALL amx_delete(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_delete, 1)
 	{
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))
@@ -84,7 +84,7 @@ namespace Natives
 	}
 
 	// native bool:amx_linked(Var:var);
-	static cell AMX_NATIVE_CALL amx_linked(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_linked, 1)
 	{
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))
@@ -95,7 +95,7 @@ namespace Natives
 	}
 
 	// native bool:amx_inside(Var:var);
-	static cell AMX_NATIVE_CALL amx_inside(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_inside, 1)
 	{
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))
@@ -106,7 +106,7 @@ namespace Natives
 	}
 
 	// native amx_sizeof(Var:var);
-	static cell AMX_NATIVE_CALL amx_sizeof(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_sizeof, 1)
 	{
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))
@@ -117,7 +117,7 @@ namespace Natives
 	}
 
 	// native bool:amx_my(Var:var);
-	static cell AMX_NATIVE_CALL amx_my(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_my, 1)
 	{
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))
@@ -128,7 +128,7 @@ namespace Natives
 	}
 
 	// native bool:amx_to_ref(Var:var, ref[1][]);
-	static cell AMX_NATIVE_CALL amx_to_ref(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_to_ref, 2)
 	{
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info) && info->from_amx(amx))
@@ -142,7 +142,7 @@ namespace Natives
 	}
 
 	// native bool:amx_fork(fork_level:level=fork_machine, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
-	static cell AMX_NATIVE_CALL amx_fork(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_fork, 0)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		cell flags = optparam(1, 2) & SleepReturnForkFlagsMethodMask;
@@ -158,35 +158,35 @@ namespace Natives
 	}
 
 	// native amx_commit(bool:context=true);
-	static cell AMX_NATIVE_CALL amx_commit(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_commit, 0)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnForkCommit | (SleepReturnValueMask & optparam(1, 1));
 	}
 
 	// native amx_end_fork();
-	static cell AMX_NATIVE_CALL amx_end_fork(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_end_fork, 0)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnForkEnd;
 	}
 
 	// native amx_error(amx_err:code, result=0);
-	static cell AMX_NATIVE_CALL amx_error(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_error, 1)
 	{
 		amx_RaiseError(amx, params[1]);
 		return optparam(2, 0);
 	}
 
 	// native Var:amx_alloc(size, bool:zero=true);
-	static cell AMX_NATIVE_CALL amx_alloc(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_alloc, 1)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return (optparam(2, 1) ? SleepReturnAllocVarZero : SleepReturnAllocVar) | (SleepReturnValueMask & params[1]);
 	}
 
 	// native bool:amx_free(Var:var);
-	static cell AMX_NATIVE_CALL amx_free(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(amx_free, 1)
 	{
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(params[1], info))

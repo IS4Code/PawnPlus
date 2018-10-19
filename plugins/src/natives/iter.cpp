@@ -120,7 +120,7 @@ static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
 namespace Natives
 {
 	// native Iter:list_iter(List:list);
-	static cell AMX_NATIVE_CALL list_iter(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(list_iter, 1)
 	{
 		std::shared_ptr<list_t> ptr;
 		if(list_pool.get_by_id(params[1], ptr))
@@ -132,7 +132,7 @@ namespace Natives
 	}
 
 	// native Iter:map_iter(Map:map);
-	static cell AMX_NATIVE_CALL map_iter(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(map_iter, 1)
 	{
 		std::shared_ptr<map_t> ptr;
 		if(map_pool.get_by_id(params[1], ptr))
@@ -144,7 +144,7 @@ namespace Natives
 	}
 
 	// native Iter:linked_list_iter(LinkedList:linked_list);
-	static cell AMX_NATIVE_CALL linked_list_iter(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(linked_list_iter, 1)
 	{
 		std::shared_ptr<linked_list_t> ptr;
 		if(linked_list_pool.get_by_id(params[1], ptr))
@@ -156,14 +156,14 @@ namespace Natives
 	}
 
 	// native bool:iter_valid(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_valid(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_valid, 1)
 	{
 		dyn_iterator *iter;
 		return iter_pool.get_by_id(params[1], iter);
 	}
 
 	// native GlobalIterator:str_to_global(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_to_global(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_to_global, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -175,7 +175,7 @@ namespace Natives
 	}
 
 	// native String:str_to_local(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_to_local(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_to_local, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -187,7 +187,7 @@ namespace Natives
 	}
 
 	// native bool:iter_delete(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_delete(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_delete, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -198,7 +198,7 @@ namespace Natives
 	}
 
 	// native bool:iter_linked(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_linked(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_linked, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -209,7 +209,7 @@ namespace Natives
 	}
 
 	// native bool:iter_inside(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_inside(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_inside, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -220,7 +220,7 @@ namespace Natives
 	}
 
 	// native Iterator:iter_erase(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_erase(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_erase, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -232,7 +232,7 @@ namespace Natives
 	}
 
 	// native Iterator:iter_reset(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_reset(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_reset, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -244,7 +244,7 @@ namespace Natives
 	}
 
 	// native Iterator:iter_clone(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_clone(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_clone, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -255,7 +255,7 @@ namespace Natives
 	}
 
 	// native bool:iter_eq(IterTag:iter1, IterTag:iter2);
-	static cell AMX_NATIVE_CALL iter_eq(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_eq, 2)
 	{
 		dyn_iterator *iter1;
 		if(!iter_pool.get_by_id(params[1], iter1)) return 0;
@@ -265,7 +265,7 @@ namespace Natives
 	}
 
 	// native Iterator:iter_move_next(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_move_next(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_move_next, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -277,7 +277,7 @@ namespace Natives
 	}
 
 	// native Iterator:iter_move_previous(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_move_previous(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_move_previous, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -289,7 +289,7 @@ namespace Natives
 	}
 
 	// native Iterator:iter_to_first(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_to_first(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_to_first, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -301,7 +301,7 @@ namespace Natives
 	}
 
 	// native Iterator:iter_to_last(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_to_last(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_to_last, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
@@ -313,121 +313,121 @@ namespace Natives
 	}
 
 	// native iter_get(IterTag:iter, offset=0);
-	static cell AMX_NATIVE_CALL iter_get(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get, 2)
 	{
 		return value_at<2>::iter_get<dyn_func>(amx, params);
 	}
 
 	// native iter_get_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
-	static cell AMX_NATIVE_CALL iter_get_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get_arr, 3)
 	{
 		return value_at<2, 3>::iter_get<dyn_func_arr>(amx, params);
 	}
 
 	// native Variant:iter_get_var(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_get_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get_var, 1)
 	{
 		return value_at<>::iter_get<dyn_func_var>(amx, params);
 	}
 
 	// native bool:iter_get_safe(IterTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_safe(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get_safe, 4)
 	{
 		return value_at<2, 3, 4>::iter_get<dyn_func>(amx, params);
 	}
 
 	// native iter_get_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_arr_safe(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get_arr_safe, 4)
 	{
 		return value_at<2, 3, 4>::iter_get<dyn_func_arr>(amx, params);
 	}
 
 	// native bool:iter_set(IterTag:iter, AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_set(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_set, 3)
 	{
 		return value_at<2, 3>::iter_set<dyn_func>(amx, params);
 	}
 
 	// native bool:iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_set_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_set_arr, 4)
 	{
 		return value_at<2, 3, 4>::iter_set<dyn_func_arr>(amx, params);
 	}
 
 	// native bool:iter_set_str(IterTag:iter, const value[]);
-	static cell AMX_NATIVE_CALL iter_set_str(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_set_str, 2)
 	{
 		return value_at<2>::iter_set<dyn_func_str>(amx, params);
 	}
 
 	// native bool:iter_set_var(IterTag:iter, VariantTag:value);
-	static cell AMX_NATIVE_CALL iter_set_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_set_var, 2)
 	{
 		return value_at<2>::iter_set<dyn_func_var>(amx, params);
 	}
 
 	// native bool:iter_set_cell(IterTag:iter, offset, AnyTag:value);
-	static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_set_cell, 3)
 	{
 		return ::iter_set_cell(amx, params);
 	}
 
 	// native bool:iter_set_cell_safe(IterTag:iter, offset, AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_set_cell_safe(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_set_cell_safe, 4)
 	{
 		return ::iter_set_cell<4>(amx, params);
 	}
 
 	// native bool:iter_insert(IterTag:iter, AnyTag:value, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_insert(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_insert, 3)
 	{
 		return value_at<2, 3>::iter_insert<dyn_func>(amx, params);
 	}
 
 	// native bool:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_insert_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_insert_arr, 4)
 	{
 		return value_at<2, 3, 4>::iter_insert<dyn_func_arr>(amx, params);
 	}
 
 	// native bool:iter_insert_str(IterTag:iter, const value[]);
-	static cell AMX_NATIVE_CALL iter_insert_str(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_insert_str, 2)
 	{
 		return value_at<2>::iter_insert<dyn_func_str>(amx, params);
 	}
 
 	// native bool:iter_insert_var(IterTag:iter, VariantTag:value);
-	static cell AMX_NATIVE_CALL iter_insert_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_insert_var, 2)
 	{
 		return value_at<2>::iter_insert<dyn_func_var>(amx, params);
 	}
 
 	// native iter_get_key(IterTag:iter, offset=0);
-	static cell AMX_NATIVE_CALL iter_get_key(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get_key, 2)
 	{
 		return value_at<2>::iter_get_key<dyn_func>(amx, params);
 	}
 
 	// native iter_get_key_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
-	static cell AMX_NATIVE_CALL iter_get_key_arr(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get_key_arr, 3)
 	{
 		return value_at<2, 3>::iter_get_key<dyn_func_arr>(amx, params);
 	}
 
 	// native Variant:iter_get_key_var(IterTag:iter);
-	static cell AMX_NATIVE_CALL iter_get_key_var(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get_key_var, 1)
 	{
 		return value_at<>::iter_get_key<dyn_func_var>(amx, params);
 	}
 
 	// native bool:iter_get_key_safe(IterTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_key_safe(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get_key_safe, 4)
 	{
 		return value_at<2, 3, 4>::iter_get_key<dyn_func>(amx, params);
 	}
 
 	// native iter_get_key_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	static cell AMX_NATIVE_CALL iter_get_key_arr_safe(AMX *amx, cell *params)
+	AMX_DEFINE_NATIVE(iter_get_key_arr_safe, 4)
 	{
 		return value_at<2, 3, 4>::iter_get_key<dyn_func_arr>(amx, params);
 	}
