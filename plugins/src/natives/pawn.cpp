@@ -271,7 +271,7 @@ namespace Natives
 
 		if(callback == nullptr || fname == nullptr) return -1;
 
-		int ret = events::register_callback(callback, flags, amx, fname, format, params + 4, (params[0] / static_cast<int>(sizeof(cell))) - 3);
+		int ret = events::register_callback(callback, flags, amx, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
 		switch(ret)
 		{
 			case -1:
@@ -339,7 +339,7 @@ namespace Natives
 
 		if(native == nullptr || fname == nullptr) return -1;
 
-		int ret = amxhook::register_filter(amx, output, native, native_format, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
+		int ret = amxhook::register_filter(amx, output, native, native_format, fname, format, params + 6, (params[0] / static_cast<int>(sizeof(cell))) - 5);
 		switch(ret)
 		{
 			case -1:
