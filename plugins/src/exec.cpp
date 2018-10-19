@@ -93,15 +93,16 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 	{
 		cell old_hea = amx->hea, old_stk = amx->stk;
 		ret = amx_ExecOrig(amx, retval, index);
+		bool handled = false;
 		if(ret == AMX_ERR_SLEEP || amx->error == AMX_ERR_SLEEP)
 		{
 			index = AMX_EXEC_CONT;
 
 			amx::object owner;
 			auto &ctx = amx::get_context(amx, owner);
-			tasks::extra info = tasks::get_extra(amx, owner);
+			tasks::extra &info = tasks::get_extra(amx, owner);
 
-			bool handled = true;
+			handled = true;
 
 			switch(amx->pri & SleepReturnTypeMask)
 			{
@@ -117,8 +118,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					if(auto task = info.awaited_task.lock())
 					{
 						if(retval != nullptr) *retval = info.result;
-						task->register_reset(amx::reset(amx, true));
 						info.awaited_task = {};
+						task->register_reset(amx::reset(amx, true));
 					}
 				}
 				break;
@@ -384,6 +385,22 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				amx->hea = old_hea;
 			}
 		}
+
+		if(restore && !handled && ret != AMX_ERR_SLEEP)
+		{
+			amx::object owner;
+			tasks::extra &info = tasks::get_extra(amx, owner);
+			if(auto task = info.bound_task.lock())
+			{
+				if(ret == AMX_ERR_NONE)
+				{
+					task->set_completed(*retval);
+				}else{
+					task->set_faulted(ret);
+				}
+			}
+		}
+
 		break;
 	}
 	amx::pop(amx);

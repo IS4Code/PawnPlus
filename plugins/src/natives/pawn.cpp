@@ -202,7 +202,7 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 					}else{
 						logerror(amx, "[PP] pawn_call_public: + must be the last specifier");
 					}
-					break;
+					return 0;
 				}
 				default:
 				{

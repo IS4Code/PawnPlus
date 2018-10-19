@@ -991,12 +991,9 @@ native task_state:task_wait(Task:task);
 /*
 native task_await(Task:task);
 */
-stock task_await(Task:task)
-{
-    task_wait(task);
-    return task_get_result(task);
-}
+stock task_await(Task:task) return task_wait(task), task_get_result(task);
 native task_yield(AnyTag:value);
+native bool:task_bind(Task:task, const function[], const format[], AnyTag:...);
 
 #define task_state_default (task_state:0)
 #define task_state_completed (task_state:1)

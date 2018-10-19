@@ -1,5 +1,6 @@
 #include "natives.h"
 #include "context.h"
+#include "exec.h"
 #include "modules/tasks.h"
 #include <algorithm>
 
@@ -282,6 +283,85 @@ namespace Natives
 		}
 		return 0;
 	}
+
+	// native bool:task_bind(Task:task, const function[], const format[], AnyTag:...);
+	static cell AMX_NATIVE_CALL task_bind(AMX *amx, cell *params)
+	{
+		std::shared_ptr<task> task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			char *fname;
+			amx_StrParam(amx, params[2], fname);
+
+			char *format;
+			amx_StrParam(amx, params[3], format);
+
+			if(fname == nullptr) return 0;
+
+			int numargs = format == nullptr ? 0 : std::strlen(format);
+			if(numargs > 0 && format[numargs - 1] == '+')
+			{
+				numargs--;
+			}
+
+			if(params[0] < (3 + numargs) * static_cast<int>(sizeof(cell)))
+			{
+				logerror(amx, "[PP] task_bind: not enough arguments");
+				return 0;
+			}
+
+			int pubindex = 0;
+
+			if(amx_FindPublic(amx, fname, &pubindex) == AMX_ERR_NONE)
+			{
+				if(format[numargs] == '+')
+				{
+					for(int i = (params[0] / sizeof(cell)) - 1; i >= numargs; i--)
+					{
+						amx_Push(amx, params[params[4 + i]]);
+					}
+				}
+
+				for(int i = numargs - 1; i >= 0; i--)
+				{
+					cell param = params[4 + i];
+					cell *addr;
+
+					switch(format[i])
+					{
+						case 'a':
+						case 's':
+						case '*':
+						{
+							amx_Push(amx, param);
+							break;
+						}
+						case '+':
+						{
+							logerror(amx, "[PP] task_bind: + must be the last specifier");
+							return 0;
+						}
+						default:
+						{
+							amx_GetAddr(amx, param, &addr);
+							param = *addr;
+							amx_Push(amx, param);
+							break;
+						}
+					}
+				}
+
+				amx::reset reset(amx, false);
+				reset.context.get_extra<tasks::extra>().bound_task = task;
+
+				cell result;
+				amx_ExecContext(amx, &result, pubindex, true, &reset);
+				amx->error = AMX_ERR_NONE;
+				return 1;
+			}
+		}
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -306,6 +386,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_all),
 	AMX_DECLARE_NATIVE(task_wait),
 	AMX_DECLARE_NATIVE(task_yield),
+	AMX_DECLARE_NATIVE(task_bind),
 };
 
 int RegisterTasksNatives(AMX *amx)
