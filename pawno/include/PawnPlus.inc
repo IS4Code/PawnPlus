@@ -315,7 +315,7 @@ native String:str_clone(ConstStringTag:str);
 native str_len(ConstStringTag:str);
 native str_get(ConstStringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
 native str_getc(ConstStringTag:str, pos);
-native str_setc(ConstStringTag:str, pos, value);
+native str_setc(StringTag:str, pos, value);
 native str_cmp(ConstStringTag:str1, ConstStringTag:str2);
 native bool:str_empty(ConstStringTag:str);
 native bool:str_eq(ConstStringTag:str1, ConstStringTag:str2);
