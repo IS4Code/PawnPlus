@@ -3,6 +3,7 @@
 
 #include "sdk/amx/amx.h"
 #include <string>
+#include <memory>
 
 typedef const struct tag_info *tag_ptr;
 
