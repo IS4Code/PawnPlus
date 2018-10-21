@@ -11,6 +11,9 @@
 #include "fixes/linux.h"
 
 #include <cstring>
+#include <limits>
+
+int maxRecursionLevel = std::numeric_limits<int>::max();
 
 // Automatically destroys the AMX machine when the info instance is destroyed (i.e. the AMX becomes unused)
 struct forked_amx_holder : public amx::extra
@@ -54,6 +57,11 @@ amx_code_info::amx_code_info(AMX *amx) : amx::extra(amx)
 
 int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset, bool forked)
 {
+	if(amx::context_level >= maxRecursionLevel)
+	{
+		return logerror(amx, AMX_ERR_GENERAL, "[PP] native recursion depth %d too high (limit is %d, use pp_max_recursion to increase it)", amx::context_level, maxRecursionLevel);
+	}
+
 	if(events::invoke_callbacks(amx, index, retval)) return AMX_ERR_NONE;
 
 	if(!forked)

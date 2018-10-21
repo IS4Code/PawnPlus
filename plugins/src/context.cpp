@@ -6,6 +6,8 @@
 
 int globalExecLevel = 0;
 
+const int &amx::context_level = globalExecLevel;
+
 struct AMX_STATE : public amx::extra
 {
 	std::stack<amx::context> contexts;

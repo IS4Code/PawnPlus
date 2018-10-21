@@ -1,6 +1,7 @@
 #include "natives.h"
 #include "main.h"
 #include "hooks.h"
+#include "exec.h"
 #include "context.h"
 #include "modules/tasks.h"
 #include "modules/strings.h"
@@ -123,6 +124,13 @@ namespace Natives
 	AMX_DEFINE_NATIVE(pp_num_natives, 0)
 	{
 		return amx::num_natives(amx);
+	}
+
+	// native pp_num_natives(level);
+	AMX_DEFINE_NATIVE(pp_max_recursion, 1)
+	{
+		maxRecursionLevel = params[1];
+		return 0;
 	}
 }
 

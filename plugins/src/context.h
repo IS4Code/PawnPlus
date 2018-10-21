@@ -31,6 +31,8 @@ constexpr cell SleepReturnFreeVar = 0xD2000000;
 
 namespace amx
 {
+	extern const int &context_level;
+
 	class context
 	{
 		AMX *_amx;
