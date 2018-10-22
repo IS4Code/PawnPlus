@@ -355,10 +355,10 @@ namespace Natives
 				amx::reset reset(amx, false);
 				reset.context.get_extra<tasks::extra>().bound_task = task;
 
-				cell result;
+				cell result = 1;
 				amx_ExecContext(amx, &result, pubindex, true, &reset);
 				amx->error = AMX_ERR_NONE;
-				return 1;
+				return result;
 			}
 		}
 		return 0;
