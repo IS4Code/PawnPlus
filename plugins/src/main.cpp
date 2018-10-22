@@ -36,6 +36,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 
 	amx::on_bottom(
 		[](AMX *amx){
+			tasks::run_pending();
 			gc_collect();
 			Threads::StartThreads();
 		}

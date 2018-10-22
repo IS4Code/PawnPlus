@@ -5,6 +5,8 @@
 #include <exception>
 
 int globalExecLevel = 0;
+bool groundRecursion = false;
+bool runGroundCallback = false;
 
 const int &amx::context_level = globalExecLevel;
 
@@ -67,15 +69,30 @@ int amx::pop(AMX *amx)
 	{
 		throw std::logic_error("[PP] Context stack imbalance.");
 	}
+
+	amx::object obj;
+	auto &contexts = get_state(amx, obj).contexts;
+	{
+		auto top = std::move(contexts.top());
+		contexts.pop();
+	}
+
 	globalExecLevel--;
 	if(globalExecLevel == 0)
 	{
-		ground_callbacks.invoke(amx);
+		runGroundCallback = true;
+		if(!groundRecursion)
+		{
+			groundRecursion = true;
+			while(runGroundCallback)
+			{
+				runGroundCallback = false;
+				ground_callbacks.invoke(amx);
+			}
+			groundRecursion = false;
+		}
 	}
-
-	amx::object obj;
-	get_state(amx, obj).contexts.pop();
-
+	
 	return globalExecLevel;
 }
 

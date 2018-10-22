@@ -11,7 +11,6 @@ namespace Natives
 	// native Task:wait_ticks(ticks);
 	AMX_DEFINE_NATIVE(wait_ticks, 1)
 	{
-		if(params[1] == 0) return 0;
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		if(params[1] < 0)
 		{
@@ -24,7 +23,6 @@ namespace Natives
 	// native Task:wait_ms(interval);
 	AMX_DEFINE_NATIVE(wait_ms, 1)
 	{
-		if(params[1] == 0) return 0;
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		if(params[1] < 0)
 		{

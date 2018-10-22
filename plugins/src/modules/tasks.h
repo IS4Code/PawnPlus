@@ -13,6 +13,7 @@ namespace tasks
 	{
 		friend class task;
 		friend void tick();
+		friend void run_pending();
 
 		virtual void set_completed(class task &t) = 0;
 		virtual void set_faulted(class task &t) = 0;
@@ -117,6 +118,7 @@ namespace tasks
 	bool contains(const task *ptr);
 	bool remove(task *ptr);
 	void clear();
+	void run_pending();
 
 	std::shared_ptr<task> find(task *ptr);
 
