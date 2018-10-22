@@ -47,10 +47,26 @@ namespace tasks
 
 	class task_handler : public handler
 	{
+	protected:
 		std::weak_ptr<task> _task;
 
 	public:
 		task_handler(std::weak_ptr<task> task) : _task(task)
+		{
+
+		}
+
+		virtual void set_completed(task &t) override;
+		virtual void set_faulted(task &t) override;
+	};
+
+	class task_result_handler : public task_handler
+	{
+		cell result;
+		bool iserror;
+
+	public:
+		task_result_handler(std::weak_ptr<task> task, cell result, bool iserror) : task_handler(task), result(result), iserror(iserror)
 		{
 
 		}
@@ -126,6 +142,24 @@ namespace tasks
 		{
 			task->set_faulted(t.error());
 		}
+	}
+
+	void task_result_handler::set_completed(task &t)
+	{
+		if(auto task = _task.lock())
+		{
+			if(iserror)
+			{
+				task->set_faulted(result);
+			}else{
+				task->set_completed(result);
+			}
+		}
+	}
+
+	void task_result_handler::set_faulted(task &t)
+	{
+		set_completed(t);
 	}
 
 	void task::set_completed(cell result)
@@ -208,29 +242,69 @@ namespace tasks
 	std::shared_ptr<task> add_tick_task(cell ticks)
 	{
 		auto task = add();
-		if(ticks > 0)
-		{
-			ucell time = tick_count + (ucell)ticks;
-			insert_sorted(tick_handlers, time, std::unique_ptr<handler>(new task_handler(task)));
-		}else if(ticks == 0)
-		{
-			pending_handlers.push(std::unique_ptr<handler>(new task_handler(task)));
-		}
+		add_tick_task(task, ticks);
 		return task;
 	}
 
 	std::shared_ptr<task> add_timer_task(cell interval)
 	{
 		auto task = add();
+		add_timer_task(task, interval);
+		return task;
+	}
+
+	void add_tick_task(std::unique_ptr<handler> &&handler, cell ticks)
+	{
+		if(ticks > 0)
+		{
+			ucell time = tick_count + (ucell)ticks;
+			insert_sorted(tick_handlers, time, std::move(handler));
+		}else if(ticks == 0)
+		{
+			pending_handlers.push(std::move(handler));
+		}
+	}
+
+	void add_timer_task(std::unique_ptr<handler> &&handler, cell interval)
+	{
 		if(interval > 0)
 		{
 			auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
-			insert_sorted(timer_handlers, time, std::unique_ptr<handler>(new task_handler(task)));
+			insert_sorted(timer_handlers, time, std::move(handler));
 		}else if(interval == 0)
 		{
-			pending_handlers.push(std::unique_ptr<handler>(new task_handler(task)));
+			pending_handlers.push(std::move(handler));
 		}
-		return task;
+	}
+	
+	void add_tick_task(const std::shared_ptr<task> &task, cell ticks)
+	{
+		add_tick_task(std::unique_ptr<handler>(new task_handler(task)), ticks);
+	}
+
+	void add_timer_task(const std::shared_ptr<task> &task, cell interval)
+	{
+		add_timer_task(std::unique_ptr<handler>(new task_handler(task)), interval);
+	}
+
+	void add_tick_task_result(const std::shared_ptr<task> &task, cell ticks, cell result)
+	{
+		add_tick_task(std::unique_ptr<handler>(new task_result_handler(task, result, false)), ticks);
+	}
+
+	void add_timer_task_result(const std::shared_ptr<task> &task, cell interval, cell result)
+	{
+		add_timer_task(std::unique_ptr<handler>(new task_result_handler(task, result, false)), interval);
+	}
+
+	void add_tick_task_error(const std::shared_ptr<task> &task, cell ticks, cell error)
+	{
+		add_tick_task(std::unique_ptr<handler>(new task_result_handler(task, error, true)), ticks);
+	}
+
+	void add_timer_task_error(const std::shared_ptr<task> &task, cell interval, cell error)
+	{
+		add_timer_task(std::unique_ptr<handler>(new task_result_handler(task, error, true)), interval);
 	}
 	
 	void run_pending()
@@ -349,6 +423,10 @@ namespace tasks
 	{
 		tick_handlers.clear();
 		timer_handlers.clear();
+		if(!pending_handlers.empty())
+		{
+			pending_handlers = {};
+		}
 		pool.clear();
 	}
 }

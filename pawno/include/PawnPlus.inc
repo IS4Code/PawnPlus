@@ -969,8 +969,8 @@ native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:
 /* Tasks and async */
 /*                 */
 
-native wait_ticks(ticks);
 native wait_ms(interval);
+native wait_ticks(ticks);
 native Task:task_new();
 native bool:task_delete(Task:task);
 native bool:task_valid(Task:task);
@@ -979,6 +979,10 @@ native task_set_result(Task:task, AnyTag:result);
 native task_get_result(Task:task);
 native task_set_error(Task:task, amx_err:error);
 native amx_err:task_get_error(Task:task);
+native task_set_result_ms(Task:task, AnyTag:result, interval);
+native task_set_result_ticks(Task:task, AnyTag:result, ticks);
+native task_set_error_ms(Task:task, amx_err:error, interval);
+native task_set_error_ticks(Task:task, amx_err:error, ticks);
 native bool:task_completed(Task:task);
 native bool:task_faulted(Task:task);
 native task_state:task_state(Task:task);

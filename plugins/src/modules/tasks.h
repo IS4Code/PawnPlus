@@ -110,6 +110,12 @@ namespace tasks
 	std::shared_ptr<task> add();
 	std::shared_ptr<task> add_tick_task(cell ticks);
 	std::shared_ptr<task> add_timer_task(cell interval);
+	void add_tick_task(const std::shared_ptr<task> &task, cell ticks);
+	void add_timer_task(const std::shared_ptr<task> &task, cell interval);
+	void add_tick_task_result(const std::shared_ptr<task> &task, cell ticks, cell result);
+	void add_timer_task_result(const std::shared_ptr<task> &task, cell interval, cell result);
+	void add_tick_task_error(const std::shared_ptr<task> &task, cell ticks, cell error);
+	void add_timer_task_error(const std::shared_ptr<task> &task, cell interval, cell error);
 	cell get_id(const task *ptr);
 	bool get_by_id(cell id, task *&ptr);
 	bool get_by_id(cell id, std::shared_ptr<task> &ptr);

@@ -361,6 +361,54 @@ namespace Natives
 		}
 		return 0;
 	}
+
+	// native task_set_result_ms(Task:task, AnyTag:result, interval);
+	AMX_DEFINE_NATIVE(task_set_result_ms, 3)
+	{
+		std::shared_ptr<task> task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			tasks::add_timer_task_result(task, params[3], params[2]);
+			return 1;
+		}
+		return 0;
+	}
+
+	// native task_set_result_ticks(Task:task, AnyTag : result, ticks);
+	AMX_DEFINE_NATIVE(task_set_result_ticks, 3)
+	{
+		std::shared_ptr<task> task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			tasks::add_tick_task_result(task, params[3], params[2]);
+			return 1;
+		}
+		return 0;
+	}
+
+	// native task_set_error_ms(Task:task, amx_err : error, interval);
+	AMX_DEFINE_NATIVE(task_set_error_ms, 3)
+	{
+		std::shared_ptr<task> task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			tasks::add_timer_task_error(task, params[3], params[2]);
+			return 1;
+		}
+		return 0;
+	}
+
+	// native task_set_error_ticks(Task:task, amx_err : error, ticks);
+	AMX_DEFINE_NATIVE(task_set_error_ticks, 3)
+	{
+		std::shared_ptr<task> task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			tasks::add_tick_task_error(task, params[3], params[2]);
+			return 1;
+		}
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -386,6 +434,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_wait),
 	AMX_DECLARE_NATIVE(task_yield),
 	AMX_DECLARE_NATIVE(task_bind),
+	AMX_DECLARE_NATIVE(task_set_result_ms),
+	AMX_DECLARE_NATIVE(task_set_result_ticks),
+	AMX_DECLARE_NATIVE(task_set_error_ms),
+	AMX_DECLARE_NATIVE(task_set_error_ticks),
 };
 
 int RegisterTasksNatives(AMX *amx)
