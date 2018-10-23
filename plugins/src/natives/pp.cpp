@@ -126,7 +126,7 @@ namespace Natives
 		return amx::num_natives(amx);
 	}
 
-	// native pp_num_natives(level);
+	// native pp_max_recursion(level);
 	AMX_DEFINE_NATIVE(pp_max_recursion, 1)
 	{
 		maxRecursionLevel = params[1];
@@ -151,6 +151,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_entry_s),
 	AMX_DECLARE_NATIVE(pp_collect),
 	AMX_DECLARE_NATIVE(pp_num_natives),
+	AMX_DECLARE_NATIVE(pp_max_recursion),
 };
 
 int RegisterConfigNatives(AMX *amx)

@@ -112,6 +112,7 @@ native pp_num_local_iters();
 native pp_num_global_iters();
 native pp_collect();
 native pp_num_natives();
+native pp_max_recursion(level);
 
 /*                 */
 /*      Pawn       */
