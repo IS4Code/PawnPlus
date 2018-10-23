@@ -4,6 +4,7 @@
 #include "modules/variants.h"
 #include "modules/containers.h"
 #include "modules/tasks.h"
+#include "modules/amxutils.h"
 #include "objects/stored_param.h"
 #include "fixes/linux.h"
 #include "utils/optional.h"
@@ -1093,7 +1094,51 @@ struct task_operations : public null_operations
 		tasks::task *task;
 		if(tasks::get_by_id(arg, task))
 		{
-			return tasks::remove(task);
+			return tasks::get_id(&(*tasks::add() = task->clone()));
+		}
+		return 0;
+	}
+
+	virtual cell clone(tag_ptr tag, cell arg) const override
+	{
+		return copy(tag, arg);
+	}
+};
+
+struct var_operations : public null_operations
+{
+	var_operations() : null_operations(tags::tag_var)
+	{
+
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		amx_var_info *info;
+		return !amx_var_pool.get_by_id(a, info);
+	}
+
+	virtual bool del(tag_ptr tag, cell arg) const override
+	{
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(arg, info))
+		{
+			return amx_var_pool.remove(info);
+		}
+		return false;
+	}
+
+	virtual bool free(tag_ptr tag, cell arg) const override
+	{
+		return del(tag, arg);
+	}
+
+	virtual cell copy(tag_ptr tag, cell arg) const override
+	{
+		amx_var_info *info;
+		if(amx_var_pool.get_by_id(arg, info))
+		{
+			return amx_var_pool.get_id(&(*amx_var_pool.add() = *info));
 		}
 		return 0;
 	}
@@ -1111,8 +1156,8 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	std::vector<std::unique_ptr<tag_info>> v;
 	auto unknown = std::make_unique<tag_info>(0, "{...}", nullptr, std::make_unique<null_operations>(tags::tag_unknown));
 	auto unknown_tag = unknown.get();
-	auto string_const = std::make_unique<tag_info>(12, "String@Const", unknown_tag, std::make_unique<string_operations>());
-	auto variant_const = std::make_unique<tag_info>(13, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
+	auto string_const = std::make_unique<tag_info>(13, "String@Const", unknown_tag, std::make_unique<string_operations>());
+	auto variant_const = std::make_unique<tag_info>(14, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
 	v.push_back(std::move(unknown));
 	v.push_back(std::make_unique<tag_info>(1, "", unknown_tag, std::make_unique<cell_operations>(tags::tag_cell)));
 	v.push_back(std::make_unique<tag_info>(2, "bool", unknown_tag, std::make_unique<bool_operations>()));
@@ -1125,6 +1170,7 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::make_unique<tag_info>(9, "Iter", unknown_tag, std::make_unique<iter_operations>()));
 	v.push_back(std::make_unique<tag_info>(10, "Ref", unknown_tag, std::make_unique<ref_operations>()));
 	v.push_back(std::make_unique<tag_info>(11, "Task", unknown_tag, std::make_unique<task_operations>()));
+	v.push_back(std::make_unique<tag_info>(12, "Var", unknown_tag, std::make_unique<var_operations>()));
 	v.push_back(std::move(string_const));
 	v.push_back(std::move(variant_const));
 	return v;

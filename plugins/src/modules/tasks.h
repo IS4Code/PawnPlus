@@ -38,6 +38,10 @@ namespace tasks
 		{
 
 		}
+		task(task &&obj) : _value(obj._value), _state(obj._state), _keep(obj._keep), handlers(std::move(obj.handlers))
+		{
+
+		}
 		void keep(bool keep)
 		{
 			_keep = keep;
@@ -78,11 +82,28 @@ namespace tasks
 				return false;
 			}
 		}
+		task clone()
+		{
+			task clone;
+			clone._value = _value;
+			clone._state = _state;
+			clone._keep = _keep;
+			return clone;
+		}
 		void reset()
 		{
 			_value = 0;
 			_state = 0;
 			handlers.clear();
+		}
+
+		task &operator=(task &&obj)
+		{
+			_value = obj._value;
+			_state = obj._state;
+			_keep = obj._keep;
+			handlers = std::move(obj.handlers);
+			return *this;
 		}
 
 		typedef std::list<std::unique_ptr<handler>>::iterator handler_iterator;

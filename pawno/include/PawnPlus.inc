@@ -160,6 +160,7 @@ native List:pawn_get_args(const format[], bool:byref=false, level=0);
 #define tag_uid_iter (tag_uid:9)
 #define tag_uid_ref (tag_uid:10)
 #define tag_uid_task (tag_uid:11)
+#define tag_uid_var (tag_uid:12)
 
 native tag_uid:tag_uid(tag_id);
 native tag_id(tag_uid:tag_uid);

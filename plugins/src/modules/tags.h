@@ -135,6 +135,7 @@ namespace tags
 	constexpr const cell tag_iter = 9;
 	constexpr const cell tag_ref = 10;
 	constexpr const cell tag_task = 11;
+	constexpr const cell tag_var = 12;
 
 	tag_ptr find_tag(const char *name, size_t sublen=-1);
 	tag_ptr find_tag(AMX *amx, cell tag_id);

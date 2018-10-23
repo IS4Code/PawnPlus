@@ -23,6 +23,8 @@ class amx_var_info
 	cell _size;
 
 public:
+	amx_var_info() = default;
+
 	amx_var_info(AMX *amx, cell addr, cell size) : _amx(amx::load(amx)), _addr(addr), _size(size)
 	{
 
