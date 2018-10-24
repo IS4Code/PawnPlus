@@ -411,12 +411,12 @@ namespace Natives
 	}
 
 	// native task_config(task_restore:heap=task_restore_full, task_restore:stack=task_restore_full);
-	AMX_DEFINE_NATIVE(task_config, 2)
+	AMX_DEFINE_NATIVE(task_config, 0)
 	{
 		amx::object owner;
 		auto &info = tasks::get_extra(amx, owner);
-		info.restore_heap = static_cast<amx::restore_range>(params[1]);
-		info.restore_stack = static_cast<amx::restore_range>(params[2]);
+		info.restore_heap = static_cast<amx::restore_range>(optparam(1, 3));
+		info.restore_stack = static_cast<amx::restore_range>(optparam(2, 3));
 		return 0;
 	}
 }
