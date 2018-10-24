@@ -17,55 +17,55 @@ namespace amx
 		auto amxhdr = (AMX_HEADER*)amx->base;
 		dat = amx->data != nullptr ? amx->data : amx->base + amxhdr->dat;
 
-		size_t heap_size = hea - amx->hlw;
+		unsigned char *h;
+		size_t heap_size;
+		switch(restore_heap)
+		{
+			case restore_range::none:
+				heap_size = 0;
+				break;
+			case restore_range::frame:
+			case restore_range::context:
+				h = dat + reset_hea;
+				heap_size = hea - reset_hea;
+				break;
+			case restore_range::full:
+				h = dat + amx->hlw;
+				heap_size = hea - amx->hlw;
+				break;
+		}
 		if(heap_size > 0)
 		{
-			unsigned char *h;
-			switch(restore_heap)
-			{
-				case restore_range::none:
-					h = dat;
-					heap_size = 0;
-					break;
-				case restore_range::frame:
-				case restore_range::context:
-					h = dat + reset_hea;
-					heap_size -= reset_hea - amx->hlw;
-					if(heap_size < 0)
-					{
-						heap_size = 0;
-					}
-					break;
-				case restore_range::full:
-					h = dat + amx->hlw;
-					break;
-			}
 			heap = std::make_unique<unsigned char[]>(heap_size);
 			std::memcpy(heap.get(), h, heap_size);
 		}
 
-		size_t stack_size = amx->stp - stk;
+		size_t stack_size;
+		switch(restore_stack)
+		{
+			case restore_range::none:
+				stack_size = 0;
+				break;
+			case restore_range::frame:
+				stack_size = frm + sizeof(cell) * 2 - stk;
+				break;
+			case restore_range::context:
+				stack_size = reset_stk - stk;
+				break;
+			case restore_range::full:
+				stack_size = amx->stp - stk;
+				break;
+		}
 		if(stack_size > 0)
 		{
 			unsigned char *s = dat + stk;
-			switch(restore_stack)
-			{
-				case restore_range::none:
-					stack_size = 0;
-					break;
-				case restore_range::frame:
-					stack_size -= amx->stp - frm;
-					break;
-				case restore_range::context:
-					stack_size -= amx->stp - reset_stk;
-					if(stack_size < 0)
-					{
-						stack_size = 0;
-					}
-					break;
-			}
 			stack = std::make_unique<unsigned char[]>(stack_size);
 			std::memcpy(stack.get(), s, stack_size);
+			if(restore_stack == restore_range::frame)
+			{
+				// set return address to 0 (HALT 0)
+				reinterpret_cast<cell&>(stack[stack_size - sizeof(cell)]) = 0;
+			}
 		}
 	}
 
@@ -107,29 +107,26 @@ namespace amx
 			switch(restore_heap)
 			{
 				case restore_range::none:
-					h = dat;
 					heap_size = 0;
 					break;
 				case restore_range::frame:
 				case restore_range::context:
 					h = dat + reset_hea;
 					heap_size = hea - reset_hea;
-					if(heap_size < 0)
-					{
-						heap_size = 0;
-					}
 					break;
 				case restore_range::full:
 					h = dat + amx->hlw;
 					heap_size = hea - amx->hlw;
 					break;
 			}
-			std::memcpy(h, heap.get(), heap_size);
+			if(heap_size > 0)
+			{
+				std::memcpy(h, heap.get(), heap_size);
+			}
 		}
 
 		if(stack)
 		{
-			unsigned char *s = dat + stk;
 			size_t stack_size;
 			switch(restore_stack)
 			{
@@ -137,7 +134,7 @@ namespace amx
 					stack_size = 0;
 					break;
 				case restore_range::frame:
-					stack_size = frm - stk;
+					stack_size = frm + sizeof(cell) * 2 - stk;
 					break;
 				case restore_range::context:
 					stack_size = reset_stk - stk;
@@ -146,7 +143,11 @@ namespace amx
 					stack_size = amx->stp - stk;
 					break;
 			}
-			std::memcpy(s, stack.get(), stack_size);
+			if(stack_size > 0)
+			{
+				unsigned char *s = dat + stk;
+				std::memcpy(s, stack.get(), stack_size);
+			}
 		}
 
 		return true;
