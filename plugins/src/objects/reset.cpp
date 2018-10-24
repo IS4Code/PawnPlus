@@ -48,6 +48,7 @@ namespace amx
 				break;
 			case restore_range::frame:
 				stack_size = frm + sizeof(cell) * 2 - stk;
+				stack_size += sizeof(cell) + *reinterpret_cast<cell*>(dat + stk + stack_size);
 				break;
 			case restore_range::context:
 				stack_size = reset_stk - stk;
@@ -64,7 +65,7 @@ namespace amx
 			if(restore_stack == restore_range::frame)
 			{
 				// set return address to 0 (HALT 0)
-				reinterpret_cast<cell&>(stack[stack_size - sizeof(cell)]) = 0;
+				reinterpret_cast<cell&>(stack[frm + sizeof(cell) - stk]) = 0;
 			}
 		}
 	}
@@ -135,6 +136,7 @@ namespace amx
 					break;
 				case restore_range::frame:
 					stack_size = frm + sizeof(cell) * 2 - stk;
+					stack_size += sizeof(cell) + reinterpret_cast<cell&>(stack[stack_size]);
 					break;
 				case restore_range::context:
 					stack_size = reset_stk - stk;
