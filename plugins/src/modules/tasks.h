@@ -121,6 +121,8 @@ namespace tasks
 		cell result = 0;
 		std::weak_ptr<task> awaited_task;
 		std::weak_ptr<task> bound_task;
+		amx::restore_range restore_heap = amx::restore_range::full;
+		amx::restore_range restore_stack = amx::restore_range::full;
 
 		extra(AMX *amx) : amx::extra(amx)
 		{

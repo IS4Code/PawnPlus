@@ -4,7 +4,7 @@
 
 namespace amx
 {
-	reset::reset(AMX* amx, bool context) : amx(amx::load(amx)), cip(amx->cip), frm(amx->frm), pri(amx->pri), alt(amx->alt), hea(amx->hea), reset_hea(amx->reset_hea), stk(amx->stk), reset_stk(amx->reset_stk)
+	reset::reset(AMX* amx, bool context, restore_range restore_heap, restore_range restore_stack) : amx(amx::load(amx)), cip(amx->cip), frm(amx->frm), pri(amx->pri), alt(amx->alt), hea(amx->hea), reset_hea(amx->reset_hea), stk(amx->stk), reset_stk(amx->reset_stk), restore_heap(restore_heap), restore_stack(restore_stack)
 	{
 		if(context)
 		{
@@ -12,16 +12,34 @@ namespace amx
 			this->context = std::move(amx::get_context(amx, owner));
 		}
 
-		unsigned char *dat, *h, *s;
+		unsigned char *dat;
 
 		auto amxhdr = (AMX_HEADER*)amx->base;
-		dat = amx->base + amxhdr->dat;
-		h = dat + amx->hlw;
-		s = dat + stk;
+		dat = amx->data != nullptr ? amx->data : amx->base + amxhdr->dat;
 
 		size_t heap_size = hea - amx->hlw;
 		if(heap_size > 0)
 		{
+			unsigned char *h;
+			switch(restore_heap)
+			{
+				case restore_range::none:
+					h = dat;
+					heap_size = 0;
+					break;
+				case restore_range::frame:
+				case restore_range::context:
+					h = dat + reset_hea;
+					heap_size -= reset_hea - amx->hlw;
+					if(heap_size < 0)
+					{
+						heap_size = 0;
+					}
+					break;
+				case restore_range::full:
+					h = dat + amx->hlw;
+					break;
+			}
 			heap = std::make_unique<unsigned char[]>(heap_size);
 			std::memcpy(heap.get(), h, heap_size);
 		}
@@ -29,6 +47,23 @@ namespace amx
 		size_t stack_size = amx->stp - stk;
 		if(stack_size > 0)
 		{
+			unsigned char *s = dat + stk;
+			switch(restore_stack)
+			{
+				case restore_range::none:
+					stack_size = 0;
+					break;
+				case restore_range::frame:
+					stack_size -= amx->stp - frm;
+					break;
+				case restore_range::context:
+					stack_size -= amx->stp - reset_stk;
+					if(stack_size < 0)
+					{
+						stack_size = 0;
+					}
+					break;
+			}
 			stack = std::make_unique<unsigned char[]>(stack_size);
 			std::memcpy(stack.get(), s, stack_size);
 		}
@@ -54,7 +89,7 @@ namespace amx
 		unsigned char *dat;
 
 		auto amxhdr = (AMX_HEADER*)amx->base;
-		dat = amx->base + amxhdr->dat;
+		dat = amx->data != nullptr ? amx->data : amx->base + amxhdr->dat;
 
 		amx->cip = cip;
 		amx->frm = frm;
@@ -65,24 +100,59 @@ namespace amx
 		amx->stk = stk;
 		amx->reset_stk = reset_stk;
 
-		size_t heap_size = hea - amx->hlw;
 		if(heap)
 		{
-			auto h = dat + amx->hlw;
+			unsigned char *h;
+			size_t heap_size;
+			switch(restore_heap)
+			{
+				case restore_range::none:
+					h = dat;
+					heap_size = 0;
+					break;
+				case restore_range::frame:
+				case restore_range::context:
+					h = dat + reset_hea;
+					heap_size = hea - reset_hea;
+					if(heap_size < 0)
+					{
+						heap_size = 0;
+					}
+					break;
+				case restore_range::full:
+					h = dat + amx->hlw;
+					heap_size = hea - amx->hlw;
+					break;
+			}
 			std::memcpy(h, heap.get(), heap_size);
 		}
 
-		size_t stack_size = amx->stp - stk;
 		if(stack)
 		{
-			auto s = dat + stk;
+			unsigned char *s = dat + stk;
+			size_t stack_size;
+			switch(restore_stack)
+			{
+				case restore_range::none:
+					stack_size = 0;
+					break;
+				case restore_range::frame:
+					stack_size = frm - stk;
+					break;
+				case restore_range::context:
+					stack_size = reset_stk - stk;
+					break;
+				case restore_range::full:
+					stack_size = amx->stp - stk;
+					break;
+			}
 			std::memcpy(s, stack.get(), stack_size);
 		}
 
 		return true;
 	}
 
-	reset::reset(reset &&obj) : context(std::move(obj.context)), amx(obj.amx), cip(obj.cip), frm(obj.frm), pri(obj.pri), alt(obj.alt), hea(obj.hea), reset_hea(obj.reset_hea), heap(std::move(obj.heap)), stk(obj.stk), reset_stk(obj.reset_stk), stack(std::move(obj.stack))
+	reset::reset(reset &&obj) : context(std::move(obj.context)), amx(obj.amx), cip(obj.cip), frm(obj.frm), pri(obj.pri), alt(obj.alt), hea(obj.hea), reset_hea(obj.reset_hea), heap(std::move(obj.heap)), stk(obj.stk), reset_stk(obj.reset_stk), stack(std::move(obj.stack)), restore_heap(obj.restore_heap), restore_stack(obj.restore_stack)
 	{
 
 	}
@@ -98,6 +168,8 @@ namespace amx
 		hea = obj.hea, reset_hea = obj.reset_hea;
 		heap = std::move(obj.heap);
 		stack = std::move(obj.stack);
+		restore_heap = obj.restore_heap;
+		restore_stack = obj.restore_stack;
 		return *this;
 	}
 }

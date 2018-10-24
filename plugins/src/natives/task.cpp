@@ -409,6 +409,16 @@ namespace Natives
 		}
 		return 0;
 	}
+
+	// native task_config(task_restore:heap=task_restore_full, task_restore:stack=task_restore_full);
+	AMX_DEFINE_NATIVE(task_config, 2)
+	{
+		amx::object owner;
+		auto &info = tasks::get_extra(amx, owner);
+		info.restore_heap = static_cast<amx::restore_range>(params[1]);
+		info.restore_stack = static_cast<amx::restore_range>(params[2]);
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -438,6 +448,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_set_result_ticks),
 	AMX_DECLARE_NATIVE(task_set_error_ms),
 	AMX_DECLARE_NATIVE(task_set_error_ticks),
+	AMX_DECLARE_NATIVE(task_config),
 };
 
 int RegisterTasksNatives(AMX *amx)

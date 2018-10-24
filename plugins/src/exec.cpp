@@ -127,7 +127,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					{
 						if(retval != nullptr) *retval = info.result;
 						info.awaited_task = {};
-						task->register_reset(amx::reset(amx, true));
+						task->register_reset(amx::reset(amx, true, info.restore_heap, info.restore_stack));
 					}
 				}
 				break;
@@ -137,7 +137,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
 					if(retval != nullptr) *retval = info.result;
-					tasks::register_tick(ticks, amx::reset(amx, true));
+					tasks::register_tick(ticks, amx::reset(amx, true, info.restore_heap, info.restore_stack));
 				}
 				break;
 				case SleepReturnWaitMs:
@@ -146,7 +146,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
 					if(retval != nullptr) *retval = info.result;
-					tasks::register_timer(interval, amx::reset(amx, true));
+					tasks::register_timer(interval, amx::reset(amx, true, info.restore_heap, info.restore_stack));
 				}
 				break;
 				case SleepReturnWaitInf:

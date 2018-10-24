@@ -971,6 +971,14 @@ native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:
 /* Tasks and async */
 /*                 */
 
+enum task_restore
+{
+    task_restore_none = 0,
+    task_restore_frame = 1,
+    task_restore_context = 2,
+    task_restore_full = 3,
+};
+
 native wait_ms(interval);
 native wait_ticks(ticks);
 native Task:task_new();
@@ -1000,6 +1008,7 @@ native task_await(Task:task);
 stock task_await(Task:task) return task_wait(task), task_get_result(task);
 native task_yield(AnyTag:value);
 native bool:task_bind(Task:task, const function[], const format[], AnyTag:...);
+native task_config(task_restore:heap=task_restore_full, task_restore:stack=task_restore_full);
 
 #define task_state_default (task_state:0)
 #define task_state_completed (task_state:1)
