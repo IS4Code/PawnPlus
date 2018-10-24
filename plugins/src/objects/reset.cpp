@@ -16,16 +16,22 @@ namespace amx
 
 		auto amxhdr = (AMX_HEADER*)amx->base;
 		dat = amx->base + amxhdr->dat;
-		h = amx->base + amxhdr->hea;
+		h = dat + amx->hlw;
 		s = dat + stk;
 
-		size_t heap_size = hea - (amxhdr->hea - amxhdr->dat);
-		heap = std::make_unique<unsigned char[]>(heap_size);
-		std::memcpy(heap.get(), h, heap_size);
+		size_t heap_size = hea - amx->hlw;
+		if(heap_size > 0)
+		{
+			heap = std::make_unique<unsigned char[]>(heap_size);
+			std::memcpy(heap.get(), h, heap_size);
+		}
 
-		size_t stack_size = amxhdr->stp - amxhdr->dat - stk;
-		stack = std::make_unique<unsigned char[]>(stack_size);
-		std::memcpy(stack.get(), s, stack_size);
+		size_t stack_size = amx->stp - stk;
+		if(stack_size > 0)
+		{
+			stack = std::make_unique<unsigned char[]>(stack_size);
+			std::memcpy(stack.get(), s, stack_size);
+		}
 	}
 
 	bool reset::restore()
@@ -45,27 +51,33 @@ namespace amx
 
 		auto amx = obj->get();
 
-		unsigned char *dat, *h, *s;
+		unsigned char *dat;
 
 		auto amxhdr = (AMX_HEADER*)amx->base;
 		dat = amx->base + amxhdr->dat;
-		h = amx->base + amxhdr->hea;
-		s = dat + stk;
 
 		amx->cip = cip;
 		amx->frm = frm;
 		amx->pri = pri;
 		amx->alt = alt;
 		amx->hea = hea;
-		amx->reset_hea = hea;
+		amx->reset_hea = reset_hea;
 		amx->stk = stk;
-		amx->reset_stk = stk;
+		amx->reset_stk = reset_stk;
 
-		size_t heap_size = hea - (amxhdr->hea - amxhdr->dat);
-		std::memcpy(h, heap.get(), heap_size);
+		size_t heap_size = hea - amx->hlw;
+		if(heap)
+		{
+			auto h = dat + amx->hlw;
+			std::memcpy(h, heap.get(), heap_size);
+		}
 
-		size_t stack_size = amxhdr->stp - amxhdr->dat - stk;
-		std::memcpy(s, stack.get(), stack_size);
+		size_t stack_size = amx->stp - stk;
+		if(stack)
+		{
+			auto s = dat + stk;
+			std::memcpy(s, stack.get(), stack_size);
+		}
 
 		return true;
 	}
