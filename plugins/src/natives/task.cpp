@@ -15,6 +15,12 @@ namespace Natives
 		if(params[1] < 0)
 		{
 			return SleepReturnWaitInf;
+		}else if(params[1] & ~SleepReturnValueMask)
+		{
+			amx::object owner;
+			auto &info = tasks::get_extra(amx, owner);
+			info.awaited_task = tasks::add_tick_task(params[1]);
+			return SleepReturnAwait;
 		}else{
 			return SleepReturnWaitTicks | (SleepReturnValueMask & params[1]);
 		}
@@ -27,6 +33,12 @@ namespace Natives
 		if(params[1] < 0)
 		{
 			return SleepReturnWaitInf;
+		}else if(params[1] & ~SleepReturnValueMask)
+		{
+			amx::object owner;
+			auto &info = tasks::get_extra(amx, owner);
+			info.awaited_task = tasks::add_timer_task(params[1]);
+			return SleepReturnAwait;
 		}else{
 			return SleepReturnWaitMs | (SleepReturnValueMask & params[1]);
 		}
