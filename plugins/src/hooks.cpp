@@ -13,42 +13,86 @@ extern void *pAMXFunctions;
 
 extern int ExecLevel;
 
-subhook_t amx_Init_h;
-subhook_t amx_Exec_h;
-subhook_t amx_GetAddr_h;
-subhook_t amx_StrLen_h;
-subhook_t amx_Register_h;
+template <class FType>
+class amx_hook_func;
+
+template <class Ret, class... Args>
+class amx_hook_func<Ret(*)(Args...)>
+{
+public:
+	typedef Ret hook_ftype(Ret(*)(Args...), Args...);
+
+	typedef Ret AMXAPI handler_ftype(Args...);
+
+	template <subhook_t &Hook, hook_ftype *Handler>
+	static Ret AMXAPI handler(Args... args)
+	{
+		return Handler(reinterpret_cast<Ret(*)(Args...)>(subhook_get_trampoline(Hook)), args...);
+	}
+};
+
+template <int Index>
+class amx_hook
+{
+	static subhook_t hook;
+
+public:
+	template <class FType, typename amx_hook_func<FType>::hook_ftype *Func>
+	struct ctl
+	{
+		static void load()
+		{
+			typename amx_hook_func<FType>::handler_ftype *hookfn = &amx_hook_func<FType>::template handler<hook, Func>;
+
+			hook = subhook_new(reinterpret_cast<void*>(((FType*)pAMXFunctions)[Index]), reinterpret_cast<void*>(hookfn), {});
+			subhook_install(hook);
+		}
+
+		static void unload()
+		{
+			subhook_remove(hook);
+			subhook_free(hook);
+		}
+
+		static void install()
+		{
+			subhook_install(hook);
+		}
+
+		static void uninstall()
+		{
+			subhook_remove(hook);
+		}
+
+		static FType orig()
+		{
+			if(subhook_is_installed(hook))
+			{
+				return reinterpret_cast<FType>(subhook_get_trampoline(hook));
+			}else{
+				return ((FType*)pAMXFunctions)[Index];
+			}
+		}
+	};
+};
+
+template <int index>
+subhook_t amx_hook<index>::hook;
+
+#define AMX_HOOK_FUNC(Func, ...) Func(decltype(&::Func) _base_func, __VA_ARGS__)
+#define base_func _base_func
+#define amx_Hook(Func) amx_hook<PLUGIN_AMX_EXPORT_##Func>::ctl<decltype(&::amx_##Func), &Hooks::amx_##Func>
 
 bool hook_ref_args = false;
 
-int AMXAPI amx_InitOrig(AMX *amx, void *program)
-{
-	if(subhook_is_installed(amx_Init_h))
-	{
-		return reinterpret_cast<decltype(&amx_Init)>(subhook_get_trampoline(amx_Init_h))(amx, program);
-	} else {
-		return amx_Init(amx, program);
-	}
-}
-
-int AMXAPI amx_ExecOrig(AMX *amx, cell *retval, int index)
-{
-	if(subhook_is_installed(amx_Exec_h))
-	{
-		return reinterpret_cast<decltype(&amx_Exec)>(subhook_get_trampoline(amx_Exec_h))(amx, retval, index);
-	}else{
-		return amx_Exec(amx, retval, index);
-	}
-}
-
 namespace Hooks
 {
-	int AMXAPI amx_Init(AMX *amx, void *program)
+	int AMX_HOOK_FUNC(amx_Init, AMX *amx, void *program)
 	{
 		amx->base = (unsigned char*)program;
 		amx::load_lock(amx)->get_extra<amx_code_info>();
 		amx->base = nullptr;
-		int ret = amx_InitOrig(amx, program);
+		int ret = base_func(amx, program);
 		if(ret != AMX_ERR_NONE)
 		{
 			amx::unload(amx);
@@ -56,14 +100,14 @@ namespace Hooks
 		return ret;
 	}
 
-	int AMXAPI amx_Exec(AMX *amx, cell *retval, int index)
+	int AMX_HOOK_FUNC(amx_Exec, AMX *amx, cell *retval, int index)
 	{
 		return amx_ExecContext(amx, retval, index, false, nullptr);
 	}
 
-	int AMXAPI amx_GetAddr(AMX *amx, cell amx_addr, cell **phys_addr)
+	int AMX_HOOK_FUNC(amx_GetAddr, AMX *amx, cell amx_addr, cell **phys_addr)
 	{
-		int ret = reinterpret_cast<decltype(&amx_GetAddr)>(subhook_get_trampoline(amx_GetAddr_h))(amx, amx_addr, phys_addr);
+		int ret = base_func(amx, amx_addr, phys_addr);
 
 		if(ret == AMX_ERR_MEMACCESS)
 		{
@@ -104,7 +148,7 @@ namespace Hooks
 		return ret;
 	}
 
-	int AMXAPI amx_StrLen(const cell *cstring, int *length)
+	int AMX_HOOK_FUNC(amx_StrLen, const cell *cstring, int *length)
 	{
 		auto str = strings::pool.find_cache(cstring);
 		if(str != nullptr)
@@ -113,55 +157,52 @@ namespace Hooks
 			return AMX_ERR_NONE;
 		}
 
-		return reinterpret_cast<decltype(&amx_StrLen)>(subhook_get_trampoline(amx_StrLen_h))(cstring, length);
+		return base_func(cstring, length);
 	}
 
-	int AMXAPI amx_Register(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number)
+	int AMX_HOOK_FUNC(amx_Register, AMX *amx, const AMX_NATIVE_INFO *nativelist, int number)
 	{
-		int ret = reinterpret_cast<decltype(&amx_Register)>(subhook_get_trampoline(amx_Register_h))(amx, nativelist, number);
+		int ret = base_func(amx, nativelist, number);
 		amx::register_natives(amx, nativelist, number);
 		return ret;
 	}
 }
 
-template <class Func>
-void RegisterAmxHook(subhook_t &hook, int index, Func *fnptr)
+int AMXAPI amx_InitOrig(AMX *amx, void *program)
 {
-	hook = subhook_new(reinterpret_cast<void*>(((Func**)pAMXFunctions)[index]), reinterpret_cast<void*>(fnptr), {});
-	subhook_install(hook);
+	return amx_Hook(Init)::orig()(amx, program);
+}
+
+int AMXAPI amx_ExecOrig(AMX *amx, cell *retval, int index)
+{
+	return amx_Hook(Exec)::orig()(amx, retval, index);
 }
 
 void Hooks::Register()
 {
-	RegisterAmxHook(amx_Init_h, PLUGIN_AMX_EXPORT_Init, &Hooks::amx_Init);
-	RegisterAmxHook(amx_Exec_h, PLUGIN_AMX_EXPORT_Exec, &Hooks::amx_Exec);
-	RegisterAmxHook(amx_GetAddr_h, PLUGIN_AMX_EXPORT_GetAddr, &Hooks::amx_GetAddr);
-	RegisterAmxHook(amx_StrLen_h, PLUGIN_AMX_EXPORT_StrLen, &Hooks::amx_StrLen);
-	RegisterAmxHook(amx_Register_h, PLUGIN_AMX_EXPORT_Register, &Hooks::amx_Register);
-}
-
-void UnregisterHook(subhook_t hook)
-{
-	subhook_remove(hook);
-	subhook_free(hook);
+	amx_Hook(Init)::load();
+	amx_Hook(Exec)::load();
+	amx_Hook(GetAddr)::load();
+	amx_Hook(StrLen)::load();
+	amx_Hook(Register)::load();
 }
 
 void Hooks::Unregister()
 {
-	UnregisterHook(amx_Init_h);
-	UnregisterHook(amx_Exec_h);
-	UnregisterHook(amx_GetAddr_h);
-	UnregisterHook(amx_StrLen_h);
-	UnregisterHook(amx_Register_h);
+	amx_Hook(Init)::unload();
+	amx_Hook(Exec)::unload();
+	amx_Hook(GetAddr)::unload();
+	amx_Hook(StrLen)::unload();
+	amx_Hook(Register)::unload();
 }
 
 void Hooks::ToggleStrLen(bool toggle)
 {
 	if(toggle)
 	{
-		subhook_install(amx_StrLen_h);
+		amx_Hook(StrLen)::install();
 	}else{
-		subhook_remove(amx_StrLen_h);
+		amx_Hook(StrLen)::uninstall();
 	}
 }
 
