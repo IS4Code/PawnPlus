@@ -25,9 +25,9 @@ namespace impl
 	template <AMX_NATIVE Native>
 	static cell AMX_NATIVE_CALL adapt_native(AMX *amx, cell *params)
 	{
-		if(params[0] < native_info<Native>::arg_count * static_cast<cell>(sizeof(cell)))
+		if(params[0] < native_info<Native>::arg_count() * static_cast<cell>(sizeof(cell)))
 		{
-			logerror(amx, AMX_ERR_PARAMS, "[PP] %s: not enough arguments (%d expected, got %d)", native_info<Native>::name, native_info<Native>::arg_count, params[0] / static_cast<cell>(sizeof(cell)));
+			logerror(amx, AMX_ERR_PARAMS, "[PP] %s: not enough arguments (%d expected, got %d)", native_info<Native>::name(), native_info<Native>::arg_count(), params[0] / static_cast<cell>(sizeof(cell)));
 			return 0;
 		}
 		return Native(amx, params);
@@ -42,8 +42,8 @@ namespace impl \
 	template <> \
 	struct native_info<&Natives::Name> \
 	{ \
-		static constexpr const char name[] = #Name; \
-		static constexpr const cell arg_count = ArgCount; \
+		static constexpr char *name() { return #Name; } \
+		static constexpr cell arg_count() { return ArgCount; } \
 	}; \
 } \
 namespace Natives \
