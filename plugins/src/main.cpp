@@ -42,7 +42,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 		}
 	);
 
-	logprintf(" PawnPlus v0.10 loaded");
+	logprintf(" PawnPlus v0.10.1 loaded");
 	logprintf(" Created by IllidanS4");
 	return true;
 }
@@ -59,7 +59,7 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 
 	Hooks::Unregister();
 
-	logprintf(" PawnPlus v0.10 unloaded");
+	logprintf(" PawnPlus v0.10.1 unloaded");
 }
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) 
