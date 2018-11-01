@@ -229,7 +229,7 @@ int &dyn_iterator::operator[](size_t index) const
 	return unused;
 }
 
-bool dyn_iterator::extract_dyn(const std::type_info &type, void *&value) const
+bool dyn_iterator::extract_dyn(const std::type_info &type, void *value) const
 {
 	return false;
 }
@@ -244,6 +244,27 @@ bool dyn_iterator::insert_dyn(const std::type_info &type, const void *value)
 	return false;
 }
 
+
+bool list_iterator_t::extract_dyn(const std::type_info &type, void *value) const
+{
+	if(type == typeid(value_type*) && valid())
+	{
+		*reinterpret_cast<value_type**>(value) = &*_position;
+		return true;
+	}else if(type == typeid(std::shared_ptr<std::pair<const dyn_object, dyn_object>>))
+	{
+		if(auto source = lock_same())
+		{
+			if(_position != source->end())
+			{
+				auto fake_pair = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(static_cast<cell>(std::distance(source->begin(), _position)), tags::find_tag(tags::tag_cell)), {}));
+				*reinterpret_cast<std::shared_ptr<std::pair<const dyn_object, dyn_object>>*>(value) = std::move(fake_pair);
+				return true;
+			}
+		}
+	}
+	return false;
+}
 
 
 std::shared_ptr<linked_list_t> linked_list_iterator_t::lock_same()
@@ -416,17 +437,17 @@ bool linked_list_iterator_t::operator==(const dyn_iterator &obj) const
 	return false;
 }
 
-bool linked_list_iterator_t::extract_dyn(const std::type_info &type, void *&value) const
+bool linked_list_iterator_t::extract_dyn(const std::type_info &type, void *value) const
 {
 	if(valid())
 	{
-		if(type == typeid(dyn_object))
+		if(type == typeid(dyn_object*))
 		{
-			value = &**_position;
+			*reinterpret_cast<dyn_object**>(value) = &**_position;
 			return true;
-		}else if(type == typeid(value_type))
+		}else if(type == typeid(value_type*))
 		{
-			value = &*_position;
+			*reinterpret_cast<value_type**>(value) = &*_position;
 			return true;
 		}
 	}

@@ -15,6 +15,7 @@
 #include <exception>
 #include <typeinfo>
 #include <functional>
+#include <iterator>
 
 template <class Type>
 class collection_base
@@ -165,9 +166,9 @@ public:
 	virtual ~dyn_iterator() = default;
 
 	template <class Type>
-	bool extract(Type *&value) const
+	bool extract(Type &value) const
 	{
-		return extract_dyn(typeid(Type), reinterpret_cast<void*&>(value));
+		return extract_dyn(typeid(Type), reinterpret_cast<void*>(&value));
 	}
 
 	template <class Type>
@@ -183,7 +184,7 @@ public:
 	}
 
 protected:
-	virtual bool extract_dyn(const std::type_info &type, void *&value) const;
+	virtual bool extract_dyn(const std::type_info &type, void *value) const;
 	virtual bool insert_dyn(const std::type_info &type, void *value);
 	virtual bool insert_dyn(const std::type_info &type, const void *value);
 };
@@ -349,11 +350,11 @@ public:
 	}
 
 protected:
-	virtual bool extract_dyn(const std::type_info &type, void *&value) const override
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override
 	{
-		if(type == typeid(value_type) && valid())
+		if(type == typeid(value_type*) && valid())
 		{
-			value = &*_position;
+			*reinterpret_cast<value_type**>(value) = &*_position;
 			return true;
 		}
 		return false;
@@ -447,6 +448,9 @@ public:
 	{
 		return std::make_unique<list_iterator_t>(*this);
 	}
+
+protected:
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
 };
 
 class map_iterator_t : public iterator_impl<map_t>
@@ -531,7 +535,7 @@ public:
 	virtual bool operator==(const dyn_iterator &obj) const override;
 
 protected:
-	virtual bool extract_dyn(const std::type_info &type, void *&value) const override;
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
 	virtual bool insert_dyn(const std::type_info &type, void *value) override;
 	virtual bool insert_dyn(const std::type_info &type, const void *value) override;
 };

@@ -56,6 +56,11 @@ public:
 			{
 				return Factory(amx, pair->second, params[Indices]...);
 			}
+			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+			if(iter->extract(spair))
+			{
+				return Factory(amx, spair->second, params[Indices]...);
+			}
 		}
 		return 0;
 	}
@@ -86,6 +91,11 @@ public:
 			if(iter->extract(pair))
 			{
 				return Factory(amx, pair->first, params[Indices]...);
+			}
+			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+			if(iter->extract(spair))
+			{
+				return Factory(amx, spair->first, params[Indices]...);
 			}
 		}
 		return 0;
