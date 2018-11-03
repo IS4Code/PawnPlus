@@ -108,6 +108,14 @@ namespace Natives
 		delete[] args;
 		return result;
 	}
+
+	// native tag_uid:tag_element(tag_uid:tag_uid);
+	AMX_DEFINE_NATIVE(tag_element, 1)
+	{
+		auto element = tags::find_tag(params[1])->get_ops().get_element();
+		if(element != nullptr) return element->uid;
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -123,6 +131,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(tag_set_op),
 	AMX_DECLARE_NATIVE(tag_call_op),
 	AMX_DECLARE_NATIVE(tag_lock),
+	AMX_DECLARE_NATIVE(tag_element),
 };
 
 int RegisterTagNatives(AMX *amx)

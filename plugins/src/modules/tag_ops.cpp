@@ -221,6 +221,23 @@ struct null_operations : public tag_operations
 	{
 		return 0;
 	}
+
+	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override;
+
+	virtual tag_ptr get_element() const override
+	{
+		return nullptr;
+	}
+
+	const char *get_subname(tag_ptr tag, const char *name) const
+	{
+		size_t len = tag->name.length();
+		if(std::memcmp(name, tag->name.c_str(), len) == 0 && name[len] == '@')
+		{
+			return name + len + 1;
+		}
+		return nullptr;
+	}
 };
 
 struct cell_operations : public null_operations
@@ -820,11 +837,53 @@ struct variant_operations : public null_operations
 		}
 		str.append({')'});
 	}
+
+	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
+	{
+		return std::make_unique<variant_operations>();
+	}
 };
 
-struct list_operations : public null_operations
+template <class Self, cell Tag>
+struct generic_operations : public null_operations
 {
-	list_operations() : null_operations(tags::tag_list)
+	tag_ptr element;
+
+	generic_operations() : null_operations(Tag), element(nullptr)
+	{
+
+	}
+
+	generic_operations(tag_ptr element) : null_operations(Tag), element(element)
+	{
+
+	}
+
+	virtual tag_ptr get_element() const override
+	{
+		return element;
+	}
+
+	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
+	{
+		auto subname = get_subname(tags::find_tag(tag_uid), name);
+		if(subname)
+		{
+			return std::make_unique<Self>(tags::find_tag(subname));
+		}else{
+			return std::make_unique<Self>();
+		}
+	}
+};
+
+struct list_operations : public generic_operations<list_operations, tags::tag_list>
+{
+	list_operations() : generic_operations()
+	{
+
+	}
+
+	list_operations(tag_ptr element) : generic_operations(element)
 	{
 
 	}
@@ -897,9 +956,14 @@ struct list_operations : public null_operations
 	}
 };
 
-struct map_operations : public null_operations
+struct map_operations : public generic_operations<map_operations, tags::tag_map>
 {
-	map_operations() : null_operations(tags::tag_map)
+	map_operations() : generic_operations()
+	{
+
+	}
+
+	map_operations(tag_ptr element) : generic_operations(element)
 	{
 
 	}
@@ -973,9 +1037,14 @@ struct map_operations : public null_operations
 	}
 };
 
-struct iter_operations : public null_operations
+struct iter_operations : public generic_operations<iter_operations, tags::tag_iter>
 {
-	iter_operations() : null_operations(tags::tag_iter)
+	iter_operations() : generic_operations()
+	{
+
+	}
+
+	iter_operations(tag_ptr element) : generic_operations(element)
 	{
 
 	}
@@ -1036,9 +1105,14 @@ struct iter_operations : public null_operations
 	}
 };
 
-struct ref_operations : public null_operations
+struct ref_operations : public generic_operations<ref_operations, tags::tag_ref>
 {
-	ref_operations() : null_operations(tags::tag_ref)
+	ref_operations() : generic_operations()
+	{
+
+	}
+
+	ref_operations(tag_ptr element) : generic_operations(element)
 	{
 
 	}
@@ -1061,9 +1135,14 @@ struct ref_operations : public null_operations
 	}
 };
 
-struct task_operations : public null_operations
+struct task_operations : public generic_operations<task_operations, tags::tag_task>
 {
-	task_operations() : null_operations(tags::tag_task)
+	task_operations() : generic_operations()
+	{
+
+	}
+
+	task_operations(tag_ptr element) : generic_operations(element)
 	{
 
 	}
@@ -1173,6 +1252,7 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::make_unique<tag_info>(12, "Var", unknown_tag, std::make_unique<var_operations>()));
 	v.push_back(std::move(string_const));
 	v.push_back(std::move(variant_const));
+	v.push_back(std::make_unique<tag_info>(15, "char@", v[3].get(), std::make_unique<char_operations>()));
 	return v;
 }());
 
@@ -1528,8 +1608,12 @@ public:
 	}
 };
 
-std::unique_ptr<tag_operations> tags::new_dynamic_ops(cell uid)
+std::unique_ptr<tag_operations> null_operations::derive(tag_ptr tag, cell uid, const char *name) const
 {
+	if(tag->base)
+	{
+		return tag->base->get_ops().derive(tag->base, uid, name);
+	}
 	return std::make_unique<dynamic_operations>(uid);
 }
 

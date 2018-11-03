@@ -38,7 +38,7 @@ tag_ptr tags::find_tag(const char *name, size_t sublen)
 
 	for(auto &tag : ::tag_list)
 	{
-		if(tag->name == tag_name) return tag.get();
+		if(tag && tag->name == tag_name) return tag.get();
 	}
 
 	size_t pos = std::string::npos, npos = -1;
@@ -59,7 +59,10 @@ tag_ptr tags::find_tag(const char *name, size_t sublen)
 		base = ::tag_list[tags::tag_unknown].get();
 	}
 	cell id = ::tag_list.size();
-	::tag_list.push_back(std::make_unique<tag_info>(id, std::move(tag_name), base, new_dynamic_ops(id)));
+	::tag_list.push_back(nullptr);
+
+	auto ops = base->get_ops().derive(base, id, tag_name.c_str());
+	::tag_list[id] = std::make_unique<tag_info>(id, std::move(tag_name), base, std::move(ops));
 	return ::tag_list[id].get();
 }
 
@@ -69,7 +72,7 @@ tag_ptr tags::find_existing_tag(const char *name, size_t sublen)
 
 	for(auto &tag : ::tag_list)
 	{
-		if(tag->name == tag_name) return tag.get();
+		if(tag && tag->name == tag_name) return tag.get();
 	}
 
 	return ::tag_list[tag_unknown].get();
@@ -121,14 +124,16 @@ tag_ptr tags::new_tag(const char *name, cell base_id)
 	tag_name.append(1, '+');
 
 	cell id = ::tag_list.size();
-	auto tag = std::make_unique<tag_info>(id, std::move(tag_name), base, new_dynamic_ops(id));
+	::tag_list.push_back(nullptr);
+	auto ops = base->get_ops().derive(base, id, tag_name.c_str());
+	auto tag = std::make_unique<tag_info>(id, std::move(tag_name), base, std::move(ops));
 	tag->name.append(std::to_string(reinterpret_cast<std::uintptr_t>(tag.get())));
 	while(find_existing_tag(tag->name.c_str())->uid != tag_unknown)
 	{
 		tag->name.append(1, '_');
 	}
 	auto ptr = tag.get();
-	::tag_list.push_back(std::move(tag));
+	::tag_list[id] = std::move(tag);
 	return ptr;
 }
 

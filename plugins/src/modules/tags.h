@@ -88,6 +88,9 @@ public:
 	virtual bool assign(tag_ptr tag, cell *arg, cell size) const = 0;
 	virtual bool init(tag_ptr tag, cell *arg, cell size) const = 0;
 	virtual size_t hash(tag_ptr tag, cell arg) const = 0;
+
+	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const = 0;
+	virtual tag_ptr get_element() const = 0;
 	virtual ~tag_operations() = default;
 };
 
@@ -142,8 +145,6 @@ namespace tags
 	tag_ptr find_tag(cell tag_uid);
 	tag_ptr find_existing_tag(const char *name, size_t sublen = -1);
 	tag_ptr new_tag(const char *name, cell base_id);
-
-	std::unique_ptr<tag_operations> new_dynamic_ops(cell uid);
 }
 
 #endif
