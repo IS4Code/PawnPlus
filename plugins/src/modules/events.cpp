@@ -13,7 +13,6 @@
 class event_info
 {
 	cell flags;
-	bool active;
 	std::vector<stored_param> arg_values;
 	std::string handler;
 	aux::optional<int> index;
@@ -158,7 +157,6 @@ bool event_info::handler_index(AMX *amx, int &index)
 
 bool event_info::invoke(AMX *amx, cell *retval, cell id)
 {
-	if(!active) return false;
 	int index;
 	if(!handler_index(amx, index)) return false;
 
