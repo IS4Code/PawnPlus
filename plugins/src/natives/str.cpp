@@ -17,8 +17,7 @@ namespace Natives
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
 		int flags = optparam(2, 0);
-		auto str = strings::create(addr, true, flags & 1, flags & 2);
-		return strings::pool.get_id(str);
+		return strings::create(addr, flags & 1, flags & 2);
 	}
 
 	// native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=str_preserve);
@@ -27,8 +26,7 @@ namespace Natives
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
 		int flags = optparam(3, 0);
-		auto str = strings::create(addr, true, static_cast<size_t>(params[2]), false, flags & 1, flags & 2);
-		return strings::pool.get_id(str);
+		return strings::create(addr, static_cast<size_t>(params[2]), false, flags & 1, flags & 2);
 	}
 
 	// native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
@@ -39,57 +37,54 @@ namespace Natives
 		int flags = params[2];
 		cell size = (addr[0] & 0xFF000000) ? params[3] : params[3] - 1;
 		if(size < 0) size = 0;
-		auto str = strings::create(addr, true, static_cast<size_t>(size), true, flags & 1, flags & 2);
-		return strings::pool.get_id(str);
+		return strings::create(addr, static_cast<size_t>(size), true, flags & 1, flags & 2);
 	}
 
 	// native String:str_new_buf(size);
 	AMX_DEFINE_NATIVE(str_new_buf, 1)
 	{
 		cell size = params[1];
-		return strings::pool.get_id(strings::pool.add(cell_string(size - 1, 0), true));
+		return strings::pool.get_id(strings::pool.add(cell_string(size - 1, 0)));
 	}
 
 	// native AmxString:str_addr(StringTag:str);
 	AMX_DEFINE_NATIVE(str_addr, 1)
 	{
-		cell_string *str;
+		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
-		return strings::pool.get_address(amx, str);
+		return strings::pool.get_address(amx, *str);
 	}
 
 	// native AmxStringBuffer:str_buf_addr(StringTag:str);
 	AMX_DEFINE_NATIVE(str_buf_addr, 1)
 	{
-		cell_string *str;
+		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
-		return strings::pool.get_inner_address(amx, str);
+		return strings::pool.get_inner_address(amx, *str);
 	}
 
-	// native GlobalString:str_to_global(StringTag:str);
-	AMX_DEFINE_NATIVE(str_to_global, 1)
+	// native String:str_acquire(StringTag:str);
+	AMX_DEFINE_NATIVE(str_acquire, 1)
 	{
-		cell_string *str;
+		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
-		strings::pool.move_to_global(str);
+		if(!strings::pool.acquire_ref(*str)) return 0;
 		return params[1];
 	}
 
-	// native String:str_to_local(StringTag:str);
-	AMX_DEFINE_NATIVE(str_to_local, 1)
+	// native String:str_release(StringTag:str);
+	AMX_DEFINE_NATIVE(str_release, 1)
 	{
-		cell_string *str;
+		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
-		strings::pool.move_to_local(str);
+		if(!strings::pool.release_ref(*str)) return 0;
 		return params[1];
 	}
 
 	// native bool:str_delete(StringTag:str);
 	AMX_DEFINE_NATIVE(str_delete, 1)
 	{
-		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) return 0;
-		return strings::pool.remove(str);
+		return strings::pool.remove_by_id(params[1]);
 	}
 
 	// native bool:str_valid(StringTag:str);
@@ -104,7 +99,7 @@ namespace Natives
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
-		return strings::pool.get_id(strings::pool.clone(str));
+		return strings::pool.get_id(strings::pool.add(cell_string(*str)));
 	}
 
 
@@ -118,26 +113,26 @@ namespace Natives
 		}
 		if(str1 == nullptr && str2 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(true));
+			return strings::pool.get_id(strings::pool.add());
 		}
 		if(str1 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(cell_string(*str2), true));
+			return strings::pool.get_id(strings::pool.add(cell_string(*str2)));
 		}
 		if(str2 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(cell_string(*str1), true));
+			return strings::pool.get_id(strings::pool.add(cell_string(*str1)));
 		}
 
 		auto str = *str1 + *str2;
-		return strings::pool.get_id(strings::pool.add(std::move(str), true));
+		return strings::pool.get_id(strings::pool.add(std::move(str)));
 	}
 
 	// native String:str_val(AnyTag:val, tag=tagof(value));
 	AMX_DEFINE_NATIVE(str_val, 2)
 	{
 		dyn_object obj{amx, params[1], params[2]};
-		return strings::pool.get_id(strings::pool.add(obj.to_string(), true));
+		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
 
 	// native String:str_val_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
@@ -146,7 +141,7 @@ namespace Natives
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
 		dyn_object obj{amx, addr, params[2], params[3]};
-		return strings::pool.get_id(strings::pool.add(obj.to_string(), true));
+		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
 
 	static cell AMX_NATIVE_CALL str_split_base(AMX *amx, cell_string *str, const cell_string &delims)
@@ -226,7 +221,7 @@ namespace Natives
 
 	static cell AMX_NATIVE_CALL str_join_base(AMX *amx, list_t *list, const cell_string &delim)
 	{
-		auto str = strings::pool.add(true);
+		auto &str = strings::pool.add();
 		bool first = true;
 		for(auto &obj : *list)
 		{
@@ -414,7 +409,7 @@ namespace Natives
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) return 0;
-		if(str == nullptr) return strings::pool.get_id(strings::pool.add(true));
+		if(str == nullptr) return strings::pool.get_id(strings::pool.add());
 
 		cell start = optparam(2, 0);
 		cell end = optparam(3, std::numeric_limits<cell>::max());
@@ -422,7 +417,7 @@ namespace Natives
 		if(strings::clamp_range(*str, start, end))
 		{
 			auto substr = str->substr(start, end - start);
-			return strings::pool.get_id(strings::pool.add(std::move(substr), true));
+			return strings::pool.get_id(strings::pool.add(std::move(substr)));
 		}
 		return 0;
 	}
@@ -529,7 +524,7 @@ namespace Natives
 		int flen;
 		amx_StrLen(format, &flen);
 
-		auto str = strings::pool.add(true);
+		auto &str = strings::pool.add();
 		strings::format(amx, *str, format, flen, params[0] - 1, params + 2);
 		return strings::pool.get_id(str);
 	}
@@ -539,7 +534,7 @@ namespace Natives
 	{
 		cell_string *strformat;
 		if(!strings::pool.get_by_id(params[1], strformat) && strformat != nullptr) return 0;
-		auto str = strings::pool.add(true);
+		auto &str = strings::pool.add();
 		if(strformat != nullptr)
 		{
 			strings::format(amx, *str, &(*strformat)[0], strformat->size(), params[0] / sizeof(cell) - 1, params + 2);
@@ -599,7 +594,7 @@ namespace Natives
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		auto str2 = *str;
 		std::transform(str2.begin(), str2.end(), str2.begin(), to_lower);
-		return strings::pool.get_id(strings::pool.add(std::move(str2), true));
+		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
 	// native String:str_to_upper(StringTag:str);
@@ -609,7 +604,7 @@ namespace Natives
 		if(!strings::pool.get_by_id(params[1], str)) return 0;
 		auto str2 = *str;
 		std::transform(str2.begin(), str2.end(), str2.begin(), to_upper);
-		return strings::pool.get_id(strings::pool.add(std::move(str2), true));
+		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
 	// native String:str_set_to_lower(StringTag:str);
@@ -639,7 +634,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_new_buf),
 	AMX_DECLARE_NATIVE(str_addr),
 	AMX_DECLARE_NATIVE(str_buf_addr),
-	AMX_DECLARE_NATIVE(str_to_global),
+	AMX_DECLARE_NATIVE(str_acquire),
+	AMX_DECLARE_NATIVE(str_release),
 	AMX_DECLARE_NATIVE(str_delete),
 	AMX_DECLARE_NATIVE(str_valid),
 	AMX_DECLARE_NATIVE(str_clone),

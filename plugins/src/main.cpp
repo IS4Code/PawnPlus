@@ -3,8 +3,6 @@
 #include "hooks.h"
 #include "natives.h"
 #include "context.h"
-#include "pluginapi.h"
-#include "capi.h"
 #include "modules/tasks.h"
 #include "modules/events.h"
 #include "modules/threads.h"
@@ -29,9 +27,6 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
 
-	InitPluginApi(ppData);
-	RegisterPlugin("com.is4.pawnplus.api1", &capi::info);
-
 	Hooks::Register();
 
 	amx::on_bottom(
@@ -42,7 +37,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 		}
 	);
 
-	logprintf(" PawnPlus v0.10.1 loaded");
+	logprintf(" PawnPlus v0.11.0 loaded");
 	logprintf(" Created by IllidanS4");
 	return true;
 }
@@ -59,7 +54,7 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 
 	Hooks::Unregister();
 
-	logprintf(" PawnPlus v0.10.1 unloaded");
+	logprintf(" PawnPlus v0.11.0 unloaded");
 }
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) 

@@ -532,19 +532,19 @@ struct string_operations : public null_operations
 		}
 		if(str1 == nullptr && str2 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(true));
+			return strings::pool.get_id(strings::pool.add());
 		}
 		if(str1 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(cell_string(*str2), true));
+			return strings::pool.get_id(strings::pool.add(cell_string(*str2)));
 		}
 		if(str2 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(cell_string(*str1), true));
+			return strings::pool.get_id(strings::pool.add(cell_string(*str1)));
 		}
 
 		auto str = *str1 + *str2;
-		return strings::pool.get_id(strings::pool.add(std::move(str), true));
+		return strings::pool.get_id(strings::pool.add(std::move(str)));
 	}
 
 	virtual cell mod(tag_ptr tag, cell a, cell b) const override
@@ -584,12 +584,7 @@ struct string_operations : public null_operations
 
 	virtual bool del(tag_ptr tag, cell arg) const override
 	{
-		cell_string *str;
-		if(strings::pool.get_by_id(arg, str))
-		{
-			return strings::pool.remove(str);
-		}
-		return false;
+		return strings::pool.remove_by_id(arg);
 	}
 
 	virtual bool free(tag_ptr tag, cell arg) const override
@@ -602,7 +597,7 @@ struct string_operations : public null_operations
 		cell_string *str;
 		if(strings::pool.get_by_id(arg, str))
 		{
-			return strings::pool.get_id(strings::pool.clone(str));
+			return strings::pool.get_id(strings::pool.add(cell_string(*str)));
 		}
 		return 0;
 	}
@@ -778,21 +773,16 @@ struct variant_operations : public null_operations
 
 	virtual bool del(tag_ptr tag, cell arg) const override
 	{
-		dyn_object *var;
-		if(variants::pool.get_by_id(arg, var))
-		{
-			return variants::pool.remove(var);
-		}
-		return false;
+		return variants::pool.remove_by_id(arg);
 	}
 
 	virtual bool free(tag_ptr tag, cell arg) const override
 	{
-		dyn_object *var;
+		decltype(variants::pool)::ref_container *var;
 		if(variants::pool.get_by_id(arg, var))
 		{
-			var->free();
-			return variants::pool.remove(var);
+			(*var)->free();
+			return variants::pool.remove(*var);
 		}
 		return false;
 	}
@@ -802,7 +792,7 @@ struct variant_operations : public null_operations
 		dyn_object *var;
 		if(variants::pool.get_by_id(arg, var))
 		{
-			return variants::pool.get_id(variants::pool.clone(var));
+			return variants::pool.get_id(variants::pool.add(dyn_object(*var)));
 		}
 		return 0;
 	}
@@ -812,7 +802,7 @@ struct variant_operations : public null_operations
 		dyn_object *var;
 		if(variants::pool.get_by_id(arg, var))
 		{
-			return variants::pool.get_id(variants::pool.clone(var, [](const dyn_object &obj) {return obj.clone(); }));
+			return variants::pool.get_id(variants::pool.add(var->clone()));
 		}
 		return 0;
 	}
@@ -1066,12 +1056,7 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 
 	virtual bool del(tag_ptr tag, cell arg) const override
 	{
-		dyn_iterator *iter;
-		if(iter_pool.get_by_id(arg, iter))
-		{
-			return iter_pool.remove(iter);
-		}
-		return false;
+		return iter_pool.remove_by_id(arg);
 	}
 
 	virtual bool free(tag_ptr tag, cell arg) const override
@@ -1084,7 +1069,7 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(arg, iter))
 		{
-			return iter_pool.get_id(iter_pool.clone(iter, [](const dyn_iterator &iter) {return iter.clone(); }));
+			return iter_pool.get_id(iter_pool.add(std::unique_ptr< object_pool<dyn_iterator>::ref_container>(&dynamic_cast<object_pool<dyn_iterator>::ref_container&>(*iter->clone().release()))));
 		}
 		return 0;
 	}
@@ -1659,7 +1644,7 @@ cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numar
 			return numargs >= 1 ? not(tag, args[0]) : 0;
 
 		case op_type::string:
-			return numargs >= 1 ? strings::pool.get_id(strings::pool.add(to_string(tag, args[0]), true)) : 0;
+			return numargs >= 1 ? strings::pool.get_id(strings::pool.add(to_string(tag, args[0]))) : 0;
 		case op_type::del:
 			return numargs >= 1 ? del(tag, args[0]) : 0;
 		case op_type::free:

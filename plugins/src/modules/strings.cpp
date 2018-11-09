@@ -20,11 +20,11 @@ object_pool<cell_string> strings::pool;
 cell strings::null_value1[1] = {0};
 cell strings::null_value2[2] = {0, 1};
 
-cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fixnulls)
+cell strings::create(const cell *addr, bool truncate, bool fixnulls)
 {
 	if(addr == nullptr || !addr[0])
 	{
-		return pool.add(temp);
+		return pool.get_id(pool.add());
 	}else if(addr[0] & 0xFF000000)
 	{
 		const unsigned char *c;
@@ -35,7 +35,7 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 			c = reinterpret_cast<const unsigned char*>(addr) + pos / 4 + ipos;
 		}while(*c);
 
-		cell_string *str = pool.add(cell_string(pos, 0), temp);
+		auto &str = pool.add(cell_string(pos, 0));
 
 		pos = -1;
 		do{
@@ -45,7 +45,7 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 			(*str)[pos] = *c;
 		}while(*c);
 
-		return str;
+		return pool.get_id(str);
 	}else{
 		size_t pos = -1;
 		const cell *c;
@@ -54,7 +54,7 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 			c = addr + pos;
 		}while (*c);
 
-		cell_string *str = pool.add(cell_string(addr, pos), temp);
+		auto &str = pool.add(cell_string(addr, pos));
 		if(truncate)
 		{
 			for(size_t i = 0; i < pos; i++)
@@ -64,15 +64,15 @@ cell_string *strings::create(const cell *addr, bool temp, bool truncate, bool fi
 				if(fixnulls && c == 0) c = 0x00FFFF00;
 			}
 		}
-		return str;
+		return pool.get_id(str);
 	}
 }
 
-cell_string *strings::create(const cell *addr, bool temp, size_t length, bool packed, bool truncate, bool fixnulls)
+cell strings::create(const cell *addr, size_t length, bool packed, bool truncate, bool fixnulls)
 {
 	if(addr == nullptr || length == 0)
 	{
-		return pool.add(temp);
+		return pool.get_id(pool.add());
 	}
 	if(packed && (addr[0] & 0xFF000000))
 	{
@@ -85,7 +85,7 @@ cell_string *strings::create(const cell *addr, bool temp, size_t length, bool pa
 
 		length = (length - 1) * 4 + rem;
 
-		cell_string *str = pool.add(cell_string(length, '\0'), temp);
+		auto &str = pool.add(cell_string(length, '\0'));
 		size_t pos = 0;
 		do{
 			size_t ipos = pos / 4 * 4 + 3 - pos % 4;
@@ -97,9 +97,9 @@ cell_string *strings::create(const cell *addr, bool temp, size_t length, bool pa
 			(*str)[pos] = c;
 			pos++;
 		}while(pos < length);
-		return str;
+		return pool.get_id(str);
 	}else{
-		cell_string *str = pool.add(cell_string(addr, length), temp);
+		auto &str = pool.add(cell_string(addr, length));
 		if(truncate)
 		{
 			for(size_t i = 0; i < length; i++)
@@ -116,7 +116,7 @@ cell_string *strings::create(const cell *addr, bool temp, size_t length, bool pa
 				if(c == 0) c = 0x00FFFF00;
 			}
 		}
-		return str;
+		return pool.get_id(str);
 	}
 }
 
@@ -131,9 +131,9 @@ cell_string strings::convert(const std::string &str)
 	return cstr;
 }
 
-cell_string *strings::create(const std::string &str, bool temp)
+cell strings::create(const std::string &str)
 {
-	return pool.add(convert(str), temp);
+	return pool.get_id(pool.add(convert(str)));
 }
 
 void add_query(strings::cell_string &buf, const cell *str, int len)

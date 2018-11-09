@@ -1,4 +1,4 @@
-/** PawnPlus v0.10.1 by IllidanS4 **/
+/** PawnPlus v0.11.0 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 #if defined _inc_PawnPlus
@@ -28,11 +28,8 @@
 #define PP_SYNTAX_GENERIC
 #endif
 
-#define GlobalString String@Global
 #define ConstString String@Const
-#define GlobalVariant Variant@Global
 #define ConstVariant Variant@Const
-#define GlobalIter Iter@Global
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -44,10 +41,6 @@
 
 #define PP_TAG_PREFIX@String<%0> %0@String
 #define PP_TAG_PREFIX@Variant<%0> %0@Variant
-#define PP_TAG_PREFIX@String@Global<%0> %0@String@Global
-#define PP_TAG_PREFIX@Variant@Global<%0> %0@Variant@Global
-#define PP_TAG_PREFIX@GlobalString<%0> %0@String@Global
-#define PP_TAG_PREFIX@GlobalVariant<%0> %0@Variant@Global
 #define PP_TAG_PREFIX@String@Const<%0> %0@String@Const
 #define PP_TAG_PREFIX@Variant@Const<%0> %0@Variant@Const
 #define PP_TAG_PREFIX@ConstString<%0> %0@String@Const
@@ -56,21 +49,19 @@
 #define PP_TAG_PREFIX@Map<%0> %0@Map
 #define PP_TAG_PREFIX@LinkedList<%0> %0@LinkedList
 #define PP_TAG_PREFIX@Iter<%0> %0@Iter
-#define PP_TAG_PREFIX@Iter@Global<%0> %0@Iter@Global
-#define PP_TAG_PREFIX@GlobalIter<%0> %0@Iter@Global
 #define Ref<%0> PP_TAG_PREFIX@%0<Ref>
 
 #endif
 
-#define StringTags String,GlobalString
+#define StringTags String
 #define StringTag {StringTags}
 #define ConstStringTags ConstString,StringTags
 #define ConstStringTag {ConstStringTags}
-#define VariantTags Variant,GlobalVariant
+#define VariantTags Variant
 #define VariantTag {VariantTags}
 #define ConstVariantTags ConstVariant,VariantTags
 #define ConstVariantTag {ConstVariantTags}
-#define IterTags Iter,GlobalIter
+#define IterTags Iter
 #define IterTag {IterTags}
 
 #define TagTags _,tag_uid
@@ -293,7 +284,7 @@ stock operator~(PP@af:arr[], count)
 /*     Strings     */
 /*                 */
 
-#define STRING_NULL (GlobalString:0)
+#define STRING_NULL (String:0)
 #define INVALID_CHAR (0xFFFFFF00)
 
 enum str_create_mode
@@ -309,8 +300,8 @@ native String:str_new_static(const str[], str_create_mode:mode=str_preserve, siz
 native String:str_new_buf(size);
 native AmxString:str_addr(StringTag:str);
 native AmxStringBuffer:str_buf_addr(StringTag:str);
-native GlobalString:str_to_global(StringTag:str);
-native String:str_to_local(StringTag:str);
+native String:str_acquire(StringTag:str);
+native String:str_release(StringTag:str);
 native bool:str_delete(StringTag:str);
 native bool:str_valid(ConstStringTag:str);
 native String:str_clone(ConstStringTag:str);
@@ -363,7 +354,7 @@ native String:str_set_format_s(StringTag:target, ConstStringTag:format, {StringT
 /*     Variant     */
 /*                 */
 
-#define VAR_NULL (GlobalVariant:0)
+#define VAR_NULL (Variant:0)
 
 native Variant:var_new(AnyTag:value, TagTag:tag_id=tagof(value));
 native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
@@ -373,10 +364,9 @@ native Variant:var_new_buf(size, TagTag:tag_id=0);
 native Variant:var_new_str(const value[]);
 native Variant:var_new_str_s(ConstStringTag:value);
 native Variant:var_new_var(ConstVariantTag:value);
-native GlobalVariant:var_to_global(VariantTag:var);
-native Variant:var_to_local(VariantTag:var);
+native Variant:var_acquire(VariantTag:var);
+native Variant:var_release(VariantTag:var);
 native bool:var_delete(VariantTag:var);
-native bool:var_delete_deep(VariantTag:var);
 native bool:var_valid(ConstVariantTag:var);
 native Variant:var_clone(ConstVariantTag:var);
 
@@ -873,8 +863,8 @@ native Iter<%0>:linked_list_iter<%0>(LinkedList<%0>:l)=linked_list_iter
 /*                 */
 
 native bool:iter_valid(IterTag:iter);
-native GlobalIter:iter_to_global(IterTag:iter);
-native Iter:iter_to_local(IterTag:iter);
+native Iter:iter_acquire(IterTag:iter);
+native Iter:iter_release(IterTag:iter);
 native bool:iter_delete(IterTag:iter);
 native bool:iter_linked(IterTag:iter);
 native bool:iter_inside(IterTag:iter);
@@ -1068,16 +1058,13 @@ stock operator~(PP@ts:arr[], count)
     forward %0:operator=(Float:arg)
 
 PP_PROHIBIT_UNARY_OPERATORS(String);
-PP_PROHIBIT_UNARY_OPERATORS(GlobalString);
 PP_PROHIBIT_UNARY_OPERATORS(ConstString);
 PP_PROHIBIT_UNARY_OPERATORS(AmxString);
 PP_PROHIBIT_UNARY_OPERATORS(AmxStringBuffer);
 
 forward String:operator=(AmxString:arg);
-forward GlobalString:operator=(AmxString:arg);
 forward ConstString:operator=(AmxString:arg);
 forward String:operator=(AmxStringBuffer:arg);
-forward GlobalString:operator=(AmxStringBuffer:arg);
 forward ConstString:operator=(AmxStringBuffer:arg);
 
 #undef PP_PROHIBIT_UNARY_OPERATORS
@@ -1093,134 +1080,83 @@ forward ConstString:operator=(AmxStringBuffer:arg);
     PP_PROHIBIT_BINARY_OPEARTORS(%0,_); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,Float); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,String); \
-    PP_PROHIBIT_BINARY_OPEARTORS(%0,GlobalString); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,ConstString); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxString); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxStringBuffer)
 
 PP_PROHIBIT_BINARY_OPEARTORS2(String);
-PP_PROHIBIT_BINARY_OPEARTORS2(GlobalString);
 PP_PROHIBIT_BINARY_OPEARTORS2(ConstString);
 PP_PROHIBIT_BINARY_OPEARTORS2(AmxString);
 PP_PROHIBIT_BINARY_OPEARTORS2(AmxStringBuffer);
 
 #undef PP_PROHIBIT_BINARY_OPEARTORS
 
-native GlobalString:operator=(String:arg) = str_to_global;
-stock String:operator=(GlobalString:arg) return String:arg;
 stock ConstString:operator=(String:arg) return ConstString:arg;
-stock ConstString:operator=(GlobalString:arg) return ConstString:arg;
 forward String:operator=(ConstString:arg);
-forward GlobalString:operator=(ConstString:arg);
 native AmxString:operator=(String:arg) = str_addr;
-native AmxString:operator=(GlobalString:arg) = str_addr;
 native AmxStringBuffer:operator=(String:arg) = str_buf_addr;
-native AmxStringBuffer:operator=(GlobalString:arg) = str_buf_addr;
 
 stock AmxStringBuffer:operator+(AmxStringBuffer:arg1, arg2) return AmxStringBuffer:(_:arg1+arg2);
 
 native String:operator+(String:arg1, String:arg2) = str_cat;
-native String:operator+(String:arg1, GlobalString:arg2) = str_cat;
 native String:operator+(String:arg1, ConstString:arg2) = str_cat;
-native String:operator+(GlobalString:arg1, String:arg2) = str_cat;
-native String:operator+(GlobalString:arg1, ConstString:arg2) = str_cat;
-native String:operator+(GlobalString:arg1, GlobalString:arg2) = str_cat;
 native String:operator+(ConstString:arg1, String:arg2) = str_cat;
-native String:operator+(ConstString:arg1, GlobalString:arg2) = str_cat;
 native String:operator+(ConstString:arg1, ConstString:arg2) = str_cat;
 
 native bool:operator==(String:arg1, String:arg2) = str_eq;
-native bool:operator==(String:arg1, GlobalString:arg2) = str_eq;
 native bool:operator==(String:arg1, ConstString:arg2) = str_eq;
-native bool:operator==(GlobalString:arg1, String:arg2) = str_eq;
-native bool:operator==(GlobalString:arg1, GlobalString:arg2) = str_eq;
-native bool:operator==(GlobalString:arg1, ConstString:arg2) = str_eq;
 native bool:operator==(ConstString:arg1, String:arg2) = str_eq;
-native bool:operator==(ConstString:arg1, GlobalString:arg2) = str_eq;
 native bool:operator==(ConstString:arg1, ConstString:arg2) = str_eq;
 stock bool:operator!=(String:arg1, String:arg2) return !(arg1 == arg2);
-stock bool:operator!=(String:arg1, GlobalString:arg2) return !(arg1 == arg2);
 stock bool:operator!=(String:arg1, ConstString:arg2) return !(arg1 == arg2);
-stock bool:operator!=(GlobalString:arg1, String:arg2) return !(arg1 == arg2);
-stock bool:operator!=(GlobalString:arg1, GlobalString:arg2) return !(arg1 == arg2);
-stock bool:operator!=(GlobalString:arg1, ConstString:arg2) return !(arg1 == arg2);
 stock bool:operator!=(ConstString:arg1, String:arg2) return !(arg1 == arg2);
-stock bool:operator!=(ConstString:arg1, GlobalString:arg2) return !(arg1 == arg2);
 stock bool:operator!=(ConstString:arg1, ConstString:arg2) return !(arg1 == arg2);
 
 native String:operator%(String:arg1, String:arg2) = str_cat;
-native String:operator%(String:arg1, GlobalString:arg2) = str_cat;
 native String:operator%(String:arg1, ConstString:arg2) = str_cat;
-native String:operator%(GlobalString:arg1, String:arg2) = str_cat;
-native String:operator%(GlobalString:arg1, GlobalString:arg2) = str_cat;
-native String:operator%(GlobalString:arg1, ConstString:arg2) = str_cat;
 native String:operator%(ConstString:arg1, String:arg2) = str_cat;
-native String:operator%(ConstString:arg1, GlobalString:arg2) = str_cat;
 native String:operator%(ConstString:arg1, ConstString:arg2) = str_cat;
 
 #if defined PP_SYNTAX_STRING_OP
 
 stock String:operator=(arg) return str_val(arg);
 stock String:operator=(Float:arg) return str_val(arg);
-stock GlobalString:operator=(arg) return str_to_global(str_val(arg));
-stock GlobalString:operator=(Float:arg) return str_to_global(str_val(arg));
 stock String:operator%(String:arg1, arg2) return str_cat(arg1, str_val(arg2));
-stock String:operator%(GlobalString:arg1, arg2) return str_cat(arg1, str_val(arg2));
 stock String:operator%(ConstString:arg1, arg2) return str_cat(arg1, str_val(arg2));
 stock String:operator%(arg1, String:arg2) return str_cat(str_val(arg1), arg2);
-stock String:operator%(arg1, GlobalString:arg2) return str_cat(str_val(arg1), arg2);
 stock String:operator%(arg1, ConstString:arg2) return str_cat(str_val(arg1), arg2);
 stock String:operator%(String:arg1, Float:arg2) return str_cat(arg1, str_val(arg2));
-stock String:operator%(GlobalString:arg1, Float:arg2) return str_cat(arg1, str_val(arg2));
 stock String:operator%(ConstString:arg1, Float:arg2) return str_cat(arg1, str_val(arg2));
 stock String:operator%(Float:arg1, String:arg2) return str_cat(str_val(arg1), arg2);
-stock String:operator%(Float:arg1, GlobalString:arg2) return str_cat(str_val(arg1), arg2);
 stock String:operator%(Float:arg1, ConstString:arg2) return str_cat(str_val(arg1), arg2);
 
 #endif
 
-native GlobalVariant:operator=(Variant:arg) = var_to_global;
-stock Variant:operator=(GlobalVariant:arg) return Variant:arg;
 stock ConstVariant:operator=(Variant:arg) return ConstVariant:arg;
-stock ConstVariant:operator=(GlobalVariant:arg) return ConstVariant:arg;
 forward Variant:operator=(ConstVariant:arg);
-forward GlobalVariant:operator=(ConstVariant:arg);
 
 #define PP_VARIANT_BIN_OP(%0,%1) \
     native Variant:operator%0(Variant:arg1, Variant:arg2) = %1; \
-    native Variant:operator%0(Variant:arg1, GlobalVariant:arg2) = %1; \
     native Variant:operator%0(Variant:arg1, ConstVariant:arg2) = %1; \
-    native Variant:operator%0(GlobalVariant:arg1, Variant:arg2) = %1; \
-    native Variant:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1; \
-    native Variant:operator%0(GlobalVariant:arg1, ConstVariant:arg2) = %1; \
     native Variant:operator%0(ConstVariant:arg1, Variant:arg2) = %1; \
-    native Variant:operator%0(ConstVariant:arg1, GlobalVariant:arg2) = %1; \
     native Variant:operator%0(ConstVariant:arg1, ConstVariant:arg2) = %1
 
 #define PP_VARIANT_UN_OP(%0,%1) \
     native Variant:operator%0(Variant:arg) = %1; \
-    native Variant:operator%0(GlobalVariant:arg) = %1; \
     native Variant:operator%0(ConstVariant:arg) = %1
 
 #define PP_VARIANT_UN_MOD_OP(%0,%1) \
     native Variant:operator%0(Variant:arg) = %1; \
-    forward Variant:operator%0(GlobalVariant:arg); \
     native Variant:operator%0(ConstVariant:arg) = %1
 
 #define PP_VARIANT_LOG_BIN_OP(%0,%1) \
     native bool:operator%0(Variant:arg1, Variant:arg2) = %1; \
-    native bool:operator%0(Variant:arg1, GlobalVariant:arg2) = %1; \
     native bool:operator%0(Variant:arg1, ConstVariant:arg2) = %1; \
-    native bool:operator%0(GlobalVariant:arg1, Variant:arg2) = %1; \
-    native bool:operator%0(GlobalVariant:arg1, GlobalVariant:arg2) = %1; \
-    native bool:operator%0(GlobalVariant:arg1, ConstVariant:arg2) = %1; \
     native bool:operator%0(ConstVariant:arg1, Variant:arg2) = %1; \
-    native bool:operator%0(ConstVariant:arg1, GlobalVariant:arg2) = %1; \
     native bool:operator%0(ConstVariant:arg1, ConstVariant:arg2) = %1
 
 #define PP_VARIANT_LOG_UN_OP(%0,%1) \
     native bool:operator%0(Variant:arg) = %1; \
-    native bool:operator%0(GlobalVariant:arg) = %1; \
     native bool:operator%0(ConstVariant:arg) = %1
 
 PP_VARIANT_BIN_OP(+, var_add);
@@ -1246,51 +1182,36 @@ PP_VARIANT_LOG_UN_OP(!, var_not);
 #undef PP_VARIANT_LOG_UN_OP
 
 native bool:operator==(Iter:arg1, Iter:arg2) = iter_eq;
-native bool:operator==(Iter:arg1, GlobalIter:arg2) = iter_eq;
-native bool:operator==(GlobalIter:arg1, Iter:arg2) = iter_eq;
-native bool:operator==(GlobalIter:arg1, GlobalIter:arg2) = iter_eq;
 stock bool:operator!=(Iter:arg1, Iter:arg2) return !(arg1 == arg2);
-stock bool:operator!=(Iter:arg1, GlobalIter:arg2) return !(arg1 == arg2);
-stock bool:operator!=(GlobalIter:arg1, Iter:arg2) return !(arg1 == arg2);
-stock bool:operator!=(GlobalIter:arg1, GlobalIter:arg2) return !(arg1 == arg2);
 
 #if defined PP_SYNTAX_GENERIC
 
 stock String:operator=(Ref<String>:arg) return String:arg;
-stock GlobalString:operator=(Ref<GlobalString>:arg) return GlobalString:arg;
 stock ConstString:operator=(Ref<ConstString>:arg) return ConstString:arg;
 stock Variant:operator=(Ref<Variant>:arg) return Variant:arg;
-stock GlobalVariant:operator=(Ref<GlobalVariant>:arg) return GlobalVariant:arg;
 stock ConstVariant:operator=(Ref<ConstVariant>:arg) return ConstVariant:arg;
 stock List:operator=(Ref<List>:arg) return List:arg;
 stock Map:operator=(Ref<Map>:arg) return Map:arg;
 stock LinkedList:operator=(Ref<LinkedList>:arg) return LinkedList:arg;
 stock Iter:operator=(Ref<Iter>:arg) return Iter:arg;
-stock GlobalIter:operator=(Ref<GlobalIter>:arg) return GlobalIter:arg;
 
 stock Ref<String>:operator=(String:arg) return Ref<String>:arg;
-stock Ref<GlobalString>:operator=(GlobalString:arg) return Ref<GlobalString>:arg;
 stock Ref<ConstString>:operator=(ConstString:arg) return Ref<ConstString>:arg;
 stock Ref<Variant>:operator=(Variant:arg) return Ref<Variant>:arg;
-stock Ref<GlobalVariant>:operator=(GlobalVariant:arg) return Ref<GlobalVariant>:arg;
 stock Ref<ConstVariant>:operator=(ConstVariant:arg) return Ref<ConstVariant>:arg;
 stock Ref<List>:operator=(List:arg) return Ref<List>:arg;
 stock Ref<Map>:operator=(Map:arg) return Ref<Map>:arg;
 stock Ref<LinkedList>:operator=(LinkedList:arg) return Ref<LinkedList>:arg;
 stock Ref<Iter>:operator=(Iter:arg) return Ref<Iter>:arg;
-stock Ref<GlobalIter>:operator=(GlobalIter:arg) return Ref<GlobalIter>:arg;
 
 stock Ref:operator=(Ref<String>:arg) return Ref:arg;
-stock Ref:operator=(Ref<GlobalString>:arg) return Ref:arg;
 stock Ref:operator=(Ref<ConstString>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Variant>:arg) return Ref:arg;
-stock Ref:operator=(Ref<GlobalVariant>:arg) return Ref:arg;
 stock Ref:operator=(Ref<ConstVariant>:arg) return Ref:arg;
 stock Ref:operator=(Ref<List>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Map>:arg) return Ref:arg;
 stock Ref:operator=(Ref<LinkedList>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Iter>:arg) return Ref:arg;
-stock Ref:operator=(Ref<GlobalIter>:arg) return Ref:arg;
 
 #endif
 

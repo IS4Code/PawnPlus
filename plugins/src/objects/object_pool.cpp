@@ -2,46 +2,63 @@
 #include "dyn_object.h"
 #include "modules/strings.h"
 #include "modules/containers.h"
-#include <string>
 
 template <class ObjType>
-auto object_pool<ObjType>::add(bool temp) -> object_ptr
+typename object_pool<ObjType>::ref_container_null object_pool<ObjType>::null_ref = nullptr;
+
+template <class ObjType>
+struct ref_ctor_simple
 {
-	if(temp)
+	static typename object_pool<ObjType>::object_ptr add(typename object_pool<ObjType>::list_type &list)
 	{
-		return tmp_object_list.add();
-	}else{
-		return object_list.add();
+		return *list.add();
 	}
+
+	static typename object_pool<ObjType>::object_ptr add(typename object_pool<ObjType>::list_type &list, typename object_pool<ObjType>::ref_container &&obj)
+	{
+		return *list.add(std::move(obj));
+	}
+};
+
+template <class ObjType>
+struct ref_ctor_virtual
+{
+	static typename object_pool<ObjType>::object_ptr add(typename object_pool<ObjType>::list_type &list)
+	{
+		return object_pool<ObjType>::null_ref;
+	}
+
+	static typename object_pool<ObjType>::object_ptr add(typename object_pool<ObjType>::list_type &list, typename object_pool<ObjType>::ref_container &&obj)
+	{
+		return object_pool<ObjType>::null_ref;
+	}
+};
+
+template <class ObjType>
+auto object_pool<ObjType>::add() -> object_ptr
+{
+	typedef typename std::conditional<std::has_virtual_destructor<ObjType>::value, ref_ctor_virtual<ObjType>, ref_ctor_simple<ObjType>>::type ctor;
+	return ctor::add(local_object_list);
 }
 
 template <class ObjType>
-auto object_pool<ObjType>::add(ObjType &&obj, bool temp) -> object_ptr
+auto object_pool<ObjType>::add(ref_container &&obj) -> object_ptr
 {
-	if(temp)
-	{
-		return tmp_object_list.add(std::move(obj));
-	}else{
-		return object_list.add(std::move(obj));
-	}
+	typedef typename std::conditional<std::has_virtual_destructor<ObjType>::value, ref_ctor_virtual<ObjType>, ref_ctor_simple<ObjType>>::type ctor;
+	return ctor::add(local_object_list, std::move(obj));
 }
 
 template <class ObjType>
-auto object_pool<ObjType>::add(std::unique_ptr<ObjType> &&obj, bool temp) -> object_ptr
+auto object_pool<ObjType>::add(std::unique_ptr<ref_container> &&obj) -> object_ptr
 {
-	if(temp)
-	{
-		return tmp_object_list.add(std::move(obj));
-	}else{
-		return object_list.add(std::move(obj));
-	}
+	return *local_object_list.add(std::move(obj));
 }
 
 template <class ObjType>
 cell object_pool<ObjType>::get_address(AMX *amx, const_object_ptr obj) const
 {
 	unsigned char *data = (amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat);
-	return reinterpret_cast<cell>(obj) - reinterpret_cast<cell>(data);
+	return reinterpret_cast<cell>(&obj) - reinterpret_cast<cell>(data);
 }
 
 template <class ObjType>
@@ -59,26 +76,39 @@ bool object_pool<ObjType>::is_null_address(AMX *amx, cell addr) const
 }
 
 template <class ObjType>
-bool object_pool<ObjType>::move_to_global(const_object_ptr obj)
+bool object_pool<ObjType>::acquire_ref(object_ptr obj)
 {
-	auto it = tmp_object_list.find(obj);
-	if(it != tmp_object_list.end())
+	bool local = obj.local();
+	if(obj.acquire())
 	{
-		std::unique_ptr<ObjType> ptr = tmp_object_list.extract(it);
-		object_list.add(std::move(ptr));
+		if(local)
+		{
+			auto it = local_object_list.find(&obj);
+			if(it != local_object_list.end())
+			{
+				auto ptr = local_object_list.extract(it);
+				global_object_list.add(std::move(ptr));
+			}
+		}
 		return true;
 	}
 	return false;
 }
 
 template <class ObjType>
-bool object_pool<ObjType>::move_to_local(const_object_ptr obj)
+bool object_pool<ObjType>::release_ref(object_ptr obj)
 {
-	auto it = object_list.find(obj);
-	if(it != object_list.end())
+	if(obj.release())
 	{
-		std::unique_ptr<ObjType> ptr = object_list.extract(it);
-		tmp_object_list.add(std::move(ptr));
+		if(obj.local())
+		{
+			auto it = global_object_list.find(&obj);
+			if(it != global_object_list.end())
+			{
+				auto ptr = global_object_list.extract(it);
+				local_object_list.add(std::move(ptr));
+			}
+		}
 		return true;
 	}
 	return false;
@@ -87,7 +117,7 @@ bool object_pool<ObjType>::move_to_local(const_object_ptr obj)
 template <class ObjType>
 void object_pool<ObjType>::set_cache(const_object_ptr obj)
 {
-	inner_cache[&obj->operator[](0)] = obj;
+	inner_cache[&obj->operator[](0)] = &obj;
 }
 
 template <class ObjType>
@@ -96,102 +126,73 @@ auto object_pool<ObjType>::find_cache(const_inner_ptr ptr) -> object_ptr
 	auto it = inner_cache.find(ptr);
 	if(it != inner_cache.end())
 	{
-		return const_cast<object_ptr>(it->second);
+		return const_cast<object_ptr>(*it->second);
 	}
-	return nullptr;
+	return null_ref;
 }
 
 template <class ObjType>
 bool object_pool<ObjType>::remove(object_ptr obj)
 {
-	auto it = object_list.find(obj);
-	if(it != object_list.end())
+	auto it = global_object_list.find(&obj);
+	if(it != global_object_list.end())
 	{
-		object_list.erase(it);
+		global_object_list.erase(it);
 		return true;
 	}
-	it = tmp_object_list.find(obj);
-	if(it != tmp_object_list.end())
+	it = local_object_list.find(&obj);
+	if(it != local_object_list.end())
 	{
-		tmp_object_list.erase(it);
+		local_object_list.erase(it);
 		return true;
 	}
 	return false;
 }
 
 template <class ObjType>
-auto object_pool<ObjType>::clone(const_object_ptr obj) -> object_ptr
+bool object_pool<ObjType>::remove_by_id(cell id)
 {
-	auto it = object_list.find(obj);
-	if(it != object_list.end())
+	auto obj = reinterpret_cast<ref_container*>(id);
+	auto it = global_object_list.find(obj);
+	if(it != global_object_list.end())
 	{
-		return add(ObjType(*obj), false);
+		global_object_list.erase(it);
+		return true;
 	}
-	it = tmp_object_list.find(obj);
-	if(it != tmp_object_list.end())
+	it = local_object_list.find(obj);
+	if(it != local_object_list.end())
 	{
-		return add(ObjType(*obj), true);
+		local_object_list.erase(it);
+		return true;
 	}
-	return nullptr;
-}
-
-template <class ObjType>
-auto object_pool<ObjType>::clone(const_object_ptr obj, const std::function<ObjType(const ObjType&)> &cloning) -> object_ptr
-{
-	auto it = object_list.find(obj);
-	if(it != object_list.end())
-	{
-		return add(cloning(*obj), false);
-	}
-	it = tmp_object_list.find(obj);
-	if(it != tmp_object_list.end())
-	{
-		return add(cloning(*obj), true);
-	}
-	return nullptr;
-}
-
-template <class ObjType>
-auto object_pool<ObjType>::clone(const_object_ptr obj, const std::function<std::unique_ptr<ObjType>(const ObjType&)> &cloning) -> object_ptr
-{
-	auto it = object_list.find(obj);
-	if(it != object_list.end())
-	{
-		return add(cloning(*obj), false);
-	}
-	it = tmp_object_list.find(obj);
-	if(it != tmp_object_list.end())
-	{
-		return add(cloning(*obj), true);
-	}
-	return nullptr;
+	return false;
 }
 
 template <class ObjType>
 auto object_pool<ObjType>::get(AMX *amx, cell addr) -> object_ptr
 {
-	object_ptr obj = reinterpret_cast<object_ptr>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + addr);
+	auto obj = reinterpret_cast<ref_container*>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + addr);
 	
-	auto it = tmp_object_list.find(obj);
-	if(it != tmp_object_list.end())
+	auto it = local_object_list.find(obj);
+	if(it != local_object_list.end())
 	{
-		return *it;
+		return **it;
 	}
-	it = object_list.find(obj);
-	if(it != object_list.end())
+	it = global_object_list.find(obj);
+	if(it != global_object_list.end())
 	{
-		return *it;
+		return **it;
 	}
-	return nullptr;
+	return null_ref;
 }
 
 template <class ObjType>
 void object_pool<ObjType>::clear()
 {
 	inner_cache.clear();
-	auto tmp = std::move(tmp_object_list);
+	auto tmp = std::move(local_object_list);
 	tmp.clear();
-	auto list = std::move(object_list);
+	auto list = std::move(global_object_list);
 	list.clear();
 }
 
@@ -199,22 +200,39 @@ template <class ObjType>
 void object_pool<ObjType>::clear_tmp()
 {
 	inner_cache.clear();
-	auto tmp = std::move(tmp_object_list);
+	auto tmp = std::move(local_object_list);
 	tmp.clear();
 }
 
-
 template <class ObjType>
-bool object_pool<ObjType>::get_by_id(cell id, object_ptr &obj)
+bool object_pool<ObjType>::get_by_id(cell id, ref_container *&obj)
 {
-	obj = reinterpret_cast<object_ptr>(id);
+	obj = reinterpret_cast<ref_container*>(id);
 
-	if(tmp_object_list.find(obj) != tmp_object_list.end())
+	if(local_object_list.find(obj) != local_object_list.end())
 	{
 		return true;
 	}
-	if(object_list.find(obj) != object_list.end())
+	if(global_object_list.find(obj) != global_object_list.end())
 	{
+		return true;
+	}
+	return false;
+}
+
+template <class ObjType>
+bool object_pool<ObjType>::get_by_id(cell id, ObjType *&obj)
+{
+	auto ptr = reinterpret_cast<ref_container*>(id);
+
+	if(local_object_list.find(ptr) != local_object_list.end())
+	{
+		obj = *ptr;
+		return true;
+	}
+	if(global_object_list.find(ptr) != global_object_list.end())
+	{
+		obj = *ptr;
 		return true;
 	}
 	return false;
@@ -223,25 +241,19 @@ bool object_pool<ObjType>::get_by_id(cell id, object_ptr &obj)
 template <class ObjType>
 cell object_pool<ObjType>::get_id(const_object_ptr obj) const
 {
-	return reinterpret_cast<cell>(obj);
-}
-
-template <class ObjType>
-bool object_pool<ObjType>::contains(const_object_ptr obj) const
-{
-	return tmp_object_list.contains(obj) || object_list.contains(obj);
+	return reinterpret_cast<cell>(&obj);
 }
 
 template <class ObjType>
 size_t object_pool<ObjType>::local_size() const
 {
-	return tmp_object_list.size();
+	return local_object_list.size();
 }
 
 template <class ObjType>
 size_t object_pool<ObjType>::global_size() const
 {
-	return object_list.size();
+	return global_object_list.size();
 }
 
 template class object_pool<strings::cell_string>;

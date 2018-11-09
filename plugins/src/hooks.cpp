@@ -117,7 +117,7 @@ namespace Hooks
 				*phys_addr = strings::null_value1;
 				return AMX_ERR_NONE;
 			}
-			auto ptr = strings::pool.get(amx, amx_addr);
+			auto &ptr = strings::pool.get(amx, amx_addr);
 			if(ptr != nullptr)
 			{
 				strings::pool.set_cache(ptr);
@@ -137,7 +137,7 @@ namespace Hooks
 				*phys_addr = strings::null_value2;
 				return AMX_ERR_NONE;
 			}
-			auto ptr = strings::pool.get(amx, **phys_addr);
+			auto &ptr = strings::pool.get(amx, **phys_addr);
 			if(ptr != nullptr)
 			{
 				strings::pool.set_cache(ptr);
@@ -150,7 +150,7 @@ namespace Hooks
 
 	int AMX_HOOK_FUNC(amx_StrLen, const cell *cstring, int *length)
 	{
-		auto str = strings::pool.find_cache(cstring);
+		auto &str = strings::pool.find_cache(cstring);
 		if(str != nullptr)
 		{
 			*length = str->size();

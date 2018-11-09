@@ -135,7 +135,7 @@ namespace Natives
 		std::shared_ptr<list_t> ptr;
 		if(list_pool.get_by_id(params[1], ptr))
 		{
-			auto iter = iter_pool.add(std::make_unique<list_iterator_t>(ptr), true);
+			auto &iter = iter_pool.add(std::make_unique<list_iterator_t>(ptr));
 			return iter_pool.get_id(iter);
 		}
 		return 0;
@@ -147,7 +147,7 @@ namespace Natives
 		std::shared_ptr<map_t> ptr;
 		if(map_pool.get_by_id(params[1], ptr))
 		{
-			auto iter = iter_pool.add(std::make_unique<map_iterator_t>(ptr), true);
+			auto &iter = iter_pool.add(std::make_unique<map_iterator_t>(ptr));
 			return iter_pool.get_id(iter);
 		}
 		return 0;
@@ -159,7 +159,7 @@ namespace Natives
 		std::shared_ptr<linked_list_t> ptr;
 		if(linked_list_pool.get_by_id(params[1], ptr))
 		{
-			auto iter = iter_pool.add(std::make_unique<linked_list_iterator_t>(ptr), true);
+			auto &iter = iter_pool.add(std::make_unique<linked_list_iterator_t>(ptr));
 			return iter_pool.get_id(iter);
 		}
 		return 0;
@@ -172,39 +172,28 @@ namespace Natives
 		return iter_pool.get_by_id(params[1], iter);
 	}
 
-	// native GlobalIterator:str_to_global(IterTag:iter);
-	AMX_DEFINE_NATIVE(iter_to_global, 1)
+	// native Iter:iter_acquire(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_acquire, 1)
 	{
-		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
-		{
-			iter_pool.move_to_global(iter);
-			return params[1];
-		}
-		return 0;
+		decltype(iter_pool)::ref_container *iter;
+		if(!iter_pool.get_by_id(params[1], iter)) return 0;
+		if(!iter_pool.acquire_ref(*iter)) return 0;
+		return params[1];
 	}
 
-	// native String:str_to_local(IterTag:iter);
-	AMX_DEFINE_NATIVE(iter_to_local, 1)
+	// native Iter:iter_release(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_release, 1)
 	{
-		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
-		{
-			iter_pool.move_to_local(iter);
-			return params[1];
-		}
-		return 0;
+		decltype(iter_pool)::ref_container *iter;
+		if(!iter_pool.get_by_id(params[1], iter)) return 0;
+		if(!iter_pool.release_ref(*iter)) return 0;
+		return params[1];
 	}
 
 	// native bool:iter_delete(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_delete, 1)
 	{
-		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
-		{
-			return iter_pool.remove(iter);
-		}
-		return 0;
+		return iter_pool.remove_by_id(params[1]);
 	}
 
 	// native bool:iter_linked(IterTag:iter);
@@ -259,7 +248,7 @@ namespace Natives
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
 		{
-			return iter_pool.get_id(iter_pool.clone(iter, [](const dyn_iterator &iter) {return iter.clone(); }));
+			return iter_pool.get_id(iter_pool.add(std::unique_ptr<object_pool<dyn_iterator>::ref_container>(&dynamic_cast<object_pool<dyn_iterator>::ref_container&>(*iter->clone().release()))));
 		}
 		return 0;
 	}
@@ -449,6 +438,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_iter),
 	AMX_DECLARE_NATIVE(linked_list_iter),
 	AMX_DECLARE_NATIVE(iter_valid),
+	AMX_DECLARE_NATIVE(iter_acquire),
+	AMX_DECLARE_NATIVE(iter_release),
 	AMX_DECLARE_NATIVE(iter_delete),
 	AMX_DECLARE_NATIVE(iter_linked),
 	AMX_DECLARE_NATIVE(iter_inside),

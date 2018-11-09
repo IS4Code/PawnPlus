@@ -6,7 +6,7 @@ object_pool<dyn_object> variants::pool;
 cell variants::create(dyn_object &&obj)
 {
 	if(obj.empty()) return 0;
-	return pool.get_id(pool.add(std::move(obj), true));
+	return pool.get_id(pool.add(std::move(obj)));
 }
 
 dyn_object variants::get(cell ptr)
@@ -173,7 +173,7 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj)
 	auto addr = obj.get_cell_addr(nullptr, 0);
 	if(addr)
 	{
-		return strings::pool.get_id(strings::create(addr, true, false, false));
+		return strings::create(addr, false, false);
 	}else{
 		return 0;
 	}
@@ -185,7 +185,7 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_
 	auto addr = obj.get_cell_addr(offsets_addr, offsets_size);
 	if(addr)
 	{
-		return strings::pool.get_id(strings::create(addr, true, false, false));
+		return strings::create(addr, false, false);
 	}else{
 		return 0;
 	}
@@ -197,7 +197,7 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell unused)
 	auto addr = obj.get_cell_addr(nullptr, 0);
 	if(addr)
 	{
-		return strings::pool.get_id(strings::create(addr, true, false, false));
+		return strings::create(addr, false, false);
 	}else{
 		return 0;
 	}
@@ -210,7 +210,7 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_
 	auto addr = obj.get_cell_addr(offsets_addr, offsets_size);
 	if(addr)
 	{
-		return strings::pool.get_id(strings::create(addr, true, false, false));
+		return strings::create(addr, false, false);
 	}else{
 		return 0;
 	}

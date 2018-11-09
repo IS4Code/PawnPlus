@@ -190,7 +190,7 @@ protected:
 };
 
 template <class Base>
-class iterator_impl : public dyn_iterator
+class iterator_impl : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
 {
 protected:
 	typedef typename Base::iterator iterator;
@@ -385,6 +385,17 @@ protected:
 		}
 		return false;
 	}
+
+public:
+	virtual dyn_iterator *get() override
+	{
+		return this;
+	}
+
+	virtual const dyn_iterator *get() const override
+	{
+		return this;
+	}
 };
 
 class list_iterator_t : public iterator_impl<list_t>
@@ -492,7 +503,7 @@ public:
 	}
 };
 
-class linked_list_iterator_t : public dyn_iterator
+class linked_list_iterator_t : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
 {
 protected:
 	typedef typename linked_list_t::iterator iterator;
@@ -538,6 +549,17 @@ protected:
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
 	virtual bool insert_dyn(const std::type_info &type, void *value) override;
 	virtual bool insert_dyn(const std::type_info &type, const void *value) override;
+
+public:
+	virtual dyn_iterator *get() override
+	{
+		return this;
+	}
+
+	virtual const dyn_iterator *get() const override
+	{
+		return this;
+	}
 };
 
 extern aux::shared_id_set_pool<list_t> list_pool;

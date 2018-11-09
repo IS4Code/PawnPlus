@@ -91,12 +91,6 @@
     <ClCompile Include="src\modules\variants.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
-    <ClCompile Include="src\pluginapi.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\capi.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\natives\namx.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
@@ -225,12 +219,6 @@
       <Filter>src\modules</Filter>
     </ClInclude>
     <ClInclude Include="src\natives.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pluginapi.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\capi.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\utils\linear_pool.h">

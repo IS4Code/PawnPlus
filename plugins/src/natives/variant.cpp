@@ -75,39 +75,28 @@ namespace Natives
 		return value_at<1>::var_new<dyn_func_var>(amx, params);
 	}
 
-	// native GlobalVariant:var_to_global(VariantTag:var);
-	AMX_DEFINE_NATIVE(var_to_global, 1)
+	// native Variant:var_acquire(VariantTag:var);
+	AMX_DEFINE_NATIVE(var_acquire, 1)
 	{
-		dyn_object *var;
+		decltype(variants::pool)::ref_container *var;
 		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		variants::pool.move_to_global(var);
+		if(!variants::pool.acquire_ref(*var)) return 0;
 		return params[1];
 	}
 
-	// native Variant:var_to_local(VariantTag:var);
-	AMX_DEFINE_NATIVE(var_to_local, 1)
+	// native Variant:var_release(VariantTag:var);
+	AMX_DEFINE_NATIVE(var_release, 1)
 	{
-		dyn_object *var;
+		decltype(variants::pool)::ref_container *var;
 		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		variants::pool.move_to_local(var);
+		if(!variants::pool.release_ref(*var)) return 0;
 		return params[1];
 	}
 
 	// native bool:var_delete(VariantTag:var);
 	AMX_DEFINE_NATIVE(var_delete, 1)
 	{
-		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		return variants::pool.remove(var);
-	}
-
-	// native bool:var_delete_deep(VariantTag:var);
-	AMX_DEFINE_NATIVE(var_delete_deep, 1)
-	{
-		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		var->free();
-		return variants::pool.remove(var);
+		return variants::pool.remove_by_id(params[1]);
 	}
 
 	// native bool:var_valid(VariantTag:var);
@@ -122,7 +111,7 @@ namespace Natives
 	{
 		dyn_object *var;
 		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		return variants::pool.get_id(variants::pool.clone(var, [](const dyn_object &obj) {return obj.clone(); }));
+		return variants::pool.get_id(variants::pool.add(var->clone()));
 	}
 
 	// native var_get(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
@@ -414,10 +403,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_new_str),
 	AMX_DECLARE_NATIVE(var_new_str_s),
 	AMX_DECLARE_NATIVE(var_new_var),
-	AMX_DECLARE_NATIVE(var_to_global),
-	AMX_DECLARE_NATIVE(var_to_local),
+	AMX_DECLARE_NATIVE(var_acquire),
+	AMX_DECLARE_NATIVE(var_release),
 	AMX_DECLARE_NATIVE(var_delete),
-	AMX_DECLARE_NATIVE(var_delete_deep),
 	AMX_DECLARE_NATIVE(var_valid),
 	AMX_DECLARE_NATIVE(var_clone),
 

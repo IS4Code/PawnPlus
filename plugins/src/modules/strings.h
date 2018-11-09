@@ -12,9 +12,9 @@ namespace strings
 	extern cell null_value2[2];
 	extern object_pool<cell_string> pool;
 
-	cell_string *create(const cell *addr, bool temp, bool truncate, bool fixnulls);
-	cell_string *create(const cell *addr, bool temp, size_t length, bool packed, bool truncate, bool fixnulls);
-	cell_string *create(const std::string &str, bool temp);
+	cell create(const cell *addr, bool truncate, bool fixnulls);
+	cell create(const cell *addr, size_t length, bool packed, bool truncate, bool fixnulls);
+	cell create(const std::string &str);
 
 	void format(AMX *amx, strings::cell_string &str, const cell *format, int flen, int argc, cell *args);
 

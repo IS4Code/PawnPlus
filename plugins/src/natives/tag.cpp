@@ -30,7 +30,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(tag_name_s, 1)
 	{
 		tag_ptr tag = tags::find_tag(params[1]);
-		return strings::pool.get_id(strings::create(tag->name, true));
+		return strings::create(tag->name);
 	}
 
 	// native tag_uid:tag_base(tag_uid:tag_uid);
