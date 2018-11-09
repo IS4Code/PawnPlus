@@ -632,12 +632,21 @@ tag_ptr dyn_object::get_tag() const
 	return tag;
 }
 
-void dyn_object::free() const
+void dyn_object::acquire() const
 {
 	const auto &ops = tag->get_ops();
 	for(auto it = begin(); it != end(); it++)
 	{
-		ops.free(tag, *it);
+		ops.acquire(tag, *it);
+	}
+}
+
+void dyn_object::release() const
+{
+	const auto &ops = tag->get_ops();
+	for(auto it = begin(); it != end(); it++)
+	{
+		ops.release(tag, *it);
 	}
 }
 

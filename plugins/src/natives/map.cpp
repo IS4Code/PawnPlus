@@ -417,8 +417,8 @@ namespace Natives
 		if(!map_pool.get_by_id(params[1], ptr)) return 0;
 		for(auto &pair : *ptr)
 		{
-			pair.first.free();
-			pair.second.free();
+			pair.first.release();
+			pair.second.release();
 		}
 		return map_pool.remove(ptr);
 	}

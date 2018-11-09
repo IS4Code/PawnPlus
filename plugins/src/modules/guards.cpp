@@ -16,7 +16,7 @@ struct guards_extra : public amx::extra
 	{
 		for(auto &guard : pool)
 		{
-			guard->free();
+			guard->release();
 		}
 	}
 };
@@ -34,7 +34,9 @@ dyn_object *guards::add(AMX *amx, dyn_object &&obj)
 	amx::object owner;
 	auto &ctx = amx::get_context(amx, owner);
 	auto &guards = ctx.get_extra<guards_extra>();
-	return guards.pool.add(std::move(obj));
+	auto ptr = guards.pool.add(std::move(obj));
+	ptr->acquire();
+	return ptr;
 }
 
 cell guards::get_id(AMX *amx, const dyn_object *obj)
@@ -67,7 +69,7 @@ bool guards::free(AMX *amx, dyn_object *obj)
 	auto it = guards.pool.find(obj);
 	if(it != guards.pool.end())
 	{
-		obj->free();
+		obj->release();
 		guards.pool.erase(it);
 	}
 	return false;

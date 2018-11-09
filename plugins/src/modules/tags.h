@@ -28,13 +28,14 @@ enum class op_type
 
 	string = 20,
 	del = 21,
-	free = 22,
+	release = 22,
 	collect = 23,
 	copy = 24,
 	clone = 25,
 	assign = 26,
 	init = 27,
 	hash = 28,
+	acquire = 29,
 };
 
 namespace std
@@ -81,7 +82,8 @@ public:
 	virtual void append_string(tag_ptr tag, cell arg, std::basic_string<cell> &str) const = 0;
 	virtual char format_spec(tag_ptr tag, bool arr) const = 0;
 	virtual bool del(tag_ptr tag, cell arg) const = 0;
-	virtual bool free(tag_ptr tag, cell arg) const = 0;
+	virtual bool release(tag_ptr tag, cell arg) const = 0;
+	virtual bool acquire(tag_ptr tag, cell arg) const = 0;
 	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const = 0;
 	virtual cell copy(tag_ptr tag, cell arg) const = 0;
 	virtual cell clone(tag_ptr tag, cell arg) const = 0;

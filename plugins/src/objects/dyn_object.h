@@ -56,7 +56,8 @@ public:
 
 	char get_specifier() const;
 	size_t get_hash() const;
-	void free() const;
+	void acquire() const;
+	void release() const;
 	dyn_object clone() const;
 	dyn_object call_op(op_type type, cell *args, size_t numargs, bool wrap) const;
 

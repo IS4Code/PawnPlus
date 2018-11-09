@@ -187,13 +187,14 @@ enum tag_op
     
     tag_op_string = 20,
     tag_op_delete = 21,
-    tag_op_delete_deep = 22,
+    tag_op_release = 22,
     tag_op_collect = 23,
     tag_op_copy = 24,
     tag_op_clone = 25,
     tag_op_assign = 26,
     tag_op_init = 27,
     tag_op_hash = 28,
+    tag_op_acquire = 29,
 }
 
 /*                 */

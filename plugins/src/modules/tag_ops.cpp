@@ -177,9 +177,14 @@ struct null_operations : public tag_operations
 		return false;
 	}
 
-	virtual bool free(tag_ptr tag, cell arg) const override
+	virtual bool release(tag_ptr tag, cell arg) const override
 	{
 		return del(tag, arg);
+	}
+
+	virtual bool acquire(tag_ptr tag, cell arg) const override
+	{
+		return false;
 	}
 
 	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const override
@@ -587,9 +592,20 @@ struct string_operations : public null_operations
 		return strings::pool.remove_by_id(arg);
 	}
 
-	virtual bool free(tag_ptr tag, cell arg) const override
+	virtual bool release(tag_ptr tag, cell arg) const override
 	{
-		return del(tag, arg);
+		decltype(strings::pool)::ref_container *str;
+		if(!strings::pool.get_by_id(arg, str)) return false;
+		if(!strings::pool.release_ref(*str)) return false;
+		return true;
+	}
+
+	virtual bool acquire(tag_ptr tag, cell arg) const override
+	{
+		decltype(strings::pool)::ref_container *str;
+		if(!strings::pool.get_by_id(arg, str)) return false;
+		if(!strings::pool.acquire_ref(*str)) return false;
+		return true;
 	}
 
 	virtual cell copy(tag_ptr tag, cell arg) const override
@@ -776,15 +792,20 @@ struct variant_operations : public null_operations
 		return variants::pool.remove_by_id(arg);
 	}
 
-	virtual bool free(tag_ptr tag, cell arg) const override
+	virtual bool release(tag_ptr tag, cell arg) const override
 	{
 		decltype(variants::pool)::ref_container *var;
-		if(variants::pool.get_by_id(arg, var))
-		{
-			(*var)->free();
-			return variants::pool.remove(*var);
-		}
-		return false;
+		if(!variants::pool.get_by_id(arg, var)) return false;
+		if(!variants::pool.release_ref(*var)) return false;
+		return true;
+	}
+
+	virtual bool acquire(tag_ptr tag, cell arg) const override
+	{
+		decltype(variants::pool)::ref_container *var;
+		if(!variants::pool.get_by_id(arg, var)) return false;
+		if(!variants::pool.acquire_ref(*var)) return false;
+		return true;
 	}
 
 	virtual cell copy(tag_ptr tag, cell arg) const override
@@ -904,14 +925,14 @@ struct list_operations : public generic_operations<list_operations, tags::tag_li
 		return false;
 	}
 
-	virtual bool free(tag_ptr tag, cell arg) const override
+	virtual bool release(tag_ptr tag, cell arg) const override
 	{
 		list_t *l;
 		if(list_pool.get_by_id(arg, l))
 		{
 			for(auto &obj : *l)
 			{
-				obj.free();
+				obj.release();
 			}
 			return list_pool.remove(l);
 		}
@@ -984,15 +1005,15 @@ struct map_operations : public generic_operations<map_operations, tags::tag_map>
 		return false;
 	}
 
-	virtual bool free(tag_ptr tag, cell arg) const override
+	virtual bool release(tag_ptr tag, cell arg) const override
 	{
 		map_t *m;
 		if(map_pool.get_by_id(arg, m))
 		{
 			for(auto &pair : *m)
 			{
-				pair.first.free();
-				pair.second.free();
+				pair.first.release();
+				pair.second.release();
 			}
 			return map_pool.remove(m);
 		}
@@ -1059,9 +1080,20 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 		return iter_pool.remove_by_id(arg);
 	}
 
-	virtual bool free(tag_ptr tag, cell arg) const override
+	virtual bool release(tag_ptr tag, cell arg) const override
 	{
-		return del(tag, arg);
+		decltype(iter_pool)::ref_container *iter;
+		if(!iter_pool.get_by_id(arg, iter)) return false;
+		if(!iter_pool.release_ref(*iter)) return false;
+		return true;
+	}
+
+	virtual bool acquire(tag_ptr tag, cell arg) const override
+	{
+		decltype(iter_pool)::ref_container *iter;
+		if(!iter_pool.get_by_id(arg, iter)) return false;
+		if(!iter_pool.acquire_ref(*iter)) return false;
+		return true;
 	}
 
 	virtual cell copy(tag_ptr tag, cell arg) const override
@@ -1148,7 +1180,7 @@ struct task_operations : public generic_operations<task_operations, tags::tag_ta
 		return false;
 	}
 
-	virtual bool free(tag_ptr tag, cell arg) const override
+	virtual bool release(tag_ptr tag, cell arg) const override
 	{
 		return del(tag, arg);
 	}
@@ -1192,7 +1224,7 @@ struct var_operations : public null_operations
 		return false;
 	}
 
-	virtual bool free(tag_ptr tag, cell arg) const override
+	virtual bool release(tag_ptr tag, cell arg) const override
 	{
 		return del(tag, arg);
 	}
@@ -1433,14 +1465,34 @@ public:
 		return op_un(tag, op_type::del, arg);
 	}
 
-	virtual bool free(tag_ptr tag, cell arg) const override
+	virtual bool release(tag_ptr tag, cell arg) const override
 	{
-		auto it = dyn_ops.find(op_type::free);
+		auto it = dyn_ops.find(op_type::release);
 		if(it != dyn_ops.end() && it->second)
 		{
 			return it->second->invoke(tag, arg);
 		}
-		return del(tag, arg);
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base != nullptr)
+		{
+			return base->get_ops().release(tag, arg);
+		}
+		return false;
+	}
+
+	virtual bool acquire(tag_ptr tag, cell arg) const override
+	{
+		auto it = dyn_ops.find(op_type::acquire);
+		if(it != dyn_ops.end() && it->second)
+		{
+			return it->second->invoke(tag, arg);
+		}
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base != nullptr)
+		{
+			return base->get_ops().acquire(tag, arg);
+		}
+		return false;
 	}
 
 	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const override
@@ -1647,8 +1699,10 @@ cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numar
 			return numargs >= 1 ? strings::pool.get_id(strings::pool.add(to_string(tag, args[0]))) : 0;
 		case op_type::del:
 			return numargs >= 1 ? del(tag, args[0]) : 0;
-		case op_type::free:
-			return numargs >= 1 ? free(tag, args[0]) : 0;
+		case op_type::release:
+			return numargs >= 1 ? release(tag, args[0]) : 0;
+		case op_type::acquire:
+			return numargs >= 1 ? acquire(tag, args[0]) : 0;
 		case op_type::collect:
 			return 0;
 		case op_type::copy:

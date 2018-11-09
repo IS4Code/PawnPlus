@@ -164,7 +164,7 @@ namespace Natives
 		if(!list_pool.get_by_id(params[1], ptr)) return 0;
 		for(auto &obj : *ptr)
 		{
-			obj.free();
+			obj.release();
 		}
 		return list_pool.remove(ptr);
 	}
