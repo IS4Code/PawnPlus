@@ -78,6 +78,17 @@
 #define AnyTag {PP_ALL_TAGS}
 #endif
 
+stock const _PP@TRUE = true;
+
+stock _PP@TMP;
+#define _PP@TMP=(%0,%1)) _PP@TMP=(%0)),%1
+#define _PP@CAST[%0](%1) (%0:_PP@TMP=(%1))
+
+stock _PP@TMP2;
+#define _PP@TMP2=(%0,%1)[%2] _PP@TMP2=(%0)[%2]
+#define _PP@EXPAND:(%0,%1)) (%0)),%1
+#define _PP@CAST_ARR[%0](%1) ((_PP@TRUE?(%0:0):(%0:_PP@TMP2=(%1)[0])),%0:_PP@EXPAND:(%1))
+
 
 /*                 */
 /*  Configuration  */
@@ -454,69 +465,32 @@ native Iter:list_iter(List:list);
 
 #if defined PP_SYNTAX_GENERIC
 
-#define list_new<%0> list_new@%0
-#define list_new_arr<%0> list_new_arr@%0
-#define list_new_args_t<%0> list_new_args_t@%0
-#define list_new_args_gen<%0>(%1) list_new_args_t<%0>(_,%1)
-#define list_valid<%0> list_valid@%0
-#define list_delete<%0> list_delete@%0
-#define list_delete_deep<%0> list_delete_deep@%0
-#define list_clone<%0> list_clone@%0
-#define list_size<%0> list_size@%0
-#define list_clear<%0> list_clear@%0
+#define list_new<%0>(%1) (List<%0>:list_new(%1))
+#define list_new_arr<%0>(%1) (List<%0>:list_new_arr(_PP@CAST_ARR[%0](%1)))
+#define list_new_args_of<%0>(%1) (List<%0>:list_new_args_t(_,_PP@CAST[%0](%1)))
+#define list_valid<%0>(%1) list_valid(List:_PP@CAST[List<%0>](%1))
+#define list_delete_deep<%0>(%1) list_delete_deep(List:PP@CAST(List<%0>,%1))
+#define list_clone<%0>(%1) (List<%0>:list_clone(List:_PP@CAST[List<%0>](%1)))
+#define list_size<%0>(%1) list_size(List:_PP@CAST[List<%0>](%1))
+#define list_clear<%0>(%1) list_clear(List:_PP@CAST[List<%0>](%1))
 
-#define list_add<%0> list_add@%0
-#define list_add_arr<%0> list_add_arr@%0
-#define list_add_list<%0> list_add_list@%0
-#define list_add_args_t<%0> list_add_args_t@%0
-#define list_add_args_gen<%0>(%1) list_add_args_t<%0>(_,%1)
+#define list_add<%0>(%1,%2) list_add(List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
+#define list_add_arr<%0>(%1,%2) list_add_arr(List:_PP@CAST[List<%0>](%1),_PP@CAST_ARR[%0](%2))
+#define list_add_list<%0>(%1,%2) list_add_list(List:_PP@CAST[List<%0>](%1),List:_PP@CAST[List<%0>](%2))
+#define list_add_args_of<%0>(%1,%2) list_add_args_t(_,List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
 
-#define list_remove<%0> list_remove@%0
+#define list_remove<%0>(%1,%2) list_remove(List:_PP@CAST[List<%0>](%1),%2)
 
-#define list_get<%0> list_get@%0
-#define list_get_arr<%0> list_get_arr@%0
+#define list_get<%0>(%1,%2) (%0:list_get(List:_PP@CAST[List<%0>](%1),%2))
+#define list_get_arr<%0>(%1,%2,%3) list_get_arr(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 
-#define list_set<%0> list_set@%0
-#define list_set_arr<%0> list_set_arr@%0
-#define list_set_cell<%0> list_set_cell@%0
+#define list_set<%0>(%1,%2,%3) list_set(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST[%0](%3))
+#define list_set_arr<%0>(%1,%2,%3) list_set_arr(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
+#define list_set_cell<%0>(%1,%2,%3,%4) list_set_cell(List:_PP@CAST[List<%0>](%1),%2,%3,_PP@CAST[%0](%4))
 
-#define list_sizeof<%0> list_sizeof@%0
+#define list_sizeof<%0>(%1) list_sizeof(List:_PP@CAST[List<%0>](%1))
 
-#define list_iter<%0> list_iter@%0
-
-#define @define_List<%0> \
-enum{Void:List<%0>};\
-native List<%0>:list_new<%0>()=list_new;\
-native List<%0>:list_new_arr<%0>(%0:v[],s=sizeof(v),t=(tagof(%0:)))=list_new_arr;\
-native List<%0>:list_new_args_t<%0>(t=(tagof(%0:)),%0:a,%0:...)=list_new_args;\
-native bool:list_valid<%0>(List<%0>:l)=list_valid;\
-native bool:list_delete<%0>(List<%0>:l)=list_delete;\
-native bool:list_delete_deep<%0>(List<%0>:l)=list_delete_deep;\
-native List<%0>:list_clone<%0>(List<%0>:l)=list_clone;\
-native list_size<%0>(List<%0>:l)=list_size;\
-native bool:list_clear<%0>(List<%0>:l)=list_clear;\
-native list_add<%0>(List<%0>:l,%0:v,i=-1,t=(tagof(%0:)))=list_add;\
-native list_add_arr<%0>(List<%0>:l,const %0:v[],i=-1,s=sizeof(v),t=(tagof(%0:)))=list_add_arr;\
-native list_add_list<%0>(List<%0>:l,List<%0>:l2,i=-1)=list_add_list;\
-native list_add_args_t<%0>(t=(tagof(%0:)),%0:a,%0:...)=list_add_args;\
-native bool:list_remove<%0>(List<%0>:l,i)=list_remove;\
-native %0:list_get<%0>(List<%0>:l,i,o=0)=list_get;\
-native list_get_arr<%0>(List<%0>:l,i,%0:v[],s=sizeof(v))=list_get_arr;\
-native bool:list_set<%0>(List<%0>:l,i,%0:v,t=(tagof(%0:)))=list_set;\
-native bool:list_set_arr<%0>(List<%0>:l,i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=list_set_arr;\
-native bool:list_set_cell<%0>(List<%0>:l,i,o,%0:v)=list_set_cell;\
-native list_sizeof<%0>(List<%0>:l,i)=list_sizeof;\
-forward List:operator=(List<%0>:l);\
-forward List<%0>:operator=(List:l);\
-native Iter<%0>:list_iter<%0>(List<%0>:l)=list_iter;\
-forward Iter<%0>:operator=(Iter:i);\
-native iter_get<%0>(Iter<%0>:i,o=0)=iter_get;\
-native iter_get_arr<%0>(Iter<%0>:i,%0:v[],s=sizeof(v))=iter_get_arr;\
-native bool:iter_set<%0>(Iter<%0>:i,%0:v,t=(tagof(%0:)))=iter_set;\
-native bool:iter_set_arr<%0>(Iter<%0>:i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=iter_set_arr;\
-native bool:iter_set_cell<%0>(Iter<%0>:i,o,%0:v)=iter_set_cell;\
-native bool:iter_insert<%0>(Iter<%0>:i,%0:v,t=(tagof(%0:)))=iter_insert;\
-native bool:iter_insert_arr<%0>(Iter<%0>:i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=iter_insert_arr
+#define list_iter<%0>(%1) (Iter<%0>:list_iter(List:_PP@CAST[List<%0>](%1)))
 
 #endif
 
@@ -659,94 +633,49 @@ native Iter:map_iter(Map:map);
 
 #if defined PP_SYNTAX_GENERIC
 
-#define map_new<%0,%1> map_new@%0@%1
-#define map_new_args_t<%0,%1> map_new_args_t@%0@%1
-#define map_new_args_gen<%0,%1>(%2) map_new_args_t<%0,%1>(_,_,%2)
-#define map_valid<%0,%1> map_valid@%0@%1
-#define map_delete<%0,%1> map_delete@%0@%1
-#define map_delete_deep<%0,%1> map_delete_deep@%0@%1
-#define map_clone<%0,%1> map_clone@%0@%1
-#define map_size<%0,%1> map_size@%0@%1
+#define map_new<%0,%1>(%2) (Map<%0,%1>:map_new(%2))
+#define map_new_args_of<%0,%1>(%2,%3) (Map<%0,%1>:map_new_args_t<%0,%1>(_,_,_PP@CAST[%0](%2),_PP@CAST[%0](%3)))
+#define map_valid<%0,%1>(%2) map_valid(Map:_PP@CAST[Map<%0,%1>](%2))
+#define map_delete<%0,%1>(%2) map_delete(Map:_PP@CAST[Map<%0,%1>](%2))
+#define map_delete_deep<%0,%1>(%2) map_delete_deep(Map:_PP@CAST[Map<%0,%1>](%2))
+#define map_clone<%0,%1>(%2) (Map<%0,%1>:map_clone(Map:_PP@CAST[Map<%0,%1>](%2)))
+#define map_size<%0,%1>(%2) map_size(Map:_PP@CAST[Map<%0,%1>](%2))
 
-#define map_add<%0,%1> map_add@%0@%1
-#define map_add_arr<%0,%1> map_add_arr@%0@%1
-#define map_arr_add<%0,%1> map_arr_add@%0@%1
-#define map_arr_add_arr<%0,%1> map_arr_add_arr@%0@%1
-#define map_add_map<%0,%1> map_add_map@%0@%1
-#define map_add_args_t<%0,%1> map_add_args_t@%0@%1
-#define map_add_args_gen<%0,%1>(%2) map_add_args_t<%0,%1>(_,_,%2)
+#define map_add<%0,%1>(%2,%3,%4) map_add(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3),_PP@CAST[%1](%4))
+#define map_add_arr<%0,%1>(%2,%3,%4) map_add_arr(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3),_PP@CAST_ARR[%1](%4))
+#define map_arr_add<%0,%1>(%2,%3,%4) map_arr_add(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3),_PP@CAST[%1](%4))
+#define map_arr_add_arr<%0,%1>(%2,%3,%4) map_arr_add_arr(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3),_PP@CAST_ARR[%1](%4))
+#define map_add_map<%0,%1>(%2,%3) map_add_map(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[Map<%0,%1>](%3))
+#define map_add_args_of<%0,%1>(%2,%3,%4) map_add_args_t<%0,%1>(_,_,Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3),_PP@CAST[%0](%4))
 
-#define map_remove<%0,%1> map_remove@%0@%1
-#define map_arr_remove<%0,%1> map_arr_remove@%0@%1
+#define map_remove<%0,%1>(%2,%3) map_remove(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3))
+#define map_arr_remove<%0,%1>(%2,%3) map_arr_remove(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
 
-#define map_get<%0,%1> map_get@%0@%1
-#define map_get_arr<%0,%1> map_get_arr@%0@%1
-#define map_arr_get<%0,%1> map_arr_get@%0@%1
-#define map_arr_get_arr<%0,%1> map_arr_get_arr@%0@%1
+#define map_has_key<%0,%1>(%2,%3) map_has_key(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3))
+#define map_has_arr_key<%0,%1>(%2,%3) map_has_arr_key(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
 
-#define map_set<%0,%1> map_set@%0@%1
-#define map_set_arr<%0,%1> map_set_arr@%0@%1
-#define map_set_cell<%0,%1> map_set_cell@%0@%1
-#define map_arr_set<%0,%1> map_arr_set@%0@%1
-#define map_arr_set_arr<%0,%1> map_arr_set_arr@%0@%1
-#define map_arr_set_cell<%0,%1> map_arr_set_cell@%0@%1
+#define map_get<%0,%1>(%2,%3) (%1:map_get(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3)))
+#define map_get_arr<%0,%1>(%2,%3,%4) map_get_arr(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3),_PP@CAST_ARR[%1](%4))
+#define map_arr_get<%0,%1>(%2,%3) (%1:map_get(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3)))
+#define map_arr_get_arr<%0,%1>(%2,%3,%4) map_arr_get_arr(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3),_PP@CAST_ARR[%1](%4))
 
-#define map_key_at<%0,%1> map_key_at@%0@%1
-#define map_arr_key_at<%0,%1> map_arr_key_at@%0@%1
+#define map_set<%0,%1>(%2,%3,%4) map_set(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3),_PP@CAST[%1](%4))
+#define map_set_arr<%0,%1>(%2,%3,%4) map_set_arr(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3),_PP@CAST_ARR[%1](%4))
+#define map_set_cell<%0,%1>(%2,%3,%4,%5) map_set_cell(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3),%4,_PP@CAST[%1](%5))
+#define map_arr_set<%0,%1>(%2,%3,%4) map_arr_set(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3),_PP@CAST[%1](%4))
+#define map_arr_set_arr<%0,%1>(%2,%3,%4) map_arr_set_arr(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3),_PP@CAST_ARR[%1](%4))
+#define map_arr_set_cell<%0,%1>(%2,%3,%4,%5) map_arr_set_cell(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3),%4,_PP@CAST[%1](%5))
 
-#define map_value_at<%0,%1> map_value_at@%0@%1
-#define map_arr_value_at<%0,%1> map_arr_value_at@%0@%1
+#define map_key_at<%0,%1>(%2,%3) (%0:map_key_at(Map:_PP@CAST[Map<%0,%1>](%2),%3))
+#define map_arr_key_at<%0,%1>(%2,%3,%4) map_arr_key_at(Map:_PP@CAST[Map<%0,%1>](%2),%3,_PP@CAST_ARR[%0](%4))
 
-#define map_sizeof<%0,%1> map_sizeof@%0@%1
-#define map_arr_sizeof<%0,%1> map_arr_sizeof@%0@%1
+#define map_value_at<%0,%1>(%2,%3) (%1:map_value_at(Map:_PP@CAST[Map<%0,%1>](%2),%3))
+#define map_arr_value_at<%0,%1>(%2,%3,%4) map_arr_value_at(Map:_PP@CAST[Map<%0,%1>](%2),%3,_PP@CAST_ARR[%1](%4))
 
-#define map_iter<%0,%1> map_iter@%0@%1
+#define map_sizeof<%0,%1>(%2,%3) map_sizeof(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3))
+#define map_arr_sizeof<%0,%1>(%2,%3) map_arr_sizeof(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
 
-#define @define_Map<%0,%1> \
-enum{Void:Map<%0,%1>};\
-native Map<%0,%1>:map_new<%0,%1>()=map_new;\
-native Map<%0,%1>:map_new_args_t<%0,%1>(kt=(tagof(%0:)),vt=(tagof(%1:)),%0:a0,%1:a1,{%0,%1}:...)=map_new_args;\
-native bool:map_valid<%0,%1>(Map<%0,%1>:m)=map_valid;\
-native bool:map_delete<%0,%1>(Map<%0,%1>:m)=map_delete;\
-native bool:map_delete_deep<%0,%1>(Map<%0,%1>:m)=map_delete_deep;\
-native Map<%0,%1>:map_clone<%0,%1>(Map<%0,%1>:m)=map_clone;\
-native map_size<%0,%1>(Map<%0,%1>:m)=map_size;\
-native bool:map_add<%0,%1>(Map<%0,%1>:m,%0:k,%1:v,kt=(tagof(%0:)),vt=(tagof(%1:)))=map_add;\
-native bool:map_add_arr<%0,%1>(Map<%0,%1>:m,%0:k,const %1:v[],vs=sizeof(v),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_add_arr;\
-native bool:map_arr_add<%0,%1>(Map<%0,%1>:m,const %0:k[],%1:v,ks=sizeof(k),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_arr_add;\
-native bool:map_arr_add_arr<%0,%1>(Map<%0,%1>:m,const %0:k[],const %1:v[],ks=sizeof(k),vs=sizeof(v),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_arr_add_arr;\
-native map_add_map<%0,%1>(Map<%0,%1>:m,Map<%0,%1>:m2,bool:ow);\
-native map_add_args_t<%0,%1>(kt=(tagof(%0:)),vt=(tagof(%1:)),Map<%0,%1>:m,%0:a0,%1:a1,{%0,%1}:...)=map_add_args;\
-native bool:map_remove<%0,%1>(Map<%0,%1>:m,%0:k,kt=(tagof(%0:)))=map_remove;\
-native bool:map_arr_remove<%0,%1>(Map<%0,%1>:m,const %0:k[],ks=sizeof(k),kt=(tagof(%0:)))=map_arr_remove;\
-native %0:map_get<%0,%1>(Map<%0,%1>:m,%0:k,o=0,kt=(tagof(%0:)))=map_get;\
-native map_get_arr<%0,%1>(Map<%0,%1>:m,%0:k,%1:v[],vs=sizeof(v),kt=(tagof(%0:)))=map_get_arr;\
-native map_arr_get<%0,%1>(Map<%0,%1>:m,const %0:k[],o=0,ks=sizeof(k),kt=(tagof(%0:)))=map_arr_get;\
-native map_arr_get_arr<%0,%1>(Map<%0,%1>:m,const %0:k[],%1:v[],vs=sizeof(v),ks=sizeof(k),kt=(tagof(%0:)))=map_arr_get_arr;\
-native bool:map_set<%0,%1>(Map<%0,%1>:m,%0:k,%1:v,kt=(tagof(%0:)),vt=(tagof(%1:)))=map_set;\
-native bool:map_set_arr<%0,%1>(Map<%0,%1>:m,%0:k,const %1:v[],vs=sizeof(v),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_set_arr;\
-native bool:map_set_cell<%0,%1>(Map<%0,%1>:m,%0:k,o,%1:v,kt=(tagof(%0:)))=map_set_cell;\
-native bool:map_arr_set<%0,%1>(Map<%0,%1>:m,const %0:k[],%1:v,ks=sizeof(k),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_arr_set;\
-native bool:map_arr_set_arr<%0,%1>(Map<%0,%1>:m,const %0:k[],const %1:v[],vs=sizeof(v),ks=sizeof(k),kt=(tagof(%0:)),vt=(tagof(%1:)))=map_arr_set_arr;\
-native bool:map_arr_set_cell<%0,%1>(Map<%0,%1>:m,const %0:k[],o,%1:v,ks=sizeof(k),kt=(tagof(%0:)))=map_arr_set_cell;\
-native %0:map_key_at<%0,%1>(Map<%0,%1>:m,i,o=0)=map_key_at;\
-native map_arr_key_at<%0,%1>(Map<%0,%1>:m,i,%0:k[],ks=sizeof(k))=map_arr_key_at;\
-native %1:map_value_at<%0,%1>(Map<%0,%1>:m,i,o=0)=map_value_at;\
-native map_arr_value_at<%0,%1>(Map<%0,%1>:m,i,%1:v[],vs=sizeof(v))=map_arr_value_at;\
-native map_sizeof<%0,%1>(Map<%0,%1>:m,%0:k,kt=(tagof(%0:)))=map_sizeof;\
-native map_arr_sizeof<%0,%1>(Map<%0,%1>:m,const %0:k[],ks=sizeof(k),kt=(tagof(%0:)))=map_arr_sizeof;\
-forward Map:operator=(Map<%0,%1>:m);\
-forward Map<%0,%1>:operator=(Map:m);\
-native PairIter<%0,%1>:map_iter<%0,%1>(Map<%0,%1>:m)=map_iter;\
-forward PairIter<%0,%1>:operator=(Iter:i);\
-forward PairIter<%0,%1>:operator=(Iter<%0>:i);\
-native %0:iter_get_key<%0,%1>(PairIter<%0,%1>:i,o=0)=iter_get_key;\
-native iter_get_key_arr<%0,%1>(PairIter<%0,%1>:i,%0:v[],s=sizeof(v))=iter_get_key_arr;\
-native %1:iter_get_value<%0,%1>(PairIter<%0,%1>:i,o=0)=iter_get;\
-native iter_get_value_arr<%0,%1>(PairIter<%0,%1>:i,%1:v[],s=sizeof(v))=iter_get_arr;\
-native bool:iter_set_value<%0,%1>(PairIter<%0,%1>:i,%1:v,t=(tagof(%0:)))=iter_set;\
-native bool:iter_set_value_arr<%0,%1>(PairIter<%0,%1>:i,const %1:v[],s=sizeof(v),t=tagof(v))=iter_set_arr;\
-native bool:iter_set_value_cell<%0,%1>(PairIter<%0,%1>:i,o,%1:v)=iter_set_cell
+#define map_iter<%0,%1>(%2) (PairIter<%0,%1>:map_iter(Map:_PP@CAST[Map<%0,%1>](%2)))
 
 #endif
 
@@ -800,61 +729,32 @@ native Iter:linked_list_iter(LinkedList:linked_list);
 
 #if defined PP_SYNTAX_GENERIC
 
-#define linked_list_new<%0> linked_list_new@%0
-#define linked_list_new_arr<%0> linked_list_new_arr@%0
-#define linked_list_new_args_t<%0> linked_list_new_args_t@%0
-#define linked_list_new_args_gen<%0>(%1) linked_list_new_args_t<%0>(_,%1)
-#define linked_list_valid<%0> linked_list_valid@%0
-#define linked_list_delete<%0> linked_list_delete@%0
-#define linked_list_delete_deep<%0> linked_list_delete_deep@%0
-#define linked_list_clone<%0> linked_list_clone@%0
-#define linked_list_size<%0> linked_list_size@%0
-#define linked_list_clear<%0> linked_list_clear@%0
+#define linked_list_new<%0>(%1) (LinkedList<%0>:linked_list_new(%1))
+#define linked_list_new_arr<%0>(%1) (LinkedList<%0>:linked_list_new_arr(_PP@CAST_ARR[%0](%1)))
+#define linked_list_new_args_of<%0>(%1) (LinkedList<%0>:linked_list_new_args_t(_,_PP@CAST[%0](%1)))
+#define linked_list_valid<%0>(%1) linked_list_valid(LinkedList:_PP@CAST[LinkedList<%0>](%1))
+#define linked_list_delete_deep<%0>(%1) linked_list_delete_deep(LinkedList:PP@CAST(LinkedList<%0>,%1))
+#define linked_list_clone<%0>(%1) (LinkedList<%0>:linked_list_clone(LinkedList:_PP@CAST[LinkedList<%0>](%1)))
+#define linked_list_size<%0>(%1) linked_list_size(LinkedList:_PP@CAST[LinkedList<%0>](%1))
+#define linked_list_clear<%0>(%1) linked_list_clear(LinkedList:_PP@CAST[LinkedList<%0>](%1))
 
-#define linked_list_add<%0> linked_list_add@%0
-#define linked_list_add_arr<%0> linked_list_add_arr@%0
-#define linked_list_add_list<%0> linked_list_add_list@%0
-#define linked_list_add_args_t<%0> linked_list_add_args_t@%0
-#define linked_list_add_args_gen<%0>(%1) linked_list_add_args_t<%0>(_,%1)
+#define linked_list_add<%0>(%1,%2) linked_list_add(LinkedList:_PP@CAST[LinkedList<%0>](%1),_PP@CAST[%0](%2))
+#define linked_list_add_arr<%0>(%1,%2) linked_list_add_arr(LinkedList:_PP@CAST[LinkedList<%0>](%1),_PP@CAST_ARR[%0](%2))
+#define linked_list_add_list<%0>(%1,%2) linked_list_add_list(LinkedList:_PP@CAST[LinkedList<%0>](%1),LinkedList:_PP@CAST[LinkedList<%0>](%2))
+#define linked_list_add_args_of<%0>(%1,%2) linked_list_add_args_t(_,LinkedList:_PP@CAST[LinkedList<%0>](%1),_PP@CAST[%0](%2))
 
-#define linked_list_remove<%0> linked_list_remove@%0
+#define linked_list_remove<%0>(%1,%2) linked_list_remove(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2)
 
-#define linked_list_get<%0> linked_list_get@%0
-#define linked_list_get_arr<%0> linked_list_get_arr@%0
+#define linked_list_get<%0>(%1,%2) (%0:linked_list_get(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2))
+#define linked_list_get_arr<%0>(%1,%2,%3) linked_list_get_arr(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 
-#define linked_list_set<%0> linked_list_set@%0
-#define linked_list_set_arr<%0> linked_list_set_arr@%0
-#define linked_list_set_cell<%0> linked_list_set_cell@%0
+#define linked_list_set<%0>(%1,%2,%3) linked_list_set(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2,_PP@CAST[%0](%3))
+#define linked_list_set_arr<%0>(%1,%2,%3) linked_list_set_arr(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
+#define linked_list_set_cell<%0>(%1,%2,%3,%4) linked_list_set_cell(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2,%3,_PP@CAST[%0](%4))
 
-#define linked_list_sizeof<%0> linked_list_sizeof@%0
+#define linked_list_sizeof<%0>(%1) linked_list_sizeof(LinkedList:_PP@CAST[LinkedList<%0>](%1))
 
-#define linked_list_iter<%0> linked_list_iter@%0
-
-#define @define_LinkedList<%0> \
-enum{Void:LinkedList<%0>};\
-native LinkedList<%0>:linked_list_new<%0>()=linked_list_new;\
-native LinkedList<%0>:linked_list_new_arr<%0>(%0:v[],s=sizeof(v),t=(tagof(%0:)))=linked_list_new_arr;\
-native LinkedList<%0>:linked_list_new_args_t<%0>(t=(tagof(%0:)),%0:a,%0:...)=linked_list_new_args;\
-native bool:linked_list_valid<%0>(LinkedList<%0>:l)=linked_list_valid;\
-native bool:linked_list_delete<%0>(LinkedList<%0>:l)=linked_list_delete;\
-native bool:linked_list_delete_deep<%0>(LinkedList<%0>:l)=linked_list_delete_deep;\
-native LinkedList<%0>:linked_list_clone<%0>(LinkedList<%0>:l)=linked_list_clone;\
-native linked_list_size<%0>(LinkedList<%0>:l)=linked_list_size;\
-native bool:linked_list_clear<%0>(LinkedList<%0>:l)=linked_list_clear;\
-native linked_list_add<%0>(LinkedList<%0>:l,%0:v,i=-1,t=(tagof(%0:)))=linked_list_add;\
-native linked_list_add_arr<%0>(LinkedList<%0>:l,const %0:v[],i=-1,s=sizeof(v),t=(tagof(%0:)))=linked_list_add_arr;\
-native linked_list_add_list<%0>(LinkedList<%0>:l,LinkedList<%0>:l2,i=-1)=linked_list_add_list;\
-native linked_list_add_args_t<%0>(t=(tagof(%0:)),%0:a,%0:...)=linked_list_add_args;\
-native bool:linked_list_remove<%0>(LinkedList<%0>:l,i)=linked_list_remove;\
-native %0:linked_list_get<%0>(LinkedList<%0>:l,i,o=0)=linked_list_get;\
-native linked_list_get_arr<%0>(LinkedList<%0>:l,i,%0:v[],s=sizeof(v))=linked_list_get_arr;\
-native bool:linked_list_set<%0>(LinkedList<%0>:l,i,%0:v,t=(tagof(%0:)))=linked_list_set;\
-native bool:linked_list_set_arr<%0>(LinkedList<%0>:l,i,const %0:v[],s=sizeof(v),t=(tagof(%0:)))=linked_list_set_arr;\
-native bool:linked_list_set_cell<%0>(LinkedList<%0>:l,i,o,%0:v)=linked_list_set_cell;\
-native linked_list_sizeof<%0>(LinkedList<%0>:l,i)=linked_list_sizeof;\
-forward LinkedList:operator=(LinkedList<%0>:l);\
-forward LinkedList<%0>:operator=(LinkedList:l);\
-native Iter<%0>:linked_list_iter<%0>(LinkedList<%0>:l)=linked_list_iter
+#define linked_list_iter<%0>(%1) (Iter<%0>:linked_list_iter(LinkedList:_PP@CAST[LinkedList<%0>](%1)))
 
 #endif
 
@@ -917,20 +817,36 @@ native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:
 
 #if defined PP_SYNTAX_GENERIC
 
-#define iter_get<%0> iter_get@%0
-#define iter_get_arr<%0> iter_get_arr@%0
-#define iter_set<%0> iter_set@%0
-#define iter_set_arr<%0> iter_set_arr@%0
-#define iter_set_cell<%0> iter_set_cell@%0
-#define iter_insert<%0> iter_insert@%0
-#define iter_insert_arr<%0> iter_set_insert@%0
-#define iter_get_key<%0,%1> iter_get_key@%0@%1
-#define iter_get_key_arr<%0,%1> iter_get_key_arr@%0@%1
-#define iter_get_value<%0,%1> iter_get_value@%0@%1
-#define iter_get_value_arr<%0,%1> iter_get_value_arr@%0@%1
-#define iter_set_value<%0,%1> iter_set_value@%0@%1
-#define iter_set_value_arr<%0,%1> iter_set_value_arr@%0@%1
-#define iter_set_value_cell<%0,%1> iter_set_value_cell@%0@%1
+#define iter_valid<%0>(%1) iter_valid(Iter:_PP@CAST[Iter<%0>](%1))
+#define iter_acquire<%0>(%1) (Iter<%0>:iter_acquire(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_release<%0>(%1) (Iter<%0>:iter_release(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_delete<%0>(%1) iter_delete(Iter:_PP@CAST[Iter<%0>](%1))
+#define iter_linked<%0>(%1) iter_linked(Iter:_PP@CAST[Iter<%0>](%1))
+#define iter_inside<%0>(%1) iter_inside(Iter:_PP@CAST[Iter<%0>](%1))
+#define iter_erase<%0>(%1) (Iter<%0>:iter_erase(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_reset<%0>(%1) (Iter<%0>:iter_reset(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_clone<%0>(%1) (Iter<%0>:iter_clone(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_move_next<%0>(%1) (Iter<%0>:iter_move_next(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_move_previous<%0>(%1) (Iter<%0>:iter_move_previous(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_to_first<%0>(%1) (Iter<%0>:iter_to_first(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_to_last<%0>(%1) (Iter<%0>:iter_to_last(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_eq<%0>(%1,%2) iter_eq(Iter:_PP@CAST[Iter<%0>](%1),Iter:_PP@CAST[Iter<%0>](%2))
+
+#define iter_get<%0>(%1) (%0:iter_get(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_get_arr<%0>(%1,%2) iter_get_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2))
+#define iter_set<%0>(%1,%2) iter_set(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST[%0](%2))
+#define iter_set_arr<%0>(%1,%2) iter_set_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2))
+#define iter_set_cell<%0>(%1,%2,%3) iter_set_cell(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST[%0](%3))
+#define iter_insert<%0>(%1,%2) iter_insert(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST[%0](%2))
+#define iter_insert_arr<%0>(%1,%2) iter_insert_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2))
+
+#define iter_get_key<%0,%1>(%2) (%0:iter_get_key(Iter:_PP@CAST[PairIter<%0,%1>](%2)))
+#define iter_get_key_arr<%0,%1>(%2,%3) iter_get_key_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
+#define iter_get_value<%0,%1>(%2) (%1:iter_get_value(Iter:_PP@CAST[PairIter<%0,%1>](%2)))
+#define iter_get_value_arr<%0,%1>(%2,%3) iter_get_value_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%1](%3))
+#define iter_set_value<%0,%1>(%2,%3) iter_set_value(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST[%1](%3))
+#define iter_set_value_arr(%2,%3) iter_set_value_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%1](%3))
+#define iter_set_value_cell<%0,%1>(%2,%3,%4) iter_set_value_cell(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST[%1](%4))
 
 #if defined PP_SYNTAX_FOR_LIST
 #define for_list_of<%2>(%0:%1) for(new Iter<%2>:%0=list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
