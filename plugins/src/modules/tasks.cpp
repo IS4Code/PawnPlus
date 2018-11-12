@@ -83,7 +83,11 @@ namespace tasks
 
 	std::queue<std::unique_ptr<handler>> pending_handlers;
 
-	task auto_result(1);
+	static task &auto_result()
+	{
+		static task result(1);
+		return result;
+	}
 
 	tasks::extra &get_extra(AMX *amx, amx::object &owner)
 	{
@@ -313,7 +317,7 @@ namespace tasks
 		{
 			auto handler = std::move(pending_handlers.front());
 			pending_handlers.pop();
-			handler->set_completed(auto_result);
+			handler->set_completed(auto_result());
 		}
 	}
 
@@ -389,7 +393,7 @@ namespace tasks
 				{
 					auto handler = std::move(pair.second);
 					it = tick_handlers.erase(it);
-					handler->set_completed(auto_result);
+					handler->set_completed(auto_result());
 				}else{
 					break;
 				}
@@ -411,7 +415,7 @@ namespace tasks
 				{
 					auto handler = std::move(pair.second);
 					it = timer_handlers.erase(it);
-					handler->set_completed(auto_result);
+					handler->set_completed(auto_result());
 				}else{
 					it++;
 				}

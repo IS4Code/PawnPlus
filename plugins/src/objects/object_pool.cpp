@@ -4,7 +4,11 @@
 #include "modules/containers.h"
 
 template <class ObjType>
-typename object_pool<ObjType>::ref_container_null object_pool<ObjType>::null_ref = nullptr;
+typename object_pool<ObjType>::ref_container_null &object_pool<ObjType>::null_ref()
+{
+	static object_pool<ObjType>::ref_container_null obj = nullptr;
+	return obj;
+}
 
 template <class ObjType>
 struct ref_ctor_simple
@@ -25,12 +29,12 @@ struct ref_ctor_virtual
 {
 	static typename object_pool<ObjType>::object_ptr add(typename object_pool<ObjType>::list_type &list)
 	{
-		return object_pool<ObjType>::null_ref;
+		return object_pool<ObjType>::null_ref();
 	}
 
 	static typename object_pool<ObjType>::object_ptr add(typename object_pool<ObjType>::list_type &list, typename object_pool<ObjType>::ref_container &&obj)
 	{
-		return object_pool<ObjType>::null_ref;
+		return object_pool<ObjType>::null_ref();
 	}
 };
 
@@ -128,7 +132,7 @@ auto object_pool<ObjType>::find_cache(const_inner_ptr ptr) -> object_ptr
 	{
 		return const_cast<object_ptr>(*it->second);
 	}
-	return null_ref;
+	return null_ref();
 }
 
 template <class ObjType>
@@ -183,7 +187,7 @@ auto object_pool<ObjType>::get(AMX *amx, cell addr) -> object_ptr
 	{
 		return **it;
 	}
-	return null_ref;
+	return null_ref();
 }
 
 template <class ObjType>

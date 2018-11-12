@@ -238,7 +238,7 @@ public:
 	typedef decltype(&static_cast<const ObjType*>(nullptr)->operator[](0)) const_inner_ptr;
 
 	typedef aux::id_set_pool<ref_container> list_type;
-	static ref_container_null null_ref;
+	static ref_container_null &null_ref();
 private:
 
 	list_type global_object_list;
