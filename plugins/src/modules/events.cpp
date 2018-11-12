@@ -181,7 +181,10 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 		cell retaddr;
 		amx_Allot(amx, 1, &retaddr, &retarg);
 		amx_Push(amx, retaddr);
-		*retarg = *retval;
+		if(retval)
+		{
+			*retarg = *retval;
+		}
 	}
 
 	for(auto it = arg_values.rbegin(); it != arg_values.rend(); it++)
@@ -207,11 +210,14 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 
 	if(handled)
 	{
-		if(retarg)
+		if(retval)
 		{
-			*retval = *retarg;
-		}else{
-			*retval = handled;
+			if(retarg)
+			{
+				*retval = *retarg;
+			}else{
+				*retval = handled;
+			}
 		}
 		return true;
 	}
