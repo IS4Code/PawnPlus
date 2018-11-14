@@ -53,6 +53,32 @@ public:
 		if(static_cast<ucell>(params[2]) >= ptr->size()) return 0;
 		return Factory(amx, (*ptr)[params[2]], params[Indices]...);
 	}
+	
+	// native list_find(List:list, value, index=0, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL list_find(AMX *amx, cell *params)
+	{
+		cell index = optparam(3, 0);
+		if(index < 0)
+		{
+			index = 0;
+		}
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) return -1;
+		if(static_cast<ucell>(index) >= ptr->size())
+		{
+			return -1;
+		}
+		auto find = Factory(amx, params[Indices]...);
+		for(size_t i = static_cast<size_t>(index); i < ptr->size(); i++)
+		{
+			if((*ptr)[i] == find)
+			{
+				return static_cast<cell>(i);
+			}
+		}
+		return -1;
+	}
 };
 
 // native bool:list_set_cell(List:list, index, offset, AnyTag:value, ...);
@@ -398,6 +424,30 @@ namespace Natives
 		auto &obj = (*ptr)[params[2]];
 		return obj.get_size();
 	}
+
+	// native list_find(List:list, AnyTag:value, index=0, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(list_find, 4)
+	{
+		return value_at<2, 4>::list_find<dyn_func>(amx, params);
+	}
+
+	// native list_find_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(list_find_arr, 5)
+	{
+		return value_at<2, 4, 5>::list_find<dyn_func_arr>(amx, params);
+	}
+
+	// native list_find_str(List:list, const value[], index=0);
+	AMX_DEFINE_NATIVE(list_find_str, 2)
+	{
+		return value_at<2>::list_find<dyn_func_str>(amx, params);
+	}
+
+	// native list_find_var(List:list, VariantTag:value, index=0);
+	AMX_DEFINE_NATIVE(list_find_var, 2)
+	{
+		return value_at<2>::list_find<dyn_func_var>(amx, params);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -433,6 +483,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_set_var),
 	AMX_DECLARE_NATIVE(list_set_cell),
 	AMX_DECLARE_NATIVE(list_set_cell_safe),
+	AMX_DECLARE_NATIVE(list_find),
+	AMX_DECLARE_NATIVE(list_find_arr),
+	AMX_DECLARE_NATIVE(list_find_str),
+	AMX_DECLARE_NATIVE(list_find_var),
 	AMX_DECLARE_NATIVE(list_tagof),
 	AMX_DECLARE_NATIVE(list_sizeof),
 };

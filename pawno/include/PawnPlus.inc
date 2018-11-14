@@ -458,6 +458,11 @@ native bool:list_set_var(List:list, index, ConstVariantTag:value);
 native bool:list_set_cell(List:list, index, offset, AnyTag:value);
 native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
+native list_find(List:list, AnyTag:value, index=0, TagTag:tag_id=tagof(value));
+native list_find_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), TagTag:tag_id=tagof(value));
+native list_find_str(List:list, const value[], index=0);
+native list_find_var(List:list, ConstVariantTag:value, index=0);
+
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);
 
@@ -487,6 +492,9 @@ native Iter:list_iter(List:list, index=0);
 #define list_set<%0>(%1,%2,%3) list_set(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST[%0](%3))
 #define list_set_arr<%0>(%1,%2,%3) list_set_arr(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 #define list_set_cell<%0>(%1,%2,%3,%4) list_set_cell(List:_PP@CAST[List<%0>](%1),%2,%3,_PP@CAST[%0](%4))
+
+#define list_find<%0>(%1,%2) list_find(List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
+#define list_find_arr<%0>(%1,%2) list_find_arr(List:_PP@CAST[List<%0>](%1),_PP@CAST_ARR[%0](%2))
 
 #define list_sizeof<%0>(%1) list_sizeof(List:_PP@CAST[List<%0>](%1))
 
