@@ -796,11 +796,17 @@ native bool:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(valu
 native bool:iter_insert_str(IterTag:iter, const value[]);
 native bool:iter_insert_var(IterTag:iter, ConstVariantTag:value);
 
+native iter_tagof(IterTag:iter);
+native iter_sizeof(IterTag:iter);
+
 native iter_get_key(IterTag:iter, offset=0);
 native iter_get_key_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
 native Variant:iter_get_key_var(IterTag:iter);
 native bool:iter_get_key_safe(IterTag:iter, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 native iter_get_key_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+
+native iter_tagof_key(IterTag:iter);
+native iter_sizeof_key(IterTag:iter);
 
 native iter_get_value(IterTag:iter, offset=0) = iter_get;
 native iter_get_value_arr(IterTag:iter, AnyTag:value[], size=sizeof(value)) = iter_get_arr;
@@ -814,6 +820,9 @@ native bool:iter_set_value_str(IterTag:iter, const value[]) = iter_set_str;
 native bool:iter_set_value_var(IterTag:iter, ConstVariantTag:value) = iter_set_var;
 native bool:iter_set_value_cell(IterTag:iter, offset, AnyTag:value) = iter_set_cell;
 native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:value_tag_id=tagof(value)) = iter_set_cell_safe;
+
+native iter_tagof_value(IterTag:iter) = iter_tagof;
+native iter_sizeof_value(IterTag:iter) = iter_sizeof;
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -840,6 +849,8 @@ native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:
 #define iter_insert<%0>(%1,%2) iter_insert(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST[%0](%2))
 #define iter_insert_arr<%0>(%1,%2) iter_insert_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2))
 
+#define iter_sizeof<%0>(%1) iter_sizeof(Iter:_PP@CAST[Iter<%0>](%1))
+
 #define iter_get_key<%0,%1>(%2) (%0:iter_get_key(Iter:_PP@CAST[PairIter<%0,%1>](%2)))
 #define iter_get_key_arr<%0,%1>(%2,%3) iter_get_key_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
 #define iter_get_value<%0,%1>(%2) (%1:iter_get_value(Iter:_PP@CAST[PairIter<%0,%1>](%2)))
@@ -847,6 +858,9 @@ native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:
 #define iter_set_value<%0,%1>(%2,%3) iter_set_value(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST[%1](%3))
 #define iter_set_value_arr(%2,%3) iter_set_value_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%1](%3))
 #define iter_set_value_cell<%0,%1>(%2,%3,%4) iter_set_value_cell(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST[%1](%4))
+
+#define iter_sizeof_key<%0,%1>(%2) iter_sizeof(Iter:_PP@CAST[PairIter<%0,%1>](%2))
+#define iter_sizeof_value<%0,%1>(%2) iter_sizeof(Iter:_PP@CAST[PairIter<%0,%1>](%2))
 
 #if defined PP_SYNTAX_FOR_LIST
 #define for_list_of<%2>(%0:%1) for(new Iter<%2>:%0=list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))

@@ -430,6 +430,96 @@ namespace Natives
 	{
 		return value_at<2, 3, 4>::iter_get_key<dyn_func_arr>(amx, params);
 	}
+
+	// native iter_tagof(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_tagof, 1)
+	{
+		dyn_iterator *iter;
+		if(iter_pool.get_by_id(params[1], iter))
+		{
+			dyn_object *obj;
+			if(iter->extract(obj))
+			{
+				return obj->get_tag(amx);
+			}
+			std::pair<const dyn_object, dyn_object> *pair;
+			if(iter->extract(pair))
+			{
+				return pair->second.get_tag(amx);
+			}
+			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+			if(iter->extract(spair))
+			{
+				return pair->second.get_tag(amx);
+			}
+		}
+		return 0;
+	}
+
+	// native iter_sizeof(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_sizeof, 1)
+	{
+		dyn_iterator *iter;
+		if(iter_pool.get_by_id(params[1], iter))
+		{
+			dyn_object *obj;
+			if(iter->extract(obj))
+			{
+				return obj->get_size();
+			}
+			std::pair<const dyn_object, dyn_object> *pair;
+			if(iter->extract(pair))
+			{
+				return pair->second.get_size();
+			}
+			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+			if(iter->extract(spair))
+			{
+				return pair->second.get_size();
+			}
+		}
+		return 0;
+	}
+
+	// native iter_tagof_key(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_tagof_key, 1)
+	{
+		dyn_iterator *iter;
+		if(iter_pool.get_by_id(params[1], iter))
+		{
+			std::pair<const dyn_object, dyn_object> *pair;
+			if(iter->extract(pair))
+			{
+				return pair->first.get_tag(amx);
+			}
+			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+			if(iter->extract(spair))
+			{
+				return pair->first.get_tag(amx);
+			}
+		}
+		return 0;
+	}
+
+	// native iter_sizeof_key(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_sizeof_key, 1)
+	{
+		dyn_iterator *iter;
+		if(iter_pool.get_by_id(params[1], iter))
+		{
+			std::pair<const dyn_object, dyn_object> *pair;
+			if(iter->extract(pair))
+			{
+				return pair->first.get_size();
+			}
+			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+			if(iter->extract(spair))
+			{
+				return pair->first.get_size();
+			}
+		}
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -471,6 +561,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_get_key_var),
 	AMX_DECLARE_NATIVE(iter_get_key_safe),
 	AMX_DECLARE_NATIVE(iter_get_key_arr_safe),
+	AMX_DECLARE_NATIVE(iter_sizeof),
+	AMX_DECLARE_NATIVE(iter_tagof),
+	AMX_DECLARE_NATIVE(iter_sizeof_key),
+	AMX_DECLARE_NATIVE(iter_tagof_key),
 };
 
 int RegisterIterNatives(AMX *amx)
