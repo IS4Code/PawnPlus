@@ -102,6 +102,26 @@ public:
 	}
 };
 
+template <size_t... KeyIndices>
+class key_at
+{
+	using key_ftype = typename dyn_factory<KeyIndices...>::type;
+
+public:
+	// native Iter:map_iter_at(Map:map, key, ...);
+	template <key_ftype KeyFactory>
+	static cell AMX_NATIVE_CALL map_iter_at(AMX *amx, cell *params)
+	{
+		std::shared_ptr<map_t> ptr;
+		if(map_pool.get_by_id(params[1], ptr))
+		{
+			auto &iter = iter_pool.add(std::make_unique<map_iterator_t>(ptr, ptr->find(KeyFactory(amx, params[KeyIndices]...))));
+			return iter_pool.get_id(iter);
+		}
+		return 0;
+	}
+};
+
 // native bool:iter_set_cell(IterTag:iter, offset, AnyTag:value, ...);
 template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
@@ -177,6 +197,30 @@ namespace Natives
 			return iter_pool.get_id(iter);
 		}
 		return 0;
+	}
+
+	// native Iter:map_iter_at(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
+	AMX_DEFINE_NATIVE(map_iter_at, 3)
+	{
+		return key_at<2, 3>::map_iter_at<dyn_func>(amx, params);
+	}
+
+	// native Iter:map_iter_at_arr(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+	AMX_DEFINE_NATIVE(map_iter_at_arr, 4)
+	{
+		return key_at<2, 3, 4>::map_iter_at<dyn_func_arr>(amx, params);
+	}
+
+	// native Iter:map_iter_at_str(Map:map, const key[]);
+	AMX_DEFINE_NATIVE(map_iter_at_str, 2)
+	{
+		return key_at<2>::map_iter_at<dyn_func_str>(amx, params);
+	}
+
+	// native Iter:map_iter_at_var(Map:map, ConstVariantTag:key);
+	AMX_DEFINE_NATIVE(map_iter_at_var, 2)
+	{
+		return key_at<2>::map_iter_at<dyn_func_var>(amx, params);
 	}
 
 	// native Iter:linked_list_iter(LinkedList:linked_list, index=0);
@@ -627,6 +671,10 @@ static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(list_iter),
 	AMX_DECLARE_NATIVE(map_iter),
+	AMX_DECLARE_NATIVE(map_iter_at),
+	AMX_DECLARE_NATIVE(map_iter_at_arr),
+	AMX_DECLARE_NATIVE(map_iter_at_str),
+	AMX_DECLARE_NATIVE(map_iter_at_var),
 	AMX_DECLARE_NATIVE(linked_list_iter),
 	AMX_DECLARE_NATIVE(iter_valid),
 	AMX_DECLARE_NATIVE(iter_acquire),

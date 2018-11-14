@@ -630,6 +630,10 @@ native map_var_tagof(Map:map, ConstVariantTag:key);
 native map_var_sizeof(Map:map, ConstVariantTag:key);
 
 native Iter:map_iter(Map:map, index=0);
+native Iter:map_iter_at(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
+native Iter:map_iter_at_arr(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native Iter:map_iter_at_str(Map:map, const key[]);
+native Iter:map_iter_at_var(Map:map, ConstVariantTag:key);
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -676,6 +680,8 @@ native Iter:map_iter(Map:map, index=0);
 #define map_arr_sizeof<%0,%1>(%2,%3) map_arr_sizeof(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
 
 #define map_iter<%0,%1>(%2) (PairIter<%0,%1>:map_iter(Map:_PP@CAST[Map<%0,%1>](%2)))
+#define map_iter_at<%0,%1>(%2,%3) (PairIter<%0,%1>:map_iter_at(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3)))
+#define map_iter_at_arr<%0,%1>(%2,%3) (PairIter<%0,%1>:map_iter_at_arr(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3)))
 
 #endif
 
