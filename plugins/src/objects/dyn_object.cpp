@@ -735,6 +735,7 @@ bool dyn_object::struct_compatible(const dyn_object &obj) const
 bool dyn_object::operator==(const dyn_object &obj) const
 {
 	if(!tag_compatible(obj) || !struct_compatible(obj)) return false;
+	if(empty()) return true;
 	const cell *begin1 = begin();
 	const cell *end1 = end();
 	const cell *begin2 = obj.begin();
@@ -751,6 +752,7 @@ bool dyn_object::operator==(const dyn_object &obj) const
 bool dyn_object::operator!=(const dyn_object &obj) const
 {
 	if(!tag_compatible(obj) || !struct_compatible(obj)) return true;
+	if(empty()) return false;
 	const cell *begin1 = begin();
 	const cell *end1 = end();
 	const cell *begin2 = obj.begin();
@@ -768,6 +770,7 @@ template <bool(tag_operations::*OpFunc)(tag_ptr, cell, cell) const>
 bool dyn_object::operator_log_func(const dyn_object &obj) const
 {
 	if(!tag_compatible(obj) || !struct_compatible(obj)) return false;
+	if(empty()) return false;
 	const cell *begin1 = begin();
 	const cell *end1 = end();
 	const cell *begin2 = obj.begin();
