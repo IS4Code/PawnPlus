@@ -772,10 +772,10 @@ native bool:iter_inside(IterTag:iter);
 native Iter:iter_erase(IterTag:iter);
 native Iter:iter_reset(IterTag:iter);
 native Iter:iter_clone(IterTag:iter);
-native Iter:iter_move_next(IterTag:iter);
-native Iter:iter_move_previous(IterTag:iter);
-native Iter:iter_to_first(IterTag:iter);
-native Iter:iter_to_last(IterTag:iter);
+native Iter:iter_move_next(IterTag:iter, steps=1);
+native Iter:iter_move_previous(IterTag:iter, steps=1);
+native Iter:iter_to_first(IterTag:iter, index=0);
+native Iter:iter_to_last(IterTag:iter, index=0);
 native bool:iter_eq(IterTag:iter1, IterTag:iter2);
 
 native iter_get(IterTag:iter, offset=0);

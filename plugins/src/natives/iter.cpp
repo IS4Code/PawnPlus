@@ -302,49 +302,111 @@ namespace Natives
 		return *iter1 == *iter2;
 	}
 
-	// native Iterator:iter_move_next(IterTag:iter);
+	// native Iterator:iter_move_next(IterTag:iter, steps=1);
 	AMX_DEFINE_NATIVE(iter_move_next, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
 		{
-			iter->move_next();
+			cell steps = optparam(2, 1);
+			if(steps < 0)
+			{
+				for(cell i = steps; i < 0; i++)
+				{
+					if(!iter->move_previous())
+					{
+						break;
+					}
+				}
+			}else{
+				for(cell i = 0; i < steps; i++)
+				{
+					if(!iter->move_next())
+					{
+						break;
+					}
+				}
+			}
 			return params[1];
 		}
 		return 0;
 	}
 
-	// native Iterator:iter_move_previous(IterTag:iter);
+	// native Iterator:iter_move_previous(IterTag:iter, steps=1);
 	AMX_DEFINE_NATIVE(iter_move_previous, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
 		{
-			iter->move_previous();
+			cell steps = optparam(2, 1);
+			if(steps < 0)
+			{
+				for(cell i = steps; i < 0; i++)
+				{
+					if(!iter->move_next())
+					{
+						break;
+					}
+				}
+			}else{
+				for(cell i = 0; i < steps; i++)
+				{
+					if(!iter->move_previous())
+					{
+						break;
+					}
+				}
+			}
 			return params[1];
 		}
 		return 0;
 	}
 
-	// native Iterator:iter_to_first(IterTag:iter);
+	// native Iterator:iter_to_first(IterTag:iter, index=0);
 	AMX_DEFINE_NATIVE(iter_to_first, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
 		{
-			iter->set_to_first();
+			cell index = optparam(2, 0);
+			if(index < 0)
+			{
+				iter->reset();
+			}else{
+				iter->set_to_first();
+				for(cell i = 0; i < index; i++)
+				{
+					if(!iter->move_next())
+					{
+						break;
+					}
+				}
+			}
 			return params[1];
 		}
 		return 0;
 	}
 
-	// native Iterator:iter_to_last(IterTag:iter);
+	// native Iterator:iter_to_last(IterTag:iter, index=0);
 	AMX_DEFINE_NATIVE(iter_to_last, 1)
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(params[1], iter))
 		{
-			iter->set_to_last();
+			cell index = optparam(2, 0);
+			if(index < 0)
+			{
+				iter->reset();
+			}else{
+				iter->set_to_last();
+				for(cell i = 0; i < index; i++)
+				{
+					if(!iter->move_previous())
+					{
+						break;
+					}
+				}
+			}
 			return params[1];
 		}
 		return 0;
