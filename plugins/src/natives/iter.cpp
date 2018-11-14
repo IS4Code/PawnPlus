@@ -129,37 +129,76 @@ static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
 
 namespace Natives
 {
-	// native Iter:list_iter(List:list);
+	// native Iter:list_iter(List:list, index=0);
 	AMX_DEFINE_NATIVE(list_iter, 1)
 	{
 		std::shared_ptr<list_t> ptr;
 		if(list_pool.get_by_id(params[1], ptr))
 		{
 			auto &iter = iter_pool.add(std::make_unique<list_iterator_t>(ptr));
+			cell index = optparam(2, 0);
+			if(index < 0)
+			{
+				iter->reset();
+			}else{
+				for(cell i = 0; i < index; i++)
+				{
+					if(!iter->move_next())
+					{
+						break;
+					}
+				}
+			}
 			return iter_pool.get_id(iter);
 		}
 		return 0;
 	}
 
-	// native Iter:map_iter(Map:map);
+	// native Iter:map_iter(Map:map, index=0);
 	AMX_DEFINE_NATIVE(map_iter, 1)
 	{
 		std::shared_ptr<map_t> ptr;
 		if(map_pool.get_by_id(params[1], ptr))
 		{
 			auto &iter = iter_pool.add(std::make_unique<map_iterator_t>(ptr));
+			cell index = optparam(2, 0);
+			if(index < 0)
+			{
+				iter->reset();
+			}else{
+				for(cell i = 0; i < index; i++)
+				{
+					if(!iter->move_next())
+					{
+						break;
+					}
+				}
+			}
 			return iter_pool.get_id(iter);
 		}
 		return 0;
 	}
 
-	// native Iter:linked_list_iter(LinkedList:linked_list);
+	// native Iter:linked_list_iter(LinkedList:linked_list, index=0);
 	AMX_DEFINE_NATIVE(linked_list_iter, 1)
 	{
 		std::shared_ptr<linked_list_t> ptr;
 		if(linked_list_pool.get_by_id(params[1], ptr))
 		{
 			auto &iter = iter_pool.add(std::make_unique<linked_list_iterator_t>(ptr));
+			cell index = optparam(2, 0);
+			if(index < 0)
+			{
+				iter->reset();
+			}else{
+				for(cell i = 0; i < index; i++)
+				{
+					if(!iter->move_next())
+					{
+						break;
+					}
+				}
+			}
 			return iter_pool.get_id(iter);
 		}
 		return 0;

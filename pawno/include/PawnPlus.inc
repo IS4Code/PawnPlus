@@ -461,7 +461,7 @@ native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, TagTag:ta
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);
 
-native Iter:list_iter(List:list);
+native Iter:list_iter(List:list, index=0);
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -629,7 +629,7 @@ native map_str_sizeof(Map:map, const key[]);
 native map_var_tagof(Map:map, ConstVariantTag:key);
 native map_var_sizeof(Map:map, ConstVariantTag:key);
 
-native Iter:map_iter(Map:map);
+native Iter:map_iter(Map:map, index=0);
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -725,7 +725,7 @@ native bool:linked_list_set_cell_safe(LinkedList:linked_list, index, offset, Any
 native linked_list_tagof(LinkedList:linked_list, index);
 native linked_list_sizeof(LinkedList:linked_list, index);
 
-native Iter:linked_list_iter(LinkedList:linked_list);
+native Iter:linked_list_iter(LinkedList:linked_list, index=0);
 
 #if defined PP_SYNTAX_GENERIC
 
