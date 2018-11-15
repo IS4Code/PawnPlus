@@ -65,12 +65,14 @@
 #define ConstVariantTag {ConstVariantTags}
 #define IterTags Iter
 #define IterTag {IterTags}
+#define HandleTags Handle
+#define HandleTag {HandleTags}
 
 #define TagTags _,tag_uid
 #define TagTag {TagTags}
 
 #if !defined PP_ALL_TAGS
-#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map
+#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map,IterTags,HandleTags
 #if defined PP_ADDITIONAL_TAGS
 #define AnyTag {PP_ALL_TAGS,PP_ADDITIONAL_TAGS}
 #else
@@ -916,19 +918,19 @@ native iter_sizeof_value(IterTag:iter) = iter_sizeof;
 native Handle:handle_new(AnyTag:value, TagTag:tag_id=tagof(value));
 native Handle:handle_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native Handle:handle_new_var(ConstVariantTag:value);
-native Handle:handle_acquire(Handle:handle);
-native Handle:handle_release(Handle:handle);
-native bool:handle_delete(Handle:handle);
-native bool:handle_valid(Handle:handle);
+native Handle:handle_acquire(HandleTag:handle);
+native Handle:handle_release(HandleTag:handle);
+native bool:handle_delete(HandleTag:handle);
+native bool:handle_valid(HandleTag:handle);
 
-native handle_get(Handle:handle, offset=0);
-native handle_get_arr(Handle:handle, AnyTag:value[], size=sizeof(value));
-native Variant:handle_get_var(Handle:handle);
-native bool:handle_get_safe(Handle:handle, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
+native handle_get(HandleTag:handle, offset=0);
+native handle_get_arr(HandleTag:handle, AnyTag:value[], size=sizeof(value));
+native Variant:handle_get_var(HandleTag:handle);
+native bool:handle_get_safe(HandleTag:handle, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 native handle_get_arr_safe(ConstVariantTag:var, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 
-native handle_tagof(Handle:handle);
-native handle_sizeof(Handle:handle);
+native handle_tagof(HandleTag:handle);
+native handle_sizeof(HandleTag:handle);
 
 #if defined PP_SYNTAX_GENERIC
 
