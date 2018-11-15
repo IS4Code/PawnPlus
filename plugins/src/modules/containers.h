@@ -562,9 +562,54 @@ public:
 	}
 };
 
+class handle_t
+{
+	dyn_object object;
+
+public:
+	handle_t() = default;
+
+	handle_t(dyn_object &&obj) : object(std::move(obj))
+	{
+		object.acquire();
+	}
+
+	handle_t(handle_t &&handle) : object(std::move(handle.object))
+	{
+
+	}
+
+	handle_t(const handle_t&) = delete;
+
+	const dyn_object &get() const
+	{
+		return object;
+	}
+
+	int &operator[](size_t index) const
+	{
+		static int unused;
+		return unused;
+	}
+
+	handle_t &operator=(handle_t &&handle)
+	{
+		object = std::move(handle.object);
+		return *this;
+	}
+
+	handle_t &operator=(const handle_t&) = delete;
+
+	~handle_t()
+	{
+		object.release();
+	}
+};
+
 extern aux::shared_id_set_pool<list_t> list_pool;
 extern aux::shared_id_set_pool<map_t> map_pool;
 extern aux::shared_id_set_pool<linked_list_t> linked_list_pool;
 extern object_pool<dyn_iterator> iter_pool;
+extern object_pool<handle_t> handle_pool;
 
 #endif

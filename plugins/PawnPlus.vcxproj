@@ -147,6 +147,7 @@
     <ClCompile Include="src\modules\tasks.cpp" />
     <ClCompile Include="src\modules\threads.cpp" />
     <ClCompile Include="src\modules\variants.cpp" />
+    <ClCompile Include="src\natives\handle.cpp" />
     <ClCompile Include="src\natives\iter.cpp" />
     <ClCompile Include="src\natives\linked_list.cpp" />
     <ClCompile Include="src\natives\list.cpp" />

@@ -112,6 +112,9 @@
     <ClCompile Include="src\natives\linked_list.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives\handle.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

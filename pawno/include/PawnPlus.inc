@@ -38,6 +38,7 @@
 #define LinkedList<%0> LinkedList@%0
 #define Iter<%0> Iter@%0
 #define PairIter<%0,%1> Iter@%1@%0
+#define Handle<%0> Handle@%0
 
 #define PP_TAG_PREFIX@String<%0> %0@String
 #define PP_TAG_PREFIX@Variant<%0> %0@Variant
@@ -49,6 +50,7 @@
 #define PP_TAG_PREFIX@Map<%0> %0@Map
 #define PP_TAG_PREFIX@LinkedList<%0> %0@LinkedList
 #define PP_TAG_PREFIX@Iter<%0> %0@Iter
+#define PP_TAG_PREFIX@Handle<%0> %0@Handle
 #define Ref<%0> PP_TAG_PREFIX@%0<Ref>
 
 #endif
@@ -112,6 +114,8 @@ native pp_num_guards();
 native String:pp_entry_s();
 native pp_num_local_iters();
 native pp_num_global_iters();
+native pp_num_local_handles();
+native pp_num_global_handles();
 native pp_collect();
 native pp_num_natives();
 native pp_max_recursion(level);
@@ -900,6 +904,42 @@ native iter_sizeof_value(IterTag:iter) = iter_sizeof;
 
 #if defined PP_SYNTAX_FOR_LINKED_LIST
 #define for_linked_list(%0:%1) for(new Iter:%0=linked_list_iter(%1);iter_inside(%0);iter_move_next(%0))
+#endif
+
+
+/*                 */
+/*     Handles     */
+/*                 */
+
+#define HANDLE_NULL (Handle:0)
+
+native Handle:handle_new(AnyTag:value, TagTag:tag_id=tagof(value));
+native Handle:handle_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native Handle:handle_new_var(ConstVariantTag:value);
+native Handle:handle_acquire(Handle:handle);
+native Handle:handle_release(Handle:handle);
+native bool:handle_delete(Handle:handle);
+native bool:handle_valid(Handle:handle);
+
+native handle_get(Handle:handle, offset=0);
+native handle_get_arr(Handle:handle, AnyTag:value[], size=sizeof(value));
+native Variant:handle_get_var(Handle:handle);
+native bool:handle_get_safe(Handle:handle, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
+native handle_get_arr_safe(ConstVariantTag:var, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+
+native handle_tagof(Handle:handle);
+native handle_sizeof(Handle:handle);
+
+#if defined PP_SYNTAX_GENERIC
+
+#define handle_new<%0>(%1) (Handle<%0>:handle_new(_PP@CAST[%0](%1)))
+#define handle_new_arr<%0>(%1) (Handle<%0>:handle_new_arr(_PP@CAST_ARR[%0](%1)))
+
+#define handle_get<%0>(%1) (%0:handle_get(Handle:_PP@CAST[Handle<%0>](%1)))
+#define handle_get_arr<%0>(%1,%2) handle_get_arr(Handle:_PP@CAST[Handle<%0>](%1),_PP@CAST_ARR[%0](%2))
+
+#define handle_sizeof<%0>(%1) handle_sizeof(Handle:_PP@CAST[Handle<%0>](%1))
+
 #endif
 
 

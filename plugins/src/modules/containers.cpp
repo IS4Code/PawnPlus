@@ -4,6 +4,7 @@ aux::shared_id_set_pool<list_t> list_pool;
 aux::shared_id_set_pool<map_t> map_pool;
 aux::shared_id_set_pool<linked_list_t> linked_list_pool;
 object_pool<dyn_iterator> iter_pool;
+object_pool<handle_t> handle_pool;
 
 
 

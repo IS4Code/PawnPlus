@@ -113,6 +113,18 @@ namespace Natives
 		return iter_pool.global_size();
 	}
 
+	// native pp_num_local_handles();
+	AMX_DEFINE_NATIVE(pp_num_local_handles, 0)
+	{
+		return handle_pool.local_size();
+	}
+
+	// native pp_num_global_handles();
+	AMX_DEFINE_NATIVE(pp_num_global_handles, 0)
+	{
+		return handle_pool.global_size();
+	}
+
 	// native pp_collect();
 	AMX_DEFINE_NATIVE(pp_collect, 0)
 	{
@@ -148,6 +160,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_num_guards),
 	AMX_DECLARE_NATIVE(pp_num_local_iters),
 	AMX_DECLARE_NATIVE(pp_num_global_iters),
+	AMX_DECLARE_NATIVE(pp_num_local_handles),
+	AMX_DECLARE_NATIVE(pp_num_global_handles),
 	AMX_DECLARE_NATIVE(pp_entry_s),
 	AMX_DECLARE_NATIVE(pp_collect),
 	AMX_DECLARE_NATIVE(pp_num_natives),

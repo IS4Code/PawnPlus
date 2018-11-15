@@ -263,3 +263,4 @@ size_t object_pool<ObjType>::global_size() const
 template class object_pool<strings::cell_string>;
 template class object_pool<dyn_object>;
 template class object_pool<dyn_iterator>;
+template class object_pool<handle_t>;
