@@ -634,29 +634,38 @@ tag_ptr dyn_object::get_tag() const
 
 void dyn_object::acquire() const
 {
-	const auto &ops = tag->get_ops();
-	for(auto it = begin(); it != end(); it++)
+	if(!empty())
 	{
-		ops.acquire(tag, *it);
+		const auto &ops = tag->get_ops();
+		for(auto it = begin(); it != end(); it++)
+		{
+			ops.acquire(tag, *it);
+		}
 	}
 }
 
 void dyn_object::release() const
 {
-	const auto &ops = tag->get_ops();
-	for(auto it = begin(); it != end(); it++)
+	if(!empty())
 	{
-		ops.release(tag, *it);
+		const auto &ops = tag->get_ops();
+		for(auto it = begin(); it != end(); it++)
+		{
+			ops.release(tag, *it);
+		}
 	}
 }
 
 dyn_object dyn_object::clone() const
 {
 	dyn_object copy(*this);
-	const auto &ops = tag->get_ops();
-	for(auto it = copy.begin(); it != copy.end(); it++)
+	if(!empty())
 	{
-		*it = ops.clone(tag, *it);
+		const auto &ops = tag->get_ops();
+		for(auto it = copy.begin(); it != copy.end(); it++)
+		{
+			*it = ops.clone(tag, *it);
+		}
 	}
 	return copy;
 }
