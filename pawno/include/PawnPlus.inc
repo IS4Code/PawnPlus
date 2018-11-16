@@ -214,6 +214,7 @@ enum tag_op
     tag_op_init = 27,
     tag_op_hash = 28,
     tag_op_acquire = 29,
+    tag_op_handle = 30,
 }
 
 /*                 */
@@ -924,6 +925,8 @@ native Handle:handle_acquire(HandleTag:handle);
 native Handle:handle_release(HandleTag:handle);
 native bool:handle_delete(HandleTag:handle);
 native bool:handle_valid(HandleTag:handle);
+native bool:handle_linked(HandleTag:handle);
+native handle_reset(HandleTag:handle);
 
 native handle_get(HandleTag:handle, offset=0);
 native handle_get_arr(HandleTag:handle, AnyTag:value[], size=sizeof(value));
@@ -938,6 +941,12 @@ native handle_sizeof(HandleTag:handle);
 
 #define handle_new<%0>(%1) (Handle<%0>:handle_new(_PP@CAST[%0](%1)))
 #define handle_new_arr<%0>(%1) (Handle<%0>:handle_new_arr(_PP@CAST_ARR[%0](%1)))
+#define handle_acquire<%0>(%1) (Handle<%0>:handle_acquire(Handle:_PP@CAST[Handle<%0>](%1)))
+#define handle_release<%0>(%1) (Handle<%0>:handle_release(Handle:_PP@CAST[Handle<%0>](%1)))
+#define handle_delete<%0>(%1) handle_delete(Handle:_PP@CAST[Handle<%0>](%1))
+#define handle_valid<%0>(%1) handle_valid(Handle:_PP@CAST[Handle<%0>](%1))
+#define handle_linked<%0>(%1) handle_linked(Handle:_PP@CAST[Handle<%0>](%1))
+#define handle_reset<%0>(%1) handle_reset(Handle:_PP@CAST[Handle<%0>](%1))
 
 #define handle_get<%0>(%1) (%0:handle_get(Handle:_PP@CAST[Handle<%0>](%1)))
 #define handle_get_arr<%0>(%1,%2) handle_get_arr(Handle:_PP@CAST[Handle<%0>](%1),_PP@CAST_ARR[%0](%2))

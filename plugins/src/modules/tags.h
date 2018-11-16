@@ -36,6 +36,7 @@ enum class op_type
 	init = 27,
 	hash = 28,
 	acquire = 29,
+	handle = 30,
 };
 
 namespace std
@@ -84,6 +85,7 @@ public:
 	virtual bool del(tag_ptr tag, cell arg) const = 0;
 	virtual bool release(tag_ptr tag, cell arg) const = 0;
 	virtual bool acquire(tag_ptr tag, cell arg) const = 0;
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const = 0;
 	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const = 0;
 	virtual cell copy(tag_ptr tag, cell arg) const = 0;
 	virtual cell clone(tag_ptr tag, cell arg) const = 0;

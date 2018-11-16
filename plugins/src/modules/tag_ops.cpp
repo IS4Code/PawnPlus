@@ -187,6 +187,11 @@ struct null_operations : public tag_operations
 		return false;
 	}
 
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		return {};
+	}
+
 	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const override
 	{
 		return false;
@@ -925,6 +930,16 @@ struct list_operations : public generic_operations<list_operations, tags::tag_li
 		return false;
 	}
 
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<list_t> l;
+		if(list_pool.get_by_id(arg, l))
+		{
+			return l;
+		}
+		return {};
+	}
+
 	virtual bool release(tag_ptr tag, cell arg) const override
 	{
 		list_t *l;
@@ -1003,6 +1018,16 @@ struct map_operations : public generic_operations<map_operations, tags::tag_map>
 			return map_pool.remove(m);
 		}
 		return false;
+	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<map_t> m;
+		if(map_pool.get_by_id(arg, m))
+		{
+			return m;
+		}
+		return {};
 	}
 
 	virtual bool release(tag_ptr tag, cell arg) const override
@@ -1183,6 +1208,16 @@ struct task_operations : public generic_operations<task_operations, tags::tag_ta
 	virtual bool release(tag_ptr tag, cell arg) const override
 	{
 		return del(tag, arg);
+	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<tasks::task> t;
+		if(tasks::get_by_id(arg, t))
+		{
+			return t;
+		}
+		return {};
 	}
 
 	virtual cell copy(tag_ptr tag, cell arg) const override
@@ -1493,6 +1528,27 @@ public:
 			return base->get_ops().acquire(tag, arg);
 		}
 		return false;
+	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		auto it = dyn_ops.find(op_type::handle);
+		if(it != dyn_ops.end() && it->second)
+		{
+			cell id = it->second->invoke(tag, arg);
+			handle_t *handle;
+			if(handle_pool.get_by_id(id, handle))
+			{
+				return handle->get_bond();
+			}
+			return {};
+		}
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base != nullptr)
+		{
+			return base->get_ops().handle(tag, arg);
+		}
+		return {};
 	}
 
 	virtual bool collect(tag_ptr tag, const cell *arg, cell size) const override

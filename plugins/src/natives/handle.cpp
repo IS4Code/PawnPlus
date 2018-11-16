@@ -123,6 +123,23 @@ namespace Natives
 		if(!handle_pool.get_by_id(params[1], handle)) return 0;
 		return handle->get().get_size();
 	}
+
+	// native bool:handle_linked(HandleTag:handle);
+	AMX_DEFINE_NATIVE(handle_linked, 1)
+	{
+		handle_t *handle;
+		if(!handle_pool.get_by_id(params[1], handle)) return 0;
+		return handle->linked();
+	}
+
+	// native handle_reset(HandleTag:handle);
+	AMX_DEFINE_NATIVE(handle_reset, 1)
+	{
+		handle_t *handle;
+		if(!handle_pool.get_by_id(params[1], handle)) return 0;
+		handle->reset();
+		return 1;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -134,6 +151,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(handle_release),
 	AMX_DECLARE_NATIVE(handle_delete),
 	AMX_DECLARE_NATIVE(handle_valid),
+	AMX_DECLARE_NATIVE(handle_linked),
+	AMX_DECLARE_NATIVE(handle_reset),
 
 	AMX_DECLARE_NATIVE(handle_get),
 	AMX_DECLARE_NATIVE(handle_get_arr),

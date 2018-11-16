@@ -644,6 +644,26 @@ void dyn_object::acquire() const
 	}
 }
 
+std::weak_ptr<void> dyn_object::handle() const
+{
+	std::weak_ptr<void> handle;
+	if(!empty())
+	{
+		const auto &ops = tag->get_ops();
+		bool first = true;
+		for(auto it = begin(); it != end(); it++)
+		{
+			if(first)
+			{
+				handle = ops.handle(tag, *it);
+			}else{
+				return {};
+			}
+		}
+	}
+	return handle;
+}
+
 void dyn_object::release() const
 {
 	if(!empty())

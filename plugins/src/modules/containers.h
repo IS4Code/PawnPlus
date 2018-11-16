@@ -565,16 +565,17 @@ public:
 class handle_t
 {
 	dyn_object object;
+	std::weak_ptr<void> bond;
 
 public:
 	handle_t() = default;
 
-	handle_t(dyn_object &&obj) : object(std::move(obj))
+	handle_t(dyn_object &&obj) : object(std::move(obj)), bond((object.acquire(), object.handle()))
 	{
-		object.acquire();
+
 	}
 
-	handle_t(handle_t &&handle) : object(std::move(handle.object))
+	handle_t(handle_t &&handle) : object(std::move(handle.object)), bond(std::move(handle.bond))
 	{
 
 	}
@@ -586,6 +587,11 @@ public:
 		return object;
 	}
 
+	const std::weak_ptr<void> &get_bond() const
+	{
+		return bond;
+	}
+
 	int &operator[](size_t index) const
 	{
 		static int unused;
@@ -594,15 +600,33 @@ public:
 
 	handle_t &operator=(handle_t &&handle)
 	{
-		object = std::move(handle.object);
+		if(this != &handle)
+		{
+			object = std::move(handle.object);
+			bond = std::move(handle.bond);
+		}
 		return *this;
+	}
+
+	bool linked() const
+	{
+		return !bond.expired();
+	}
+
+	void reset()
+	{
+		object = {};
+		bond = {};
 	}
 
 	handle_t &operator=(const handle_t&) = delete;
 
 	~handle_t()
 	{
-		object.release();
+		if(!bond.expired() || (!bond.owner_before(std::weak_ptr<void>{}) && !std::weak_ptr<void>{}.owner_before(bond)))
+		{
+			object.release();
+		}
 	}
 };
 
