@@ -140,6 +140,18 @@ native bool:pawn_guard_valid(Guard:guard);
 native bool:pawn_guard_free(Guard:guard);
 native List:pawn_get_args(const format[], bool:byref=false, level=0);
 
+#if defined PP_SYNTAX_GENERIC
+
+stock _pp_fake_cast(val)
+{
+    return val;
+}
+
+#define pawn_ref<%0>(%1) (Ref<%0>:_pp_fake_cast(_:_PP@CAST[%0](%1)))
+#define pawn_unref<%0>(%1) (%0:_pp_fake_cast(_:_PP@CAST[Ref<%0>](%1)))
+
+#endif
+
 /*                 */
 /*      Tags       */
 /*                 */
