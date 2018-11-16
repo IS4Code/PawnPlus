@@ -5,6 +5,8 @@
 #include "modules/containers.h"
 #include "modules/tasks.h"
 #include "modules/amxutils.h"
+#include "modules/events.h"
+#include "modules/amxhook.h"
 #include "objects/stored_param.h"
 #include "fixes/linux.h"
 #include "utils/optional.h"
@@ -982,6 +984,96 @@ struct list_operations : public generic_operations<list_operations, tags::tag_li
 	}
 };
 
+struct linked_list_operations : public generic_operations<linked_list_operations, tags::tag_linked_list>
+{
+	linked_list_operations() : generic_operations()
+	{
+
+	}
+
+	linked_list_operations(tag_ptr element) : generic_operations(element)
+	{
+
+	}
+
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
+	{
+		return a == b;
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		linked_list_t *l;
+		return !linked_list_pool.get_by_id(a, l);
+	}
+
+	virtual char format_spec(tag_ptr tag, bool arr) const override
+	{
+		return arr ? 'a' : 'l';
+	}
+
+	virtual bool del(tag_ptr tag, cell arg) const override
+	{
+		linked_list_t *l;
+		if(linked_list_pool.get_by_id(arg, l))
+		{
+			return linked_list_pool.remove(l);
+		}
+		return false;
+	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<linked_list_t> l;
+		if(linked_list_pool.get_by_id(arg, l))
+		{
+			return l;
+		}
+		return {};
+	}
+
+	virtual bool release(tag_ptr tag, cell arg) const override
+	{
+		linked_list_t *l;
+		if(linked_list_pool.get_by_id(arg, l))
+		{
+			for(auto &obj : *l)
+			{
+				obj->release();
+			}
+			return linked_list_pool.remove(l);
+		}
+		return false;
+	}
+
+	virtual cell copy(tag_ptr tag, cell arg) const override
+	{
+		linked_list_t *l;
+		if(linked_list_pool.get_by_id(arg, l))
+		{
+			linked_list_t *l2 = linked_list_pool.add().get();
+			*l2 = *l;
+			return linked_list_pool.get_id(l2);
+		}
+		return 0;
+	}
+
+	virtual cell clone(tag_ptr tag, cell arg) const override
+	{
+		linked_list_t *l;
+		if(linked_list_pool.get_by_id(arg, l))
+		{
+			linked_list_t *l2 = linked_list_pool.add().get();
+			for(auto &obj : *l)
+			{
+				l2->push_back(obj->clone());
+			}
+			return linked_list_pool.get_id(l2);
+		}
+		return 0;
+	}
+};
+
 struct map_operations : public generic_operations<map_operations, tags::tag_map>
 {
 	map_operations() : generic_operations()
@@ -1280,6 +1372,42 @@ struct var_operations : public null_operations
 	}
 };
 
+struct guard_operations : public null_operations
+{
+	guard_operations() : null_operations(tags::tag_guard)
+	{
+
+	}
+};
+
+
+struct callback_handler_operations : public null_operations
+{
+	callback_handler_operations() : null_operations(tags::tag_callback_handler)
+	{
+
+	}
+};
+
+
+struct native_hook_operations : public null_operations
+{
+	native_hook_operations() : null_operations(tags::tag_native_hook)
+	{
+
+	}
+
+	virtual bool del(tag_ptr tag, cell arg) const override
+	{
+		return amxhook::remove_hook(arg);
+	}
+
+	virtual bool release(tag_ptr tag, cell arg) const override
+	{
+		return del(tag, arg);
+	}
+};
+
 static const null_operations unknown_ops(tags::tag_unknown);
 
 std::vector<std::unique_ptr<tag_info>> tag_list([]()
@@ -1287,8 +1415,8 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	std::vector<std::unique_ptr<tag_info>> v;
 	auto unknown = std::make_unique<tag_info>(0, "{...}", nullptr, std::make_unique<null_operations>(tags::tag_unknown));
 	auto unknown_tag = unknown.get();
-	auto string_const = std::make_unique<tag_info>(13, "String@Const", unknown_tag, std::make_unique<string_operations>());
-	auto variant_const = std::make_unique<tag_info>(14, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
+	auto string_const = std::make_unique<tag_info>(17, "String@Const", unknown_tag, std::make_unique<string_operations>());
+	auto variant_const = std::make_unique<tag_info>(18, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
 	v.push_back(std::move(unknown));
 	v.push_back(std::make_unique<tag_info>(1, "", unknown_tag, std::make_unique<cell_operations>(tags::tag_cell)));
 	v.push_back(std::make_unique<tag_info>(2, "bool", unknown_tag, std::make_unique<bool_operations>()));
@@ -1302,9 +1430,13 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::make_unique<tag_info>(10, "Ref", unknown_tag, std::make_unique<ref_operations>()));
 	v.push_back(std::make_unique<tag_info>(11, "Task", unknown_tag, std::make_unique<task_operations>()));
 	v.push_back(std::make_unique<tag_info>(12, "Var", unknown_tag, std::make_unique<var_operations>()));
+	v.push_back(std::make_unique<tag_info>(13, "LinkedList", unknown_tag, std::make_unique<linked_list_operations>()));
+	v.push_back(std::make_unique<tag_info>(14, "Guard", unknown_tag, std::make_unique<guard_operations>()));
+	v.push_back(std::make_unique<tag_info>(15, "CallbackHandler", unknown_tag, std::make_unique<callback_handler_operations>()));
+	v.push_back(std::make_unique<tag_info>(16, "NativeHook", unknown_tag, std::make_unique<native_hook_operations>()));
 	v.push_back(std::move(string_const));
 	v.push_back(std::move(variant_const));
-	v.push_back(std::make_unique<tag_info>(15, "char@", v[3].get(), std::make_unique<char_operations>()));
+	v.push_back(std::make_unique<tag_info>(19, "char@", v[3].get(), std::make_unique<char_operations>()));
 	return v;
 }());
 

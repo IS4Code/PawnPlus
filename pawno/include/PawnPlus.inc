@@ -171,6 +171,10 @@ stock _pp_fake_cast(val)
 #define tag_uid_ref (tag_uid:10)
 #define tag_uid_task (tag_uid:11)
 #define tag_uid_var (tag_uid:12)
+#define tag_uid_linked_list (tag_uid:13)
+#define tag_uid_guard (tag_uid:14)
+#define tag_uid_callback_handler (tag_uid:15)
+#define tag_uid_native_hook (tag_uid:16)
 
 native tag_uid:tag_uid(tag_id);
 native tag_id(tag_uid:tag_uid);

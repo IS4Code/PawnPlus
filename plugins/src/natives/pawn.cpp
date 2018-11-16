@@ -355,7 +355,7 @@ namespace Natives
 	// native pawn_remove_hook(NativeHook:id);
 	AMX_DEFINE_NATIVE(pawn_remove_hook, 1)
 	{
-		return static_cast<cell>(amxhook::remove_hook(amx, params[1]));
+		return static_cast<cell>(amxhook::remove_hook(params[1]));
 	}
 
 	// native Guard:pawn_guard(AnyTag:value, tag_id=tagof(value));

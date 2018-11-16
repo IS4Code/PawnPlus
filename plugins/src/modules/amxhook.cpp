@@ -138,7 +138,7 @@ cell amxhook::register_filter(AMX *amx, bool output, const char *native, const c
 	return register_handler(amx, native, std::make_unique<filter_handler>(amx, output, func_format, handler, format, params, numargs));
 }
 
-bool amxhook::remove_hook(AMX *amx, cell id)
+bool amxhook::remove_hook(cell id)
 {
 	auto it = hook_handlers.find(id);
 	if(it == hook_handlers.end()) return false;
