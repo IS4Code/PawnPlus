@@ -385,14 +385,14 @@ namespace Natives
 	// native bool:pawn_guard_valid(Guard:guard);
 	AMX_DEFINE_NATIVE(pawn_guard_valid, 1)
 	{
-		dyn_object *obj;
+		handle_t *obj;
 		return guards::get_by_id(amx, params[1], obj);
 	}
 
 	// native bool:pawn_guard_free(Guard:guard);
 	AMX_DEFINE_NATIVE(pawn_guard_free, 1)
 	{
-		dyn_object *obj;
+		handle_t *obj;
 		if(guards::get_by_id(amx, params[1], obj))
 		{
 			return guards::free(amx, obj);

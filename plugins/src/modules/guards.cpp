@@ -2,22 +2,15 @@
 #include "context.h"
 
 #include "utils/id_set_pool.h"
+#include <memory>
 
 struct guards_extra : public amx::extra
 {
-	aux::id_set_pool<dyn_object> pool;
+	aux::id_set_pool<handle_t> pool;
 
 	guards_extra(AMX *amx) : amx::extra(amx)
 	{
 
-	}
-
-	virtual ~guards_extra()
-	{
-		for(auto &guard : pool)
-		{
-			guard->release();
-		}
 	}
 };
 
@@ -29,22 +22,21 @@ size_t guards::count(AMX *amx)
 	return guards.pool.size();
 }
 
-dyn_object *guards::add(AMX *amx, dyn_object &&obj)
+handle_t *guards::add(AMX *amx, dyn_object &&obj)
 {
 	amx::object owner;
 	auto &ctx = amx::get_context(amx, owner);
 	auto &guards = ctx.get_extra<guards_extra>();
-	auto ptr = guards.pool.add(std::move(obj));
-	ptr->acquire();
+	auto ptr = guards.pool.add(handle_t(std::move(obj)));
 	return ptr;
 }
 
-cell guards::get_id(AMX *amx, const dyn_object *obj)
+cell guards::get_id(AMX *amx, const handle_t *obj)
 {
 	return reinterpret_cast<cell>(obj);
 }
 
-bool guards::get_by_id(AMX *amx, cell id, dyn_object *&obj)
+bool guards::get_by_id(AMX *amx, cell id, handle_t *&obj)
 {
 	amx::object owner;
 	auto &ctx = amx::get_context(amx, owner);
@@ -52,7 +44,7 @@ bool guards::get_by_id(AMX *amx, cell id, dyn_object *&obj)
 	return guards.pool.get_by_id(id, obj);
 }
 
-bool guards::contains(AMX *amx, const dyn_object *obj)
+bool guards::contains(AMX *amx, const handle_t *obj)
 {
 	amx::object owner;
 	auto &ctx = amx::get_context(amx, owner);
@@ -60,7 +52,7 @@ bool guards::contains(AMX *amx, const dyn_object *obj)
 	return guards.pool.contains(obj);
 }
 
-bool guards::free(AMX *amx, dyn_object *obj)
+bool guards::free(AMX *amx, handle_t *obj)
 {
 	amx::object owner;
 	auto &ctx = amx::get_context(amx, owner);
@@ -69,7 +61,6 @@ bool guards::free(AMX *amx, dyn_object *obj)
 	auto it = guards.pool.find(obj);
 	if(it != guards.pool.end())
 	{
-		obj->release();
 		guards.pool.erase(it);
 	}
 	return false;
