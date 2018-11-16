@@ -40,6 +40,7 @@
 #define PairIter<%0,%1> Iter@%1@%0
 #define Handle<%0> Handle@%0
 #define Ref<%0> Ref@%0
+#define Task<%0> Task@%0
 
 #endif
 
@@ -1014,6 +1015,33 @@ native task_config(task_restore:heap=task_restore_full, task_restore:stack=task_
 #define yield%9\32;%0; task_yield(%0);
 #endif
 
+#if defined PP_SYNTAX_GENERIC
+
+#define task_new<%0>(%1) (Task<%0>:task_new(%1))
+#define task_delete<%0>(%1) task_delete(Task:_PP@CAST[Task<%0>](%1))
+#define task_valid<%0>(%1) task_valid(Task:_PP@CAST[Task<%0>](%1))
+#define task_keep<%0>(%1) (Task<%0>:task_keep(Task:_PP@CAST[Task<%0>](%1)))
+#define task_set_result<%0>(%1,%2) task_set_result(Task:_PP@CAST[Task<%0>](%1),_PP@CAST[%0](%2))
+#define task_set_result_arr<%0>(%1,%2) task_set_result_arr(Task:_PP@CAST[Task<%0>](%1),_PP@CAST_ARR[%0](%2))
+#define task_get_result<%0>(%1) (%0:task_get_result(Task:_PP@CAST[Task<%0>](%1)))
+#define task_get_result_arr<%0>(%1,%2) task_get_result_arr(Task:_PP@CAST[Task<%0>](%1),_PP@CAST_ARR[%0](%2))
+#define task_set_error<%0>(%1) task_set_error(Task:_PP@CAST[Task<%0>](%1))
+#define task_get_error<%0>(%1) task_get_error(Task:_PP@CAST[Task<%0>](%1))
+#define task_set_result_ms<%0>(%1,%2,%3) task_set_result_ms(Task:_PP@CAST[Task<%0>](%1),_PP@CAST[%0](%2),%3)
+#define task_set_result_ms_arr<%0>(%1,%2,%3) task_set_result_ms_arr(Task:_PP@CAST[Task<%0>](%1),_PP@CAST_ARR[%0](%2),%3)
+#define task_set_result_ticks<%0>(%1,%2,%3) task_set_result_ticks(Task:_PP@CAST[Task<%0>](%1),_PP@CAST[%0](%2),%3)
+#define task_set_result_ticks_arr<%0>(%1,%2,%3) task_set_result_ticks_arr(Task:_PP@CAST[Task<%0>](%1),_PP@CAST_ARR[%0](%2),%3)
+#define task_set_error_ms<%0>(%1) task_set_error_ms(Task:_PP@CAST[Task<%0>](%1))
+#define task_set_error_ticks<%0>(%1) task_set_error_ticks(Task:_PP@CAST[Task<%0>](%1))
+#define task_completed<%0>(%1) task_completed(Task:_PP@CAST[Task<%0>](%1))
+#define task_faulted<%0>(%1) task_faulted(Task:_PP@CAST[Task<%0>](%1))
+#define task_state<%0>(%1) task_state(Task:_PP@CAST[Task<%0>](%1))
+#define task_reset<%0>(%1) task_reset(Task:_PP@CAST[Task<%0>](%1))
+#define task_wait<%0>(%1) task_wait(Task:_PP@CAST[Task<%0>](%1))
+#define task_await<%0>(%1) (%0:task_await(Task:_PP@CAST[Task<%0>](%1)))
+#define task_bind<%0>(%1) task_bind(Task:_PP@CAST[Task<%0>](%1))
+
+#endif
 
 /*                 */
 /*     Threads     */
