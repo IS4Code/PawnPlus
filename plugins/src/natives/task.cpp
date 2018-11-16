@@ -3,6 +3,7 @@
 #include "exec.h"
 #include "modules/tasks.h"
 #include "modules/variants.h"
+#include "objects/stored_param.h"
 #include <algorithm>
 
 using namespace tasks;
@@ -546,6 +547,153 @@ namespace Natives
 		info.restore_stack = static_cast<amx::restore_range>(optparam(2, 3));
 		return 0;
 	}
+
+	// native task_continue_with(Task:task, const handler[], const additional_format[]="", AnyTag:...);
+	AMX_DEFINE_NATIVE(task_continue_with, 0)
+	{
+		task *task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			char *fname;
+			amx_StrParam(amx, params[2], fname);
+
+			const char *format;
+			amx_OptStrParam(amx, 3, format, "");
+
+			std::shared_ptr<std::vector<stored_param>> arg_values;
+
+			if(format && *format)
+			{
+				arg_values = std::make_shared<std::vector<stored_param>>();
+				size_t argi = -1;
+				size_t len = std::strlen(format);
+				size_t numargs = params[0] / sizeof(cell) - 3;
+				try{
+					for(size_t i = 0; i < len; i++)
+					{
+						arg_values->push_back(stored_param::create(amx, format[i], params + 4, argi, numargs));
+					}
+				}catch(nullptr_t)
+				{
+					logerror(amx, "[PP] task_continue_with: not enough arguments");
+					return 0;
+				}
+			}
+
+			std::string handler(fname);
+			auto obj = amx::load(amx);
+			task->register_handler([handler, obj, arg_values](tasks::task &t){
+				if(auto lock = obj.lock())
+				{
+					AMX *amx = *lock;
+
+					int index;
+					if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return;
+
+					cell heap, *heap_addr;
+					amx_Allot(amx, 0, &heap, &heap_addr);
+
+					amx_Push(amx, tasks::get_id(&t));
+
+					if(arg_values)
+					{
+						for(auto it = arg_values->rbegin(); it != arg_values->rend(); it++)
+						{
+							it->push(amx, 0);
+						}
+					}
+
+					cell retval;
+					amx_Exec(amx, &retval, index);
+					amx->error = AMX_ERR_NONE;
+
+					amx_Release(amx, heap);
+				}
+			});
+
+			return 1;
+		}
+		return 0;
+	}
+	
+	// native Task:task_continue_with_bound(Task:task, Task:bound, const handler[], const additional_format[]="", AnyTag:...);
+	AMX_DEFINE_NATIVE(task_continue_with_bound, 0)
+	{
+		task *task;
+		std::shared_ptr<tasks::task> bound;
+		if(tasks::get_by_id(params[1], task) && tasks::get_by_id(params[2], bound))
+		{
+			char *fname;
+			amx_StrParam(amx, params[3], fname);
+
+			const char *format;
+			amx_OptStrParam(amx, 4, format, "");
+
+			std::shared_ptr<std::vector<stored_param>> arg_values;
+
+			if(format && *format)
+			{
+				arg_values = std::make_shared<std::vector<stored_param>>();
+				size_t argi = -1;
+				size_t len = std::strlen(format);
+				size_t numargs = params[0] / sizeof(cell) - 4;
+				try{
+					for(size_t i = 0; i < len; i++)
+					{
+						arg_values->push_back(stored_param::create(amx, format[i], params + 5, argi, numargs));
+					}
+				}catch(nullptr_t)
+				{
+					logerror(amx, "[PP] task_continue_with_bound: not enough arguments");
+					return 0;
+				}
+			}
+
+			std::string handler(fname);
+			auto obj = amx::load(amx);
+			std::weak_ptr<tasks::task> bound_task = bound;
+			task->register_handler([handler, obj, arg_values, bound_task](tasks::task &t){
+				if(auto lock = obj.lock())
+				{
+					AMX *amx = *lock;
+
+					int index;
+					if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return;
+
+					cell heap, *heap_addr;
+					amx_Allot(amx, 0, &heap, &heap_addr);
+
+					amx_Push(amx, tasks::get_id(&t));
+
+					if(arg_values)
+					{
+						for(auto it = arg_values->rbegin(); it != arg_values->rend(); it++)
+						{
+							it->push(amx, 0);
+						}
+					}
+
+					cell retval;
+
+					if(auto bound = bound_task.lock())
+					{
+						amx::reset reset(amx, false);
+						reset.context.get_extra<tasks::extra>().bound_task = bound;
+
+						amx_ExecContext(amx, &retval, index, true, &reset);
+					}else{
+						amx_Exec(amx, &retval, index);
+					}
+					amx->error = AMX_ERR_NONE;
+
+					amx_Release(amx, heap);
+				}
+			});
+
+			return params[2];
+		}
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -589,6 +737,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_set_error_ms),
 	AMX_DECLARE_NATIVE(task_set_error_ticks),
 	AMX_DECLARE_NATIVE(task_config),
+	AMX_DECLARE_NATIVE(task_continue_with),
+	AMX_DECLARE_NATIVE(task_continue_with_bound),
 };
 
 int RegisterTasksNatives(AMX *amx)
