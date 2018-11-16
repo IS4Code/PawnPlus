@@ -3,7 +3,11 @@ PawnPlus v0.11.0
 
 _PawnPlus_ extends the possibilities of the Pawn scripting language with new constructs, data types, and programming techniques.
 
-With this plugin, you can use techniques like asynchronous programming, task-based programming, lightweight form of delegates, and dynamic data objects to make programming in Pawn easier, simpler, and more efficient.
+With this plugin, you can use techniques like asynchronous task-based programming, reflection, hooking, and dynamic structures to make programming in Pawn easier, simpler, and more efficient.
+
+_PawnPlus_ introduces dynamically sized strings, lists, linked lists, and maps. Collections can contain any number of elements of any type (cells or arrays) and any tag. They can be iterated using versatile iterator objects. Tasks can be used to execute code based on a specific event, without creating additional callbacks and without blocking the program.
+
+Several new object types use the garbage collector present in the plugin, removing the need to explicitly delete memory in most cases.
 
 ## Documentation
 See the [wiki](//github.com/IllidanS4/PawnPlus/wiki) for documentation and tutorials on how to use this plugin.
@@ -18,3 +22,10 @@ This plugin can optionally add a number of syntax features to Pawn like addition
 
 ## Building
 Use Visual Studio to build the project on Windows, or `make` on Linux.
+
+## Credits
+* [Zeex](//github.com/Zeex) for creating [subhook](//github.com/Zeex/subhook) without which this wouldn't be possible.
+* [Y_Less](//github.com/Y-Less/) for help with macros for generic functions.
+* [Southclaws](//github.com/Southclaws/) for being Southclaws.
+
+Thanks to all _PawnPlus_ users for your support! 
