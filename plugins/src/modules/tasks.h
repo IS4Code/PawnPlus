@@ -2,6 +2,7 @@
 #define TASKS_H_INCLUDED
 
 #include "objects/reset.h"
+#include "objects/dyn_object.h"
 #include "sdk/amx/amx.h"
 #include <list>
 #include <memory>
@@ -24,7 +25,10 @@ namespace tasks
 
 	class task
 	{
-		cell _value = 0;
+		union{
+			cell _error = 0;
+			dyn_object _value;
+		};
 		unsigned char _state = 0;
 		bool _keep = false;
 		std::list<std::unique_ptr<handler>> handlers;
@@ -34,13 +38,16 @@ namespace tasks
 		{
 
 		}
-		task(cell result) : _state(1), _value(result)
+		task(dyn_object &&result) : _state(1), _value(std::move(result))
 		{
 
 		}
-		task(task &&obj) : _value(obj._value), _state(obj._state), _keep(obj._keep), handlers(std::move(obj.handlers))
+		task(task &&obj) : _error(obj._error), _state(obj._state), _keep(obj._keep), handlers(std::move(obj.handlers))
 		{
-
+			if(_state == 1)
+			{
+				_value = std::move(obj._value);
+			}
 		}
 		void keep(bool keep)
 		{
@@ -54,29 +61,28 @@ namespace tasks
 		{
 			return _state == 1;
 		}
-		cell result() const
+		dyn_object result() const
 		{
 			if(completed()) return _value;
-			return 0;
+			return {};
 		}
 		cell error() const
 		{
-			if(faulted()) return _value;
+			if(faulted()) return _error;
 			return 0;
 		}
 		cell state() const
 		{
 			return _state;
 		}
-		bool result_or_error(AMX *amx, cell &result) const
+		bool check_error(AMX *amx) const
 		{
 			if(completed())
 			{
-				result = _value;
 				return true;
 			}else if(faulted())
 			{
-				amx_RaiseError(amx, _value);
+				amx_RaiseError(amx, _error);
 				return false;
 			}else{
 				return false;
@@ -85,35 +91,66 @@ namespace tasks
 		task clone()
 		{
 			task clone;
-			clone._value = _value;
+			if(completed())
+			{
+				new (&clone._value) dyn_object();
+				clone._value = _value;
+			}else{
+				clone._error = _error;
+			}
 			clone._state = _state;
 			clone._keep = _keep;
 			return clone;
 		}
 		void reset()
 		{
-			_value = 0;
+			if(completed())
+			{
+				_value.~dyn_object();
+			}
+			_error = 0;
 			_state = 0;
 			handlers.clear();
 		}
 
 		task &operator=(task &&obj)
 		{
-			_value = obj._value;
-			_state = obj._state;
-			_keep = obj._keep;
-			handlers = std::move(obj.handlers);
+			if(this != &obj)
+			{
+				if(obj.completed())
+				{
+					if(_state != 1)
+					{
+						new (&_value) dyn_object();
+					}
+					_value = std::move(obj._value);
+				}else{
+					_error = obj._error;
+				}
+				_state = obj._state;
+				_keep = obj._keep;
+				handlers = std::move(obj.handlers);
+			}
 			return *this;
 		}
 
 		typedef std::list<std::unique_ptr<handler>>::iterator handler_iterator;
 
-		void set_completed(cell result);
+		void set_completed(dyn_object &&result);
 		void set_faulted(cell error);
 		handler_iterator register_reset(amx::reset &&reset);
 		handler_iterator register_handler(const std::function<void(task&)> &func);
 		handler_iterator register_handler(std::function<void(task&)> &&func);
 		void unregister_handler(const handler_iterator &it);
+
+		~task()
+		{
+			if(completed())
+			{
+				_value.~dyn_object();
+				_state = 0;
+			}
+		}
 	};
 
 	struct extra : amx::extra
@@ -135,8 +172,8 @@ namespace tasks
 	std::shared_ptr<task> add_timer_task(cell interval);
 	void add_tick_task(const std::shared_ptr<task> &task, cell ticks);
 	void add_timer_task(const std::shared_ptr<task> &task, cell interval);
-	void add_tick_task_result(const std::shared_ptr<task> &task, cell ticks, cell result);
-	void add_timer_task_result(const std::shared_ptr<task> &task, cell interval, cell result);
+	void add_tick_task_result(const std::shared_ptr<task> &task, cell ticks, dyn_object &&result);
+	void add_timer_task_result(const std::shared_ptr<task> &task, cell interval, dyn_object &&result);
 	void add_tick_task_error(const std::shared_ptr<task> &task, cell ticks, cell error);
 	void add_timer_task_error(const std::shared_ptr<task> &task, cell interval, cell error);
 	cell get_id(const task *ptr);

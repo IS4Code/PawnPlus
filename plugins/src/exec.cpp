@@ -402,7 +402,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 			{
 				if(ret == AMX_ERR_NONE)
 				{
-					task->set_completed(*retval);
+					task->set_completed(dyn_object(*retval, tags::find_tag(tags::tag_cell)));
 				}else{
 					task->set_faulted(ret);
 				}

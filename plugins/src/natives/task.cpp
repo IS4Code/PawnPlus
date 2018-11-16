@@ -2,9 +2,73 @@
 #include "context.h"
 #include "exec.h"
 #include "modules/tasks.h"
+#include "modules/variants.h"
 #include <algorithm>
 
 using namespace tasks;
+
+template <size_t... Indices>
+class value_at
+{
+	using value_ftype = typename dyn_factory<Indices...>::type;
+	using result_ftype = typename dyn_result<Indices...>::type;
+
+public:
+	// native task_set_result(Task:task, result, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL task_set_result(AMX *amx, cell *params)
+	{
+		task *task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			task->set_completed(Factory(amx, params[Indices]...));
+			return 1;
+		}
+		return 0;
+	}
+
+	// native task_get_result(Task:task, ...);
+	template <result_ftype Factory>
+	static cell AMX_NATIVE_CALL task_get_result(AMX *amx, cell *params)
+	{
+		task *task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			if(task->check_error(amx))
+			{
+				return Factory(amx, task->result(), params[Indices]...);
+			}
+			return 0;
+		}
+		return 0;
+	}
+
+	// native task_set_result_ms(Task:task, result, interval, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL task_set_result_ms(AMX *amx, cell *params)
+	{
+		std::shared_ptr<task> task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			tasks::add_timer_task_result(task, params[3], Factory(amx, params[Indices]...));
+			return 1;
+		}
+		return 0;
+	}
+
+	// native task_set_result_ticks(Task:task, result, interval, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL task_set_result_ticks(AMX *amx, cell *params)
+	{
+		std::shared_ptr<task> task;
+		if(tasks::get_by_id(params[1], task))
+		{
+			tasks::add_tick_task_result(task, params[3], Factory(amx, params[Indices]...));
+			return 1;
+		}
+		return 0;
+	}
+};
 
 namespace Natives
 {
@@ -80,31 +144,58 @@ namespace Natives
 		return tasks::get_by_id(params[1], task);
 	}
 
-	// native task_set_result(Task:task, AnyTag:result);
-	AMX_DEFINE_NATIVE(task_set_result, 2)
+	// native task_set_result(Task:task, AnyTag:result, TagTag:tag_id=tagof(result));
+	AMX_DEFINE_NATIVE(task_set_result, 3)
 	{
-		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			task->set_completed(params[2]);
-			return 1;
-		}
-		return 0;
+		return value_at<2, 3>::task_set_result<dyn_func>(amx, params);
 	}
 
-	// native task_get_result(Task:task);
-	AMX_DEFINE_NATIVE(task_get_result, 1)
+	// native task_set_result_arr(Task:task, const AnyTag:result[], size=sizeof(result), TagTag:tag_id=tagof(result));
+	AMX_DEFINE_NATIVE(task_set_result_arr, 4)
 	{
-		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			cell result;
-			if(task->result_or_error(amx, result))
-			{
-				return result;
-			}
-		}
-		return 0;
+		return value_at<2, 3, 4>::task_set_result<dyn_func_arr>(amx, params);
+	}
+
+	// native task_set_result_str(Task:task, const result[]);
+	AMX_DEFINE_NATIVE(task_set_result_str, 2)
+	{
+		return value_at<2>::task_set_result<dyn_func_str>(amx, params);
+	}
+
+	// native task_set_result_var(Task:task, ConstVariantTag:result);
+	AMX_DEFINE_NATIVE(task_set_result_var, 2)
+	{
+		return value_at<2>::task_set_result<dyn_func_var>(amx, params);
+	}
+
+	// native task_get_result(Task:task, offset=0);
+	AMX_DEFINE_NATIVE(task_get_result, 2)
+	{
+		return value_at<2>::task_get_result<dyn_func>(amx, params);
+	}
+
+	// native task_get_result_arr(Task:task, AnyTag:result[], size=sizeof(result));
+	AMX_DEFINE_NATIVE(task_get_result_arr, 3)
+	{
+		return value_at<2, 3>::task_get_result<dyn_func_arr>(amx, params);
+	}
+
+	// native Variant:task_get_result_var(Task:task);
+	AMX_DEFINE_NATIVE(task_get_result_var, 1)
+	{
+		return value_at<>::task_get_result<dyn_func_var>(amx, params);
+	}
+
+	// native bool:task_get_result_safe(Task:task, &AnyTag:result, offset=0, TagTag:tag_id=tagof(result));
+	AMX_DEFINE_NATIVE(task_get_result_safe, 4)
+	{
+		return value_at<2, 3, 4>::task_get_result<dyn_func>(amx, params);
+	}
+
+	// native task_get_result_arr_safe(Task:task, AnyTag:result[], size=sizeof(result), TagTag:tag_id=tagof(result));
+	AMX_DEFINE_NATIVE(task_get_result_arr_safe, 4)
+	{
+		return value_at<2, 3, 4>::task_get_result<dyn_func_arr>(amx, params);
 	}
 
 	// native task_reset(Task:task);
@@ -217,7 +308,7 @@ namespace Natives
 						}
 					}
 					list->clear();
-					created->set_completed(tasks::get_id(&t));
+					created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
 				});
 				list->push_back(std::make_pair(it, task));
 			}
@@ -250,7 +341,7 @@ namespace Natives
 					}))
 					{
 						list->clear();
-						created->set_completed(tasks::get_id(&t));
+						created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
 					}
 				});
 				list->push_back(task);
@@ -280,7 +371,7 @@ namespace Natives
 		return 0;
 	}
 
-	// native task_yield(AnyTag:value);
+	// native task_yield(AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(task_yield, 1)
 	{
 		amx::object owner;
@@ -288,7 +379,7 @@ namespace Natives
 		info.result = params[1];
 		if(auto task = info.bound_task.lock())
 		{
-			task->set_completed(info.result);
+			task->set_completed(dyn_object(amx, params[1], optparam(2, 0)));
 			return 1;
 		}
 		return 0;
@@ -374,28 +465,52 @@ namespace Natives
 		return 0;
 	}
 
-	// native task_set_result_ms(Task:task, AnyTag:result, interval);
-	AMX_DEFINE_NATIVE(task_set_result_ms, 3)
+	// native task_set_result_ms(Task:task, AnyTag:result, interval, TagTag:tag_id=tagof(result));
+	AMX_DEFINE_NATIVE(task_set_result_ms, 4)
 	{
-		std::shared_ptr<task> task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			tasks::add_timer_task_result(task, params[3], params[2]);
-			return 1;
-		}
-		return 0;
+		return value_at<2, 4>::task_set_result_ms<dyn_func>(amx, params);
 	}
 
-	// native task_set_result_ticks(Task:task, AnyTag : result, ticks);
-	AMX_DEFINE_NATIVE(task_set_result_ticks, 3)
+	// native task_set_result_ms_arr(Task:task, const AnyTag:result[], interval, size=sizeof(result), TagTag:tag_id=tagof(result));
+	AMX_DEFINE_NATIVE(task_set_result_ms_arr, 5)
 	{
-		std::shared_ptr<task> task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			tasks::add_tick_task_result(task, params[3], params[2]);
-			return 1;
-		}
-		return 0;
+		return value_at<2, 4, 5>::task_set_result_ms<dyn_func_arr>(amx, params);
+	}
+
+	// native task_set_result_ms_str(Task:task, const result[], interval);
+	AMX_DEFINE_NATIVE(task_set_result_ms_str, 3)
+	{
+		return value_at<2>::task_set_result_ms<dyn_func_str>(amx, params);
+	}
+
+	// native task_set_result_ms_var(Task:task, ConstVariantTag:result, interval);
+	AMX_DEFINE_NATIVE(task_set_result_ms_var, 3)
+	{
+		return value_at<2>::task_set_result_ms<dyn_func_var>(amx, params);
+	}
+
+	// native task_set_result_ticks(Task:task, AnyTag:result, interval, TagTag:tag_id=tagof(result));
+	AMX_DEFINE_NATIVE(task_set_result_ticks, 4)
+	{
+		return value_at<2, 4>::task_set_result_ticks<dyn_func>(amx, params);
+	}
+
+	// native task_set_result_ticks_arr(Task:task, const AnyTag:result[], interval, size=sizeof(result), TagTag:tag_id=tagof(result));
+	AMX_DEFINE_NATIVE(task_set_result_ticks_arr, 5)
+	{
+		return value_at<2, 4, 5>::task_set_result_ticks<dyn_func_arr>(amx, params);
+	}
+
+	// native task_set_result_ticks_str(Task:task, const result[], interval);
+	AMX_DEFINE_NATIVE(task_set_result_ticks_str, 3)
+	{
+		return value_at<2>::task_set_result_ticks<dyn_func_str>(amx, params);
+	}
+
+	// native task_set_result_ticks_var(Task:task, ConstVariantTag:result, interval);
+	AMX_DEFINE_NATIVE(task_set_result_ticks_var, 3)
+	{
+		return value_at<2>::task_set_result_ticks<dyn_func_var>(amx, params);
 	}
 
 	// native task_set_error_ms(Task:task, amx_err : error, interval);
@@ -442,7 +557,14 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_valid),
 	AMX_DECLARE_NATIVE(task_keep),
 	AMX_DECLARE_NATIVE(task_set_result),
+	AMX_DECLARE_NATIVE(task_set_result_arr),
+	AMX_DECLARE_NATIVE(task_set_result_str),
+	AMX_DECLARE_NATIVE(task_set_result_var),
 	AMX_DECLARE_NATIVE(task_get_result),
+	AMX_DECLARE_NATIVE(task_get_result_arr),
+	AMX_DECLARE_NATIVE(task_get_result_var),
+	AMX_DECLARE_NATIVE(task_get_result_safe),
+	AMX_DECLARE_NATIVE(task_get_result_arr_safe),
 	AMX_DECLARE_NATIVE(task_reset),
 	AMX_DECLARE_NATIVE(task_completed),
 	AMX_DECLARE_NATIVE(task_faulted),
@@ -457,7 +579,13 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_yield),
 	AMX_DECLARE_NATIVE(task_bind),
 	AMX_DECLARE_NATIVE(task_set_result_ms),
+	AMX_DECLARE_NATIVE(task_set_result_ms_arr),
+	AMX_DECLARE_NATIVE(task_set_result_ms_str),
+	AMX_DECLARE_NATIVE(task_set_result_ms_var),
 	AMX_DECLARE_NATIVE(task_set_result_ticks),
+	AMX_DECLARE_NATIVE(task_set_result_ticks_arr),
+	AMX_DECLARE_NATIVE(task_set_result_ticks_str),
+	AMX_DECLARE_NATIVE(task_set_result_ticks_var),
 	AMX_DECLARE_NATIVE(task_set_error_ms),
 	AMX_DECLARE_NATIVE(task_set_error_ticks),
 	AMX_DECLARE_NATIVE(task_config),

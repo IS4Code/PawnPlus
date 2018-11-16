@@ -62,17 +62,34 @@ namespace tasks
 
 	class task_result_handler : public task_handler
 	{
-		cell result;
+		union{
+			cell error;
+			dyn_object result;
+		};
 		bool iserror;
 
 	public:
-		task_result_handler(std::weak_ptr<task> task, cell result, bool iserror) : task_handler(task), result(result), iserror(iserror)
+		task_result_handler(std::weak_ptr<task> task, cell error) : task_handler(task), error(error), iserror(true)
+		{
+
+		}
+
+		task_result_handler(std::weak_ptr<task> task, dyn_object &&result) : task_handler(task), result(std::move(result)), iserror(false)
 		{
 
 		}
 
 		virtual void set_completed(task &t) override;
 		virtual void set_faulted(task &t) override;
+
+		virtual ~task_result_handler()
+		{
+			if(!iserror)
+			{
+				result.~dyn_object();
+				iserror = true;
+			}
+		}
 	};
 
 	aux::shared_id_set_pool<task> pool;
@@ -85,7 +102,7 @@ namespace tasks
 
 	static task &auto_result()
 	{
-		static task result(1);
+		static task result(dyn_object(1, tags::find_tag(tags::tag_cell)));
 		return result;
 	}
 
@@ -154,9 +171,9 @@ namespace tasks
 		{
 			if(iserror)
 			{
-				task->set_faulted(result);
+				task->set_faulted(error);
 			}else{
-				task->set_completed(result);
+				task->set_completed(dyn_object(result));
 			}
 		}
 	}
@@ -166,8 +183,12 @@ namespace tasks
 		set_completed(t);
 	}
 
-	void task::set_completed(cell result)
+	void task::set_completed(dyn_object &&result)
 	{
+		if(_state != 1)
+		{
+			new (&_value) dyn_object();
+		}
 		_state = 1;
 		_value = result;
 
@@ -189,8 +210,12 @@ namespace tasks
 
 	void task::set_faulted(cell error)
 	{
+		if(_state == 1)
+		{
+			_value.~dyn_object();
+		}
 		_state = 2;
-		_value = error;
+		_error = error;
 
 		auto handlers = std::move(this->handlers);
 
@@ -291,24 +316,24 @@ namespace tasks
 		add_timer_task(std::unique_ptr<handler>(new task_handler(task)), interval);
 	}
 
-	void add_tick_task_result(const std::shared_ptr<task> &task, cell ticks, cell result)
+	void add_tick_task_result(const std::shared_ptr<task> &task, cell ticks, dyn_object &&result)
 	{
-		add_tick_task(std::unique_ptr<handler>(new task_result_handler(task, result, false)), ticks);
+		add_tick_task(std::unique_ptr<handler>(new task_result_handler(task, std::move(result))), ticks);
 	}
 
-	void add_timer_task_result(const std::shared_ptr<task> &task, cell interval, cell result)
+	void add_timer_task_result(const std::shared_ptr<task> &task, cell interval, dyn_object &&result)
 	{
-		add_timer_task(std::unique_ptr<handler>(new task_result_handler(task, result, false)), interval);
+		add_timer_task(std::unique_ptr<handler>(new task_result_handler(task, std::move(result))), interval);
 	}
 
 	void add_tick_task_error(const std::shared_ptr<task> &task, cell ticks, cell error)
 	{
-		add_tick_task(std::unique_ptr<handler>(new task_result_handler(task, error, true)), ticks);
+		add_tick_task(std::unique_ptr<handler>(new task_result_handler(task, error)), ticks);
 	}
 
 	void add_timer_task_error(const std::shared_ptr<task> &task, cell interval, cell error)
 	{
-		add_timer_task(std::unique_ptr<handler>(new task_result_handler(task, error, true)), interval);
+		add_timer_task(std::unique_ptr<handler>(new task_result_handler(task, error)), interval);
 	}
 	
 	void run_pending()
