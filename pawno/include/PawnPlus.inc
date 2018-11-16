@@ -39,19 +39,7 @@
 #define Iter<%0> Iter@%0
 #define PairIter<%0,%1> Iter@%1@%0
 #define Handle<%0> Handle@%0
-
-#define PP_TAG_PREFIX@String<%0> %0@String
-#define PP_TAG_PREFIX@Variant<%0> %0@Variant
-#define PP_TAG_PREFIX@String@Const<%0> %0@String@Const
-#define PP_TAG_PREFIX@Variant@Const<%0> %0@Variant@Const
-#define PP_TAG_PREFIX@ConstString<%0> %0@String@Const
-#define PP_TAG_PREFIX@ConstVariant<%0> %0@Variant@Const
-#define PP_TAG_PREFIX@List<%0> %0@List
-#define PP_TAG_PREFIX@Map<%0> %0@Map
-#define PP_TAG_PREFIX@LinkedList<%0> %0@LinkedList
-#define PP_TAG_PREFIX@Iter<%0> %0@Iter
-#define PP_TAG_PREFIX@Handle<%0> %0@Handle
-#define Ref<%0> PP_TAG_PREFIX@%0<Ref>
+#define Ref<%0> Ref@%0
 
 #endif
 
