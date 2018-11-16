@@ -72,14 +72,15 @@
 
 stock const _PP@TRUE = true;
 
-stock _PP@TMP;
-#define _PP@TMP=(%0,%1)) _PP@TMP=(%0)),%1
-#define _PP@CAST[%0](%1) (%0:_PP@TMP=(%1))
+stock _PP@TMP1, _PP@TMP2, _PP@TMP3;
+#define _PP@END
 
-stock _PP@TMP2;
-#define _PP@TMP2=(%0,%1)[%2] _PP@TMP2=(%0)[%2]
-#define _PP@EXPAND:(%0,%1)) (%0)),%1
-#define _PP@CAST_ARR[%0](%1) ((_PP@TRUE?(%0:0):(%0:_PP@TMP2=(%1)[0])),%0:_PP@EXPAND:(%1))
+#define _PP@TMP2=(%0,%1)_PP@END) _PP@TMP1=(%0)),%1
+#define _PP@CAST[%0](%1) (%0:_PP@TMP2=(%1)_PP@END)
+
+#define _PP@TMP3=(%0,%1)[%2] _PP@TMP1=(%0)[%2]
+#define _PP@EXPAND:(%0,%1)_PP@END) (%0)),%1
+#define _PP@CAST_ARR[%0](%1) ((_PP@TRUE?(%0:0):(%0:_PP@TMP3=(%1)[0])),%0:_PP@EXPAND:(%1)_PP@END)
 
 
 /*                 */
