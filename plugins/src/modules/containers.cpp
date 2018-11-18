@@ -258,7 +258,7 @@ bool list_iterator_t::extract_dyn(const std::type_info &type, void *value) const
 		{
 			if(_position != source->end())
 			{
-				auto fake_pair = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(static_cast<cell>(std::distance(source->begin(), _position)), tags::find_tag(tags::tag_cell)), {}));
+				auto fake_pair = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(static_cast<cell>(std::distance(source->begin(), _position)), tags::find_tag(tags::tag_cell)), *_position));
 				*reinterpret_cast<std::shared_ptr<std::pair<const dyn_object, dyn_object>>*>(value) = std::move(fake_pair);
 				return true;
 			}

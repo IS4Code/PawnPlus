@@ -1250,16 +1250,16 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 			{
 				str.append(pair->first.to_string());
 				str.push_back('=');
-				str.push_back('=>');
+				str.push_back('>');
 				str.append(pair->second.to_string());
 			}else{
 				std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
 				if(iter->extract(spair))
 				{
-					str.append(pair->first.to_string());
+					str.append(spair->first.to_string());
 					str.push_back('=');
-					str.push_back('=>');
-					str.append(pair->second.to_string());
+					str.push_back('>');
+					str.append(spair->second.to_string());
 				}else{
 					dyn_object *obj;
 					if(iter->extract(obj))
