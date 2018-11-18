@@ -208,6 +208,7 @@
     <ClInclude Include="src\objects\reset.h" />
     <ClInclude Include="src\objects\stored_param.h" />
     <ClInclude Include="src\utils\func_pool.h" />
+    <ClInclude Include="src\utils\hybrid_map.h" />
     <ClInclude Include="src\utils\optional.h" />
     <ClInclude Include="src\utils\linear_pool.h" />
     <ClInclude Include="src\utils\id_set_pool.h" />

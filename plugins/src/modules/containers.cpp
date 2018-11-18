@@ -99,7 +99,7 @@ size_t map_t::erase(const dyn_object &key)
 
 auto map_t::erase(iterator position) -> iterator
 {
-	return collection_base<std::unordered_map<dyn_object, dyn_object>>::erase(position);
+	return collection_base<aux::hybrid_map<dyn_object, dyn_object>>::erase(position);
 }
 
 bool map_t::insert_dyn(iterator position, const std::type_info &type, void *value, iterator &result)

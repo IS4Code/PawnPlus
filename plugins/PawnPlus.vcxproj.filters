@@ -245,6 +245,9 @@
     <ClInclude Include="src\modules\containers.h">
       <Filter>src\modules</Filter>
     </ClInclude>
+    <ClInclude Include="src\utils\hybrid_map.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />

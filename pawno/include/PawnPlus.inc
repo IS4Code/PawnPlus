@@ -540,6 +540,8 @@ native bool:map_delete(Map:map);
 native bool:map_delete_deep(Map:map);
 native Map:map_clone(Map:map);
 native map_size(Map:map);
+native map_set_ordered(Map:map, bool:ordered);
+native bool:map_is_ordered(Map:map);
 
 native bool:map_add(Map:map, AnyTag:key, AnyTag:value, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native bool:map_add_arr(Map:map, AnyTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
@@ -665,6 +667,8 @@ native Iter:map_iter_at_var(Map:map, ConstVariantTag:key);
 #define map_delete_deep<%0,%1>(%2) map_delete_deep(Map:_PP@CAST[Map<%0,%1>](%2))
 #define map_clone<%0,%1>(%2) (Map<%0,%1>:map_clone(Map:_PP@CAST[Map<%0,%1>](%2)))
 #define map_size<%0,%1>(%2) map_size(Map:_PP@CAST[Map<%0,%1>](%2))
+#define map_set_ordered<%0,%1>(%2) map_set_ordered(Map:_PP@CAST[Map<%0,%1>](%2))
+#define map_is_ordered<%0,%1>(%2) map_is_ordered(Map:_PP@CAST[Map<%0,%1>](%2))
 
 #define map_add<%0,%1>(%2,%3,%4) map_add(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3),_PP@CAST[%1](%4))
 #define map_add_arr<%0,%1>(%2,%3,%4) map_add_arr(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3),_PP@CAST_ARR[%1](%4))

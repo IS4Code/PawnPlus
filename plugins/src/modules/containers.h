@@ -4,6 +4,7 @@
 #include "objects/object_pool.h"
 #include "objects/dyn_object.h"
 #include "utils/shared_id_set_pool.h"
+#include "utils/hybrid_map.h"
 #include "fixes/linux.h"
 
 #include "sdk/amx/amx.h"
@@ -110,7 +111,7 @@ public:
 	}
 };
 
-class map_t : public collection_base<std::unordered_map<dyn_object, dyn_object>>
+class map_t : public collection_base<aux::hybrid_map<dyn_object, dyn_object>>
 {
 public:
 	dyn_object &operator[](const dyn_object &key);
@@ -126,6 +127,17 @@ public:
 	{
 		data.insert(first, last);
 		++revision;
+	}
+
+	void set_ordered(bool ordered)
+	{
+		data.set_ordered(ordered);
+		++revision;
+	}
+
+	bool ordered() const
+	{
+		return data.is_ordered();
 	}
 };
 
