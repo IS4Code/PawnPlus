@@ -797,8 +797,10 @@ bool dyn_object::operator!=(const dyn_object &obj) const
 
 bool dyn_object::operator<(const dyn_object &obj) const
 {
-	if(!tag_compatible(obj) || !struct_compatible(obj)) return false;
-	if(empty()) return false;
+	cell this_tag = tag->find_top_base()->uid;
+	cell obj_tag = obj.tag->find_top_base()->uid;
+	if(this_tag < obj_tag) return true;
+	if(this_tag > obj_tag) return false;
 	const cell *begin1 = begin();
 	const cell *end1 = end();
 	const cell *begin2 = obj.begin();
@@ -830,8 +832,10 @@ bool dyn_object::operator<(const dyn_object &obj) const
 
 bool dyn_object::operator>(const dyn_object &obj) const
 {
-	if(!tag_compatible(obj) || !struct_compatible(obj)) return false;
-	if(empty()) return false;
+	cell this_tag = tag->find_top_base()->uid;
+	cell obj_tag = obj.tag->find_top_base()->uid;
+	if(this_tag < obj_tag) return false;
+	if(this_tag > obj_tag) return true;
 	const cell *begin1 = begin();
 	const cell *end1 = end();
 	const cell *begin2 = obj.begin();
@@ -863,8 +867,10 @@ bool dyn_object::operator>(const dyn_object &obj) const
 
 bool dyn_object::operator<=(const dyn_object &obj) const
 {
-	if(!tag_compatible(obj) || !struct_compatible(obj)) return false;
-	if(empty()) return true;
+	cell this_tag = tag->find_top_base()->uid;
+	cell obj_tag = obj.tag->find_top_base()->uid;
+	if(this_tag < obj_tag) return true;
+	if(this_tag > obj_tag) return false;
 	const cell *begin1 = begin();
 	const cell *end1 = end();
 	const cell *begin2 = obj.begin();
@@ -893,8 +899,10 @@ bool dyn_object::operator<=(const dyn_object &obj) const
 
 bool dyn_object::operator>=(const dyn_object &obj) const
 {
-	if(!tag_compatible(obj) || !struct_compatible(obj)) return false;
-	if(empty()) return true;
+	cell this_tag = tag->find_top_base()->uid;
+	cell obj_tag = obj.tag->find_top_base()->uid;
+	if(this_tag < obj_tag) return false;
+	if(this_tag > obj_tag) return true;
 	const cell *begin1 = begin();
 	const cell *end1 = end();
 	const cell *begin2 = obj.begin();
