@@ -139,7 +139,7 @@ struct null_operations : public tag_operations
 		if(tag->uid != tag_uid)
 		{
 			str.append(strings::convert(tag->name));
-			str.append({':'});
+			str.push_back(':');
 		}
 		append_string(tag, arg, str);
 		return str;
@@ -151,21 +151,22 @@ struct null_operations : public tag_operations
 		if(tag->uid != tag_uid)
 		{
 			str.append(strings::convert(tag->name));
-			str.append({':'});
+			str.push_back(':');
 		}
-		str.append({'{'});
+		str.push_back('{');
 		bool first = true;
 		for(cell i = 0; i < size; i++)
 		{
 			if(first)
 			{
 				first = false;
-			} else {
-				str.append({',', ' '});
+			}else{
+				str.push_back(',');
+				str.push_back(' ');
 			}
 			append_string(tag, arg[i], str);
 		}
-		str.append({'}'});
+		str.push_back('}');
 		return str;
 	}
 	
@@ -847,13 +848,13 @@ struct variant_operations : public null_operations
 
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
-		str.append({'('});
+		str.push_back('(');
 		dyn_object *var;
 		if(variants::pool.get_by_id(arg, var))
 		{
 			str.append(var->to_string());
 		}
-		str.append({')'});
+		str.push_back(')');
 	}
 
 	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
@@ -1236,6 +1237,39 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 			return iter->get_hash();
 		}
 		return null_operations::hash(tag, arg);
+	}
+
+	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	{
+		str.push_back('[');
+		dyn_iterator *iter;
+		if(iter_pool.get_by_id(arg, iter))
+		{
+			std::pair<const dyn_object, dyn_object> *pair;
+			if(iter->extract(pair))
+			{
+				str.append(pair->first.to_string());
+				str.push_back('=');
+				str.push_back('=>');
+				str.append(pair->second.to_string());
+			}else{
+				std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+				if(iter->extract(spair))
+				{
+					str.append(pair->first.to_string());
+					str.push_back('=');
+					str.push_back('=>');
+					str.append(pair->second.to_string());
+				}else{
+					dyn_object *obj;
+					if(iter->extract(obj))
+					{
+						str.append(obj->to_string());
+					}
+				}
+			}
+		}
+		str.push_back(']');
 	}
 };
 
