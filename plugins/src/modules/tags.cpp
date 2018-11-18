@@ -174,7 +174,7 @@ bool tag_info::inherits_from(tag_ptr parent) const
 tag_ptr tag_info::find_top_base() const
 {
 	tag_ptr test = this;
-	while(test->base != nullptr)
+	while(test->base != nullptr && test->base->uid != tags::tag_unknown)
 	{
 		test = test->base;
 	}
