@@ -136,10 +136,13 @@ public:
 	template <result_ftype ValueFactory>
 	static cell AMX_NATIVE_CALL map_key_at(AMX *amx, cell *params)
 	{
+		cell index = params[2];
+		if(index < 0) return 0;
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(static_cast<size_t>(index) >= ptr->size()) return 0;
 		auto it = ptr->begin();
-		std::advance(it, params[2]);
+		std::advance(it, index);
 		if(it != ptr->end())
 		{
 			return ValueFactory(amx, it->first, params[ValueIndices]...);
@@ -151,10 +154,13 @@ public:
 	template <result_ftype ValueFactory>
 	static cell AMX_NATIVE_CALL map_value_at(AMX *amx, cell *params)
 	{
+		cell index = params[2];
+		if(index < 0) return 0;
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(static_cast<size_t>(index) >= ptr->size()) return 0;
 		auto it = ptr->begin();
-		std::advance(it, params[2]);
+		std::advance(it, index);
 		if(it != ptr->end())
 		{
 			return ValueFactory(amx, it->second, params[ValueIndices]...);
