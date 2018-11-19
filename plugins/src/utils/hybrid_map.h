@@ -55,7 +55,7 @@ namespace aux
 			typedef typename impl::assert_same<typename unordered_iterator::value_type, typename ordered_iterator::value_type>::type value_type;
 			typedef typename impl::assert_same<typename unordered_iterator::pointer, typename ordered_iterator::pointer>::type pointer;
 			typedef typename impl::assert_same<typename unordered_iterator::reference, typename ordered_iterator::reference>::type reference;
-			typedef typename impl::assert_same<typename unordered_iterator::iterator_category, typename ordered_iterator::iterator_category>::type iterator_category;
+			typedef std::bidirectional_iterator_tag iterator_category;
 
 			iterator_base() : uiterator(), ordered(false)
 			{
@@ -201,8 +201,6 @@ namespace aux
 				if(ordered)
 				{
 					--oiterator;
-				}else{
-					--uiterator;
 				}
 				return *this;
 			}

@@ -498,14 +498,42 @@ public:
 	{
 
 	}
-
+	
 	virtual bool move_previous() override
 	{
+		if(auto source = lock_same())
+		{
+			if(!source->ordered()) return false;
+
+			if(_position == source->end())
+			{
+				return false;
+			}else if(_position == source->begin())
+			{
+				_position = source->end();
+				_inside = false;
+				return false;
+			}
+			--_position;
+			return true;
+		}
 		return false;
 	}
 
 	virtual bool set_to_last() override
 	{
+		if(auto source = _source.lock())
+		{
+			if(!source->ordered()) return false;
+
+			_revision = source->get_revision();
+			_position = source->end();
+			if(_position != source->begin())
+			{
+				--_position;
+				return true;
+			}
+		}
 		return false;
 	}
 
