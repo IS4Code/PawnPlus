@@ -413,6 +413,8 @@ namespace Natives
 	{
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		map_t old;
+		ptr->swap(old);
 		return map_pool.remove(ptr);
 	}
 
@@ -421,12 +423,15 @@ namespace Natives
 	{
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) return 0;
-		for(auto &pair : *ptr)
+		map_t old;
+		ptr->swap(old);
+		map_pool.remove(ptr);
+		for(auto &pair : old)
 		{
 			pair.first.release();
 			pair.second.release();
 		}
-		return map_pool.remove(ptr);
+		return 1;
 	}
 
 	// native Map:map_clone(Map:map);
@@ -455,7 +460,7 @@ namespace Natives
 	{
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) return 0;
-		ptr->clear();
+		map_t().swap(*ptr);
 		return 1;
 	}
 

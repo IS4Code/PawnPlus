@@ -164,11 +164,14 @@ namespace Natives
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return 0;
-		for(auto &obj : *ptr)
+		linked_list_t old;
+		ptr->swap(old);
+		linked_list_pool.remove(ptr);
+		for(auto &obj : old)
 		{
 			obj->release();
 		}
-		return linked_list_pool.remove(ptr);
+		return 1;
 	}
 
 	// native LinkedList:linked_list_clone(LinkedList:linked_list);
@@ -197,7 +200,7 @@ namespace Natives
 	{
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) return 0;
-		ptr->clear();
+		linked_list_t().swap(*ptr);
 		return 1;
 	}
 

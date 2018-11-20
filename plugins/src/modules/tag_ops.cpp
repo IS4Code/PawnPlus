@@ -948,11 +948,14 @@ struct list_operations : public generic_operations<list_operations, tags::tag_li
 		list_t *l;
 		if(list_pool.get_by_id(arg, l))
 		{
-			for(auto &obj : *l)
+			list_t old;
+			l->swap(old);
+			list_pool.remove(l);
+			for(auto &obj : old)
 			{
 				obj.release();
 			}
-			return list_pool.remove(l);
+			return true;
 		}
 		return false;
 	}
@@ -1038,11 +1041,14 @@ struct linked_list_operations : public generic_operations<linked_list_operations
 		linked_list_t *l;
 		if(linked_list_pool.get_by_id(arg, l))
 		{
-			for(auto &obj : *l)
+			linked_list_t old;
+			l->swap(old);
+			linked_list_pool.remove(l);
+			for(auto &obj : old)
 			{
 				obj->release();
 			}
-			return linked_list_pool.remove(l);
+			return true;
 		}
 		return false;
 	}
@@ -1128,12 +1134,15 @@ struct map_operations : public generic_operations<map_operations, tags::tag_map>
 		map_t *m;
 		if(map_pool.get_by_id(arg, m))
 		{
-			for(auto &pair : *m)
+			map_t old;
+			m->swap(old);
+			map_pool.remove(m);
+			for(auto &pair : old)
 			{
 				pair.first.release();
 				pair.second.release();
 			}
-			return map_pool.remove(m);
+			return true;
 		}
 		return false;
 	}

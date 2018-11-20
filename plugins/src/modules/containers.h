@@ -87,6 +87,12 @@ public:
 	{
 		return revision;
 	}
+
+	void swap(collection_base<Type> &other)
+	{
+		std::swap(data, other.data);
+		std::swap(revision, other.revision);
+	}
 };
 
 class list_t : public collection_base<std::vector<dyn_object>>

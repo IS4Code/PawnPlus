@@ -188,11 +188,14 @@ namespace Natives
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) return 0;
-		for(auto &obj : *ptr)
+		list_t old;
+		ptr->swap(old);
+		list_pool.remove(ptr);
+		for(auto &obj : old)
 		{
 			obj.release();
 		}
-		return list_pool.remove(ptr);
+		return 1;
 	}
 
 	// native List:list_clone(List:list);
@@ -221,7 +224,7 @@ namespace Natives
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) return 0;
-		ptr->clear();
+		list_t().swap(*ptr);
 		return 1;
 	}
 

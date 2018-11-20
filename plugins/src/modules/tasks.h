@@ -42,11 +42,14 @@ namespace tasks
 		{
 
 		}
-		task(task &&obj) : _error(obj._error), _state(obj._state), _keep(obj._keep), handlers(std::move(obj.handlers))
+		task(task &&obj) : _state(obj._state), _keep(obj._keep), handlers(std::move(obj.handlers))
 		{
 			if(_state == 1)
 			{
 				_value = std::move(obj._value);
+			}else if(_state == 2)
+			{
+				_error = obj._error;
 			}
 		}
 		void keep(bool keep)

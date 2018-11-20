@@ -40,6 +40,7 @@ namespace aux
 			auto it = data.find(value);
 			if(it != data.end())
 			{
+				std::shared_ptr<Type> orig(std::move(it->second));
 				data.erase(it);
 				return true;
 			}
