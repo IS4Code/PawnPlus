@@ -540,6 +540,7 @@ native bool:map_delete(Map:map);
 native bool:map_delete_deep(Map:map);
 native Map:map_clone(Map:map);
 native map_size(Map:map);
+native map_clear(Map:map);
 native map_set_ordered(Map:map, bool:ordered);
 native bool:map_is_ordered(Map:map);
 
