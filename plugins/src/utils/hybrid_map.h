@@ -39,11 +39,9 @@ namespace aux
 		bool ordered;
 
 	public:
-		template <class UnorderedIterator, class OrderedIterator>
+		template <class unordered_iterator, class ordered_iterator>
 		class iterator_base
 		{
-			typedef typename UnorderedIterator unordered_iterator;
-			typedef typename OrderedIterator ordered_iterator;
 			union {
 				unordered_iterator uiterator;
 				ordered_iterator oiterator;
@@ -601,9 +599,9 @@ namespace aux
 		{
 			if(ordered)
 			{
-				omap.~map<Key, Value>();
+				omap.~ordered_map();
 			}else{
-				umap.~unordered_map<Key, Value>();
+				umap.~unordered_map();
 			}
 		}
 	};
