@@ -212,10 +212,7 @@ namespace aux
 
 			bool operator==(const iterator_base<unordered_iterator, ordered_iterator> &obj) const
 			{
-				if(is_trivially_copy_assignable(unordered_iterator) && is_trivially_copy_assignable(ordered_iterator))
-				{
-					return !std::memcmp(this, &obj, sizeof(obj));
-				}else if(ordered && obj.ordered)
+				if(ordered && obj.ordered)
 				{
 					return oiterator == obj.oiterator;
 				}else if(!ordered && !obj.ordered)
@@ -228,7 +225,15 @@ namespace aux
 
 			bool operator!=(const iterator_base<unordered_iterator, ordered_iterator> &obj) const
 			{
-				return !(*this == obj);
+				if(ordered && obj.ordered)
+				{
+					return oiterator != obj.oiterator;
+				}else if(!ordered && !obj.ordered)
+				{
+					return uiterator != obj.uiterator;
+				}else{
+					return true;
+				}
 			}
 
 			~iterator_base()
