@@ -1,6 +1,7 @@
 #include "natives.h"
 #include "amxinfo.h"
 #include "hooks.h"
+#include "errors.h"
 #include "modules/events.h"
 #include "modules/containers.h"
 #include "modules/amxhook.h"
@@ -71,7 +72,10 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 	char *format;
 	amx_StrParam(amx, params[2], format);
 
-	if(fname == nullptr) return -1;
+	if(fname == nullptr)
+	{
+		amx_FormalError(errors::arg_empty);
+	}
 	if(format == nullptr) format = "";
 	int numargs = std::strlen(format);
 	if(numargs > 0 && format[numargs - 1] == '+')
@@ -81,164 +85,154 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 
 	if(params[0] < (2 + numargs) * static_cast<int>(sizeof(cell)))
 	{
-		if(native)
-		{
-			logerror(amx, "[PP] pawn_call_native: not enough arguments");
-		}else{
-			logerror(amx, "[PP] pawn_call_public: not enough arguments");
-		}
-		return 0;
+		amx_FormalError(errors::not_enough_args, 2 + numargs, params[0] / static_cast<cell>(sizeof(cell)));
 	}
 
 	int pubindex = 0;
 	AMX_NATIVE func = nullptr;
 
-	if(native ? (func = amx::find_native(amx, fname)) != nullptr : !amx_FindPublic(amx, fname, &pubindex))
+	if(native ? (func = amx::find_native(amx, fname)) == nullptr : amx_FindPublic(amx, fname, &pubindex) != AMX_ERR_NONE)
 	{
-		amx_stack stack(amx, native);
-		std::unordered_map<dyn_object*, cell> storage;
-
-		if(format[numargs] == '+')
-		{
-			for(int i = (params[0] / sizeof(cell)) - 1; i >= numargs; i--)
-			{
-				stack.push(params[3 + i]);
-			}
-		}
-
-		for(int i = numargs - 1; i >= 0; i--)
-		{
-			cell param = params[3 + i];
-			cell *addr;
-
-			switch(format[i])
-			{
-				case 'a':
-				case 's':
-				case '*':
-				{
-					stack.push(param);
-					break;
-				}
-				case 'S':
-				{
-					amx_GetAddr(amx, param, &addr);
-					strings::cell_string *ptr;
-					if(strings::pool.get_by_id(*addr, ptr))
-					{
-						size_t size = ptr->size();
-						amx_Allot(amx, size + 1, &param, &addr);
-						std::memcpy(addr, ptr->c_str(), size * sizeof(cell));
-						addr[size] = 0;
-					}else{
-						amx_Allot(amx, 1, &param, &addr);
-						addr[0] = 0;
-					}
-					stack.push(param);
-					break;
-				}
-				case 'L':
-				{
-					amx_GetAddr(amx, param, &addr);
-					list_t *ptr;
-					if(list_pool.get_by_id(*addr, ptr))
-					{
-						for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
-						{
-							cell addr = it->store(amx);
-							storage[&*it] = addr;
-							stack.push(addr);
-						}
-						cell fmt_value;
-						amx_Allot(amx, ptr->size() + 1, &fmt_value, &addr);
-						for(auto it = ptr->begin(); it != ptr->end(); it++)
-						{
-							*(addr++) = it->get_specifier();
-						}
-						*addr = 0;
-						stack.push(fmt_value);
-					}else{
-						cell fmt_value;
-						amx_Allot(amx, 1, &fmt_value, &addr);
-						addr[0] = 0;
-						stack.push(fmt_value);
-					}
-					break;
-				}
-				case 'l':
-				{
-					amx_GetAddr(amx, param, &addr);
-					list_t *ptr;
-					if(list_pool.get_by_id(*addr, ptr))
-					{
-						for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
-						{
-							cell addr = it->store(amx);
-							storage[&*it] = addr;
-							stack.push(addr);
-						}
-					}
-					break;
-				}
-				case 'v':
-				{
-					amx_GetAddr(amx, param, &addr);
-					dyn_object *ptr;
-					if(variants::pool.get_by_id(*addr, ptr))
-					{
-						param = ptr->store(amx);
-						storage[ptr] = param;
-					}else{
-						param = 0;
-					}
-					stack.push(param);
-					break;
-				}
-				case '+':
-				{
-					if(native)
-					{
-						logerror(amx, "[PP] pawn_call_native: + must be the last specifier");
-					}else{
-						logerror(amx, "[PP] pawn_call_public: + must be the last specifier");
-					}
-					return 0;
-				}
-				default:
-				{
-					amx_GetAddr(amx, param, &addr);
-					param = *addr;
-					stack.push(param);
-					break;
-				}
-			}
-		}
-
-		stack.done();
-
-		cell result;
-		int ret;
-		if(native)
-		{
-			amx->error = AMX_ERR_NONE;
-			result = func(amx, reinterpret_cast<cell*>(stack.data + amx->stk));
-			ret = amx->error;
-		}else{
-			ret = amx_Exec(amx, &result, pubindex);
-		}
-		if(ret == AMX_ERR_NONE)
-		{
-			for(auto &pair : storage)
-			{
-				pair.first->load(amx, pair.second);
-			}
-		} else {
-			result = -2;
-		}
-		stack.reset();
-		return result;
+		amx_FormalError(errors::func_not_found, native ? "native" : "public", fname);
 	}
-	return -1;
+
+	amx_stack stack(amx, native);
+	std::unordered_map<dyn_object*, cell> storage;
+
+	if(format[numargs] == '+')
+	{
+		for(int i = (params[0] / sizeof(cell)) - 1; i >= numargs; i--)
+		{
+			stack.push(params[3 + i]);
+		}
+	}
+
+	for(int i = numargs - 1; i >= 0; i--)
+	{
+		cell param = params[3 + i];
+		cell *addr;
+
+		switch(format[i])
+		{
+			case 'a':
+			case 's':
+			case '*':
+			{
+				stack.push(param);
+				break;
+			}
+			case 'S':
+			{
+				amx_GetAddr(amx, param, &addr);
+				strings::cell_string *ptr;
+				if(strings::pool.get_by_id(*addr, ptr))
+				{
+					size_t size = ptr->size();
+					amx_Allot(amx, size + 1, &param, &addr);
+					std::memcpy(addr, ptr->c_str(), size * sizeof(cell));
+					addr[size] = 0;
+				}else{
+					amx_Allot(amx, 1, &param, &addr);
+					addr[0] = 0;
+				}
+				stack.push(param);
+				break;
+			}
+			case 'L':
+			{
+				amx_GetAddr(amx, param, &addr);
+				list_t *ptr;
+				if(list_pool.get_by_id(*addr, ptr))
+				{
+					for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+					{
+						cell addr = it->store(amx);
+						storage[&*it] = addr;
+						stack.push(addr);
+					}
+					cell fmt_value;
+					amx_Allot(amx, ptr->size() + 1, &fmt_value, &addr);
+					for(auto it = ptr->begin(); it != ptr->end(); it++)
+					{
+						*(addr++) = it->get_specifier();
+					}
+					*addr = 0;
+					stack.push(fmt_value);
+				}else{
+					cell fmt_value;
+					amx_Allot(amx, 1, &fmt_value, &addr);
+					addr[0] = 0;
+					stack.push(fmt_value);
+				}
+				break;
+			}
+			case 'l':
+			{
+				amx_GetAddr(amx, param, &addr);
+				list_t *ptr;
+				if(list_pool.get_by_id(*addr, ptr))
+				{
+					for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
+					{
+						cell addr = it->store(amx);
+						storage[&*it] = addr;
+						stack.push(addr);
+					}
+				}
+				break;
+			}
+			case 'v':
+			{
+				amx_GetAddr(amx, param, &addr);
+				dyn_object *ptr;
+				if(variants::pool.get_by_id(*addr, ptr))
+				{
+					param = ptr->store(amx);
+					storage[ptr] = param;
+				}else{
+					param = 0;
+				}
+				stack.push(param);
+				break;
+			}
+			case '+':
+			{
+				amx_FormalError("+ must be the last specifier");
+				break;
+			}
+			default:
+			{
+				amx_GetAddr(amx, param, &addr);
+				param = *addr;
+				stack.push(param);
+				break;
+			}
+		}
+	}
+
+	stack.done();
+
+	cell result;
+	int ret;
+	if(native)
+	{
+		amx->error = AMX_ERR_NONE;
+		result = func(amx, reinterpret_cast<cell*>(stack.data + amx->stk));
+		ret = amx->error;
+	}else{
+		ret = amx_Exec(amx, &result, pubindex);
+	}
+	if(ret == AMX_ERR_NONE)
+	{
+		for(auto &pair : storage)
+		{
+			pair.first->load(amx, pair.second);
+		}
+	}else{
+		result = -2;
+	}
+	stack.reset();
+	return result;
 }
 
 namespace Natives
@@ -269,18 +263,12 @@ namespace Natives
 		const char *format;
 		amx_OptStrParam(amx, 4, format, "");
 
-		if(callback == nullptr || fname == nullptr) return -1;
-
-		int ret = events::register_callback(callback, flags, amx, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
-		switch(ret)
+		if(callback == nullptr || fname == nullptr)
 		{
-			case -1:
-				logerror(amx, "[PP] pawn_register_callback: not enough arguments");
-				return 0;
-			case -2:
-				logerror(amx, "[PP] pawn_register_callback: public function '%s' cannot be found", callback);
-				return 0;
+			amx_FormalError(errors::arg_empty);
 		}
+
+		cell ret = events::register_callback(callback, flags, amx, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
 		return ret;
 	}
 
@@ -305,18 +293,12 @@ namespace Natives
 		const char *format;
 		amx_OptStrParam(amx, 4, format, "");
 
-		if(native == nullptr || fname == nullptr) return -1;
-
-		int ret = amxhook::register_hook(amx, native, native_format, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
-		switch(ret)
+		if(native == nullptr || fname == nullptr)
 		{
-			case -1:
-				logerror(amx, "[PP] pawn_add_hook: not enough arguments");
-				return 0;
-			case -2:
-				logerror(amx, "[PP] pawn_add_hook: native function '%s' cannot be found", native);
-				return 0;
+			amx_FormalError(errors::arg_empty);
 		}
+
+		cell ret = amxhook::register_hook(amx, native, native_format, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
 		return ret;
 	}
 
@@ -337,18 +319,12 @@ namespace Natives
 		char *format;
 		amx_OptStrParam(amx, 5, format, "");
 
-		if(native == nullptr || fname == nullptr) return -1;
-
-		int ret = amxhook::register_filter(amx, output, native, native_format, fname, format, params + 6, (params[0] / static_cast<int>(sizeof(cell))) - 5);
-		switch(ret)
+		if(native == nullptr || fname == nullptr)
 		{
-			case -1:
-				logerror(amx, "[PP] pawn_add_filter: not enough arguments");
-				return 0;
-			case -2:
-				logerror(amx, "[PP] pawn_add_filter: native function '%s' cannot be found", native);
-				return 0;
+			amx_FormalError(errors::arg_empty);
 		}
+
+		cell ret = amxhook::register_filter(amx, output, native, native_format, fname, format, params + 6, (params[0] / static_cast<int>(sizeof(cell))) - 5);
 		return ret;
 	}
 
@@ -393,11 +369,9 @@ namespace Natives
 	AMX_DEFINE_NATIVE(pawn_guard_free, 1)
 	{
 		handle_t *obj;
-		if(guards::get_by_id(amx, params[1], obj))
-		{
-			return guards::free(amx, obj);
-		}
-		return 0;
+		if(!guards::get_by_id(amx, params[1], obj)) amx_LogicError(errors::pointer_invalid, "guard", params[1]);
+		
+		return guards::free(amx, obj);
 	}
 	
 	// native List:pawn_get_args(const format[], bool:byref=false, level=0);
@@ -427,8 +401,7 @@ namespace Natives
 		size_t nfuncargs = static_cast<size_t>(args[0] / sizeof(cell));
 		if(nfuncargs < numargs)
 		{
-			logerror(amx, "[PP] pawn_get_args: not enough arguments");
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs, nfuncargs);
 		}
 
 		auto ptr = list_pool.add();
@@ -500,9 +473,9 @@ namespace Natives
 				}
 				case '+':
 				{
-					logerror(amx, "[PP] pawn_get_args: + must be the last specifier");
 					list_pool.remove(ptr.get());
-					return 0;
+					amx_FormalError("+ must be the last specifier");
+					break;
 				}
 				case 'b':
 				{

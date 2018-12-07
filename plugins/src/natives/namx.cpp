@@ -1,6 +1,7 @@
 #include "natives.h"
 #include "amxinfo.h"
 #include "context.h"
+#include "errors.h"
 #include "modules/amxutils.h"
 #include "utils/id_set_pool.h"
 
@@ -47,22 +48,18 @@ namespace Natives
 	AMX_DEFINE_NATIVE(amx_set, 2)
 	{
 		amx_var_info *info;
-		if(amx_var_pool.get_by_id(params[1], info))
-		{
-			return info->set(optparam(3, 0), params[2]);
-		}
-		return 0;
+		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
+		
+		return info->set(optparam(3, 0), params[2]);
 	}
 
 	// native amx_get(Var:var, index=0);
 	AMX_DEFINE_NATIVE(amx_get, 1)
 	{
 		amx_var_info *info;
-		if(amx_var_pool.get_by_id(params[1], info))
-		{
-			return info->get(optparam(2, 0));
-		}
-		return 0;
+		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
+		
+		return info->get(optparam(2, 0));
 	}
 
 	// native bool:amx_valid(Var:var);
@@ -72,73 +69,62 @@ namespace Natives
 		return amx_var_pool.get_by_id(params[1], info);
 	}
 
-	// native bool:amx_delete(Var:var);
+	// native amx_delete(Var:var);
 	AMX_DEFINE_NATIVE(amx_delete, 1)
 	{
 		amx_var_info *info;
-		if(amx_var_pool.get_by_id(params[1], info))
-		{
-			return amx_var_pool.remove(info);
-		}
-		return 0;
+		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
+		
+		return amx_var_pool.remove(info);
 	}
 
 	// native bool:amx_linked(Var:var);
 	AMX_DEFINE_NATIVE(amx_linked, 1)
 	{
 		amx_var_info *info;
-		if(amx_var_pool.get_by_id(params[1], info))
-		{
-			return info->valid();
-		}
-		return 0;
+		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
+		
+		return info->valid();
 	}
 
 	// native bool:amx_inside(Var:var);
 	AMX_DEFINE_NATIVE(amx_inside, 1)
 	{
 		amx_var_info *info;
-		if(amx_var_pool.get_by_id(params[1], info))
-		{
-			return info->inside();
-		}
-		return 0;
+		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
+		
+		return info->inside();
 	}
 
 	// native amx_sizeof(Var:var);
 	AMX_DEFINE_NATIVE(amx_sizeof, 1)
 	{
 		amx_var_info *info;
-		if(amx_var_pool.get_by_id(params[1], info))
-		{
-			return info->size();
-		}
-		return 0;
+		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
+		
+		return info->size();
 	}
 
 	// native bool:amx_my(Var:var);
 	AMX_DEFINE_NATIVE(amx_my, 1)
 	{
 		amx_var_info *info;
-		if(amx_var_pool.get_by_id(params[1], info))
-		{
-			return info->from_amx(amx);
-		}
-		return 0;
+		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
+		
+		return info->from_amx(amx);
 	}
 
-	// native bool:amx_to_ref(Var:var, ref[1][]);
+	// native amx_to_ref(Var:var, ref[1][]);
 	AMX_DEFINE_NATIVE(amx_to_ref, 2)
 	{
 		amx_var_info *info;
-		if(amx_var_pool.get_by_id(params[1], info) && info->from_amx(amx))
-		{
-			cell *addr;
-			amx_GetAddr(amx, params[2], &addr);
-			*addr = info->address() - params[2];
-			return 1;
-		}
-		return 0;
+		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
+		if(!info->from_amx(amx)) amx_LogicError(errors::operation_not_supported, "AMX variable", params[1]);
+		
+		cell *addr;
+		amx_GetAddr(amx, params[2], &addr);
+		*addr = info->address() - params[2];
+		return 1;
 	}
 
 	// native bool:amx_fork(fork_level:level=fork_machine, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
@@ -189,18 +175,17 @@ namespace Natives
 	AMX_DEFINE_NATIVE(amx_free, 1)
 	{
 		amx_var_info *info;
-		if(amx_var_pool.get_by_id(params[1], info))
+		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
+		if(!info->from_amx(amx)) amx_LogicError(errors::operation_not_supported, "AMX variable", params[1]);
+			
+		cell addr = info->free();
+		if(addr != -1)
 		{
-			if(info->from_amx(amx))
-			{
-				amx_RaiseError(amx, AMX_ERR_SLEEP);
-				cell addr = info->free();
-				if(addr != -1)
-				{
-					return SleepReturnFreeVar | (SleepReturnValueMask & addr);
-				}
-			}
+			amx_RaiseError(amx, AMX_ERR_SLEEP);
+			return SleepReturnFreeVar | (SleepReturnValueMask & addr);
 		}
+
+		amx_LogicError(errors::operation_not_supported, "AMX variable", params[1]);
 		return 0;
 	}
 }

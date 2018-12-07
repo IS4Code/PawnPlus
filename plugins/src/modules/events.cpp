@@ -2,6 +2,7 @@
 #include "amxinfo.h"
 #include "hooks.h"
 #include "main.h"
+#include "errors.h"
 #include "objects/stored_param.h"
 #include "utils/optional.h"
 
@@ -46,29 +47,24 @@ namespace events
 {
 	int register_callback(const char *callback, cell flags, AMX *amx, const char *function, const char *format, const cell *params, int numargs)
 	{
-		try{
-			amx::object obj;
-			int index;
-			if(amx_FindPublic(amx, callback, &index) != AMX_ERR_NONE || index < 0)
-			{
-				return -2;
-			}
-			auto &info = get_info(amx, obj);
-			auto &callback_handlers = info.callback_handlers;
-			if((size_t)index >= callback_handlers.size())
-			{
-				callback_handlers.resize(index + 1);
-			}
-			auto &list = callback_handlers[index];
-			auto ptr = std::unique_ptr<event_info>(new event_info(flags, amx, function, format, params, numargs));
-			cell id = reinterpret_cast<cell>(ptr.get());
-			list.push_back(std::move(ptr));
-			info.handler_ids[id] = index;
-			return id;
-		}catch(std::nullptr_t)
+		amx::object obj;
+		int index;
+		if(amx_FindPublic(amx, callback, &index) != AMX_ERR_NONE)
 		{
-			return -1;
+			amx_FormalError(errors::func_not_found, "public", callback);
 		}
+		auto &info = get_info(amx, obj);
+		auto &callback_handlers = info.callback_handlers;
+		if((size_t)index >= callback_handlers.size())
+		{
+			callback_handlers.resize(index + 1);
+		}
+		auto &list = callback_handlers[index];
+		auto ptr = std::unique_ptr<event_info>(new event_info(flags, amx, function, format, params, numargs));
+		cell id = reinterpret_cast<cell>(ptr.get());
+		list.push_back(std::move(ptr));
+		info.handler_ids[id] = index;
+		return id;
 	}
 
 	bool remove_callback(AMX *amx, cell id)

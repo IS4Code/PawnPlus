@@ -1,4 +1,5 @@
 #include "natives.h"
+#include "errors.h"
 #include "modules/containers.h"
 #include "modules/variants.h"
 #include <iterator>
@@ -21,7 +22,7 @@ public:
 		static cell AMX_NATIVE_CALL map_add(AMX *amx, cell *params)
 		{
 			map_t *ptr;
-			if(!map_pool.get_by_id(params[1], ptr)) return -1;
+			if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 			auto ret = ptr->insert(std::make_pair(KeyFactory(amx, params[KeyIndices]...), ValueFactory(amx, params[ValueIndices]...)));
 			return static_cast<cell>(ret.second);
 		}
@@ -31,7 +32,7 @@ public:
 		static cell AMX_NATIVE_CALL map_set(AMX *amx, cell *params)
 		{
 			map_t *ptr;
-			if(!map_pool.get_by_id(params[1], ptr)) return 0;
+			if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 			(*ptr)[KeyFactory(amx, params[KeyIndices]...)] = ValueFactory(amx, params[ValueIndices]...);
 			return 1;
 		}
@@ -41,12 +42,13 @@ public:
 		static cell AMX_NATIVE_CALL map_get(AMX *amx, cell *params)
 		{
 			map_t *ptr;
-			if(!map_pool.get_by_id(params[1], ptr)) return 0;
+			if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 			auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 			if(it != ptr->end())
 			{
 				return ValueFactory(amx, it->second, params[ValueIndices]...);
 			}
+			amx_LogicError(errors::key_not_present);
 			return 0;
 		}
 	};
@@ -56,7 +58,7 @@ public:
 	static cell AMX_NATIVE_CALL map_remove(AMX *amx, cell *params)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
@@ -71,7 +73,7 @@ public:
 	static cell AMX_NATIVE_CALL map_has_key(AMX *amx, cell *params)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
@@ -84,9 +86,9 @@ public:
 	template <key_ftype KeyFactory, size_t TagIndex = 0>
 	static cell AMX_NATIVE_CALL map_set_cell(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) return 0;
+		if(params[3] < 0) amx_LogicError(errors::out_of_range, "array offset");
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
@@ -94,6 +96,7 @@ public:
 			if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 			return obj.set_cell(params[3], params[4]);
 		}
+		amx_LogicError(errors::key_not_present);
 		return 0;
 	}
 
@@ -102,12 +105,13 @@ public:
 	static cell AMX_NATIVE_CALL map_tagof(AMX *amx, cell *params)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
 			return it->second.get_tag(amx);
 		}
+		amx_LogicError(errors::key_not_present);
 		return 0;
 	}
 
@@ -116,12 +120,13 @@ public:
 	static cell AMX_NATIVE_CALL map_sizeof(AMX *amx, cell *params)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
 		if(it != ptr->end())
 		{
 			return it->second.get_size();
 		}
+		amx_LogicError(errors::key_not_present);
 		return 0;
 	}
 };
@@ -137,16 +142,17 @@ public:
 	static cell AMX_NATIVE_CALL map_key_at(AMX *amx, cell *params)
 	{
 		cell index = params[2];
-		if(index < 0) return 0;
+		if(index < 0) amx_LogicError(errors::out_of_range, "map index");
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
-		if(static_cast<size_t>(index) >= ptr->size()) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		if(static_cast<size_t>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "map index");
 		auto it = ptr->begin();
 		std::advance(it, index);
 		if(it != ptr->end())
 		{
 			return ValueFactory(amx, it->first, params[ValueIndices]...);
 		}
+		amx_LogicError(errors::key_not_present);
 		return 0;
 	}
 
@@ -155,16 +161,17 @@ public:
 	static cell AMX_NATIVE_CALL map_value_at(AMX *amx, cell *params)
 	{
 		cell index = params[2];
-		if(index < 0) return 0;
+		if(index < 0) amx_LogicError(errors::out_of_range, "map index");
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
-		if(static_cast<size_t>(index) >= ptr->size()) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		if(static_cast<size_t>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "map index");
 		auto it = ptr->begin();
 		std::advance(it, index);
 		if(it != ptr->end())
 		{
 			return ValueFactory(amx, it->second, params[ValueIndices]...);
 		}
+		amx_LogicError(errors::key_not_present);
 		return 0;
 	}
 };
@@ -184,8 +191,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_new_args: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 3, numargs + 2);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -210,8 +216,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_new_args_str: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -235,8 +240,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_new_args_str: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -261,8 +265,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_new_str_args: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -286,8 +289,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell);
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_new_str_args_str: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 1, numargs);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -306,8 +308,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell);
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_new_str_args_var: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 1, numargs);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -331,8 +332,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_new_var_args: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -357,8 +357,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell);
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_new_var_args_str: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 1, numargs);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -382,8 +381,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell);
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_new_var_args_var: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 1, numargs);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -412,7 +410,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_delete, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		map_t old;
 		ptr->swap(old);
 		return map_pool.remove(ptr);
@@ -422,7 +420,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_delete_deep, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		map_t old;
 		ptr->swap(old);
 		map_pool.remove(ptr);
@@ -438,7 +436,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_clone, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		auto m = map_pool.add();
 		for(auto &&pair : *ptr)
 		{
@@ -451,7 +449,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_size, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return -1;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		return static_cast<cell>(ptr->size());
 	}
 
@@ -459,7 +457,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_clear, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		map_t().swap(*ptr);
 		return 1;
 	}
@@ -468,7 +466,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_set_ordered, 2)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		ptr->set_ordered(params[2]);
 		return 1;
 	}
@@ -477,7 +475,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_is_ordered, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		return ptr->ordered();
 	}
 
@@ -581,9 +579,9 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_map, 3)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return -1;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		map_t *ptr2;
-		if(!map_pool.get_by_id(params[1], ptr2)) return -1;
+		if(!map_pool.get_by_id(params[1], ptr2)) amx_LogicError(errors::pointer_invalid, "map", params[2]);
 		if(params[3])
 		{
 			for(auto &pair : *ptr2)
@@ -600,12 +598,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_args, 3)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[3], ptr)) return -1;
+		if(!map_pool.get_by_id(params[3], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		cell numargs = params[0] / sizeof(cell) - 3;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_add_args: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 4, numargs + 3);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -627,12 +624,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_args_str, 2)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[2], ptr)) return -1;
+		if(!map_pool.get_by_id(params[2], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_add_args_str: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 3, numargs + 2);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -653,12 +649,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_args_var, 2)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[2], ptr)) return -1;
+		if(!map_pool.get_by_id(params[2], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_add_args_str: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 3, numargs + 2);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -680,12 +675,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_str_args, 2)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[2], ptr)) return -1;
+		if(!map_pool.get_by_id(params[2], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_add_str_args: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 3, numargs + 2);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -706,12 +700,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_str_args_str, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return -1;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_add_str_args_str: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -727,12 +720,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_str_args_var, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return -1;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_add_str_args_var: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -753,12 +745,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_var_args, 2)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[2], ptr)) return -1;
+		if(!map_pool.get_by_id(params[2], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		cell numargs = params[0] / sizeof(cell) - 2;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_add_var_args: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 3, numargs + 2);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -780,12 +771,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_var_args_str, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return -1;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_add_var_args_str: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
@@ -806,12 +796,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(map_add_var_args_var, 1)
 	{
 		map_t *ptr;
-		if(!map_pool.get_by_id(params[1], ptr)) return -1;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		cell numargs = params[0] / sizeof(cell) - 1;
 		if(numargs % 2 != 0)
 		{
-			logerror(amx, "[PP] map_add_var_args_var: bad variable argument count %d (must be even).", numargs);
-			return 0;
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
 		}
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{

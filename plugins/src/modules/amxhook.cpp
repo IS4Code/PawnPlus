@@ -6,6 +6,7 @@
 #include "utils/linear_pool.h"
 #include "subhook/subhook.h"
 #include "utils/optional.h"
+#include "errors.h"
 
 #include <array>
 #include <unordered_map>
@@ -94,7 +95,7 @@ cell register_handler(AMX *amx, const char *native, std::unique_ptr<hook_handler
 	std::string name(native);
 	AMX_NATIVE func = amx::find_native(amx, name);
 
-	if(!func) return -2;
+	if(!func) amx_FormalError(errors::func_not_found, "native", name.c_str());
 
 	auto it = hooks_map.find(func);
 	if(it == hooks_map.end())
@@ -103,8 +104,7 @@ cell register_handler(AMX *amx, const char *native, std::unique_ptr<hook_handler
 		size_t index = p.first;
 		if(index == -1)
 		{
-			logerror(amx, "[PP] Hook pool full. Adjust max_hooked_funcs (currently %d) and recompile.", max_hooked_funcs);
-			return 0;
+			amx_LogicError("Hook pool full. Adjust max_hooked_funcs (currently %d) and recompile.", max_hooked_funcs);
 		}
 		native_hooks[index] = std::make_unique<hooked_func>(name, func, p.second, index);
 		it = hooks_map.emplace(func, index).first;
@@ -116,7 +116,7 @@ cell register_handler(AMX *amx, const char *native, std::unique_ptr<hook_handler
 		cell id = hook.add_handler(std::move(handler));
 		hook_handlers[id] = index;
 		return id;
-	}catch(nullptr_t)
+	}catch(...)
 	{
 		if(hook.empty() && !hook.running())
 		{
@@ -124,7 +124,7 @@ cell register_handler(AMX *amx, const char *native, std::unique_ptr<hook_handler
 			native_hooks[index] = nullptr;
 			func_pool::remove(index);
 		}
-		return -1;
+		throw;
 	}
 }
 

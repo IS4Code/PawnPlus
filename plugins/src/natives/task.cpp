@@ -1,6 +1,7 @@
 #include "natives.h"
 #include "context.h"
 #include "exec.h"
+#include "errors.h"
 #include "modules/tasks.h"
 #include "modules/variants.h"
 #include "objects/stored_param.h"
@@ -20,12 +21,10 @@ public:
 	static cell AMX_NATIVE_CALL task_set_result(AMX *amx, cell *params)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			task->set_completed(Factory(amx, params[Indices]...));
-			return 1;
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		task->set_completed(Factory(amx, params[Indices]...));
+		return 1;
 	}
 
 	// native task_get_result(Task:task, ...);
@@ -33,13 +32,11 @@ public:
 	static cell AMX_NATIVE_CALL task_get_result(AMX *amx, cell *params)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		if(task->check_error(amx))
 		{
-			if(task->check_error(amx))
-			{
-				return Factory(amx, task->result(), params[Indices]...);
-			}
-			return 0;
+			return Factory(amx, task->result(), params[Indices]...);
 		}
 		return 0;
 	}
@@ -49,12 +46,10 @@ public:
 	static cell AMX_NATIVE_CALL task_set_result_ms(AMX *amx, cell *params)
 	{
 		std::shared_ptr<task> task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			tasks::add_timer_task_result(task, params[3], Factory(amx, params[Indices]...));
-			return 1;
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		tasks::add_timer_task_result(task, params[3], Factory(amx, params[Indices]...));
+		return 1;
 	}
 
 	// native task_set_result_ticks(Task:task, result, interval, ...);
@@ -62,12 +57,10 @@ public:
 	static cell AMX_NATIVE_CALL task_set_result_ticks(AMX *amx, cell *params)
 	{
 		std::shared_ptr<task> task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			tasks::add_tick_task_result(task, params[3], Factory(amx, params[Indices]...));
-			return 1;
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		tasks::add_tick_task_result(task, params[3], Factory(amx, params[Indices]...));
+		return 1;
 	}
 };
 
@@ -119,23 +112,19 @@ namespace Natives
 	AMX_DEFINE_NATIVE(task_delete, 1)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			return tasks::remove(task);
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		return tasks::remove(task);
 	}
 
 	// native Task:task_keep(Task:task, bool:keep=true);
 	AMX_DEFINE_NATIVE(task_keep, 1)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			task->keep(optparam(2, 1));
-			return params[1];
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		task->keep(optparam(2, 1));
+		return params[1];
 	}
 
 	// native bool:task_valid(Task:task);
@@ -203,12 +192,10 @@ namespace Natives
 	AMX_DEFINE_NATIVE(task_reset, 1)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			task->reset();
-			return 1;
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		task->reset();
+		return 1;
 	}
 
 	// native task_set_error(Task:task, amx_err:error);
@@ -219,56 +206,46 @@ namespace Natives
 			return 0;
 		}
 		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			task->set_faulted(params[2]);
-			return 1;
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		task->set_faulted(params[2]);
+		return 1;
 	}
 
 	// native amx_err:task_get_error(Task:task);
 	AMX_DEFINE_NATIVE(task_get_error, 1)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			return task->error();
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		return task->error();
 	}
 
 	// native bool:task_completed(Task:task);
 	AMX_DEFINE_NATIVE(task_completed, 1)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			return task->completed();
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		return task->completed();
 	}
 
 	// native bool:task_faulted(Task:task);
 	AMX_DEFINE_NATIVE(task_faulted, 1)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			return task->faulted();
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		return task->faulted();
 	}
 
 	// native task_state:task_state(Task:task);
 	AMX_DEFINE_NATIVE(task_state, 1)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			return task->state();
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		return task->state();
 	}
 
 	// native Task:task_ticks(ticks);
@@ -294,25 +271,24 @@ namespace Natives
 			cell *addr;
 			amx_GetAddr(amx, params[i], &addr);
 			std::shared_ptr<task> task;
-			if(tasks::get_by_id(*addr, task))
+			if(!tasks::get_by_id(*addr, task)) amx_LogicError(errors::pointer_invalid, "task", *addr);
+			
+			auto it = task->register_handler([created, list](tasks::task &t)
 			{
-				auto it = task->register_handler([created, list](tasks::task &t)
+				for(auto &reg : *list)
 				{
-					for(auto &reg : *list)
+					if(auto lock2 = reg.second.lock())
 					{
-						if(auto lock2 = reg.second.lock())
+						if(lock2.get() != &t)
 						{
-							if(lock2.get() != &t)
-							{
-								lock2->unregister_handler(reg.first);
-							}
+							lock2->unregister_handler(reg.first);
 						}
 					}
-					list->clear();
-					created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
-				});
-				list->push_back(std::make_pair(it, task));
-			}
+				}
+				list->clear();
+				created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
+			});
+			list->push_back(std::make_pair(it, task));
 		}
 		return tasks::get_id(created.get());
 	}
@@ -328,25 +304,24 @@ namespace Natives
 			cell *addr;
 			amx_GetAddr(amx, params[i], &addr);
 			std::shared_ptr<task> task;
-			if(tasks::get_by_id(*addr, task))
+			if(!tasks::get_by_id(*addr, task)) amx_LogicError(errors::pointer_invalid, "task", *addr);
+			
+			task->register_handler([created, list](tasks::task &t)
 			{
-				task->register_handler([created, list](tasks::task &t)
+				if(std::all_of(list->begin(), list->end(), [](std::weak_ptr<tasks::task> &ptr)
 				{
-					if(std::all_of(list->begin(), list->end(), [](std::weak_ptr<tasks::task> &ptr)
+					if(auto lock = ptr.lock())
 					{
-						if(auto lock = ptr.lock())
-						{
-							return lock->completed();
-						}
-						return true;
-					}))
-					{
-						list->clear();
-						created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
+						return lock->completed();
 					}
-				});
-				list->push_back(task);
-			}
+					return true;
+				}))
+				{
+					list->clear();
+					created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
+				}
+			});
+			list->push_back(task);
 		}
 		return tasks::get_id(created.get());
 	}
@@ -355,21 +330,19 @@ namespace Natives
 	AMX_DEFINE_NATIVE(task_wait, 1)
 	{
 		std::shared_ptr<task> task;
-		if(tasks::get_by_id(params[1], task))
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		if(!task->completed() && !task->faulted())
 		{
-			if(!task->completed() && !task->faulted())
-			{
-				amx::object owner;
-				auto &info = tasks::get_extra(amx, owner);
-				info.awaited_task = task;
+			amx::object owner;
+			auto &info = tasks::get_extra(amx, owner);
+			info.awaited_task = task;
 
-				amx_RaiseError(amx, AMX_ERR_SLEEP);
-				return SleepReturnAwait;
-			}else{
-				return task->state();
-			}
+			amx_RaiseError(amx, AMX_ERR_SLEEP);
+			return SleepReturnAwait;
+		}else{
+			return task->state();
 		}
-		return 0;
 	}
 
 	// native task_yield(AnyTag:value, TagTag:tag_id=tagof(value));
@@ -390,80 +363,79 @@ namespace Natives
 	AMX_DEFINE_NATIVE(task_bind, 3)
 	{
 		std::shared_ptr<task> task;
-		if(tasks::get_by_id(params[1], task))
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		char *fname;
+		amx_StrParam(amx, params[2], fname);
+
+		char *format;
+		amx_StrParam(amx, params[3], format);
+
+		if(fname == nullptr) return 0;
+
+		if(format == nullptr) format = "";
+		int numargs = std::strlen(format);
+		if(numargs > 0 && format[numargs - 1] == '+')
 		{
-			char *fname;
-			amx_StrParam(amx, params[2], fname);
+			numargs--;
+		}
 
-			char *format;
-			amx_StrParam(amx, params[3], format);
+		if(params[0] < (3 + numargs) * static_cast<int>(sizeof(cell)))
+		{
+			amx_FormalError(errors::not_enough_args, 3 + numargs, params[0] / static_cast<cell>(sizeof(cell)));
+		}
 
-			if(fname == nullptr) return 0;
+		int pubindex = 0;
 
-			if(format == nullptr) format = "";
-			int numargs = std::strlen(format);
-			if(numargs > 0 && format[numargs - 1] == '+')
+		if(amx_FindPublic(amx, fname, &pubindex) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::func_not_found, "public", fname);
+		}
+		
+		if(format[numargs] == '+')
+		{
+			for(int i = (params[0] / sizeof(cell)) - 1; i >= numargs; i--)
 			{
-				numargs--;
-			}
-
-			if(params[0] < (3 + numargs) * static_cast<int>(sizeof(cell)))
-			{
-				logerror(amx, "[PP] task_bind: not enough arguments");
-				return 0;
-			}
-
-			int pubindex = 0;
-
-			if(amx_FindPublic(amx, fname, &pubindex) == AMX_ERR_NONE)
-			{
-				if(format[numargs] == '+')
-				{
-					for(int i = (params[0] / sizeof(cell)) - 1; i >= numargs; i--)
-					{
-						amx_Push(amx, params[params[4 + i]]);
-					}
-				}
-
-				for(int i = numargs - 1; i >= 0; i--)
-				{
-					cell param = params[4 + i];
-					cell *addr;
-
-					switch(format[i])
-					{
-						case 'a':
-						case 's':
-						case '*':
-						{
-							amx_Push(amx, param);
-							break;
-						}
-						case '+':
-						{
-							logerror(amx, "[PP] task_bind: + must be the last specifier");
-							return 0;
-						}
-						default:
-						{
-							amx_GetAddr(amx, param, &addr);
-							param = *addr;
-							amx_Push(amx, param);
-							break;
-						}
-					}
-				}
-
-				amx::reset reset(amx, false);
-				reset.context.get_extra<tasks::extra>().bound_task = task;
-
-				cell result = 1;
-				amx_ExecContext(amx, &result, pubindex, true, &reset);
-				amx->error = AMX_ERR_NONE;
-				return result;
+				amx_Push(amx, params[params[4 + i]]);
 			}
 		}
-		return 0;
+
+		for(int i = numargs - 1; i >= 0; i--)
+		{
+			cell param = params[4 + i];
+			cell *addr;
+
+			switch(format[i])
+			{
+				case 'a':
+				case 's':
+				case '*':
+				{
+					amx_Push(amx, param);
+					break;
+				}
+				case '+':
+				{
+					amx_FormalError("+ must be the last specifier");
+					break;
+				}
+				default:
+				{
+					amx_GetAddr(amx, param, &addr);
+					param = *addr;
+					amx_Push(amx, param);
+					break;
+				}
+			}
+		}
+
+		amx::reset reset(amx, false);
+		reset.context.get_extra<tasks::extra>().bound_task = task;
+
+		cell result = 1;
+		amx_ExecContext(amx, &result, pubindex, true, &reset);
+		amx->error = AMX_ERR_NONE;
+		return result;
 	}
 
 	// native task_set_result_ms(Task:task, AnyTag:result, interval, TagTag:tag_id=tagof(result));
@@ -518,24 +490,20 @@ namespace Natives
 	AMX_DEFINE_NATIVE(task_set_error_ms, 3)
 	{
 		std::shared_ptr<task> task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			tasks::add_timer_task_error(task, params[3], params[2]);
-			return 1;
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		tasks::add_timer_task_error(task, params[3], params[2]);
+		return 1;
 	}
 
 	// native task_set_error_ticks(Task:task, amx_err : error, ticks);
 	AMX_DEFINE_NATIVE(task_set_error_ticks, 3)
 	{
 		std::shared_ptr<task> task;
-		if(tasks::get_by_id(params[1], task))
-		{
-			tasks::add_tick_task_error(task, params[3], params[2]);
-			return 1;
-		}
-		return 0;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		tasks::add_tick_task_error(task, params[3], params[2]);
+		return 1;
 	}
 
 	// native task_config(task_restore:heap=task_restore_full, task_restore:stack=task_restore_full);
@@ -552,68 +520,60 @@ namespace Natives
 	AMX_DEFINE_NATIVE(task_continue_with, 0)
 	{
 		task *task;
-		if(tasks::get_by_id(params[1], task))
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		char *fname;
+		amx_StrParam(amx, params[2], fname);
+
+		const char *format;
+		amx_OptStrParam(amx, 3, format, "");
+
+		std::shared_ptr<std::vector<stored_param>> arg_values;
+
+		if(format && *format)
 		{
-			char *fname;
-			amx_StrParam(amx, params[2], fname);
-
-			const char *format;
-			amx_OptStrParam(amx, 3, format, "");
-
-			std::shared_ptr<std::vector<stored_param>> arg_values;
-
-			if(format && *format)
+			arg_values = std::make_shared<std::vector<stored_param>>();
+			size_t argi = -1;
+			size_t len = std::strlen(format);
+			size_t numargs = params[0] / sizeof(cell) - 3;
+			for(size_t i = 0; i < len; i++)
 			{
-				arg_values = std::make_shared<std::vector<stored_param>>();
-				size_t argi = -1;
-				size_t len = std::strlen(format);
-				size_t numargs = params[0] / sizeof(cell) - 3;
-				try{
-					for(size_t i = 0; i < len; i++)
-					{
-						arg_values->push_back(stored_param::create(amx, format[i], params + 4, argi, numargs));
-					}
-				}catch(nullptr_t)
-				{
-					logerror(amx, "[PP] task_continue_with: not enough arguments");
-					return 0;
-				}
+				arg_values->push_back(stored_param::create(amx, format[i], params + 4, argi, numargs));
 			}
-
-			std::string handler(fname);
-			auto obj = amx::load(amx);
-			task->register_handler([handler, obj, arg_values](tasks::task &t){
-				if(auto lock = obj.lock())
-				{
-					AMX *amx = *lock;
-
-					int index;
-					if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return;
-
-					cell heap, *heap_addr;
-					amx_Allot(amx, 0, &heap, &heap_addr);
-
-					amx_Push(amx, tasks::get_id(&t));
-
-					if(arg_values)
-					{
-						for(auto it = arg_values->rbegin(); it != arg_values->rend(); it++)
-						{
-							it->push(amx, 0);
-						}
-					}
-
-					cell retval;
-					amx_Exec(amx, &retval, index);
-					amx->error = AMX_ERR_NONE;
-
-					amx_Release(amx, heap);
-				}
-			});
-
-			return 1;
 		}
-		return 0;
+
+		std::string handler(fname);
+		auto obj = amx::load(amx);
+		task->register_handler([handler, obj, arg_values](tasks::task &t){
+			if(auto lock = obj.lock())
+			{
+				AMX *amx = *lock;
+
+				int index;
+				if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return;
+
+				cell heap, *heap_addr;
+				amx_Allot(amx, 0, &heap, &heap_addr);
+
+				amx_Push(amx, tasks::get_id(&t));
+
+				if(arg_values)
+				{
+					for(auto it = arg_values->rbegin(); it != arg_values->rend(); it++)
+					{
+						it->push(amx, 0);
+					}
+				}
+
+				cell retval;
+				amx_Exec(amx, &retval, index);
+				amx->error = AMX_ERR_NONE;
+
+				amx_Release(amx, heap);
+			}
+		});
+
+		return 1;
 	}
 	
 	// native Task:task_continue_with_bound(Task:task, Task:bound, const handler[], const additional_format[]="", AnyTag:...);
@@ -621,78 +581,71 @@ namespace Natives
 	{
 		task *task;
 		std::shared_ptr<tasks::task> bound;
-		if(tasks::get_by_id(params[1], task) && tasks::get_by_id(params[2], bound))
+		if(!tasks::get_by_id(params[1], task) && tasks::get_by_id(params[2], bound)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		
+		char *fname;
+		amx_StrParam(amx, params[3], fname);
+
+		const char *format;
+		amx_OptStrParam(amx, 4, format, "");
+
+		std::shared_ptr<std::vector<stored_param>> arg_values;
+
+		if(format && *format)
 		{
-			char *fname;
-			amx_StrParam(amx, params[3], fname);
+			arg_values = std::make_shared<std::vector<stored_param>>();
+			size_t argi = -1;
+			size_t len = std::strlen(format);
+			size_t numargs = params[0] / sizeof(cell) - 4;
 
-			const char *format;
-			amx_OptStrParam(amx, 4, format, "");
-
-			std::shared_ptr<std::vector<stored_param>> arg_values;
-
-			if(format && *format)
+			for(size_t i = 0; i < len; i++)
 			{
-				arg_values = std::make_shared<std::vector<stored_param>>();
-				size_t argi = -1;
-				size_t len = std::strlen(format);
-				size_t numargs = params[0] / sizeof(cell) - 4;
-				try{
-					for(size_t i = 0; i < len; i++)
-					{
-						arg_values->push_back(stored_param::create(amx, format[i], params + 5, argi, numargs));
-					}
-				}catch(nullptr_t)
-				{
-					logerror(amx, "[PP] task_continue_with_bound: not enough arguments");
-					return 0;
-				}
+				arg_values->push_back(stored_param::create(amx, format[i], params + 5, argi, numargs));
 			}
-
-			std::string handler(fname);
-			auto obj = amx::load(amx);
-			std::weak_ptr<tasks::task> bound_task = bound;
-			task->register_handler([handler, obj, arg_values, bound_task](tasks::task &t){
-				if(auto lock = obj.lock())
-				{
-					AMX *amx = *lock;
-
-					int index;
-					if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return;
-
-					cell heap, *heap_addr;
-					amx_Allot(amx, 0, &heap, &heap_addr);
-
-					amx_Push(amx, tasks::get_id(&t));
-
-					if(arg_values)
-					{
-						for(auto it = arg_values->rbegin(); it != arg_values->rend(); it++)
-						{
-							it->push(amx, 0);
-						}
-					}
-
-					cell retval;
-
-					if(auto bound = bound_task.lock())
-					{
-						amx::reset reset(amx, false);
-						reset.context.get_extra<tasks::extra>().bound_task = bound;
-
-						amx_ExecContext(amx, &retval, index, true, &reset);
-					}else{
-						amx_Exec(amx, &retval, index);
-					}
-					amx->error = AMX_ERR_NONE;
-
-					amx_Release(amx, heap);
-				}
-			});
-
-			return params[2];
 		}
-		return 0;
+
+		std::string handler(fname);
+		auto obj = amx::load(amx);
+		std::weak_ptr<tasks::task> bound_task = bound;
+		task->register_handler([handler, obj, arg_values, bound_task](tasks::task &t){
+			if(auto lock = obj.lock())
+			{
+				AMX *amx = *lock;
+
+				int index;
+				if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return;
+
+				cell heap, *heap_addr;
+				amx_Allot(amx, 0, &heap, &heap_addr);
+
+				amx_Push(amx, tasks::get_id(&t));
+
+				if(arg_values)
+				{
+					for(auto it = arg_values->rbegin(); it != arg_values->rend(); it++)
+					{
+						it->push(amx, 0);
+					}
+				}
+
+				cell retval;
+
+				if(auto bound = bound_task.lock())
+				{
+					amx::reset reset(amx, false);
+					reset.context.get_extra<tasks::extra>().bound_task = bound;
+
+					amx_ExecContext(amx, &retval, index, true, &reset);
+				}else{
+					amx_Exec(amx, &retval, index);
+				}
+				amx->error = AMX_ERR_NONE;
+
+				amx_Release(amx, heap);
+			}
+		});
+
+		return params[2];
 	}
 }
 

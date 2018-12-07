@@ -2,6 +2,7 @@
 #define NATIVES_H_INCLUDED
 
 #include "main.h"
+#include "errors.h"
 #include "sdk/amx/amx.h"
 
 #define optparam(idx, optvalue) (params[0] / sizeof(cell) < (idx) ? (optvalue) : params[idx])
@@ -19,18 +20,27 @@
 
 namespace impl
 {
+	cell handle_error(AMX *amx, cell *params, const char *native, const errors::native_error &error);
+
 	template <AMX_NATIVE Native>
 	struct native_info;
 
 	template <AMX_NATIVE Native>
 	static cell AMX_NATIVE_CALL adapt_native(AMX *amx, cell *params)
 	{
-		if(params[0] < native_info<Native>::arg_count() * static_cast<cell>(sizeof(cell)))
+		try{
+			if(params[0] < native_info<Native>::arg_count() * static_cast<cell>(sizeof(cell)))
+			{
+				amx_FormalError(errors::not_enough_args, native_info<Native>::arg_count(), params[0] / static_cast<cell>(sizeof(cell)));
+			}
+			return Native(amx, params);
+		}catch(const errors::end_of_arguments_error &err)
 		{
-			logerror(amx, AMX_ERR_PARAMS, "[PP] %s: not enough arguments (%d expected, got %d)", native_info<Native>::name(), native_info<Native>::arg_count(), params[0] / static_cast<cell>(sizeof(cell)));
-			return 0;
+			return handle_error(amx, params, native_info<Native>::name(), errors::native_error(errors::not_enough_args, AMX_ERR_NATIVE, err.argbase - params - 1 + err.required, params[0] / static_cast<cell>(sizeof(cell))));
+		}catch(const errors::native_error &err)
+		{
+			return handle_error(amx, params, native_info<Native>::name(), err);
 		}
-		return Native(amx, params);
 	}
 }
 

@@ -1,13 +1,9 @@
 #include "natives.h"
+#include "errors.h"
 #include "modules/containers.h"
 #include "modules/variants.h"
 #include "objects/dyn_object.h"
 #include "fixes/linux.h"
-#include <vector>
-#include <unordered_map>
-//#include <unordered_set>
-//#include <deque>
-#include <type_traits>
 
 template <size_t... Indices>
 class value_at
@@ -21,21 +17,21 @@ public:
 	static cell AMX_NATIVE_CALL iter_set(AMX *amx, cell *params)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		dyn_object *obj;
+		if(iter->extract(obj))
 		{
-			dyn_object *obj;
-			if(iter->extract(obj))
-			{
-				*obj = Factory(amx, params[Indices]...);
-				return 1;
-			}
-			std::pair<const dyn_object, dyn_object> *pair;
-			if(iter->extract(pair))
-			{
-				pair->second = Factory(amx, params[Indices]...);
-				return 1;
-			}
+			*obj = Factory(amx, params[Indices]...);
+			return 1;
 		}
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
+		{
+			pair->second = Factory(amx, params[Indices]...);
+			return 1;
+		}
+		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return 0;
 	}
 
@@ -44,24 +40,25 @@ public:
 	static cell AMX_NATIVE_CALL iter_get(AMX *amx, cell *params)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		dyn_object *obj;
+		if(iter->extract(obj))
 		{
-			dyn_object *obj;
-			if(iter->extract(obj))
-			{
-				return Factory(amx, *obj, params[Indices]...);
-			}
-			std::pair<const dyn_object, dyn_object> *pair;
-			if(iter->extract(pair))
-			{
-				return Factory(amx, pair->second, params[Indices]...);
-			}
-			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-			if(iter->extract(spair))
-			{
-				return Factory(amx, spair->second, params[Indices]...);
-			}
+			return Factory(amx, *obj, params[Indices]...);
 		}
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
+		{
+			return Factory(amx, pair->second, params[Indices]...);
+		}
+		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return Factory(amx, spair->second, params[Indices]...);
+		}
+
+		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return 0;
 	}
 
@@ -70,14 +67,11 @@ public:
 	static cell AMX_NATIVE_CALL iter_insert(AMX *amx, cell *params)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
-		{
-			if(iter->insert(Factory(amx, params[Indices]...)))
-			{
-				return 1;
-			}
-		}
-		return 0;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		if(!iter->insert(Factory(amx, params[Indices]...))) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
+
+		return 1;
 	}
 
 	// native iter_get_key(IterTag:iter, ...);
@@ -85,19 +79,20 @@ public:
 	static cell AMX_NATIVE_CALL iter_get_key(AMX *amx, cell *params)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
 		{
-			std::pair<const dyn_object, dyn_object> *pair;
-			if(iter->extract(pair))
-			{
-				return Factory(amx, pair->first, params[Indices]...);
-			}
-			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-			if(iter->extract(spair))
-			{
-				return Factory(amx, spair->first, params[Indices]...);
-			}
+			return Factory(amx, pair->first, params[Indices]...);
 		}
+		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return Factory(amx, spair->first, params[Indices]...);
+		}
+
+		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return 0;
 	}
 };
@@ -113,12 +108,10 @@ public:
 	static cell AMX_NATIVE_CALL map_iter_at(AMX *amx, cell *params)
 	{
 		std::shared_ptr<map_t> ptr;
-		if(map_pool.get_by_id(params[1], ptr))
-		{
-			auto &iter = iter_pool.add(std::make_unique<map_iterator_t>(ptr, ptr->find(KeyFactory(amx, params[KeyIndices]...))));
-			return iter_pool.get_id(iter);
-		}
-		return 0;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+
+		auto &iter = iter_pool.add(std::make_unique<map_iterator_t>(ptr, ptr->find(KeyFactory(amx, params[KeyIndices]...))));
+		return iter_pool.get_id(iter);
 	}
 };
 
@@ -126,24 +119,26 @@ public:
 template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
 {
-	if(params[2] < 0) return 0;
+	if(params[2] < 0) amx_LogicError(errors::out_of_range, "array offset");
+
 	dyn_iterator *iter;
-	if(iter_pool.get_by_id(params[1], iter))
+	if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+	dyn_object *obj;
+	if(iter->extract(obj))
 	{
-		dyn_object *obj;
-		if(iter->extract(obj))
-		{
-			if(TagIndex && !obj->tag_assignable(amx, params[TagIndex])) return 0;
-			return obj->set_cell(params[2], params[3]);
-		}
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			auto &obj = pair->second;
-			if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
-			return obj.set_cell(params[2], params[3]);
-		}
+		if(TagIndex && !obj->tag_assignable(amx, params[TagIndex])) return 0;
+		return obj->set_cell(params[2], params[3]);
 	}
+	std::pair<const dyn_object, dyn_object> *pair;
+	if(iter->extract(pair))
+	{
+		auto &obj = pair->second;
+		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
+		return obj.set_cell(params[2], params[3]);
+	}
+
+	amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 	return 0;
 }
 
@@ -153,50 +148,46 @@ namespace Natives
 	AMX_DEFINE_NATIVE(list_iter, 1)
 	{
 		std::shared_ptr<list_t> ptr;
-		if(list_pool.get_by_id(params[1], ptr))
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		
+		auto &iter = iter_pool.add(std::make_unique<list_iterator_t>(ptr));
+		cell index = optparam(2, 0);
+		if(index < 0)
 		{
-			auto &iter = iter_pool.add(std::make_unique<list_iterator_t>(ptr));
-			cell index = optparam(2, 0);
-			if(index < 0)
+			iter->reset();
+		}else{
+			for(cell i = 0; i < index; i++)
 			{
-				iter->reset();
-			}else{
-				for(cell i = 0; i < index; i++)
+				if(!iter->move_next())
 				{
-					if(!iter->move_next())
-					{
-						break;
-					}
+					break;
 				}
 			}
-			return iter_pool.get_id(iter);
 		}
-		return 0;
+		return iter_pool.get_id(iter);
 	}
 
 	// native Iter:map_iter(Map:map, index=0);
 	AMX_DEFINE_NATIVE(map_iter, 1)
 	{
 		std::shared_ptr<map_t> ptr;
-		if(map_pool.get_by_id(params[1], ptr))
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		
+		auto &iter = iter_pool.add(std::make_unique<map_iterator_t>(ptr));
+		cell index = optparam(2, 0);
+		if(index < 0)
 		{
-			auto &iter = iter_pool.add(std::make_unique<map_iterator_t>(ptr));
-			cell index = optparam(2, 0);
-			if(index < 0)
+			iter->reset();
+		}else{
+			for(cell i = 0; i < index; i++)
 			{
-				iter->reset();
-			}else{
-				for(cell i = 0; i < index; i++)
+				if(!iter->move_next())
 				{
-					if(!iter->move_next())
-					{
-						break;
-					}
+					break;
 				}
 			}
-			return iter_pool.get_id(iter);
 		}
-		return 0;
+		return iter_pool.get_id(iter);
 	}
 
 	// native Iter:map_iter_at(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
@@ -227,25 +218,23 @@ namespace Natives
 	AMX_DEFINE_NATIVE(linked_list_iter, 1)
 	{
 		std::shared_ptr<linked_list_t> ptr;
-		if(linked_list_pool.get_by_id(params[1], ptr))
+		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
+		
+		auto &iter = iter_pool.add(std::make_unique<linked_list_iterator_t>(ptr));
+		cell index = optparam(2, 0);
+		if(index < 0)
 		{
-			auto &iter = iter_pool.add(std::make_unique<linked_list_iterator_t>(ptr));
-			cell index = optparam(2, 0);
-			if(index < 0)
+			iter->reset();
+		}else{
+			for(cell i = 0; i < index; i++)
 			{
-				iter->reset();
-			}else{
-				for(cell i = 0; i < index; i++)
+				if(!iter->move_next())
 				{
-					if(!iter->move_next())
-					{
-						break;
-					}
+					break;
 				}
 			}
-			return iter_pool.get_id(iter);
 		}
-		return 0;
+		return iter_pool.get_id(iter);
 	}
 
 	// native bool:iter_valid(IterTag:iter);
@@ -259,8 +248,8 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_acquire, 1)
 	{
 		decltype(iter_pool)::ref_container *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) return 0;
-		if(!iter_pool.acquire_ref(*iter)) return 0;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(!iter_pool.acquire_ref(*iter)) amx_LogicError(errors::cannot_acquire, "iterator", params[1]);
 		return params[1];
 	}
 
@@ -268,81 +257,72 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_release, 1)
 	{
 		decltype(iter_pool)::ref_container *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) return 0;
-		if(!iter_pool.release_ref(*iter)) return 0;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(!iter_pool.release_ref(*iter)) amx_LogicError(errors::cannot_release, "iterator", params[1]);
 		return params[1];
 	}
 
-	// native bool:iter_delete(IterTag:iter);
+	// native iter_delete(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_delete, 1)
 	{
-		return iter_pool.remove_by_id(params[1]);
+		if(!iter_pool.remove_by_id(params[1])) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		return 1;
 	}
 
 	// native bool:iter_linked(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_linked, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
-		{
-			return !iter->expired();
-		}
-		return 0;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		
+		return !iter->expired();
 	}
 
 	// native bool:iter_inside(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_inside, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
-		{
-			return iter->valid();
-		}
-		return 0;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		return iter->valid();
 	}
 
 	// native Iterator:iter_erase(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_erase, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
-		{
-			iter->erase();
-			return params[1];
-		}
-		return 0;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		if(!iter->erase()) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
+		return params[1];
 	}
 
 	// native Iterator:iter_reset(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_reset, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
-		{
-			iter->reset();
-			return params[1];
-		}
-		return 0;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		if(!iter->reset()) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
+		return params[1];
 	}
 
 	// native Iterator:iter_clone(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_clone, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
-		{
-			return iter_pool.get_id(iter_pool.add(std::unique_ptr<object_pool<dyn_iterator>::ref_container>(&dynamic_cast<object_pool<dyn_iterator>::ref_container&>(*iter->clone().release()))));
-		}
-		return 0;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		return iter_pool.get_id(iter_pool.add(std::unique_ptr<object_pool<dyn_iterator>::ref_container>(&dynamic_cast<object_pool<dyn_iterator>::ref_container&>(*iter->clone().release()))));
 	}
 
 	// native bool:iter_eq(IterTag:iter1, IterTag:iter2);
 	AMX_DEFINE_NATIVE(iter_eq, 2)
 	{
 		dyn_iterator *iter1;
-		if(!iter_pool.get_by_id(params[1], iter1)) return 0;
+		if(!iter_pool.get_by_id(params[1], iter1)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
 		dyn_iterator *iter2;
-		if(!iter_pool.get_by_id(params[2], iter2)) return 0;
+		if(!iter_pool.get_by_id(params[2], iter2)) amx_LogicError(errors::pointer_invalid, "iterator", params[2]);
 		return *iter1 == *iter2;
 	}
 
@@ -350,110 +330,102 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_move_next, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		
+		cell steps = optparam(2, 1);
+		if(steps < 0)
 		{
-			cell steps = optparam(2, 1);
-			if(steps < 0)
+			for(cell i = steps; i < 0; i++)
 			{
-				for(cell i = steps; i < 0; i++)
+				if(!iter->move_previous())
 				{
-					if(!iter->move_previous())
-					{
-						break;
-					}
-				}
-			}else{
-				for(cell i = 0; i < steps; i++)
-				{
-					if(!iter->move_next())
-					{
-						break;
-					}
+					break;
 				}
 			}
-			return params[1];
+		}else{
+			for(cell i = 0; i < steps; i++)
+			{
+				if(!iter->move_next())
+				{
+					break;
+				}
+			}
 		}
-		return 0;
+		return params[1];
 	}
 
 	// native Iterator:iter_move_previous(IterTag:iter, steps=1);
 	AMX_DEFINE_NATIVE(iter_move_previous, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		
+		cell steps = optparam(2, 1);
+		if(steps < 0)
 		{
-			cell steps = optparam(2, 1);
-			if(steps < 0)
+			for(cell i = steps; i < 0; i++)
 			{
-				for(cell i = steps; i < 0; i++)
+				if(!iter->move_next())
 				{
-					if(!iter->move_next())
-					{
-						break;
-					}
-				}
-			}else{
-				for(cell i = 0; i < steps; i++)
-				{
-					if(!iter->move_previous())
-					{
-						break;
-					}
+					break;
 				}
 			}
-			return params[1];
+		}else{
+			for(cell i = 0; i < steps; i++)
+			{
+				if(!iter->move_previous())
+				{
+					break;
+				}
+			}
 		}
-		return 0;
+		return params[1];
 	}
 
 	// native Iterator:iter_to_first(IterTag:iter, index=0);
 	AMX_DEFINE_NATIVE(iter_to_first, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		
+		cell index = optparam(2, 0);
+		if(index < 0)
 		{
-			cell index = optparam(2, 0);
-			if(index < 0)
+			iter->reset();
+		}else{
+			iter->set_to_first();
+			for(cell i = 0; i < index; i++)
 			{
-				iter->reset();
-			}else{
-				iter->set_to_first();
-				for(cell i = 0; i < index; i++)
+				if(!iter->move_next())
 				{
-					if(!iter->move_next())
-					{
-						break;
-					}
+					break;
 				}
 			}
-			return params[1];
 		}
-		return 0;
+		return params[1];
 	}
 
 	// native Iterator:iter_to_last(IterTag:iter, index=0);
 	AMX_DEFINE_NATIVE(iter_to_last, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		
+		cell index = optparam(2, 0);
+		if(index < 0)
 		{
-			cell index = optparam(2, 0);
-			if(index < 0)
+			iter->reset();
+		}else{
+			iter->set_to_last();
+			for(cell i = 0; i < index; i++)
 			{
-				iter->reset();
-			}else{
-				iter->set_to_last();
-				for(cell i = 0; i < index; i++)
+				if(!iter->move_previous())
 				{
-					if(!iter->move_previous())
-					{
-						break;
-					}
+					break;
 				}
 			}
-			return params[1];
 		}
-		return 0;
+		return params[1];
 	}
 
 	// native iter_get(IterTag:iter, offset=0);
@@ -580,24 +552,25 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_tagof, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		
+		dyn_object *obj;
+		if(iter->extract(obj))
 		{
-			dyn_object *obj;
-			if(iter->extract(obj))
-			{
-				return obj->get_tag(amx);
-			}
-			std::pair<const dyn_object, dyn_object> *pair;
-			if(iter->extract(pair))
-			{
-				return pair->second.get_tag(amx);
-			}
-			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-			if(iter->extract(spair))
-			{
-				return pair->second.get_tag(amx);
-			}
+			return obj->get_tag(amx);
 		}
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
+		{
+			return pair->second.get_tag(amx);
+		}
+		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return pair->second.get_tag(amx);
+		}
+		
+		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return 0;
 	}
 
@@ -605,24 +578,25 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_sizeof, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		
+		dyn_object *obj;
+		if(iter->extract(obj))
 		{
-			dyn_object *obj;
-			if(iter->extract(obj))
-			{
-				return obj->get_size();
-			}
-			std::pair<const dyn_object, dyn_object> *pair;
-			if(iter->extract(pair))
-			{
-				return pair->second.get_size();
-			}
-			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-			if(iter->extract(spair))
-			{
-				return pair->second.get_size();
-			}
+			return obj->get_size();
 		}
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
+		{
+			return pair->second.get_size();
+		}
+		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return pair->second.get_size();
+		}
+
+		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return 0;
 	}
 
@@ -630,19 +604,20 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_tagof_key, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
 		{
-			std::pair<const dyn_object, dyn_object> *pair;
-			if(iter->extract(pair))
-			{
-				return pair->first.get_tag(amx);
-			}
-			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-			if(iter->extract(spair))
-			{
-				return pair->first.get_tag(amx);
-			}
+			return pair->first.get_tag(amx);
 		}
+		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return pair->first.get_tag(amx);
+		}
+
+		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return 0;
 	}
 
@@ -650,19 +625,20 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_sizeof_key, 1)
 	{
 		dyn_iterator *iter;
-		if(iter_pool.get_by_id(params[1], iter))
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
 		{
-			std::pair<const dyn_object, dyn_object> *pair;
-			if(iter->extract(pair))
-			{
-				return pair->first.get_size();
-			}
-			std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-			if(iter->extract(spair))
-			{
-				return pair->first.get_size();
-			}
+			return pair->first.get_size();
 		}
+		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return pair->first.get_size();
+		}
+
+		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return 0;
 	}
 }

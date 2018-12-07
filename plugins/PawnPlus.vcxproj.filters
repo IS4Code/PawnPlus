@@ -115,6 +115,12 @@
     <ClCompile Include="src\natives\handle.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\errors.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -247,6 +253,9 @@
     </ClInclude>
     <ClInclude Include="src\utils\hybrid_map.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\errors.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

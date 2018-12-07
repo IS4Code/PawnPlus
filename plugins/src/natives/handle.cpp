@@ -1,4 +1,5 @@
 #include "natives.h"
+#include "errors.h"
 #include "modules/containers.h"
 #include "modules/variants.h"
 #include <vector>
@@ -22,7 +23,11 @@ public:
 	static cell AMX_NATIVE_CALL handle_get(AMX *amx, cell *params)
 	{
 		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) return 0;
+		if(params[1] == 0)
+		{
+			return Factory(amx, dyn_object(), params[Indices]...);
+		}
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		return Factory(amx, handle->get(), params[Indices]...);
 	}
 };
@@ -51,8 +56,8 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_acquire, 1)
 	{
 		decltype(handle_pool)::ref_container *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) return 0;
-		if(!handle_pool.acquire_ref(*handle)) return 0;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(!handle_pool.acquire_ref(*handle)) amx_LogicError(errors::cannot_acquire, "handle", params[1]);
 		return params[1];
 	}
 
@@ -60,15 +65,16 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_release, 1)
 	{
 		decltype(handle_pool)::ref_container *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) return 0;
-		if(!handle_pool.release_ref(*handle)) return 0;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(!handle_pool.release_ref(*handle)) amx_LogicError(errors::cannot_acquire, "handle", params[1]);
 		return params[1];
 	}
 
-	// native bool:handle_delete(HandleTag:handle);
+	// native handle_delete(HandleTag:handle);
 	AMX_DEFINE_NATIVE(handle_delete, 1)
 	{
-		return handle_pool.remove_by_id(params[1]);
+		if(!handle_pool.remove_by_id(params[1])) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		return 1;
 	}
 
 	// native bool:handle_valid(HandleTag:handle);
@@ -112,7 +118,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_tagof, 1)
 	{
 		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) return 0;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		return handle->get().get_tag(amx);
 	}
 
@@ -120,7 +126,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_sizeof, 1)
 	{
 		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) return 0;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		return handle->get().get_size();
 	}
 
@@ -128,7 +134,8 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_linked, 1)
 	{
 		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) return 0;
+		if(params[1] == 0) return false;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		return handle->linked();
 	}
 
@@ -136,7 +143,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_reset, 1)
 	{
 		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) return 0;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		handle->reset();
 		return 1;
 	}

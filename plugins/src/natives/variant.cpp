@@ -20,7 +20,7 @@ public:
 	static cell AMX_NATIVE_CALL var_get(AMX *amx, cell *params)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		return Factory(amx, *var, params[Indices]...);
 	}
 };
@@ -79,8 +79,8 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_acquire, 1)
 	{
 		decltype(variants::pool)::ref_container *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		if(!variants::pool.acquire_ref(*var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if(!variants::pool.acquire_ref(*var)) amx_LogicError(errors::cannot_acquire, "variant", params[1]);
 		return params[1];
 	}
 
@@ -88,8 +88,8 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_release, 1)
 	{
 		decltype(variants::pool)::ref_container *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		if(!variants::pool.release_ref(*var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if(!variants::pool.release_ref(*var)) amx_LogicError(errors::cannot_release, "variant", params[1]);
 		return params[1];
 	}
 
@@ -110,7 +110,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_clone, 1)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		return variants::pool.get_id(variants::pool.add(var->clone()));
 	}
 
@@ -160,8 +160,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_set_cell, 4)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		if(!var->is_array()) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		cell offsets_size = params[4];
 		cell *offsets_addr = get_offsets(amx, params[3], offsets_size);
 		return var->set_cell(offsets_addr, offsets_size, params[2]);
@@ -171,8 +170,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_set_cell_safe, 5)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
-		if(!var->is_array()) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		if(!var->tag_assignable(amx, params[5])) return 0;
 		cell offsets_size = params[4];
 		cell *offsets_addr = get_offsets(amx, params[3], offsets_size);
@@ -183,7 +181,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_tagof, 1)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		return var->get_tag(amx);
 	}
 
@@ -191,7 +189,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_tag_uid, 1)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		return var->get_tag()->uid;
 	}
 
@@ -199,7 +197,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_sizeof, 3)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		cell offsets_size = params[3];
 		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
 		return var->get_size(offsets_addr, offsets_size);
@@ -210,9 +208,9 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_bin_op(AMX *amx, cell *params)
 	{
 		dyn_object *var1;
-		if(!variants::pool.get_by_id(params[1], var1)) return 0;
+		if(!variants::pool.get_by_id(params[1], var1)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		dyn_object *var2;
-		if(!variants::pool.get_by_id(params[2], var2)) return 0;
+		if(!variants::pool.get_by_id(params[2], var2)) amx_LogicError(errors::pointer_invalid, "variant", params[2]);
 		auto var = (var1->*op)(*var2);
 		if(var.empty()) return 0;
 		return variants::create(std::move(var));
@@ -253,7 +251,7 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_un_op(AMX *amx, cell *params)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		auto result = (var->*op)();
 		if(result.empty()) return 0;
 		return variants::create(std::move(result));
@@ -282,7 +280,8 @@ namespace Natives
 	static cell AMX_NATIVE_CALL var_log_op(AMX *amx, cell *params)
 	{
 		dyn_object *var1, *var2;
-		if((!variants::pool.get_by_id(params[1], var1) && var1 != nullptr) || (!variants::pool.get_by_id(params[2], var2) && var2 != nullptr)) return 0;
+		if((!variants::pool.get_by_id(params[1], var1) && var1 != nullptr)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if((!variants::pool.get_by_id(params[2], var2) && var2 != nullptr)) amx_LogicError(errors::pointer_invalid, "variant", params[2]);
 		bool init1 = false, init2 = false;
 		if(var1 == nullptr)
 		{
@@ -346,7 +345,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_not, 1)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 1;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		return !(*var);
 	}
 
@@ -354,7 +353,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_call_op, 2)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		size_t numargs = (params[0] / sizeof(cell)) - 2;
 		cell *args = new cell[numargs];
 		for(size_t i = 0; i < numargs; i++)
@@ -375,7 +374,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(var_call_op_raw, 2)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) return 0;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		size_t numargs = (params[0] / sizeof(cell)) - 2;
 		cell *args = new cell[numargs];
 		for(size_t i = 0; i < numargs; i++)

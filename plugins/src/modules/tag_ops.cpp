@@ -1807,12 +1807,7 @@ public:
 	virtual bool set_op(op_type type, AMX *amx, const char *handler, const char *add_format, const cell *args, int numargs) override
 	{
 		if(_locked) return false;
-		try {
-			dyn_ops[type] = std::make_unique<op_handler>(type, amx, handler, add_format, args, numargs);
-		}catch(std::nullptr_t)
-		{
-			return false;
-		}
+		dyn_ops[type] = std::make_unique<op_handler>(type, amx, handler, add_format, args, numargs);
 		return true;
 	}
 
