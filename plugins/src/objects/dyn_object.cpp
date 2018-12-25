@@ -354,7 +354,6 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 				cell size = end - begin;
 				if(index >= size) return false;
 				begin += index;
-				end = begin + 1;
 			}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
 			{
 				return false;
