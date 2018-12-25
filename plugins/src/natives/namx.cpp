@@ -150,8 +150,8 @@ namespace Natives
 		return SleepReturnForkCommit | (SleepReturnValueMask & optparam(1, 1));
 	}
 
-	// native amx_end_fork();
-	AMX_DEFINE_NATIVE(amx_end_fork, 0)
+	// native amx_fork_end();
+	AMX_DEFINE_NATIVE(amx_fork_end, 0)
 	{
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnForkEnd;
@@ -188,6 +188,20 @@ namespace Natives
 		amx_LogicError(errors::operation_not_supported, "AMX variable", params[1]);
 		return 0;
 	}
+
+	// native amx_parallel_begin(count=1);
+	AMX_DEFINE_NATIVE(amx_parallel_begin, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return SleepReturnParallel | (SleepReturnValueMask & optparam(1, 1));
+	}
+
+	// native amx_parallel_end();
+	AMX_DEFINE_NATIVE(amx_parallel_end, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return SleepReturnParallelEnd;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -209,8 +223,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_to_ref),
 	AMX_DECLARE_NATIVE(amx_fork),
 	AMX_DECLARE_NATIVE(amx_commit),
-	AMX_DECLARE_NATIVE(amx_end_fork),
+	AMX_DECLARE_NATIVE(amx_fork_end),
 	AMX_DECLARE_NATIVE(amx_error),
+	AMX_DECLARE_NATIVE(amx_parallel_begin),
+	AMX_DECLARE_NATIVE(amx_parallel_end),
 };
 
 int RegisterAmxNatives(AMX *amx)

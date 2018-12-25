@@ -4,7 +4,6 @@
 #include "amxinfo.h"
 #include "sdk/amx/amx.h"
 #include <functional>
-#include <stack>
 #include <unordered_map>
 
 constexpr cell SleepReturnTypeMask = 0xFF000000;
@@ -28,6 +27,9 @@ constexpr cell SleepReturnForkEnd = 0xC2000000;
 constexpr cell SleepReturnAllocVar = 0xD0000000;
 constexpr cell SleepReturnAllocVarZero = 0xD1000000;
 constexpr cell SleepReturnFreeVar = 0xD2000000;
+
+constexpr cell SleepReturnParallel = 0xE0000000;
+constexpr cell SleepReturnParallelEnd = 0xE1000000;
 
 namespace amx
 {
@@ -118,6 +120,8 @@ namespace amx
 	void restore(AMX *amx, context &&context);
 	bool has_context(AMX *amx);
 	context &get_context(AMX *amx, object &obj);
+	bool has_parent_context(AMX *amx);
+	context &get_parent_context(AMX *amx, object &obj);
 
 	void on_bottom(const std::function<void(AMX*)> &callback);
 

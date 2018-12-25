@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <forward_list>
 #include <exception>
+#include <deque>
 
 int globalExecLevel = 0;
 bool groundRecursion = false;
@@ -12,7 +13,7 @@ const int &amx::context_level = globalExecLevel;
 
 struct AMX_STATE : public amx::extra
 {
-	std::stack<amx::context> contexts;
+	std::deque<amx::context> contexts;
 
 	AMX_STATE(AMX *amx) : amx::extra(amx)
 	{
@@ -59,7 +60,7 @@ int amx::push(AMX *amx, int index)
 {
 	globalExecLevel++;
 	amx::object obj;
-	get_state(amx, obj).contexts.emplace(amx, index);
+	get_state(amx, obj).contexts.emplace_back(amx, index);
 	return globalExecLevel;
 }
 
@@ -73,8 +74,8 @@ int amx::pop(AMX *amx)
 	amx::object obj;
 	auto &contexts = get_state(amx, obj).contexts;
 	{
-		auto top = std::move(contexts.top());
-		contexts.pop();
+		auto top = std::move(contexts.back());
+		contexts.pop_back();
 	}
 
 	globalExecLevel--;
@@ -104,13 +105,24 @@ bool amx::has_context(AMX *amx)
 
 amx::context &amx::get_context(AMX *amx, amx::object &obj)
 {
-	return get_state(amx, obj).contexts.top();
+	return get_state(amx, obj).contexts.back();
+}
+
+bool amx::has_parent_context(AMX *amx)
+{
+	amx::object obj;
+	return get_state(amx, obj).contexts.size() > 1;
+}
+
+amx::context &amx::get_parent_context(AMX *amx, amx::object &obj)
+{
+	return *std::prev(get_state(amx, obj).contexts.end(), 2);
 }
 
 void amx::restore(AMX *amx, context &&context)
 {
 	amx::object obj;
-	get_state(amx, obj).contexts.top() = std::move(context);
+	get_state(amx, obj).contexts.back() = std::move(context);
 }
 
 void amx::on_bottom(const std::function<void(AMX*)> &callback)

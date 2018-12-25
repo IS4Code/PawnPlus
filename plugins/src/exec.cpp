@@ -48,11 +48,40 @@ struct forked_context : public amx::extra
 	}
 };
 
+struct parallel_context : public amx::extra
+{
+	AMX_DEBUG old_debug = nullptr;
+	bool on_break = false;
+	int count = 0;
+	int max_count = 1;
+
+	parallel_context(AMX *amx) : amx::extra(amx)
+	{
+
+	}
+};
+
 amx_code_info::amx_code_info(AMX *amx) : amx::extra(amx)
 {
 	auto amxhdr = (AMX_HEADER*)amx->base;
 	code = std::make_unique<unsigned char[]>(amxhdr->size - amxhdr->cod);
 	std::memcpy(code.get(), amx->base + amxhdr->cod, amxhdr->size - amxhdr->cod);
+}
+
+int AMXAPI amx_on_debug(AMX *amx)
+{
+	amx::object owner;
+	auto &ctx = amx::get_context(amx, owner);
+	auto &extra = ctx.get_extra<parallel_context>();
+	int ret = extra.old_debug(amx);
+	if(ret != AMX_ERR_NONE) return ret;
+	if(++extra.count == extra.max_count)
+	{
+		extra.on_break = true;
+		extra.count = 0;
+		return AMX_ERR_SLEEP;
+	}
+	return AMX_ERR_NONE;
 }
 
 int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset, bool forked)
@@ -96,6 +125,32 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 		ctx.get_extra<forked_context>().cloned = owner->has_extra<forked_amx_holder>();
 	}
 
+	AMX_DEBUG old_debug;
+	bool restore_debug = false;
+
+	if(restore)
+	{
+		amx::object owner;
+		auto &ctx = amx::get_context(amx, owner);
+		if(ctx.has_extra<parallel_context>())
+		{
+			ctx.get_extra<parallel_context>().old_debug = old_debug = amx->debug;
+			amx->debug = amx_on_debug;
+			restore_debug = true;
+		}
+	}else if(amx->debug == amx_on_debug && amx::has_parent_context(amx))
+	{
+		amx::object owner;
+		auto &ctx = amx::get_parent_context(amx, owner);
+		if(ctx.has_extra<parallel_context>())
+		{
+			auto &extra = ctx.get_extra<parallel_context>();
+			amx->debug = extra.old_debug;
+			old_debug = amx_on_debug;
+			restore_debug = true;
+		}
+	}
+
 	int ret;
 	while(true)
 	{
@@ -111,6 +166,24 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 			tasks::extra &info = tasks::get_extra(amx, owner);
 
 			handled = true;
+
+			if(ctx.has_extra<parallel_context>())
+			{
+				auto &extra = ctx.get_extra<parallel_context>();
+				if(extra.on_break)
+				{
+					extra.on_break = false;
+					extra.old_debug = nullptr;
+
+					amx->pri = 0;
+					amx->error = ret = AMX_ERR_NONE;
+					tasks::register_tick(1, amx::reset(amx, true, info.restore_heap, info.restore_stack));
+
+					amx->stk = old_stk;
+					amx->hea = old_hea;
+					break;
+				}
+			}
 
 			switch(amx->pri & SleepReturnTypeMask)
 			{
@@ -385,6 +458,38 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					continue;
 				}
 				break;
+				case SleepReturnParallel:
+				{
+					if(ctx.has_extra<parallel_context>())
+					{
+						amx->pri = 0;
+						logwarn(amx, "[PP] amx_parallel_begin was called from a parallel code.");
+						continue;
+					}
+					auto &extra = ctx.get_extra<parallel_context>();
+					extra.max_count = SleepReturnValueMask & amx->pri;
+
+					amx->pri = 1;
+					amx->error = ret = AMX_ERR_NONE;
+					if(retval != nullptr) *retval = info.result;
+					tasks::register_tick(1, amx::reset(amx, true, info.restore_heap, info.restore_stack));
+				}
+				break;
+				case SleepReturnParallelEnd:
+				{
+					if(!ctx.has_extra<parallel_context>())
+					{
+						logwarn(amx, "[PP] amx_parallel_end was called from a non-parallel code.");
+					}else{
+						auto &extra = ctx.get_extra<parallel_context>();
+						amx->debug = extra.old_debug;
+						restore_debug = false;
+						ctx.remove_extra<parallel_context>();
+					}
+					amx->pri = 0;
+					continue;
+				}
+				break;
 			}
 
 			if(handled)
@@ -411,6 +516,12 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 
 		break;
 	}
+
+	if(restore_debug)
+	{
+		amx->debug = old_debug;
+	}
+
 	amx::pop(amx);
 	if(old != nullptr)
 	{

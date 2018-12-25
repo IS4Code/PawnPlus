@@ -26,6 +26,7 @@
 #define PP_SYNTAX_FOR_LINKED_LIST
 #define PP_SYNTAX_STRING_OP
 #define PP_SYNTAX_GENERIC
+#define PP_SYNTAX_AMX_PARALLEL
 #endif
 
 #define ConstString String@Const
@@ -250,7 +251,7 @@ native bool:amx_my(Var:var);
 native bool:amx_to_ref(Var:var, ref[1][]);
 native bool:amx_fork(fork_level:level=fork_machine, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
 native amx_commit(bool:context=true);
-native amx_end_fork();
+native amx_fork_end();
 /*
 native amx_yield(val=0);
 */
@@ -261,6 +262,9 @@ stock amx_yield(val=0)
     return 0;
 }
 native amx_error(amx_err:code, result=0);
+
+native amx_parallel_begin(count=1);
+native amx_parallel_end();
 
 enum amx_err
 {
@@ -294,12 +298,25 @@ enum amx_err
 
 #if defined PP_SYNTAX_AMX_FORKED
 
-#define amx_forked(%0) for(new PP@af:_@pp_amx_forked=PP@af:amx_fork(%0);_@pp_amx_forked;_@pp_amx_forked=PP@af:amx_end_fork())
+#define amx_forked(%0) for(new PP@af:_@pp_amx_forked=PP@af:amx_fork(%0);_@pp_amx_forked;_@pp_amx_forked=PP@af:amx_fork_end())
 stock operator~(PP@af:arr[], count)
 {
     for(new i = 0; i < count; i++)
     {
-        if(arr[i]) amx_end_fork();
+        if(arr[i]) amx_fork_end();
+    }
+}
+
+#endif
+
+#if defined PP_SYNTAX_AMX_PARALLEL
+
+#define amx_parallel(%0) for(new PP@ap:_@pp_amx_parallel=PP@ap:amx_parallel_begin(%0);_@pp_amx_parallel;_@pp_amx_parallel=PP@ap:amx_parallel_end())
+stock operator~(PP@ap:arr[], count)
+{
+    for(new i = 0; i < count; i++)
+    {
+        if(arr[i]) amx_parallel_end();
     }
 }
 
