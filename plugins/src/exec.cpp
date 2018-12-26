@@ -73,8 +73,11 @@ int AMXAPI amx_on_debug(AMX *amx)
 	amx::object owner;
 	auto &ctx = amx::get_context(amx, owner);
 	auto &extra = ctx.get_extra<parallel_context>();
-	int ret = extra.old_debug(amx);
-	if(ret != AMX_ERR_NONE) return ret;
+	if(extra.old_debug)
+	{
+		int ret = extra.old_debug(amx);
+		if(ret != AMX_ERR_NONE) return ret;
+	}
 	if(++extra.count == extra.max_count)
 	{
 		extra.on_break = true;
@@ -174,6 +177,12 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				{
 					extra.on_break = false;
 					extra.old_debug = nullptr;
+
+					if(restore_debug)
+					{
+						amx->debug = old_debug;
+						restore_debug = false;
+					}
 
 					amx->pri = 0;
 					amx->error = ret = AMX_ERR_NONE;
@@ -499,6 +508,11 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 			}
 		}
 
+		if(restore_debug)
+		{
+			amx->debug = old_debug;
+		}
+
 		if(restore && !handled && ret != AMX_ERR_SLEEP)
 		{
 			amx::object owner;
@@ -515,11 +529,6 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 		}
 
 		break;
-	}
-
-	if(restore_debug)
-	{
-		amx->debug = old_debug;
 	}
 
 	amx::pop(amx);
