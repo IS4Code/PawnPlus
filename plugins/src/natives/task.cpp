@@ -23,8 +23,7 @@ public:
 		task *task;
 		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
 		
-		task->set_completed(Factory(amx, params[Indices]...));
-		return 1;
+		return task->set_completed(Factory(amx, params[Indices]...));
 	}
 
 	// native task_get_result(Task:task, ...);
@@ -286,7 +285,7 @@ namespace Natives
 					}
 				}
 				list->clear();
-				created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
+				return created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
 			});
 			list->push_back(std::make_pair(it, task));
 		}
@@ -308,6 +307,7 @@ namespace Natives
 			
 			task->register_handler([created, list](tasks::task &t)
 			{
+				cell val = 0;
 				if(std::all_of(list->begin(), list->end(), [](std::weak_ptr<tasks::task> &ptr)
 				{
 					if(auto lock = ptr.lock())
@@ -318,8 +318,9 @@ namespace Natives
 				}))
 				{
 					list->clear();
-					created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
+					val = created->set_completed(dyn_object(tasks::get_id(&t), tags::find_tag(tags::tag_task)));
 				}
+				return val;
 			});
 			list->push_back(task);
 		}
@@ -550,7 +551,7 @@ namespace Natives
 				AMX *amx = *lock;
 
 				int index;
-				if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return;
+				if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return 0;
 
 				cell heap, *heap_addr;
 				amx_Allot(amx, 0, &heap, &heap_addr);
@@ -570,7 +571,9 @@ namespace Natives
 				amx->error = AMX_ERR_NONE;
 
 				amx_Release(amx, heap);
+				return retval;
 			}
+			return 0;
 		});
 
 		return 1;
@@ -613,7 +616,7 @@ namespace Natives
 				AMX *amx = *lock;
 
 				int index;
-				if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return;
+				if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return 0;
 
 				cell heap, *heap_addr;
 				amx_Allot(amx, 0, &heap, &heap_addr);
@@ -642,7 +645,9 @@ namespace Natives
 				amx->error = AMX_ERR_NONE;
 
 				amx_Release(amx, heap);
+				return retval;
 			}
+			return 0;
 		});
 
 		return params[2];

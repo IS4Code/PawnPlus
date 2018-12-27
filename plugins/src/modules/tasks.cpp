@@ -22,27 +22,27 @@ namespace tasks
 			owner = _reset.amx.lock();
 		}
 
-		virtual void set_completed(task &t) override;
-		virtual void set_faulted(task &t) override;
+		virtual cell set_completed(task &t) override;
+		virtual cell set_faulted(task &t) override;
 	};
 
 	class func_handler : public handler
 	{
-		std::function<void(task&)> _func;
+		std::function<cell(task&)> _func;
 
 	public:
-		func_handler(const std::function<void(task&)> &func) : _func(func)
+		func_handler(const std::function<cell(task&)> &func) : _func(func)
 		{
 
 		}
 
-		func_handler(std::function<void(task&)> &&func) : _func(std::move(func))
+		func_handler(std::function<cell(task&)> &&func) : _func(std::move(func))
 		{
 
 		}
 
-		virtual void set_completed(task &t) override;
-		virtual void set_faulted(task &t) override;
+		virtual cell set_completed(task &t) override;
+		virtual cell set_faulted(task &t) override;
 	};
 
 	class task_handler : public handler
@@ -56,8 +56,8 @@ namespace tasks
 
 		}
 
-		virtual void set_completed(task &t) override;
-		virtual void set_faulted(task &t) override;
+		virtual cell set_completed(task &t) override;
+		virtual cell set_faulted(task &t) override;
 	};
 
 	class task_result_handler : public task_handler
@@ -79,8 +79,8 @@ namespace tasks
 
 		}
 
-		virtual void set_completed(task &t) override;
-		virtual void set_faulted(task &t) override;
+		virtual cell set_completed(task &t) override;
+		virtual cell set_faulted(task &t) override;
 
 		virtual ~task_result_handler()
 		{
@@ -117,7 +117,7 @@ namespace tasks
 		return pool.add();
 	}
 
-	void reset_handler::set_completed(task &t)
+	cell reset_handler::set_completed(task &t)
 	{
 		if(auto obj = _reset.amx.lock())
 		{
@@ -130,60 +130,65 @@ namespace tasks
 				int old_error = amx->error;
 				amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &_reset);
 				amx->error = old_error;
+				return retval;
 			}
 		}
+		return 0;
 	}
 
-	void reset_handler::set_faulted(task &t)
+	cell reset_handler::set_faulted(task &t)
 	{
-		set_completed(t);
+		return set_completed(t);
 	}
 
-	void func_handler::set_completed(task &t)
+	cell func_handler::set_completed(task &t)
 	{
-		_func(t);
+		return _func(t);
 	}
 
-	void func_handler::set_faulted(task &t)
+	cell func_handler::set_faulted(task &t)
 	{
-		_func(t);
+		return _func(t);
 	}
 
-	void task_handler::set_completed(task &t)
-	{
-		if(auto task = _task.lock())
-		{
-			task->set_completed(t.result());
-		}
-	}
-
-	void task_handler::set_faulted(task &t)
+	cell task_handler::set_completed(task &t)
 	{
 		if(auto task = _task.lock())
 		{
-			task->set_faulted(t.error());
+			return task->set_completed(t.result());
 		}
+		return 0;
 	}
 
-	void task_result_handler::set_completed(task &t)
+	cell task_handler::set_faulted(task &t)
+	{
+		if(auto task = _task.lock())
+		{
+			return task->set_faulted(t.error());
+		}
+		return 0;
+	}
+
+	cell task_result_handler::set_completed(task &t)
 	{
 		if(auto task = _task.lock())
 		{
 			if(iserror)
 			{
-				task->set_faulted(error);
+				return task->set_faulted(error);
 			}else{
-				task->set_completed(dyn_object(result));
+				return task->set_completed(dyn_object(result));
 			}
 		}
+		return 0;
 	}
 
-	void task_result_handler::set_faulted(task &t)
+	cell task_result_handler::set_faulted(task &t)
 	{
-		set_completed(t);
+		return set_completed(t);
 	}
 
-	void task::set_completed(dyn_object &&result)
+	cell task::set_completed(dyn_object &&result)
 	{
 		if(_state != 1)
 		{
@@ -197,18 +202,22 @@ namespace tasks
 		// prevent deletion of the task inside a continuation
 		auto handle = pool.get(this);
 
+		cell val = 0;
+
 		for(auto &handler : handlers)
 		{
-			handler->set_completed(*this);
+			val = handler->set_completed(*this);
 		}
 
 		if(!_keep && _state)
 		{
 			pool.remove(this);
 		}
+
+		return val;
 	}
 
-	void task::set_faulted(cell error)
+	cell task::set_faulted(cell error)
 	{
 		if(_state == 1)
 		{
@@ -219,15 +228,22 @@ namespace tasks
 
 		auto handlers = std::move(this->handlers);
 
+		// prevent deletion of the task inside a continuation
+		auto handle = pool.get(this);
+
+		cell val = 0;
+
 		for(auto &handler : handlers)
 		{
-			handler->set_faulted(*this);
+			val = handler->set_faulted(*this);
 		}
 
 		if(!_keep && _state)
 		{
 			pool.remove(this);
 		}
+
+		return val;
 	}
 
 	task::handler_iterator task::register_reset(amx::reset &&reset)
@@ -237,14 +253,14 @@ namespace tasks
 		return --it;
 	}
 
-	task::handler_iterator task::register_handler(const std::function<void(task&)> &func)
+	task::handler_iterator task::register_handler(const std::function<cell(task&)> &func)
 	{
 		handlers.push_back(std::unique_ptr<func_handler>(new func_handler(func)));
 		auto it = handlers.end();
 		return --it;
 	}
 
-	task::handler_iterator task::register_handler(std::function<void(task&)> &&func)
+	task::handler_iterator task::register_handler(std::function<cell(task&)> &&func)
 	{
 		handlers.push_back(std::unique_ptr<func_handler>(new func_handler(std::move(func))));
 		auto it = handlers.end();

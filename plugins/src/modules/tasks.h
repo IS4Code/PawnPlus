@@ -16,8 +16,8 @@ namespace tasks
 		friend void tick();
 		friend void run_pending();
 
-		virtual void set_completed(class task &t) = 0;
-		virtual void set_faulted(class task &t) = 0;
+		virtual cell set_completed(class task &t) = 0;
+		virtual cell set_faulted(class task &t) = 0;
 
 	public:
 		virtual ~handler() = default;
@@ -139,11 +139,11 @@ namespace tasks
 
 		typedef std::list<std::unique_ptr<handler>>::iterator handler_iterator;
 
-		void set_completed(dyn_object &&result);
-		void set_faulted(cell error);
+		cell set_completed(dyn_object &&result);
+		cell set_faulted(cell error);
 		handler_iterator register_reset(amx::reset &&reset);
-		handler_iterator register_handler(const std::function<void(task&)> &func);
-		handler_iterator register_handler(std::function<void(task&)> &&func);
+		handler_iterator register_handler(const std::function<cell(task&)> &func);
+		handler_iterator register_handler(std::function<cell(task&)> &&func);
 		void unregister_handler(const handler_iterator &it);
 
 		~task()
