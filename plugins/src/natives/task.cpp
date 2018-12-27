@@ -529,6 +529,12 @@ namespace Natives
 		const char *format;
 		amx_OptStrParam(amx, 3, format, "");
 
+		int pubindex;
+		if(amx_FindPublic(amx, fname, &pubindex) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::func_not_found, "public", fname);
+		}
+
 		std::shared_ptr<std::vector<stored_param>> arg_values;
 
 		if(format && *format)
@@ -591,6 +597,12 @@ namespace Natives
 
 		const char *format;
 		amx_OptStrParam(amx, 4, format, "");
+
+		int pubindex;
+		if(amx_FindPublic(amx, fname, &pubindex) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::func_not_found, "public", fname);
+		}
 
 		std::shared_ptr<std::vector<stored_param>> arg_values;
 
