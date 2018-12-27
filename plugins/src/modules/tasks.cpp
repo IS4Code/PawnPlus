@@ -454,7 +454,7 @@ namespace tasks
 		timer_handlers.clear();
 		if(!pending_handlers.empty())
 		{
-			pending_handlers = {};
+			std::queue<std::unique_ptr<handler>>().swap(pending_handlers);
 		}
 		pool.clear();
 	}
