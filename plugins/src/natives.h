@@ -3,6 +3,7 @@
 
 #include "main.h"
 #include "errors.h"
+#include "amxinfo.h"
 #include "sdk/amx/amx.h"
 
 #define optparam(idx, optvalue) (params[0] / sizeof(cell) < (idx) ? (optvalue) : params[idx])
@@ -36,13 +37,23 @@ namespace impl
 			return Native(amx, params);
 		}catch(const errors::end_of_arguments_error &err)
 		{
-			return handle_error(amx, params, native_info<Native>::name(), errors::native_error(errors::not_enough_args, AMX_ERR_NATIVE, err.argbase - params - 1 + err.required, params[0] / static_cast<cell>(sizeof(cell))));
+			return handle_error(amx, params, native_info<Native>::name(), errors::native_error(errors::not_enough_args, 3, err.argbase - params - 1 + err.required, params[0] / static_cast<cell>(sizeof(cell))));
 		}catch(const errors::native_error &err)
 		{
 			return handle_error(amx, params, native_info<Native>::name(), err);
 		}
 	}
 }
+
+struct native_error_level : public amx::extra
+{
+	int level = 2;
+
+	native_error_level(AMX *amx) : amx::extra(amx)
+	{
+
+	}
+};
 
 #define AMX_DEFINE_NATIVE(Name, ArgCount) \
 	cell AMX_NATIVE_CALL Name(AMX *amx, cell *params); \

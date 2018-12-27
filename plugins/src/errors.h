@@ -14,10 +14,10 @@ namespace errors
 	struct native_error
 	{
 		std::string message;
-		int code;
+		int level;
 
-		native_error(const char *format, va_list args, int code);
-		native_error(const char *format, int code, ...);
+		native_error(const char *format, va_list args, int level);
+		native_error(const char *format, int level, ...);
 	};
 
 	struct end_of_arguments_error

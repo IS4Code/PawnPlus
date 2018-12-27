@@ -1,4 +1,5 @@
 #include "natives.h"
+#include "amxinfo.h"
 
 cell impl::handle_error(AMX *amx, cell *params, const char *native, const errors::native_error &error)
 {
@@ -9,8 +10,8 @@ cell impl::handle_error(AMX *amx, cell *params, const char *native, const errors
 		cell reset_hea, *ret_addr;
 		amx_Allot(amx, 1, &reset_hea, &ret_addr);
 		*ret_addr = 0;
-		amx_Push(amx, error.code);
 		amx_Push(amx, reset_hea);
+		amx_Push(amx, error.level);
 		amx_PushString(amx, &amx_addr, &addr, error.message.c_str(), false, false);
 		amx_PushString(amx, &amx_addr, &addr, native, false, false);
 		cell ret;
@@ -25,9 +26,9 @@ cell impl::handle_error(AMX *amx, cell *params, const char *native, const errors
 	}
 
 	logprintf("[PP] %s: %s", native, error.message.c_str());
-	if(error.code)
+	if(error.level >= amx::load_lock(amx)->get_extra<native_error_level>().level)
 	{
-		amx_RaiseError(amx, error.code);
+		amx_RaiseError(amx, AMX_ERR_NATIVE);
 	}
 	return 0;
 }

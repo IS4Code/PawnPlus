@@ -13,12 +13,12 @@ namespace errors
 	error arg_empty = "argument is empty";
 }
 
-errors::native_error::native_error(const char *format, va_list args, int code) : message(vsnprintf(NULL, 0, format, args), '\0'), code(code)
+errors::native_error::native_error(const char *format, va_list args, int level) : message(vsnprintf(NULL, 0, format, args), '\0'), level(level)
 {
 	vsprintf(&message[0], format, args);
 }
 
-errors::native_error::native_error(const char *format, int code, ...) : code(code)
+errors::native_error::native_error(const char *format, int code, ...) : level(level)
 {
 	va_list args;
 	va_start(args, code);
@@ -36,7 +36,7 @@ errors::end_of_arguments_error::end_of_arguments_error(const cell *argbase, size
 {
 	va_list args;
 	va_start(args, format);
-	errors::native_error err(format, args, AMX_ERR_NATIVE);
+	errors::native_error err(format, args, 3);
 	va_end(args);
 	throw err;
 }
@@ -45,7 +45,7 @@ errors::end_of_arguments_error::end_of_arguments_error(const cell *argbase, size
 {
 	va_list args;
 	va_start(args, format);
-	errors::native_error err(format, args, AMX_ERR_NATIVE);
+	errors::native_error err(format, args, 2);
 	va_end(args);
 	throw err;
 }

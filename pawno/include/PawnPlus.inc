@@ -92,6 +92,15 @@ stock _PP@TMP1, _PP@TMP2, _PP@TMP3;
 native pp_hook_strlen(bool:hook);
 native pp_hook_check_ref_args(bool:hook);
 native pp_max_recursion(level);
+native error_level:pp_error_level(error_level:level);
+
+enum error_level
+{
+    error_message = 0,
+    error_warning = 1,
+    error_logic = 2,
+    error_formal = 3,
+};
 
 /*                 */
 /*      Debug      */
@@ -112,7 +121,7 @@ native pp_num_local_handles();
 native pp_num_global_handles();
 native pp_collect();
 native pp_num_natives();
-forward pp_on_error(const source[], const message[], &retval, amx_err:error);
+forward pp_on_error(const source[], const message[], error_level:level, &retval);
 
 /*                 */
 /*      Pawn       */

@@ -129,7 +129,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(pp_collect, 0)
 	{
 		gc_collect();
-		return 0;
+		return 1;
 	}
 
 	// native pp_num_natives();
@@ -142,7 +142,16 @@ namespace Natives
 	AMX_DEFINE_NATIVE(pp_max_recursion, 1)
 	{
 		maxRecursionLevel = params[1];
-		return 0;
+		return 1;
+	}
+
+	// native pp_error_level(error_level:level);
+	AMX_DEFINE_NATIVE(pp_error_level, 1)
+	{
+		auto &extra = amx::load_lock(amx)->get_extra<native_error_level>();
+		auto old = extra.level;
+		extra.level = params[1];
+		return old;
 	}
 }
 
@@ -166,6 +175,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_collect),
 	AMX_DECLARE_NATIVE(pp_num_natives),
 	AMX_DECLARE_NATIVE(pp_max_recursion),
+	AMX_DECLARE_NATIVE(pp_error_level),
 };
 
 int RegisterConfigNatives(AMX *amx)
