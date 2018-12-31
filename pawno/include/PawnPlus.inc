@@ -100,6 +100,7 @@ enum error_level
     error_warning = 1,
     error_logic = 2,
     error_formal = 3,
+    error_none = cellmax,
 };
 
 /*                 */
