@@ -22,7 +22,7 @@ public:
 	dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id);
 	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id);
 	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id);
-	dyn_object(AMX *amx, const cell *str);
+	dyn_object(const cell *str);
 	dyn_object(cell value, tag_ptr tag);
 	dyn_object(const cell *arr, cell size, tag_ptr tag);
 	dyn_object(const dyn_object &obj);

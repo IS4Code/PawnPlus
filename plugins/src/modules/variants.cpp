@@ -49,7 +49,7 @@ dyn_object dyn_func_str(AMX *amx, cell amx_addr)
 {
 	cell *addr;
 	amx_GetAddr(amx, amx_addr, &addr);
-	return dyn_object(amx, addr);
+	return dyn_object(addr);
 }
 
 dyn_object dyn_func_str_s(AMX *amx, cell str)

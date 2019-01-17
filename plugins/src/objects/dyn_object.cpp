@@ -140,7 +140,7 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell si
 	init_op();
 }
 
-dyn_object::dyn_object(AMX *amx, const cell *str) : rank(1), tag(tags::find_tag(tags::tag_char))
+dyn_object::dyn_object(const cell *str) : rank(1), tag(tags::find_tag(tags::tag_char))
 {
 	if(str == nullptr || !str[0])
 	{

@@ -141,7 +141,7 @@ namespace Natives
 		{
 			cell *addr, param = params[1 + arg];
 			amx_GetAddr(amx, param, &addr);
-			ptr->push_back(dyn_object(amx, addr));
+			ptr->push_back(dyn_object(addr));
 		}
 		return list_pool.get_id(ptr);
 	}
@@ -302,7 +302,7 @@ namespace Natives
 		{
 			cell *addr, param = params[2 + arg];
 			amx_GetAddr(amx, param, &addr);
-			ptr->push_back(dyn_object(amx, addr));
+			ptr->push_back(dyn_object(addr));
 		}
 		return numargs;
 	}

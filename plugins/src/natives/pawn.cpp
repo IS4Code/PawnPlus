@@ -465,7 +465,7 @@ namespace Natives
 				{
 					if(amx_GetAddr(amx, param, &addr) == AMX_ERR_NONE)
 					{
-						ptr->push_back(dyn_object(amx, addr));
+						ptr->push_back(dyn_object(addr));
 					}else{
 						ptr->push_back(dyn_object());
 					}
