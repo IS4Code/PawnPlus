@@ -4,6 +4,7 @@
 #include "amxinfo.h"
 #include "modules/strings.h"
 #include "modules/events.h"
+#include "modules/capi.h"
 
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
@@ -166,6 +167,20 @@ namespace Hooks
 		amx::register_natives(amx, nativelist, number);
 		return ret;
 	}
+
+	int AMX_HOOK_FUNC(amx_Flags, AMX *amx, uint16_t *flags)
+	{
+		if(amx && flags && *flags == pp::hook_flags_initial)
+		{
+			auto hdr = (AMX_HEADER*)amx->base;
+			if(hdr && hdr->magic == pp::hook_magic)
+			{
+				*flags = pp::hook_flags_final;
+				return reinterpret_cast<int>(get_api_table());
+			}
+		}
+		return base_func(amx, flags);
+	}
 }
 
 int AMXAPI amx_InitOrig(AMX *amx, void *program)
@@ -185,6 +200,7 @@ void Hooks::Register()
 	amx_Hook(GetAddr)::load();
 	amx_Hook(StrLen)::load();
 	amx_Hook(Register)::load();
+	amx_Hook(Flags)::load();
 }
 
 void Hooks::Unregister()
@@ -194,6 +210,7 @@ void Hooks::Unregister()
 	amx_Hook(GetAddr)::unload();
 	amx_Hook(StrLen)::unload();
 	amx_Hook(Register)::unload();
+	amx_Hook(Flags)::unload();
 }
 
 void Hooks::ToggleStrLen(bool toggle)

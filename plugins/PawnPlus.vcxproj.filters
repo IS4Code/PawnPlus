@@ -121,6 +121,12 @@
     <ClCompile Include="src\errors.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\capi.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
+    <ClCompile Include="src\api\ppcommon.cpp">
+      <Filter>src\api</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -149,6 +155,9 @@
     </Filter>
     <Filter Include="src\modules">
       <UniqueIdentifier>{df4f9eb5-a924-481c-b9a6-85ab90f41088}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\api">
+      <UniqueIdentifier>{09a52f36-5d7a-4593-bd1d-8eca51d13c27}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -256,6 +265,12 @@
     </ClInclude>
     <ClInclude Include="src\errors.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\capi.h">
+      <Filter>src\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\api\ppcommon.h">
+      <Filter>src\api</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

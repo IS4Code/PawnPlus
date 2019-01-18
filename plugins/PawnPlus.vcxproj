@@ -133,12 +133,14 @@
     <ClCompile Include="lib\sdk\amxplugin.cpp" />
     <ClCompile Include="lib\subhook\subhook.c" />
     <ClCompile Include="src\amxinfo.cpp" />
+    <ClCompile Include="src\api\ppcommon.cpp" />
     <ClCompile Include="src\context.cpp" />
     <ClCompile Include="src\errors.cpp" />
     <ClCompile Include="src\exec.cpp" />
     <ClCompile Include="src\hooks.cpp" />
     <ClCompile Include="src\modules\amxhook.cpp" />
     <ClCompile Include="src\modules\amxutils.cpp" />
+    <ClCompile Include="src\modules\capi.cpp" />
     <ClCompile Include="src\modules\containers.cpp" />
     <ClCompile Include="src\modules\events.cpp" />
     <ClCompile Include="src\modules\guards.cpp" />
@@ -189,6 +191,7 @@
     </ClInclude>
     <ClCompile Include="src\main.cpp" />
     <ClInclude Include="src\amxinfo.h" />
+    <ClInclude Include="src\api\ppcommon.h" />
     <ClInclude Include="src\context.h" />
     <ClInclude Include="src\errors.h" />
     <ClInclude Include="src\exec.h" />
@@ -197,6 +200,7 @@
     <ClInclude Include="src\main.h" />
     <ClInclude Include="src\modules\amxhook.h" />
     <ClInclude Include="src\modules\amxutils.h" />
+    <ClInclude Include="src\modules\capi.h" />
     <ClInclude Include="src\modules\containers.h" />
     <ClInclude Include="src\modules\events.h" />
     <ClInclude Include="src\modules\guards.h" />

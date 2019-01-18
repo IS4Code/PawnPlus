@@ -20,6 +20,7 @@ static: all
 PawnPlus: clean
 	$(GPP) $(PawnPlus) ./lib/sdk/*.cpp
 	$(GCC) $(PawnPlus) ./lib/subhook/*.c
+	$(GPP) $(PawnPlus) ./src/api/*.cpp
 	$(GPP) $(PawnPlus) ./src/utils/*.cpp
 	$(GPP) $(PawnPlus) ./src/objects/*.cpp
 	$(GPP) $(PawnPlus) ./src/modules/*.cpp
