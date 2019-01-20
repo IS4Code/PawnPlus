@@ -143,6 +143,8 @@ enum handler_flags
 
 native pawn_call_native(const function[], const format[], AnyTag:...);
 native pawn_call_public(const function[], const format[], AnyTag:...);
+native amx_err:pawn_try_call_native(const function[], &result, const format[], AnyTag:...);
+native amx_err:pawn_try_call_public(const function[], &result, const format[], AnyTag:...);
 native CallbackHandler:pawn_register_callback(const callback[], const handler[], handler_flags:flags=handler_default, const additional_format[]="", AnyTag:...);
 native pawn_unregister_callback(CallbackHandler:id);
 native NativeHook:pawn_add_hook(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
@@ -278,7 +280,8 @@ native amx_parallel_end();
 
 enum amx_err
 {
-    amx_err_exit = 1,
+    amx_err_none = 0,
+    amx_err_exit,
     amx_err_assert,
     amx_err_stackerr,
     amx_err_bounds,

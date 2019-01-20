@@ -39,6 +39,12 @@ namespace errors
 	extern error key_not_present;
 	extern error func_not_found;
 	extern error arg_empty;
+	extern error inner_error;
+}
+
+namespace amx
+{
+	const char *StrError(int error);
 }
 
 #endif
