@@ -107,7 +107,7 @@ namespace Natives
 		return tasks::get_id(tasks::add().get());
 	}
 
-	// native bool:task_delete(Task:task);
+	// native task_delete(Task:task);
 	AMX_DEFINE_NATIVE(task_delete, 1)
 	{
 		task *task;

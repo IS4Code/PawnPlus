@@ -659,20 +659,35 @@ public:
 		return !bond.expired();
 	}
 
+	void release()
+	{
+		if(alive())
+		{
+			object.release();
+		}
+	}
+
 	void reset()
 	{
 		object = {};
 		bond = {};
 	}
 
+	void kill()
+	{
+		bond = std::make_shared<char>();
+	}
+
 	handle_t &operator=(const handle_t&) = delete;
+
+	bool alive() const
+	{
+		return !object.empty() && (!bond.expired() || (!bond.owner_before(std::weak_ptr<void>{}) && !std::weak_ptr<void>{}.owner_before(bond)));
+	}
 
 	~handle_t()
 	{
-		if(!bond.expired() || (!bond.owner_before(std::weak_ptr<void>{}) && !std::weak_ptr<void>{}.owner_before(bond)))
-		{
-			object.release();
-		}
+		release();
 	}
 };
 

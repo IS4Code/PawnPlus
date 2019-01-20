@@ -180,7 +180,7 @@ namespace Natives
 		return list_pool.remove(ptr);
 	}
 
-	// native bool:list_delete_deep(List:list);
+	// native list_delete_deep(List:list);
 	AMX_DEFINE_NATIVE(list_delete_deep, 1)
 	{
 		list_t *ptr;

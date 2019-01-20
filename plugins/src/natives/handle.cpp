@@ -139,12 +139,37 @@ namespace Natives
 		return handle->linked();
 	}
 
-	// native handle_reset(HandleTag:handle);
+	// native bool::handle_alive(HandleTag:handle);
+	AMX_DEFINE_NATIVE(handle_alive, 1)
+	{
+		handle_t *handle;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		return handle->alive();
+	}
+
+	// native handle_reset(HandleTag:handle, bool:release=false);
 	AMX_DEFINE_NATIVE(handle_reset, 1)
 	{
 		handle_t *handle;
 		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(optparam(2, 0))
+		{
+			handle->release();
+		}
 		handle->reset();
+		return 1;
+	}
+
+	// native handle_kill(HandleTag:handle, bool:release=false);
+	AMX_DEFINE_NATIVE(handle_kill, 1)
+	{
+		handle_t *handle;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(optparam(2, 0))
+		{
+			handle->release();
+		}
+		handle->kill();
 		return 1;
 	}
 }
@@ -159,7 +184,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(handle_delete),
 	AMX_DECLARE_NATIVE(handle_valid),
 	AMX_DECLARE_NATIVE(handle_linked),
+	AMX_DECLARE_NATIVE(handle_alive),
 	AMX_DECLARE_NATIVE(handle_reset),
+	AMX_DECLARE_NATIVE(handle_kill),
 
 	AMX_DECLARE_NATIVE(handle_get),
 	AMX_DECLARE_NATIVE(handle_get_arr),
