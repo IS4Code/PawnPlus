@@ -1131,6 +1131,54 @@ stock operator~(PP@ts:arr[], count)
 
 
 /*                 */
+/*       Math      */
+/*                 */
+
+native math_iadd({_,signed}:a, {_,signed}:b);
+native math_iadd_ovf({_,signed}:a, {_,signed}:b);
+native math_isub({_,signed}:a, {_,signed}:b);
+native math_isub_ovf({_,signed}:a, {_,signed}:b);
+native math_imul({_,signed}:a, {_,signed}:b);
+native math_imul_ovf({_,signed}:a, {_,signed}:b);
+native math_idiv({_,signed}:a, {_,signed}:b);
+native math_imod({_,signed}:a, {_,signed}:b);
+native math_uadd({_,unsigned}:a, {_,unsigned}:b);
+native math_uadd_ovf({_,unsigned}:a, {_,unsigned}:b);
+native math_usub({_,unsigned}:a, {_,unsigned}:b);
+native math_usub_ovf({_,unsigned}:a, {_,unsigned}:b);
+native math_umul({_,unsigned}:a, {_,unsigned}:b);
+native math_umul_ovf({_,unsigned}:a, {_,unsigned}:b);
+native math_udiv({_,unsigned}:a, {_,unsigned}:b);
+native math_umod({_,unsigned}:a, {_,unsigned}:b);
+
+native bool:math_ilt({_,signed}:a, {_,signed}:b);
+native bool:math_ilte({_,signed}:a, {_,signed}:b);
+native bool:math_igt({_,signed}:a, {_,signed}:b);
+native bool:math_igte({_,signed}:a, {_,signed}:b);
+native bool:math_ult({_,unsigned}:a, {_,unsigned}:b);
+native bool:math_ulte({_,unsigned}:a, {_,unsigned}:b);
+native bool:math_ugt({_,unsigned}:a, {_,unsigned}:b);
+native bool:math_ugte({_,unsigned}:a, {_,unsigned}:b);
+
+native signed:operator+(signed:a, signed:b) = math_iadd_ovf;
+native signed:operator-(signed:a, signed:b) = math_isub_ovf;
+native signed:operator*(signed:a, signed:b) = math_imul_ovf;
+
+native unsigned:operator+(unsigned:a, unsigned:b) = math_uadd_ovf;
+native unsigned:operator-(unsigned:a, unsigned:b) = math_usub_ovf;
+native unsigned:operator*(unsigned:a, unsigned:b) = math_umul_ovf;
+native unsigned:operator/(unsigned:a, unsigned:b) = math_udiv;
+native unsigned:operator%(unsigned:a, unsigned:b) = math_umod;
+native bool:operator<(unsigned:a, unsigned:b) = math_ult;
+native bool:operator<=(unsigned:a, unsigned:b) = math_ulte;
+native bool:operator>(unsigned:a, unsigned:b) = math_ugt;
+native bool:operator>=(unsigned:a, unsigned:b) = math_ugte;
+
+stock signed:operator=(a) return signed:a;
+stock unsigned:operator=(a) return unsigned:a;
+
+
+/*                 */
 /*  Operators etc. */
 /*                 */
 

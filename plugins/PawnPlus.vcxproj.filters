@@ -127,6 +127,9 @@
     <ClCompile Include="src\api\ppcommon.cpp">
       <Filter>src\api</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives\math.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
