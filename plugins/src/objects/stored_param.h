@@ -20,12 +20,14 @@ struct stored_param
 	static stored_param create(AMX *amx, char format, const cell *args, size_t &argi, size_t numargs);
 	void push(AMX *amx, int id) const;
 
-	stored_param();
-	stored_param(cell val);
-	stored_param(std::basic_string<cell> &&str);
-	stored_param(const stored_param &obj);
+	stored_param() noexcept;
+	stored_param(cell val) noexcept;
+	stored_param(std::basic_string<cell> &&str) noexcept;
+	stored_param(const stored_param &obj) noexcept;
+	stored_param(stored_param &&obj) noexcept;
 	~stored_param();
-	stored_param &operator=(const stored_param &obj);
+	stored_param &operator=(const stored_param &obj) noexcept;
+	stored_param &operator=(stored_param &&obj) noexcept;
 };
 
 

@@ -80,7 +80,7 @@ public:
 template <int index>
 subhook_t amx_hook<index>::hook;
 
-#define AMX_HOOK_FUNC(Func, ...) Func(decltype(&::Func) _base_func, __VA_ARGS__)
+#define AMX_HOOK_FUNC(Func, ...) Func(decltype(&::Func) _base_func, __VA_ARGS__) noexcept
 #define base_func _base_func
 #define amx_Hook(Func) amx_hook<PLUGIN_AMX_EXPORT_##Func>::ctl<decltype(&::amx_##Func), &Hooks::amx_##Func>
 

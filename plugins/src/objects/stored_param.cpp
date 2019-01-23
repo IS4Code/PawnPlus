@@ -42,40 +42,87 @@ void stored_param::push(AMX *amx, int id) const
 	}
 }
 
-stored_param::stored_param() : type(param_type::self_id_param)
+stored_param::stored_param() noexcept : type(param_type::self_id_param)
 {
 
 }
 
-stored_param::stored_param(cell val) : type(param_type::cell_param), cell_value(val)
+stored_param::stored_param(cell val) noexcept : type(param_type::cell_param), cell_value(val)
 {
 
 }
 
-stored_param::stored_param(std::basic_string<cell> &&str) : type(param_type::string_param), string_value(std::move(str))
+stored_param::stored_param(std::basic_string<cell> &&str) noexcept : type(param_type::string_param), string_value(std::move(str))
 {
 
 }
 
-stored_param::stored_param(const stored_param &obj) : type(obj.type), cell_value(obj.cell_value)
+stored_param::stored_param(const stored_param &obj) noexcept : type(obj.type)
 {
 	if(type == param_type::string_param)
 	{
 		new (&string_value) std::basic_string<cell>(obj.string_value);
+	}else{
+		cell_value = obj.cell_value;
 	}
 }
 
-stored_param &stored_param::operator=(const stored_param &obj)
+stored_param::stored_param(stored_param &&obj) noexcept : type(obj.type)
+{
+	if(type == param_type::string_param)
+	{
+		new (&string_value) std::basic_string<cell>(std::move(obj.string_value));
+	}else{
+		cell_value = obj.cell_value;
+	}
+}
+
+stored_param &stored_param::operator=(const stored_param &obj) noexcept
 {
 	if(this != &obj)
 	{
-		type = obj.type;
 		if(type == param_type::string_param)
 		{
+			if(obj.type == type)
+			{
+				string_value = obj.string_value;
+			}else{
+				string_value.~basic_string();
+				cell_value = obj.cell_value;
+			}
+		}else if(obj.type == param_type::string_param)
+		{
 			new (&string_value) std::basic_string<cell>(obj.string_value);
-		} else {
+		}else{
 			cell_value = obj.cell_value;
 		}
+
+		type = obj.type;
+	}
+	return *this;
+}
+
+stored_param &stored_param::operator=(stored_param &&obj) noexcept
+{
+	if(this != &obj)
+	{
+		if(type == param_type::string_param)
+		{
+			if(obj.type == type)
+			{
+				string_value = std::move(obj.string_value);
+			}else{
+				string_value.~basic_string();
+				cell_value = obj.cell_value;
+			}
+		}else if(obj.type == param_type::string_param)
+		{
+			new (&string_value) std::basic_string<cell>(std::move(obj.string_value));
+		}else{
+			cell_value = obj.cell_value;
+		}
+
+		type = obj.type;
 	}
 	return *this;
 }

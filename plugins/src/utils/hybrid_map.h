@@ -339,7 +339,7 @@ namespace aux
 			return *this;
 		}
 	
-		hybrid_map<Key, Value> &operator=(const std::map<Key, Value> &map)
+		hybrid_map<Key, Value> &operator=(const ordered_map &map)
 		{
 			if(!ordered)
 			{
@@ -352,7 +352,7 @@ namespace aux
 			return *this;
 		}
 
-		hybrid_map<Key, Value> &operator=(std::map<Key, Value> &&map)
+		hybrid_map<Key, Value> &operator=(ordered_map &&map)
 		{
 			if(!ordered)
 			{

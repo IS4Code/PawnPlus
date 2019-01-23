@@ -34,15 +34,15 @@ namespace tasks
 		std::list<std::unique_ptr<handler>> handlers;
 
 	public:
-		task()
+		task() noexcept
 		{
 
 		}
-		task(dyn_object &&result) : _state(1), _value(std::move(result))
+		task(dyn_object &&result) noexcept : _state(1), _value(std::move(result))
 		{
 
 		}
-		task(task &&obj) : _state(obj._state), _keep(obj._keep), handlers(std::move(obj.handlers))
+		task(task &&obj) noexcept : _state(obj._state), _keep(obj._keep), handlers(std::move(obj.handlers))
 		{
 			if(_state == 1)
 			{
@@ -116,7 +116,7 @@ namespace tasks
 			handlers.clear();
 		}
 
-		task &operator=(task &&obj)
+		task &operator=(task &&obj) noexcept
 		{
 			if(this != &obj)
 			{

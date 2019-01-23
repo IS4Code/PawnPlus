@@ -17,12 +17,12 @@
 logprintf_t logprintf;
 extern void *pAMXFunctions;
 
-PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports() 
+PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports() noexcept
 {
 	return SUPPORTS_VERSION | SUPPORTS_AMX_NATIVES | SUPPORTS_PROCESS_TICK;
 }
 
-PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
+PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData) noexcept
 {
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
@@ -42,7 +42,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData)
 	return true;
 }
 
-PLUGIN_EXPORT void PLUGIN_CALL Unload()
+PLUGIN_EXPORT void PLUGIN_CALL Unload() noexcept
 {
 	variants::pool.clear();
 	handle_pool.clear();
@@ -58,21 +58,21 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload()
 	logprintf(" PawnPlus v0.11.1 unloaded");
 }
 
-PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) 
+PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) noexcept
 {
 	amx::load(amx);
 	RegisterNatives(amx);
 	return AMX_ERR_NONE;
 }
 
-PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx) 
+PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx) noexcept
 {
 	amx::invalidate(amx);
 	amx::unload(amx);
 	return AMX_ERR_NONE;
 }
 
-PLUGIN_EXPORT void PLUGIN_CALL ProcessTick()
+PLUGIN_EXPORT void PLUGIN_CALL ProcessTick() noexcept
 {
 	tasks::tick();
 	Threads::SyncThreads();

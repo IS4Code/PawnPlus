@@ -17,16 +17,16 @@ class dyn_object
 	tag_ptr tag;
 
 public:
-	dyn_object();
-	dyn_object(AMX *amx, cell value, cell tag_id);
-	dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id);
-	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id);
-	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id);
-	dyn_object(const cell *str);
-	dyn_object(cell value, tag_ptr tag);
-	dyn_object(const cell *arr, cell size, tag_ptr tag);
-	dyn_object(const dyn_object &obj);
-	dyn_object(dyn_object &&obj);
+	dyn_object() noexcept;
+	dyn_object(AMX *amx, cell value, cell tag_id) noexcept;
+	dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) noexcept;
+	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id) noexcept;
+	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id) noexcept;
+	dyn_object(const cell *str) noexcept;
+	dyn_object(cell value, tag_ptr tag) noexcept;
+	dyn_object(const cell *arr, cell size, tag_ptr tag) noexcept;
+	dyn_object(const dyn_object &obj) noexcept;
+	dyn_object(dyn_object &&obj) noexcept;
 
 	bool tag_assignable(AMX *amx, cell tag_id) const;
 	bool tag_assignable(tag_ptr test_tag) const;
@@ -80,14 +80,14 @@ public:
 	bool operator<=(const dyn_object &obj) const;
 	bool operator>=(const dyn_object &obj) const;
 	bool operator!() const;
-	dyn_object &operator=(const dyn_object &obj);
-	dyn_object &operator=(dyn_object &&obj);
+	dyn_object &operator=(const dyn_object &obj) noexcept;
+	dyn_object &operator=(dyn_object &&obj) noexcept;
 
 	~dyn_object();
 
 private:
-	dyn_object(cell value, tag_ptr tag, bool assign);
-	dyn_object(const dyn_object &obj, bool assign);
+	dyn_object(cell value, tag_ptr tag, bool assign) noexcept;
+	dyn_object(const dyn_object &obj, bool assign) noexcept;
 	cell *begin();
 	cell *end();
 	const cell *begin() const;

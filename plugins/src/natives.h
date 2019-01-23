@@ -27,7 +27,7 @@ namespace impl
 	struct native_info;
 
 	template <AMX_NATIVE Native>
-	static cell AMX_NATIVE_CALL adapt_native(AMX *amx, cell *params)
+	static cell AMX_NATIVE_CALL adapt_native(AMX *amx, cell *params) noexcept
 	{
 		try{
 			if(params[0] < native_info<Native>::arg_count() * static_cast<cell>(sizeof(cell)))

@@ -13,17 +13,17 @@ bool memequal(void const* ptr1, void const* ptr2, size_t size)
 	return !std::memcmp(ptr1, ptr2, size);
 }
 
-dyn_object::dyn_object() : rank(1), array_data(nullptr), tag(tags::find_tag(tags::tag_cell))
+dyn_object::dyn_object() noexcept : rank(1), array_data(nullptr), tag(tags::find_tag(tags::tag_cell))
 {
 
 }
 
-dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) : rank(0), cell_value(value), tag(tags::find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) noexcept : rank(0), cell_value(value), tag(tags::find_tag(amx, tag_id))
 {
 	init_op();
 }
 
-dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : rank(1), tag(tags::find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) noexcept : rank(1), tag(tags::find_tag(amx, tag_id))
 {
 	if(arr != nullptr)
 	{
@@ -69,7 +69,7 @@ void find_array_end(AMX *amx, const cell *&ptr)
 	}
 }
 
-dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id) : rank(2), tag(tags::find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id) noexcept : rank(2), tag(tags::find_tag(amx, tag_id))
 {
 	if(arr != nullptr)
 	{
@@ -104,7 +104,7 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell ta
 	init_op();
 }
 
-dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id) : rank(3), tag(tags::find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id) noexcept : rank(3), tag(tags::find_tag(amx, tag_id))
 {
 	if(arr != nullptr)
 	{
@@ -140,7 +140,7 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell si
 	init_op();
 }
 
-dyn_object::dyn_object(const cell *str) : rank(1), tag(tags::find_tag(tags::tag_char))
+dyn_object::dyn_object(const cell *str) noexcept : rank(1), tag(tags::find_tag(tags::tag_char))
 {
 	if(str == nullptr || !str[0])
 	{
@@ -162,12 +162,12 @@ dyn_object::dyn_object(const cell *str) : rank(1), tag(tags::find_tag(tags::tag_
 	array_data[size + 1] = 0;
 }
 
-dyn_object::dyn_object(cell value, tag_ptr tag) : dyn_object(value, tag, true)
+dyn_object::dyn_object(cell value, tag_ptr tag) noexcept : dyn_object(value, tag, true)
 {
 
 }
 
-dyn_object::dyn_object(cell value, tag_ptr tag, bool assign) : rank(0), cell_value(value), tag(tag)
+dyn_object::dyn_object(cell value, tag_ptr tag, bool assign) noexcept : rank(0), cell_value(value), tag(tag)
 {
 	if(assign)
 	{
@@ -175,7 +175,7 @@ dyn_object::dyn_object(cell value, tag_ptr tag, bool assign) : rank(0), cell_val
 	}
 }
 
-dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(tag)
+dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) noexcept : rank(1), tag(tag)
 {
 	if(arr != nullptr)
 	{
@@ -188,12 +188,12 @@ dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(t
 	init_op();
 }
 
-dyn_object::dyn_object(const dyn_object &obj) : dyn_object(obj, true)
+dyn_object::dyn_object(const dyn_object &obj) noexcept  : dyn_object(obj, true)
 {
 
 }
 
-dyn_object::dyn_object(const dyn_object &obj, bool assign) : rank(obj.rank), tag(obj.tag)
+dyn_object::dyn_object(const dyn_object &obj, bool assign) noexcept : rank(obj.rank), tag(obj.tag)
 {
 	if(is_array())
 	{
@@ -214,7 +214,7 @@ dyn_object::dyn_object(const dyn_object &obj, bool assign) : rank(obj.rank), tag
 	}
 }
 
-dyn_object::dyn_object(dyn_object &&obj) : rank(obj.rank), tag(obj.tag)
+dyn_object::dyn_object(dyn_object &&obj) noexcept  : rank(obj.rank), tag(obj.tag)
 {
 	if(is_array())
 	{
@@ -1045,7 +1045,7 @@ std::basic_string<cell> dyn_object::to_string() const
 	}
 }
 
-dyn_object &dyn_object::operator=(const dyn_object &obj)
+dyn_object &dyn_object::operator=(const dyn_object &obj) noexcept
 {
 	if(this == &obj) return *this;
 	if(is_array() && array_data != nullptr)
@@ -1071,7 +1071,7 @@ dyn_object &dyn_object::operator=(const dyn_object &obj)
 	return *this;
 }
 
-dyn_object &dyn_object::operator=(dyn_object &&obj)
+dyn_object &dyn_object::operator=(dyn_object &&obj) noexcept
 {
 	if(this == &obj) return *this;
 	if(is_array() && array_data != nullptr)
