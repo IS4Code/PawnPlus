@@ -417,6 +417,16 @@ namespace aux
 			}
 		}
 
+		Value &operator[](Key &&key)
+		{
+			if(ordered)
+			{
+				return omap[std::move(key)];
+			} else {
+				return umap[std::move(key)];
+			}
+		}
+
 		const Value &operator[](const Key &key) const
 		{
 			if(ordered)
@@ -565,6 +575,19 @@ namespace aux
 				return std::make_pair(iterator(pair.first), pair.second);
 			}else{
 				auto pair = umap.insert(std::move(val));
+				return std::make_pair(iterator(pair.first), pair.second);
+			}
+		}
+
+		template<class... Args>
+		std::pair<iterator, bool> emplace(Args&&... args)
+		{
+			if(ordered)
+			{
+				auto pair = omap.emplace(std::forward<Args>(args)...);
+				return std::make_pair(iterator(pair.first), pair.second);
+			}else{
+				auto pair = umap.emplace(std::forward<Args>(args)...);
 				return std::make_pair(iterator(pair.first), pair.second);
 			}
 		}

@@ -237,11 +237,11 @@ static func_ptr map_functions[] = {
 	},
 	+[]/*map_add_copy*/(void *map, const void *key, const void *value) -> cell
 	{
-		return static_cast<map_t*>(map)->insert(std::make_pair(*static_cast<const dyn_object*>(key), *static_cast<const dyn_object*>(value))).second;
+		return static_cast<map_t*>(map)->insert(*static_cast<const dyn_object*>(key), *static_cast<const dyn_object*>(value)).second;
 	},
 	+[]/*map_add_move*/(void *map, const void *key, void *value) -> cell
 	{
-		return static_cast<map_t*>(map)->insert(std::make_pair(*static_cast<const dyn_object*>(key), std::move(*static_cast<dyn_object*>(value)))).second;
+		return static_cast<map_t*>(map)->insert(*static_cast<const dyn_object*>(key), std::move(*static_cast<dyn_object*>(value))).second;
 	},
 	+[]/*map_clear*/(void *map) -> void
 	{

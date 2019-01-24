@@ -23,7 +23,7 @@ public:
 		{
 			map_t *ptr;
 			if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
-			auto ret = ptr->insert(std::make_pair(KeyFactory(amx, params[KeyIndices]...), ValueFactory(amx, params[ValueIndices]...)));
+			auto ret = ptr->insert(KeyFactory(amx, params[KeyIndices]...), ValueFactory(amx, params[ValueIndices]...));
 			return static_cast<cell>(ret.second);
 		}
 
@@ -204,7 +204,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2])));
+			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2]));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -228,7 +228,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 			}
 			amx_GetAddr(amx, value, &value_addr);
-			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), dyn_object(value_addr)));
+			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(value_addr));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -253,7 +253,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr)));
+			ptr->insert(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -277,7 +277,7 @@ namespace Natives
 			}else{
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(dyn_object(key_addr), dyn_object(amx, *value_addr, params[1])));
+			ptr->insert(dyn_object(key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -296,7 +296,7 @@ namespace Natives
 			cell key = params[1 + arg], value = params[1 + arg + 1], *key_addr, *value_addr;
 			amx_GetAddr(amx, key, &key_addr);
 			amx_GetAddr(amx, value, &value_addr);
-			ptr->insert(std::make_pair(dyn_object(key_addr), dyn_object(value_addr)));
+			ptr->insert(dyn_object(key_addr), dyn_object(value_addr));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -320,7 +320,7 @@ namespace Natives
 			}else{
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(dyn_object(key_addr), variants::get(*value_addr)));
+			ptr->insert(dyn_object(key_addr), variants::get(*value_addr));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -345,7 +345,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1])));
+			ptr->insert(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -369,7 +369,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 			}
 			amx_GetAddr(amx, value, &value_addr);
-			ptr->insert(std::make_pair(variants::get(*key_addr), dyn_object(value_addr)));
+			ptr->insert(variants::get(*key_addr), dyn_object(value_addr));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -394,7 +394,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(variants::get(*key_addr), variants::get(*value_addr)));
+			ptr->insert(variants::get(*key_addr), variants::get(*value_addr));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -440,7 +440,7 @@ namespace Natives
 		auto m = map_pool.add();
 		for(auto &&pair : *ptr)
 		{
-			m->insert(std::make_pair(pair.first.clone(), pair.second.clone()));
+			m->insert(pair.first.clone(), pair.second.clone());
 		}
 		return map_pool.get_id(m);
 	}
@@ -615,7 +615,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2])));
+			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2]));
 		}
 		return numargs / 2;
 	}
@@ -640,7 +640,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 			}
 			amx_GetAddr(amx, value, &value_addr);
-			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), dyn_object(value_addr)));
+			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(value_addr));
 		}
 		return numargs / 2;
 	}
@@ -666,7 +666,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr)));
+			ptr->insert(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr));
 		}
 		return numargs / 2;
 	}
@@ -691,7 +691,7 @@ namespace Natives
 			}else{
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(dyn_object(key_addr), dyn_object(amx, *value_addr, params[1])));
+			ptr->insert(dyn_object(key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
 		return numargs / 2;
 	}
@@ -711,7 +711,7 @@ namespace Natives
 			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
 			amx_GetAddr(amx, key, &key_addr);
 			amx_GetAddr(amx, value, &value_addr);
-			ptr->insert(std::make_pair(dyn_object(key_addr), dyn_object(value_addr)));
+			ptr->insert(dyn_object(key_addr), dyn_object(value_addr));
 		}
 		return numargs / 2;
 	}
@@ -736,7 +736,7 @@ namespace Natives
 			}else{
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(dyn_object(key_addr), variants::get(*value_addr)));
+			ptr->insert(dyn_object(key_addr), variants::get(*value_addr));
 		}
 		return numargs / 2;
 	}
@@ -762,7 +762,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1])));
+			ptr->insert(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
 		return numargs / 2;
 	}
@@ -787,7 +787,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 			}
 			amx_GetAddr(amx, value, &value_addr);
-			ptr->insert(std::make_pair(variants::get(*key_addr), dyn_object(value_addr)));
+			ptr->insert(variants::get(*key_addr), dyn_object(value_addr));
 		}
 		return numargs / 2;
 	}
@@ -813,7 +813,7 @@ namespace Natives
 				amx_GetAddr(amx, key, &key_addr);
 				amx_GetAddr(amx, key, &value_addr);
 			}
-			ptr->insert(std::make_pair(variants::get(*key_addr), variants::get(*value_addr)));
+			ptr->insert(variants::get(*key_addr), variants::get(*value_addr));
 		}
 		return numargs / 2;
 	}

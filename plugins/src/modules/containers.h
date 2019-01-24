@@ -121,7 +121,11 @@ class map_t : public collection_base<aux::hybrid_map<dyn_object, dyn_object>>
 {
 public:
 	dyn_object &operator[](const dyn_object &key);
-	std::pair<iterator, bool> insert(std::pair<dyn_object, dyn_object> &&value);
+	dyn_object &operator[](dyn_object &&key);
+	std::pair<iterator, bool> insert(const dyn_object &key, const dyn_object &value);
+	std::pair<iterator, bool> insert(const dyn_object &key, dyn_object &&value);
+	std::pair<iterator, bool> insert(dyn_object &&key, const dyn_object &value);
+	std::pair<iterator, bool> insert(dyn_object &&key, dyn_object &&value);
 	iterator find(const dyn_object &key);
 	size_t erase(const dyn_object &key);
 	iterator erase(iterator position);

@@ -1167,7 +1167,7 @@ struct map_operations : public generic_operations<map_operations, tags::tag_map>
 			map_t *m2 = map_pool.add().get();
 			for(auto &pair : *m)
 			{
-				m2->insert(std::make_pair(pair.first.clone(), pair.second.clone()));
+				m2->insert(pair.first.clone(), pair.second.clone());
 			}
 			return map_pool.get_id(m2);
 		}

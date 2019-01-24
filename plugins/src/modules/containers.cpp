@@ -75,9 +75,44 @@ dyn_object &map_t::operator[](const dyn_object &key)
 	return data[key];
 }
 
-auto map_t::insert(std::pair<dyn_object, dyn_object> &&value) -> std::pair<iterator, bool>
+dyn_object &map_t::operator[](dyn_object &&key)
 {
-	auto pair = data.insert(std::move(value));
+	return data[std::move(key)];
+}
+
+auto map_t::insert(const dyn_object &key, dyn_object const &value) -> std::pair<iterator, bool>
+{
+	auto pair = data.emplace(key, value);
+	if(pair.second)
+	{
+		++revision;
+	}
+	return pair;
+}
+
+auto map_t::insert(const dyn_object &key, dyn_object &&value) -> std::pair<iterator, bool>
+{
+	auto pair = data.emplace(key, std::move(value));
+	if(pair.second)
+	{
+		++revision;
+	}
+	return pair;
+}
+
+auto map_t::insert(dyn_object &&key, const dyn_object &value) -> std::pair<iterator, bool>
+{
+	auto pair = data.emplace(std::move(key), value);
+	if(pair.second)
+	{
+		++revision;
+	}
+	return pair;
+}
+
+auto map_t::insert(dyn_object &&key, dyn_object &&value) -> std::pair<iterator, bool>
+{
+	auto pair = data.emplace(std::move(key), std::move(value));
 	if(pair.second)
 	{
 		++revision;
