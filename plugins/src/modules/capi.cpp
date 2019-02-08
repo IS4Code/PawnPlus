@@ -4,6 +4,8 @@
 #include "containers.h"
 #include "strings.h"
 
+#include <type_traits>
+
 struct func_ptr
 {
 	void *ptr;
@@ -258,12 +260,66 @@ static func_ptr map_functions[] = {
 	nullptr
 };
 
+using string_ptr = typename std::remove_reference<typename object_pool<strings::cell_string>::object_ptr>::type*;
+using const_string_ptr = typename std::remove_reference<typename object_pool<strings::cell_string>::const_object_ptr>::type*;
+
+static func_ptr string_functions[] = {
+	+[]/*new_string*/() -> void*
+	{
+		return &strings::pool.add();
+	},
+	+[]/*delete_string*/(void *str) -> void
+	{
+		strings::pool.remove(*static_cast<string_ptr>(str));
+	},
+	+[]/*string_get_id*/(void *str) -> cell
+	{
+		return strings::pool.get_id(*static_cast<string_ptr>(str));
+	},
+	+[]/*string_from_id*/(cell id) -> void*
+	{
+		string_ptr ptr;
+		if(strings::pool.get_by_id(id, ptr))
+		{
+			return ptr;
+		}
+		return nullptr;
+	},
+	+[]/*string_acquire*/(void *str) -> cell
+	{
+		return static_cast<string_ptr>(str)->acquire();
+	},
+	+[]/*string_release*/(void *str) -> cell
+	{
+		return static_cast<string_ptr>(str)->release();
+	},
+	+[]/*string_get_size*/(const void *str) -> cell
+	{
+		return (*static_cast<const_string_ptr>(str))->size();
+	},
+	+[]/*string_get_data*/(void *str) -> cell*
+	{
+		return &(**static_cast<string_ptr>(str))[0];
+	},
+	+[]/*string_create*/(const char *c, cell len) -> cell
+	{
+		std::string str(c, len);
+		return strings::create(str);
+	},
+	+[]/*string_append*/(void *str, const cell *data, cell len) -> void
+	{
+		(*static_cast<string_ptr>(str))->append(data, len);
+	},
+	nullptr
+};
+
 static void *func_table[] = {
 	&tag_functions,
 	&dyn_object_functions,
 	&list_functions,
 	&linked_list_functions,
 	&map_functions,
+	&string_functions,
 	nullptr
 };
 

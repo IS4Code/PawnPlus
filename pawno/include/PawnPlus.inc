@@ -1098,6 +1098,7 @@ native Task:task_continue_with_bound(Task:task, Task:bound, const handler[], con
 
 #endif
 
+
 /*                 */
 /*     Threads     */
 /*                 */
