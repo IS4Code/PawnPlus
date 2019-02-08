@@ -103,7 +103,11 @@ namespace Hooks
 
 	int AMX_HOOK_FUNC(amx_Exec, AMX *amx, cell *retval, int index)
 	{
-		return amx_ExecContext(amx, retval, index, false, nullptr);
+		if(amx && (amx->flags & AMX_FLAG_BROWSE) == 0)
+		{
+			return amx_ExecContext(amx, retval, index, false, nullptr);
+		}
+		return base_func(amx, retval, index);
 	}
 
 	int AMX_HOOK_FUNC(amx_GetAddr, AMX *amx, cell amx_addr, cell **phys_addr)
