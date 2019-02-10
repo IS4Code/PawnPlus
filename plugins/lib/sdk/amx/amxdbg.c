@@ -214,7 +214,8 @@ int AMXAPI dbg_LookupFunction(AMX_DBG *amxdbg, ucell address, const char **funcn
    * used for stack walking, and for stepping through a function while stepping
    * over sub-functions
    */
-  int index;
+  int index, minindex = -1;
+  ucell mindist; /* look for the smallest scope (compiler error fix) */
 
   assert(amxdbg != NULL);
   assert(funcname != NULL);
@@ -223,13 +224,17 @@ int AMXAPI dbg_LookupFunction(AMX_DBG *amxdbg, ucell address, const char **funcn
     if (amxdbg->symboltbl[index]->ident == iFUNCTN
         && amxdbg->symboltbl[index]->codestart <= address
         && amxdbg->symboltbl[index]->codeend > address) {
-      break;
+		if(minindex == -1 || amxdbg->symboltbl[index]->codeend - amxdbg->symboltbl[index]->codestart < mindist)
+		{
+			minindex = index;
+			mindist = amxdbg->symboltbl[index]->codeend - amxdbg->symboltbl[index]->codestart;
+		}
     }
   } /* for */
-  if (index >= amxdbg->hdr->symbols)
+  if (minindex < 0 || minindex >= amxdbg->hdr->symbols)
     return AMX_ERR_NOTFOUND;
 
-  *funcname = amxdbg->symboltbl[index]->name;
+  *funcname = amxdbg->symboltbl[minindex]->name;
   return AMX_ERR_NONE;
 }
 
