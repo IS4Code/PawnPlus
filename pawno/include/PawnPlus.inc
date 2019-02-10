@@ -155,6 +155,7 @@ native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=ta
 native bool:pawn_guard_valid(Guard:guard);
 native bool:pawn_guard_free(Guard:guard);
 native List:pawn_get_args(const format[], bool:byref=false, level=0);
+#define pawn_nameof(%0) ((tagof(%0)),(#%0))
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -189,6 +190,9 @@ stock _pp_fake_cast(val)
 #define tag_uid_guard (tag_uid:14)
 #define tag_uid_callback_handler (tag_uid:15)
 #define tag_uid_native_hook (tag_uid:16)
+
+#define TAG_EXPORTED (0x80000000)
+#define TAG_STRONG (0x40000000)
 
 native tag_uid:tag_uid(tag_id);
 native tag_id(tag_uid:tag_uid);
@@ -1183,11 +1187,41 @@ stock unsigned:operator=(a) return unsigned:a;
 /*      Debug      */
 /*                 */
 
+#define INVALID_DEBUG_ID (Symbol:cellmin)
+
+enum symbol_kind (<<= 1)
+{
+    symbol_kind_variable = 1,
+    symbol_kind_reference,
+    symbol_kind_array,
+    symbol_kind_array_reference,
+    symbol_kind_function = 1 << 8
+}
+
+enum symbol_class (<<= 1)
+{
+    symbol_class_global = 1,
+    symbol_class_local,
+    symbol_class_static
+}
+
+native bool:debug_loaded();
+native AmxDebug:debug_get_ptr();
 native debug_code(level=0);
 native debug_line(code=cellmin);
 native String:debug_file_s(code=cellmin);
-native String:debug_funcname_s(code=cellmin);
-native String:debug_varname_s(&AnyTag:var);
+native Symbol:debug_symbol(const name[], code=cellmin, symbol_kind:kind=symbol_kind:-1, symbol_class:class=symbol_class:-1);
+native Symbol:debug_func(code=cellmin);
+native Symbol:debug_var(&AnyTag:var);
+native Symbol:debug_var_arr(AnyTag:var[]) = debug_var;
+native symbol_kind:debug_symbol_kind(Symbol:symbol);
+native symbol_class:debug_symbol_class(Symbol:symbol);
+native debug_symbol_tag(Symbol:symbol);
+native Symbol:debug_symbol_func(Symbol:symbol);
+native String:debug_symbol_name_s(Symbol:symbol);
+native debug_symbol_range(Symbol:symbol, &codestart, &codeend);
+native debug_symbol_line(Symbol:symbol);
+native String:debug_symbol_file_s(Symbol:symbol);
 
 
 /*                 */
