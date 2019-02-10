@@ -130,6 +130,12 @@
     <ClCompile Include="src\natives\math.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="lib\sdk\amx\amxdbg.c">
+      <Filter>lib\sdk\amx</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\debug.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -161,6 +167,9 @@
     </Filter>
     <Filter Include="src\api">
       <UniqueIdentifier>{09a52f36-5d7a-4593-bd1d-8eca51d13c27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\sdk\amx">
+      <UniqueIdentifier>{80240169-b172-4ef7-b38b-3491b1243c69}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -274,6 +283,30 @@
     </ClInclude>
     <ClInclude Include="src\api\ppcommon.h">
       <Filter>src\api</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sdk\plugin.h">
+      <Filter>lib\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sdk\plugincommon.h">
+      <Filter>lib\sdk</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sdk\amx\amx.h">
+      <Filter>lib\sdk\amx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sdk\amx\amxdbg.h">
+      <Filter>lib\sdk\amx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sdk\amx\getch.h">
+      <Filter>lib\sdk\amx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sdk\amx\sclinux.h">
+      <Filter>lib\sdk\amx</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\sdk\amx\osdefs.h">
+      <Filter>lib\sdk\amx</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\debug.h">
+      <Filter>src\modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -9,11 +9,16 @@ struct natives_extra : public amx::extra
 
 	}
 
+	natives_extra(AMX *amx, const std::unordered_map<std::string, AMX_NATIVE> &natives) : extra(amx), natives(natives)
+	{
+
+	}
+
 	std::unordered_map<std::string, AMX_NATIVE> natives;
 
 	virtual std::unique_ptr<extra> clone() override
 	{
-		return std::unique_ptr<extra>(new natives_extra(*this));
+		return std::unique_ptr<extra>(new natives_extra(_amx, natives));
 	}
 };
 

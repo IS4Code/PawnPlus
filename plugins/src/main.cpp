@@ -10,6 +10,7 @@
 #include "modules/variants.h"
 #include "modules/containers.h"
 #include "modules/tags.h"
+#include "modules/debug.h"
 
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
@@ -28,6 +29,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData) noexcept
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
 
 	Hooks::Register();
+	debug::init();
 
 	amx::on_bottom(
 		[](AMX *amx){

@@ -131,6 +131,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="lib\sdk\amxplugin.cpp" />
+    <ClCompile Include="lib\sdk\amx\amxdbg.c" />
     <ClCompile Include="lib\subhook\subhook.c" />
     <ClCompile Include="src\amxinfo.cpp" />
     <ClCompile Include="src\api\ppcommon.cpp" />
@@ -142,6 +143,7 @@
     <ClCompile Include="src\modules\amxutils.cpp" />
     <ClCompile Include="src\modules\capi.cpp" />
     <ClCompile Include="src\modules\containers.cpp" />
+    <ClCompile Include="src\modules\debug.cpp" />
     <ClCompile Include="src\modules\events.cpp" />
     <ClCompile Include="src\modules\guards.cpp" />
     <ClCompile Include="src\modules\strings.cpp" />
@@ -172,6 +174,13 @@
     <ClCompile Include="src\utils\thread.cpp" />
     <ClCompile Include="src\utils\thread_posix.cpp" />
     <ClCompile Include="src\utils\thread_win.cpp" />
+    <ClInclude Include="lib\sdk\amx\amx.h" />
+    <ClInclude Include="lib\sdk\amx\amxdbg.h" />
+    <ClInclude Include="lib\sdk\amx\getch.h" />
+    <ClInclude Include="lib\sdk\amx\osdefs.h" />
+    <ClInclude Include="lib\sdk\amx\sclinux.h" />
+    <ClInclude Include="lib\sdk\plugin.h" />
+    <ClInclude Include="lib\sdk\plugincommon.h" />
     <ClInclude Include="lib\subhook\subhook_linux.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExcludedFromBuild>
@@ -203,6 +212,7 @@
     <ClInclude Include="src\modules\amxutils.h" />
     <ClInclude Include="src\modules\capi.h" />
     <ClInclude Include="src\modules\containers.h" />
+    <ClInclude Include="src\modules\debug.h" />
     <ClInclude Include="src\modules\events.h" />
     <ClInclude Include="src\modules\guards.h" />
     <ClInclude Include="src\modules\strings.h" />

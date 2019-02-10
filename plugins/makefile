@@ -18,6 +18,7 @@ static: LINK = $(GPP)
 static: all
 
 PawnPlus: clean
+	$(GCC) $(PawnPlus) ./lib/sdk/amx/*.c
 	$(GPP) $(PawnPlus) ./lib/sdk/*.cpp
 	$(GCC) $(PawnPlus) ./lib/subhook/*.c
 	$(GPP) $(PawnPlus) ./src/api/*.cpp

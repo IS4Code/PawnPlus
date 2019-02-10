@@ -5,6 +5,7 @@
 #include "modules/strings.h"
 #include "modules/events.h"
 #include "modules/capi.h"
+#include "modules/debug.h"
 
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
@@ -109,6 +110,11 @@ namespace Hooks
 		if(ret != AMX_ERR_NONE)
 		{
 			amx::unload(amx);
+		}
+		auto dbg = debug::create_last();
+		if(dbg)
+		{
+			amx::load_lock(amx)->get_extra<debug::info>().dbg = dbg;
 		}
 		return ret;
 	}

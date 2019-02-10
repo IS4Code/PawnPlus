@@ -22,6 +22,8 @@ namespace amx
 			
 		}
 
+		extra(const extra&) = delete;
+
 		virtual std::unique_ptr<extra> clone()
 		{
 			return nullptr;
