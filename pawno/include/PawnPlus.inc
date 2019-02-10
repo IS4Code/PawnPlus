@@ -1183,9 +1183,11 @@ stock unsigned:operator=(a) return unsigned:a;
 /*      Debug      */
 /*                 */
 
-native debug_get_line(level=0);
-native String:debug_get_file_s(level=0);
-native String:debug_get_function_s(level=0);
+native debug_code(level=0);
+native debug_line(code=cellmin);
+native String:debug_file_s(code=cellmin);
+native String:debug_funcname_s(code=cellmin);
+native String:debug_varname_s(&AnyTag:var);
 
 
 /*                 */
