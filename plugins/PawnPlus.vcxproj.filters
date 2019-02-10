@@ -136,6 +136,9 @@
     <ClCompile Include="src\modules\debug.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives\ndebug.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

@@ -8,7 +8,6 @@
 #include "modules/strings.h"
 #include "modules/variants.h"
 #include "modules/guards.h"
-#include "modules/debug.h"
 #include "objects/dyn_object.h"
 #include <memory>
 #include <cstring>
@@ -540,22 +539,6 @@ namespace Natives
 
 		return list_pool.get_id(ptr);
 	}
-
-	// native pawn_get_line();
-	AMX_DEFINE_NATIVE(pawn_get_line, 0)
-	{
-		auto obj = amx::load_lock(amx);
-		if(obj->has_extra<debug::info>())
-		{
-			auto dbg = obj->get_extra<debug::info>().dbg;
-			long line;
-			if(dbg_LookupLine(dbg, amx->cip, &line) == AMX_ERR_NONE)
-			{
-				return line;
-			}
-		}
-		return -1;
-	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -574,7 +557,6 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_guard_valid),
 	AMX_DECLARE_NATIVE(pawn_guard_free),
 	AMX_DECLARE_NATIVE(pawn_get_args),
-	AMX_DECLARE_NATIVE(pawn_get_line),
 };
 
 int RegisterPawnNatives(AMX *amx)

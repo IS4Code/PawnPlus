@@ -1180,6 +1180,15 @@ stock unsigned:operator=(a) return unsigned:a;
 
 
 /*                 */
+/*      Debug      */
+/*                 */
+
+native debug_get_line(level=0);
+native String:debug_get_file_s(level=0);
+native String:debug_get_function_s(level=0);
+
+
+/*                 */
 /*  Operators etc. */
 /*                 */
 

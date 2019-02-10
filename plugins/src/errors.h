@@ -40,6 +40,7 @@ namespace errors
 	extern error func_not_found;
 	extern error arg_empty;
 	extern error inner_error;
+	extern error no_debug_error;
 }
 
 namespace amx

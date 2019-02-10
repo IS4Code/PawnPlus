@@ -160,6 +160,7 @@
     <ClCompile Include="src\natives\map.cpp" />
     <ClCompile Include="src\natives\math.cpp" />
     <ClCompile Include="src\natives\namx.cpp" />
+    <ClCompile Include="src\natives\ndebug.cpp" />
     <ClCompile Include="src\natives\nthread.cpp" />
     <ClCompile Include="src\natives\pp.cpp" />
     <ClCompile Include="src\natives\pawn.cpp" />
