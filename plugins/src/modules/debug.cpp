@@ -9,60 +9,56 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <io.h>
-//#include <aclapi.h>
 #else
 #include <stdio.h>
+#include <cstring>
 #endif
 #include <fcntl.h>
 
-#include <thread>
-
-static std::thread::id main_thread;
-
+#ifdef _WIN32
 static subhook_t CreateFileA_Hook;
 static decltype(&CreateFileA) CreateFileA_Trampoline;
-static HANDLE LastFile = nullptr;
+
+static thread_local HANDLE _last_file = nullptr;
 
 static HANDLE WINAPI HookCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 {
-	//if(std::this_thread::get_id() == main_thread)
+	auto &last_file = _last_file;
+	if(last_file)
 	{
-		if(LastFile)
-		{
-			CloseHandle(LastFile);
-			LastFile = nullptr;
-		}
-		HANDLE hfile = CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-		if(hfile && (dwDesiredAccess & GENERIC_READ))
-		{
-			DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &LastFile, 0, TRUE, DUPLICATE_SAME_ACCESS);
-		}
-		return hfile;
+		CloseHandle(last_file);
+		last_file = nullptr;
 	}
-	return CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+	HANDLE hfile = CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+	if(hfile && (dwDesiredAccess & GENERIC_READ))
+	{
+		DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &last_file, 0, TRUE, DUPLICATE_SAME_ACCESS);
+	}
+	return hfile;
 }
 
 AMX_DBG *debug::create_last()
 {
-	if(!LastFile)
+	auto &last_file = _last_file;
+	if(!last_file)
 	{
 		return nullptr;
 	}
-	int fd = _open_osfhandle(reinterpret_cast<intptr_t>(LastFile), _O_RDONLY);
+	int fd = _open_osfhandle(reinterpret_cast<intptr_t>(last_file), _O_RDONLY);
 	if(fd == -1)
 	{
-		CloseHandle(LastFile);
-		LastFile = nullptr;
+		CloseHandle(last_file);
+		last_file = nullptr;
 		return nullptr;
 	}
 	auto f = _fdopen(fd, "rb");
 	if(!f)
 	{
 		_close(fd);
-		LastFile = nullptr;
+		last_file = nullptr;
 		return nullptr;
 	}
-	LastFile = nullptr;
+	last_file = nullptr;
 
 	auto dbg = new AMX_DBG();
 	if(dbg_LoadInfo(dbg, f) != AMX_ERR_NONE)
@@ -78,8 +74,68 @@ AMX_DBG *debug::create_last()
 
 void debug::init()
 {
-	main_thread = std::this_thread::get_id();
 	CreateFileA_Hook = subhook_new(reinterpret_cast<void*>(CreateFileA), reinterpret_cast<void*>(HookCreateFileA), {});
 	CreateFileA_Trampoline = reinterpret_cast<decltype(&CreateFileA)>(subhook_get_trampoline(CreateFileA_Hook));
 	subhook_install(CreateFileA_Hook);
 }
+#else
+static subhook_t fopen_hook;
+static decltype(&fopen) fopen_trampoline;
+
+static thread_local int _last_file = -1;
+
+static FILE *hook_fopen(const char *pathname, const char *mode)
+{
+	auto &last_file = _last_file;
+	if(last_file != -1)
+	{
+		close(last_file);
+		last_file = -1;
+	}
+	auto file = fopen_trampoline(pathname, mode);
+	if(file && !std::strcmp(mode, "rb"))
+	{
+		int fd = fileno(file);
+		if(fd != -1)
+		{
+			last_file = dup(fd);
+		}
+	}
+	return file;
+}
+
+AMX_DBG *debug::create_last()
+{
+	auto &last_file = _last_file;
+	if(last_file == -1)
+	{
+		return nullptr;
+	}
+	auto f = fdopen(last_file, "rb");
+	if(!f)
+	{
+		close(last_file);
+		last_file = -1;
+		return nullptr;
+	}
+	last_file = -1;
+
+	auto dbg = new AMX_DBG();
+	if(dbg_LoadInfo(dbg, f) != AMX_ERR_NONE)
+	{
+		delete dbg;
+		fclose(f);
+		return nullptr;
+	}
+	fclose(f);
+
+	return dbg;
+}
+
+void debug::init()
+{
+	fopen_hook = subhook_new(reinterpret_cast<void*>(fopen), reinterpret_cast<void*>(hook_fopen), {});
+	fopen_trampoline = reinterpret_cast<decltype(&fopen)>(subhook_get_trampoline(fopen_hook));
+	subhook_install(fopen_hook);
+}
+#endif
