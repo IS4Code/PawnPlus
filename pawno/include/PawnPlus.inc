@@ -104,7 +104,7 @@ enum error_level
 };
 
 /*                 */
-/*      Debug      */
+/*     Plugin      */
 /*                 */
 
 native pp_num_tasks();
@@ -173,26 +173,26 @@ stock _pp_fake_cast(val)
 /*      Tags       */
 /*                 */
 
-#define tag_uid_unknown (tag_uid:0)
-#define tag_uid_cell (tag_uid:1)
-#define tag_uid_bool (tag_uid:2)
-#define tag_uid_char (tag_uid:3)
-#define tag_uid_float (tag_uid:4)
-#define tag_uid_string (tag_uid:5)
-#define tag_uid_variant (tag_uid:6)
-#define tag_uid_list (tag_uid:7)
-#define tag_uid_map (tag_uid:8)
-#define tag_uid_iter (tag_uid:9)
-#define tag_uid_ref (tag_uid:10)
-#define tag_uid_task (tag_uid:11)
-#define tag_uid_var (tag_uid:12)
-#define tag_uid_linked_list (tag_uid:13)
-#define tag_uid_guard (tag_uid:14)
-#define tag_uid_callback_handler (tag_uid:15)
-#define tag_uid_native_hook (tag_uid:16)
+const tag_uid:tag_uid_unknown = tag_uid:0;
+const tag_uid:tag_uid_cell = tag_uid:1;
+const tag_uid:tag_uid_bool = tag_uid:2;
+const tag_uid:tag_uid_char = tag_uid:3;
+const tag_uid:tag_uid_float = tag_uid:4;
+const tag_uid:tag_uid_string = tag_uid:5;
+const tag_uid:tag_uid_variant = tag_uid:6;
+const tag_uid:tag_uid_list = tag_uid:7;
+const tag_uid:tag_uid_map = tag_uid:8;
+const tag_uid:tag_uid_iter = tag_uid:9;
+const tag_uid:tag_uid_ref = tag_uid:10;
+const tag_uid:tag_uid_task = tag_uid:11;
+const tag_uid:tag_uid_var = tag_uid:12;
+const tag_uid:tag_uid_linked_list = tag_uid:13;
+const tag_uid:tag_uid_guard = tag_uid:14;
+const tag_uid:tag_uid_callback_handler = tag_uid:15;
+const tag_uid:tag_uid_native_hook = tag_uid:16;
 
-#define TAG_EXPORTED (0x80000000)
-#define TAG_STRONG (0x40000000)
+const TAG_EXPORTED = 0x80000000;
+const TAG_STRONG = 0x40000000;
 
 native tag_uid:tag_uid(tag_id);
 native tag_id(tag_uid:tag_uid);
@@ -344,8 +344,8 @@ stock operator~(PP@ap:arr[], count)
 /*     Strings     */
 /*                 */
 
-#define STRING_NULL (String:0)
-#define INVALID_CHAR (0xFFFFFF00)
+const String:STRING_NULL = String:0;
+const INVALID_CHAR = 0xFFFFFF00;
 
 enum str_create_mode
 {
@@ -414,7 +414,7 @@ native String:str_set_format_s(StringTag:target, ConstStringTag:format, {StringT
 /*     Variant     */
 /*                 */
 
-#define VAR_NULL (Variant:0)
+const Variant:VAR_NULL = Variant:0;
 
 native Variant:var_new(AnyTag:value, TagTag:tag_id=tagof(value));
 native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
@@ -962,7 +962,7 @@ native iter_sizeof_value(IterTag:iter) = iter_sizeof;
 /*     Handles     */
 /*                 */
 
-#define HANDLE_NULL (Handle:0)
+const Handle:HANDLE_NULL = Handle:0;
 
 native Handle:handle_new(AnyTag:value, TagTag:tag_id=tagof(value));
 native Handle:handle_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
@@ -1062,9 +1062,9 @@ native task_config(task_restore:heap=task_restore_full, task_restore:stack=task_
 native task_continue_with(Task:task, const handler[], const additional_format[]="", AnyTag:...);
 native Task:task_continue_with_bound(Task:task, Task:bound, const handler[], const additional_format[]="", AnyTag:...);
 
-#define task_state_default (task_state:0)
-#define task_state_completed (task_state:1)
-#define task_state_faulted (task_state:2)
+const task_state:task_state_default = task_state:0;
+const task_state:task_state_completed = task_state:1;
+const task_state:task_state_faulted = task_state:2;
 
 #if defined PP_SYNTAX_AWAIT
 #define await%9\32;%0; task_await(%0);
@@ -1187,7 +1187,7 @@ stock unsigned:operator=(a) return unsigned:a;
 /*      Debug      */
 /*                 */
 
-#define INVALID_DEBUG_ID (Symbol:cellmin)
+const Symbol:INVALID_SYMBOL_ID = Symbol:cellmin;
 
 enum symbol_kind (<<= 1)
 {
