@@ -84,6 +84,8 @@ stock _PP@TMP1, _PP@TMP2, _PP@TMP3;
 #define _PP@EXPAND:(%0,%1)_PP@END) (%0)),%1
 #define _PP@CAST_ARR[%0](%1) ((_PP@TRUE?(%0:0):(%0:_PP@TMP3=(%1)[0])),%0:_PP@EXPAND:(%1)_PP@END)
 
+#define _PP@REMOVE_COLON:(%0:) (%0)
+
 
 /*                 */
 /*  Configuration  */
@@ -155,7 +157,7 @@ native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=ta
 native bool:pawn_guard_valid(Guard:guard);
 native bool:pawn_guard_free(Guard:guard);
 native List:pawn_get_args(const format[], bool:byref=false, level=0);
-#define pawn_nameof(%0) ((tagof(%0)),(#%0))
+#define pawn_nameof(%0) ((tagof(%0)),_:_PP@REMOVE_COLON:(#%0))
 
 #if defined PP_SYNTAX_GENERIC
 
