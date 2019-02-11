@@ -155,7 +155,7 @@ namespace Natives
 		for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
 		{
 			auto sym = dbg->symboltbl[i];
-			if(sym->codestart <= cip && sym->codeend > cip && ((1 << (sym->ident - 1)) & kind) && ((1 << (sym->vclass - 1)) & cls) && !std::strcmp(sym->name, name))
+			if(sym->codestart <= cip && sym->codeend > cip && ((1 << (sym->ident - 1)) & kind) && ((1 << sym->vclass) & cls) && !std::strcmp(sym->name, name))
 			{
 				if(minindex == std::numeric_limits<cell>::min() || sym->codeend - sym->codestart < mindist)
 				{
@@ -321,7 +321,7 @@ namespace Natives
 			return 0;
 		}
 		auto sym = dbg->symboltbl[index];
-		return 1 << (sym->vclass - 1);
+		return 1 << sym->vclass;
 	}
 
 	// native debug_symbol_tag(Symbol:symbol);
@@ -386,6 +386,11 @@ namespace Natives
 		auto insym = dbg->symboltbl[index];
 
 		cell minindex = std::numeric_limits<cell>::min();
+		if(insym->vclass == 0)
+		{
+			return minindex;
+		}
+
 		ucell mindist;
 		for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
 		{
