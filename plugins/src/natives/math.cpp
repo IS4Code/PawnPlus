@@ -8,6 +8,7 @@
 #include "modules/variants.h"
 #include "modules/guards.h"
 #include "modules/containers.h"
+#include <limits>
 
 namespace Natives
 {
@@ -79,6 +80,42 @@ namespace Natives
 		return params[1] % params[2];
 	}
 
+	// native math_iinc({_,signed}:a);
+	AMX_DEFINE_NATIVE(math_iinc, 1)
+	{
+		return params[1] + 1;
+	}
+
+	// native math_iinc_ovf({_,signed}:a);
+	AMX_DEFINE_NATIVE(math_iinc_ovf, 1)
+	{
+		cell a = params[1];
+		if(a == std::numeric_limits<cell>::max())
+		{
+			amx_RaiseError(amx, AMX_ERR_DOMAIN);
+			return 0;
+		}
+		return a + 1;
+	}
+
+	// native math_idec({_,signed}:a);
+	AMX_DEFINE_NATIVE(math_idec, 1)
+	{
+		return params[1] - 1;
+	}
+
+	// native math_idec_ovf({_,signed}:a);
+	AMX_DEFINE_NATIVE(math_idec_ovf, 1)
+	{
+		cell a = params[1];
+		if(a == std::numeric_limits<cell>::min())
+		{
+			amx_RaiseError(amx, AMX_ERR_DOMAIN);
+			return 0;
+		}
+		return a - 1;
+	}
+
 	// native math_uadd({_,unsigned}:a, {_,unsigned}:b);
 	AMX_DEFINE_NATIVE(math_uadd, 2)
 	{
@@ -147,6 +184,42 @@ namespace Natives
 		return (ucell)params[1] % (ucell)params[2];
 	}
 
+	// native math_uinc({_,unsigned}:a);
+	AMX_DEFINE_NATIVE(math_uinc, 1)
+	{
+		return (ucell)params[1] + 1;
+	}
+
+	// native math_uinc_ovf({_,unsigned}:a);
+	AMX_DEFINE_NATIVE(math_uinc_ovf, 1)
+	{
+		ucell a = params[1];
+		if(a == std::numeric_limits<ucell>::max())
+		{
+			amx_RaiseError(amx, AMX_ERR_DOMAIN);
+			return 0;
+		}
+		return a + 1;
+	}
+
+	// native math_udec({_,unsigned}:a);
+	AMX_DEFINE_NATIVE(math_udec, 1)
+	{
+		return (ucell)params[1] - 1;
+	}
+
+	// native math_udec_ovf({_,unsigned}:a);
+	AMX_DEFINE_NATIVE(math_udec_ovf, 1)
+	{
+		ucell a = params[1];
+		if(a == std::numeric_limits<ucell>::min())
+		{
+			amx_RaiseError(amx, AMX_ERR_DOMAIN);
+			return 0;
+		}
+		return a - 1;
+	}
+
 	// native bool:math_ilt({_,signed}:a, {_,signed}:b);
 	AMX_DEFINE_NATIVE(math_ilt, 2)
 	{
@@ -206,6 +279,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(math_imul_ovf),
 	AMX_DECLARE_NATIVE(math_idiv),
 	AMX_DECLARE_NATIVE(math_imod),
+	AMX_DECLARE_NATIVE(math_iinc),
+	AMX_DECLARE_NATIVE(math_iinc_ovf),
+	AMX_DECLARE_NATIVE(math_idec),
+	AMX_DECLARE_NATIVE(math_idec_ovf),
 	AMX_DECLARE_NATIVE(math_uadd),
 	AMX_DECLARE_NATIVE(math_uadd_ovf),
 	AMX_DECLARE_NATIVE(math_usub),
@@ -214,6 +291,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(math_umul_ovf),
 	AMX_DECLARE_NATIVE(math_udiv),
 	AMX_DECLARE_NATIVE(math_umod),
+	AMX_DECLARE_NATIVE(math_uinc),
+	AMX_DECLARE_NATIVE(math_uinc_ovf),
+	AMX_DECLARE_NATIVE(math_udec),
+	AMX_DECLARE_NATIVE(math_udec_ovf),
 
 	AMX_DECLARE_NATIVE(math_ilt),
 	AMX_DECLARE_NATIVE(math_ilte),
