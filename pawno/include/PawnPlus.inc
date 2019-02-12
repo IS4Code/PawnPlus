@@ -1221,9 +1221,15 @@ native symbol_class:debug_symbol_class(Symbol:symbol);
 native debug_symbol_tag(Symbol:symbol);
 native Symbol:debug_symbol_func(Symbol:symbol);
 native String:debug_symbol_name_s(Symbol:symbol);
+native debug_symbol_addr(Symbol:symbol);
 native debug_symbol_range(Symbol:symbol, &codestart, &codeend);
 native debug_symbol_line(Symbol:symbol);
 native String:debug_symbol_file_s(Symbol:symbol);
+native bool:debug_symbol_in_scope(Symbol:symbol, level=0);
+native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0);
+native debug_symbol_get(Symbol:symbol, level=0);
+native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, tag_id=tagof(value));
+native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, tag_id=tagof(value));
 
 
 /*                 */

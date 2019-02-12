@@ -428,6 +428,27 @@ namespace Natives
 		return strings::create(sym->name);
 	}
 
+	// native debug_symbol_addr(Symbol:symbol);
+	AMX_DEFINE_NATIVE(debug_symbol_addr, 1)
+	{
+		auto obj = amx::load_lock(amx);
+		if(!obj->has_extra<debug::info>())
+		{
+			amx_LogicError(errors::no_debug_error);
+			return 0;
+		}
+		auto dbg = obj->get_extra<debug::info>().dbg;
+
+		cell index = params[1];
+		if(index < 0 || index > dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		return sym->address;
+	}
+
 	// native debug_symbol_range(Symbol:symbol, &codestart, &codeend);
 	AMX_DEFINE_NATIVE(debug_symbol_range, 3)
 	{
@@ -514,6 +535,164 @@ namespace Natives
 		}
 		return 0;
 	}
+
+	// native bool:debug_symbol_in_scope(Symbol:symbol, level=0);
+	AMX_DEFINE_NATIVE(debug_symbol_in_scope, 1)
+	{
+		auto obj = amx::load_lock(amx);
+		if(!obj->has_extra<debug::info>())
+		{
+			amx_LogicError(errors::no_debug_error);
+			return 0;
+		}
+		auto dbg = obj->get_extra<debug::info>().dbg;
+
+		cell index = params[1];
+		if(index < 0 || index > dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+
+		cell level = optparam(2, 0);
+		ucell cip;
+		if(level < 0 || (cip = get_level(amx, level)) == -1)
+		{
+			amx_LogicError(errors::out_of_range, "level");
+			return 0;
+		}
+
+		return sym->codestart <= cip && cip < sym->codeend;
+	}
+
+	cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG *&dbg, AMX_DBG_SYMBOL *&sym)
+	{
+		auto obj = amx::load_lock(amx);
+		if(!obj->has_extra<debug::info>())
+		{
+			amx_LogicError(errors::no_debug_error);
+			return 0;
+		}
+		dbg = obj->get_extra<debug::info>().dbg;
+
+		if(index < 0 || index > dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		sym = dbg->symboltbl[index];
+
+		ucell cip;
+		if(level < 0 || (cip = get_level(amx, level)) == -1)
+		{
+			amx_LogicError(errors::out_of_range, "level");
+			return 0;
+		}
+
+		if(sym->ident == iFUNCTN || sym->codestart > cip || cip >= sym->codeend)
+		{
+			amx_LogicError(errors::operation_not_supported, "symbol");
+			return 0;
+		}
+
+		auto hdr = (AMX_HEADER *)amx->base;
+		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		cell *ptr;
+		if(sym->vclass == 0 || sym->vclass == 2)
+		{
+			ptr = reinterpret_cast<cell*>(data + sym->address);
+		}else{
+			cell frm = amx->frm;
+			for(cell i = 1; i < level; i++)
+			{
+				frm = *reinterpret_cast<cell*>(data + frm);
+			}
+			ptr = reinterpret_cast<cell*>(data + frm + sym->address);
+		}
+
+		if(sym->ident == iREFERENCE || sym->ident == iREFARRAY)
+		{
+			ptr = reinterpret_cast<cell*>(data + *ptr);
+		}
+		return ptr;
+	}
+
+	cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG_SYMBOL *&sym)
+	{
+		AMX_DBG *dbg;
+		return find_symbol_addr(amx, index, level, dbg, sym);
+	}
+
+	// native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0);
+	AMX_DEFINE_NATIVE(debug_symbol_set, 2)
+	{
+		AMX_DBG_SYMBOL *sym;
+		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), sym);
+		*ptr = params[2];
+		return 1;
+	}
+
+	// native debug_symbol_get(Symbol:symbol, level=0);
+	AMX_DEFINE_NATIVE(debug_symbol_get, 2)
+	{
+		AMX_DBG_SYMBOL *sym;
+		cell *ptr = find_symbol_addr(amx, params[1], optparam(2, 0), sym);
+		return *ptr;
+	}
+
+	// native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(debug_symbol_set_safe, 4)
+	{
+		AMX_DBG *dbg;
+		AMX_DBG_SYMBOL *sym;
+		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), dbg, sym);
+		cell tag = sym->tag;
+		const char *tagname;
+		if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+		{
+			if(*tagname >= 'A' && *tagname <= 'Z')
+			{
+				tag |= 0x40000000;
+			}
+		}
+
+		auto srctag = tags::find_tag(amx, params[4]);
+		if((tag == 0 && !srctag->strong()) || (srctag->inherits_from(tags::find_tag(amx, tag))))
+		{
+			*ptr = params[2];
+			return 1;
+		}
+		return 0;
+	}
+
+	// native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(debug_symbol_get_safe, 4)
+	{
+		AMX_DBG *dbg;
+		AMX_DBG_SYMBOL *sym;
+		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), dbg, sym);
+		cell tag = sym->tag;
+		const char *tagname;
+		if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+		{
+			if(*tagname >= 'A' && *tagname <= 'Z')
+			{
+				tag |= 0x40000000;
+			}
+		}
+
+		auto srctag = tags::find_tag(amx, tag);
+		tag = params[4];
+		if((tag == 0 && !srctag->strong()) || (srctag->inherits_from(tags::find_tag(amx, tag))))
+		{
+			cell *addr;
+			amx_GetAddr(amx, params[2], &addr);
+			*addr = *ptr;
+			return 1;
+		}
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -531,9 +710,15 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_symbol_tag),
 	AMX_DECLARE_NATIVE(debug_symbol_func),
 	AMX_DECLARE_NATIVE(debug_symbol_name_s),
+	AMX_DECLARE_NATIVE(debug_symbol_addr),
 	AMX_DECLARE_NATIVE(debug_symbol_range),
 	AMX_DECLARE_NATIVE(debug_symbol_line),
 	AMX_DECLARE_NATIVE(debug_symbol_file_s),
+	AMX_DECLARE_NATIVE(debug_symbol_in_scope),
+	AMX_DECLARE_NATIVE(debug_symbol_set),
+	AMX_DECLARE_NATIVE(debug_symbol_get),
+	AMX_DECLARE_NATIVE(debug_symbol_set_safe),
+	AMX_DECLARE_NATIVE(debug_symbol_get_safe),
 };
 
 int RegisterDebugNatives(AMX *amx)
