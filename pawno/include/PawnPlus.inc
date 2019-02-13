@@ -1242,6 +1242,7 @@ native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0);
 native debug_symbol_get(Symbol:symbol, level=0);
 native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, tag_id=tagof(value));
 native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, tag_id=tagof(value));
+native debug_symbol_call(Symbol:symbol, AnyTag:...);
 
 
 /*                 */

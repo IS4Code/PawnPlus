@@ -8,6 +8,7 @@
 #include "modules/events.h"
 #include "modules/tasks.h"
 #include "modules/amxutils.h"
+#include "modules/debug.h"
 #include "fixes/linux.h"
 
 #include <cstring>
@@ -497,6 +498,48 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					}
 					amx->pri = 0;
 					continue;
+				}
+				break;
+				case SleepReturnDebugCall:
+				{
+					cell index = SleepReturnValueMask & amx->pri;
+					auto dbg = amx::load_lock(amx)->get_extra<debug::info>().dbg;
+					if(dbg)
+					{
+						auto hdr = (AMX_HEADER *)amx->base;
+						auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+						auto stk = reinterpret_cast<cell*>(data + amx->stk);
+						cell num = *stk - sizeof(cell);
+						amx->stk -= num + 2 * sizeof(cell);
+						for(cell i = 0; i < num; i += sizeof(cell))
+						{
+							cell val = *reinterpret_cast<cell*>(reinterpret_cast<unsigned char*>(stk) + num + sizeof(cell));
+							*--stk = val;
+						}
+						*--stk = num;
+
+						auto sym = dbg->symboltbl[index];
+						for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
+						{
+							auto vsym = dbg->symboltbl[i];
+							if(vsym->ident == iVARIABLE && vsym->vclass == 1 && vsym->codestart >= sym->codestart && vsym->codeend <= sym->codeend)
+							{
+								cell addr = vsym->address - 2 * sizeof(cell);
+								if(addr > 0)
+								{
+									auto arg = reinterpret_cast<cell*>(reinterpret_cast<unsigned char*>(stk) + addr);
+									cell val = *arg;
+									*arg = *reinterpret_cast<cell*>(data + val);
+								}
+							}
+						}
+
+						*--stk = amx->cip;
+						amx->cip = sym->address;
+						amx->error = ret = AMX_ERR_NONE;
+						amx->pri = 0;
+						continue;
+					}
 				}
 				break;
 			}

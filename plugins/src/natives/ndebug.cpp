@@ -155,7 +155,7 @@ namespace Natives
 		for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
 		{
 			auto sym = dbg->symboltbl[i];
-			if(sym->codestart <= cip && sym->codeend > cip && ((1 << (sym->ident - 1)) & kind) && ((1 << sym->vclass) & cls) && !std::strcmp(sym->name, name))
+			if((sym->ident == iFUNCTN || (sym->codestart <= cip && sym->codeend > cip)) && ((1 << (sym->ident - 1)) & kind) && ((1 << sym->vclass) & cls) && !std::strcmp(sym->name, name))
 			{
 				if(minindex == std::numeric_limits<cell>::min() || sym->codeend - sym->codestart < mindist)
 				{
@@ -590,7 +590,7 @@ namespace Natives
 			return 0;
 		}
 
-		if(sym->ident == iFUNCTN || sym->codestart > cip || cip >= sym->codeend)
+		if(sym->ident == iFUNCTN || (sym->vclass == 1 && (sym->codestart > cip || cip >= sym->codeend)))
 		{
 			amx_LogicError(errors::operation_not_supported, "symbol");
 			return 0;
@@ -693,6 +693,59 @@ namespace Natives
 		}
 		return 0;
 	}
+
+	// native debug_symbol_call(Symbol:symbol, AnyTag:...);
+	AMX_DEFINE_NATIVE(debug_symbol_call, 2)
+	{
+		auto obj = amx::load_lock(amx);
+		if(!obj->has_extra<debug::info>())
+		{
+			amx_LogicError(errors::no_debug_error);
+			return 0;
+		}
+		auto dbg = obj->get_extra<debug::info>().dbg;
+
+		cell index = params[1];
+		if(index < 0 || index > dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		if(sym->ident != iFUNCTN)
+		{
+			amx_LogicError(errors::operation_not_supported, "symbol");
+			return 0;
+		}
+
+		cell argslen = params[0] - sizeof(cell);
+		cell argsneeded = 0;
+		bool error = false;
+		for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
+		{
+			auto vsym = dbg->symboltbl[i];
+			if(vsym->ident != iFUNCTN && vsym->vclass == 1 && vsym->codestart >= sym->codestart && vsym->codeend <= sym->codeend)
+			{
+				cell addr = vsym->address - 2 * sizeof(cell);
+				if(addr > argslen)
+				{
+					error = true;
+					if(addr > argsneeded)
+					{
+						argsneeded = addr;
+					}
+				}
+			}
+		}
+		if(error)
+		{
+			amx_FormalError(errors::not_enough_args, argsneeded / sizeof(cell), argslen / sizeof(cell));
+			return 0;
+		}
+
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return SleepReturnDebugCall | index;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -719,6 +772,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_symbol_get),
 	AMX_DECLARE_NATIVE(debug_symbol_set_safe),
 	AMX_DECLARE_NATIVE(debug_symbol_get_safe),
+	AMX_DECLARE_NATIVE(debug_symbol_call),
 };
 
 int RegisterDebugNatives(AMX *amx)

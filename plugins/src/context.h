@@ -31,6 +31,8 @@ constexpr cell SleepReturnFreeVar = 0xD2000000;
 constexpr cell SleepReturnParallel = 0xE0000000;
 constexpr cell SleepReturnParallelEnd = 0xE1000000;
 
+constexpr cell SleepReturnDebugCall = 0xF0000000;
+
 namespace amx
 {
 	extern const int &context_level;
