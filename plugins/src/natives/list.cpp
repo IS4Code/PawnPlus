@@ -165,6 +165,20 @@ namespace Natives
 		return list_pool.get_id(ptr);
 	}
 
+	// native List:list_new_args_packed(ArgTag:...);
+	AMX_DEFINE_NATIVE(list_new_args_packed, 0)
+	{
+		auto ptr = list_pool.add();
+		cell numargs = params[0] / sizeof(cell);
+		for(cell arg = 0; arg < numargs; arg++)
+		{
+			cell *addr;
+			amx_GetAddr(amx, params[1 + arg], &addr);
+			ptr->push_back(dyn_object(amx, addr[0], addr[1]));
+		}
+		return list_pool.get_id(ptr);
+	}
+
 	// native bool:list_valid(List:list);
 	AMX_DEFINE_NATIVE(list_valid, 1)
 	{
@@ -327,6 +341,21 @@ namespace Natives
 		return numargs;
 	}
 
+	// native list_add_args_packed(List:list, ArgTag:...);
+	AMX_DEFINE_NATIVE(list_add_args_packed, 1)
+	{
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		cell numargs = params[0] / sizeof(cell) - 1;
+		for(cell arg = 0; arg < numargs; arg++)
+		{
+			cell *addr;
+			amx_GetAddr(amx, params[2 + arg], &addr);
+			ptr->push_back(dyn_object(amx, addr[0], addr[1]));
+		}
+		return numargs;
+	}
+
 	// native bool:list_remove(List:list, index);
 	AMX_DEFINE_NATIVE(list_remove, 2)
 	{
@@ -458,6 +487,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_new_args),
 	AMX_DECLARE_NATIVE(list_new_args_str),
 	AMX_DECLARE_NATIVE(list_new_args_var),
+	AMX_DECLARE_NATIVE(list_new_args_packed),
 	AMX_DECLARE_NATIVE(list_valid),
 	AMX_DECLARE_NATIVE(list_delete),
 	AMX_DECLARE_NATIVE(list_delete_deep),
@@ -472,6 +502,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_add_args),
 	AMX_DECLARE_NATIVE(list_add_args_str),
 	AMX_DECLARE_NATIVE(list_add_args_var),
+	AMX_DECLARE_NATIVE(list_add_args_packed),
 	AMX_DECLARE_NATIVE(list_remove),
 	AMX_DECLARE_NATIVE(list_get),
 	AMX_DECLARE_NATIVE(list_get_arr),

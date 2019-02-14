@@ -147,6 +147,20 @@ namespace Natives
 		return linked_list_pool.get_id(ptr);
 	}
 
+	// native LinkedList:linked_list_new_args_packed(ArgTag:...);
+	AMX_DEFINE_NATIVE(linked_list_new_args_packed, 0)
+	{
+		auto ptr = linked_list_pool.add();
+		cell numargs = params[0] / sizeof(cell);
+		for(cell arg = 0; arg < numargs; arg++)
+		{
+			cell *addr;
+			amx_GetAddr(amx, params[1 + arg], &addr);
+			ptr->push_back(dyn_object(amx, addr[0], addr[1]));
+		}
+		return linked_list_pool.get_id(ptr);
+	}
+
 	// native bool:linked_list_valid(LinkedList:linked_list);
 	AMX_DEFINE_NATIVE(linked_list_valid, 1)
 	{
@@ -311,6 +325,21 @@ namespace Natives
 		return numargs;
 	}
 
+	// native linked_list_add_args_packed(LinkedList:linked_list, ArgTag:...);
+	AMX_DEFINE_NATIVE(linked_list_add_args_packed, 1)
+	{
+		linked_list_t *ptr;
+		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
+		cell numargs = params[0] / sizeof(cell) - 1;
+		for(cell arg = 0; arg < numargs; arg++)
+		{
+			cell *addr;
+			amx_GetAddr(amx, params[2 + arg], &addr);
+			ptr->push_back(dyn_object(amx, addr[0], addr[1]));
+		}
+		return numargs;
+	}
+
 	// native bool:linked_list_remove(LinkedList:linked_list, index);
 	AMX_DEFINE_NATIVE(linked_list_remove, 2)
 	{
@@ -420,6 +449,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(linked_list_new_args),
 	AMX_DECLARE_NATIVE(linked_list_new_args_str),
 	AMX_DECLARE_NATIVE(linked_list_new_args_var),
+	AMX_DECLARE_NATIVE(linked_list_new_args_packed),
 	AMX_DECLARE_NATIVE(linked_list_valid),
 	AMX_DECLARE_NATIVE(linked_list_delete),
 	AMX_DECLARE_NATIVE(linked_list_delete_deep),
@@ -434,6 +464,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(linked_list_add_args),
 	AMX_DECLARE_NATIVE(linked_list_add_args_str),
 	AMX_DECLARE_NATIVE(linked_list_add_args_var),
+	AMX_DECLARE_NATIVE(linked_list_add_args_packed),
 	AMX_DECLARE_NATIVE(linked_list_remove),
 	AMX_DECLARE_NATIVE(linked_list_get),
 	AMX_DECLARE_NATIVE(linked_list_get_arr),

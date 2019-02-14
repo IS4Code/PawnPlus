@@ -539,6 +539,21 @@ namespace Natives
 
 		return list_pool.get_id(ptr);
 	}
+
+	// native ArgTag:[2]pawn_arg_pack(AnyTag:value, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(pawn_arg_pack, 2)
+	{
+		cell *addr;
+		int err = amx_GetAddr(amx, params[3], &addr);
+		if(err != AMX_ERR_NONE)
+		{
+			amx_RaiseError(amx, err);
+			return 0;
+		}
+		addr[0] = params[1];
+		addr[1] = params[2];
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -557,6 +572,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_guard_valid),
 	AMX_DECLARE_NATIVE(pawn_guard_free),
 	AMX_DECLARE_NATIVE(pawn_get_args),
+	AMX_DECLARE_NATIVE(pawn_arg_pack),
 };
 
 int RegisterPawnNatives(AMX *amx)

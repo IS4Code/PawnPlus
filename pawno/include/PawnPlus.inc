@@ -86,6 +86,18 @@ stock _PP@TMP1, _PP@TMP2, _PP@TMP3;
 
 #define _PP@REMOVE_COLON:(%0:) (%0)
 
+#define _PP@TAGGED_PACK(%0) ArgTag:_PP@TAGGED:_PP@TAGGED_END:%0
+#define _PP@TAGGED:_PP@TAGGED_END:%0, pawn_arg_pack(%0),ArgTag:_PP@TAGGED:_PP@TAGGED_END:
+#define _PP@TAGGED_END:%0) pawn_arg_pack(%0))
+
+#define _PP@TAGGED1_PACK(%0) ArgTag:_PP@TAGGED1:_PP@TAGGED1_END:%0
+#define _PP@TAGGED1:_PP@TAGGED1_END:%0,%1, pawn_arg_pack(%0),%1,ArgTag:_PP@TAGGED1:_PP@TAGGED1_END:
+#define _PP@TAGGED1_END:%0,%1) pawn_arg_pack(%0),%1)
+
+#define _PP@TAGGED2_PACK(%0) ArgTag:_PP@TAGGED2:_PP@TAGGED2_END:%0
+#define _PP@TAGGED2:_PP@TAGGED2_END:%0,%1, %0,pawn_arg_pack(%1),ArgTag:_PP@TAGGED2:_PP@TAGGED2_END:
+#define _PP@TAGGED2_END:%0,%1) %0,pawn_arg_pack(%1))
+
 
 /*                 */
 /*  Configuration  */
@@ -105,10 +117,6 @@ enum error_level
     error_none = cellmax,
 };
 
-/*                 */
-/*     Plugin      */
-/*                 */
-
 native pp_num_tasks();
 native pp_num_local_strings();
 native pp_num_global_strings();
@@ -125,6 +133,7 @@ native pp_num_global_handles();
 native pp_collect();
 native pp_num_natives();
 forward pp_on_error(const source[], const message[], error_level:level, &retval);
+
 
 /*                 */
 /*      Pawn       */
@@ -158,6 +167,7 @@ native bool:pawn_guard_valid(Guard:guard);
 native bool:pawn_guard_free(Guard:guard);
 native List:pawn_get_args(const format[], bool:byref=false, level=0);
 #define pawn_nameof(%0) ((tagof(%0)),_:_PP@REMOVE_COLON:(#%0))
+native ArgTag:[2]pawn_arg_pack(AnyTag:value, tag_id=tagof(value));
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -473,7 +483,11 @@ native Variant:var_call_op_raw(VariantTag:var, tag_op:tag_op, AnyTag:...);
 native List:list_new();
 native List:list_new_arr(AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
 native List:list_new_args_t(TagTag:tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) = list_new_args;
-#define list_new_args(%0) list_new_args_t(_,%0)
+native List:list_new_args_packed(ArgTag:...);
+/*
+native List:list_new_args(AnyTag:...);
+*/
+#define list_new_args(%0) list_new_args_packed(_PP@TAGGED_PACK(%0))
 native List:list_new_args_str(arg0[], ...);
 native List:list_new_args_var(ConstVariantTag:arg0, ConstVariantTag:...);
 native bool:list_valid(List:list);
@@ -489,7 +503,11 @@ native list_add_str(List:list, const value[], index=-1);
 native list_add_var(List:list, ConstVariantTag:value, index=-1);
 native list_add_list(List:list, List:range, index=-1);
 native list_add_args_t(TagTag:tag_id=tagof(arg0), List:list, AnyTag:arg0, AnyTag:...) = list_add_args;
-#define list_add_args(%0) list_add_args_t(_,%0)
+native list_add_args_packed(List:list, ArgTag:...);
+/*
+native List:list_add_args(List:list, AnyTag:...);
+*/
+#define list_add_args(%0,%1) list_add_args_packed(%0,_PP@TAGGED_PACK(%1))
 native list_add_args_str(List:list, arg0[], ...);
 native list_add_args_var(List:list, ConstVariantTag:arg0, ConstVariantTag:...);
 
@@ -560,17 +578,37 @@ native Iter:list_iter(List:list, index=0);
 
 native Map:map_new();
 native Map:map_new_args_t(TagTag:key_tag_id=tagof(arg0), TagTag:value_tag_id=tagof(arg1), AnyTag:arg0, AnyTag:arg1, AnyTag:...) = map_new_args;
-#define map_new_args(%0) map_new_args_t(_,_,%0)
+native Map:map_new_args_packed(ArgTag:...);
+/*
+native Map:map_new_args(AnyTag:...);
+*/
+#define map_new_args(%0) map_new_args_packed(_PP@TAGGED_PACK(%0))
 native Map:map_new_args_str_t(TagTag:key_tag_id=tagof(arg0), AnyTag:arg0, arg1[], AnyTag:...) = map_new_args_str;
-#define map_new_args_str(%0) map_new_args_str_t(_,%0)
+native Map:map_new_args_str_packed({ArgTag,_}:...);
+/*
+native Map:map_new_str({AnyTag,_}:...);
+*/
+#define map_new_args_str(%0) map_new_args_str_packed(_PP@TAGGED1_PACK(%0))
 native Map:map_new_args_var_t(TagTag:key_tag_id=tagof(arg0), AnyTag:arg0, ConstVariantTag:arg1, AnyTag:...) = map_new_args_var;
-#define map_new_args_var(%0) map_new_args_var_t(_,%0)
+native Map:map_new_args_var_packed({ArgTag,ConstVariantTags}:...);
+/*
+native Map:map_new_args_var({AnyTag,ConstVariantTags}:...);
+*/
+#define map_new_args_var(%0) map_new_args_var_packed(_PP@TAGGED1_PACK(%0))
 native Map:map_new_str_args_t(TagTag:value_tag_id=tagof(arg1), arg0[], AnyTag:arg1, AnyTag:...) = map_new_str_args;
-#define map_new_str_args(%0) map_new_str_args_t(_,%0)
+native Map:map_new_str_args_packed({_,ArgTag}:...);
+/*
+native Map:map_new_args_var({_,AnyTag}:...);
+*/
+#define map_new_str_args(%0) map_new_str_args_packed(_PP@TAGGED2_PACK(%0))
 native Map:map_new_str_args_str(arg0[], arg1[], ...);
 native Map:map_new_str_args_var(arg0[], ConstVariantTag:arg1, {_,VariantTags}:...);
 native Map:map_new_var_args_t(TagTag:value_tag_id=tagof(arg1), ConstVariantTag:arg0, AnyTag:arg1, AnyTag:...) = map_new_var_args;
-#define map_new_var_args(%0) map_new_var_args_t(_,%0)
+native Map:map_new_var_args_packed({ConstVariantTags,ArgTag}:...);
+/*
+native Map:map_new_args_var({ConstVariantTags,AnyTag}:...);
+*/
+#define map_new_var_args(%0) map_new_var_args_packed(_PP@TAGGED2_PACK(%0))
 native Map:map_new_var_args_str(ConstVariantTag:arg0, arg1[], {_,VariantTags}:...);
 native Map:map_new_var_args_var(ConstVariantTag:arg0, ConstVariantTag:arg1, ConstVariantTag:...);
 native bool:map_valid(Map:map);
@@ -600,17 +638,37 @@ native bool:map_var_add_str(Map:map, ConstVariantTag:key, const value[]);
 native bool:map_var_add_var(Map:map, ConstVariantTag:key, ConstVariantTag:value);
 native map_add_map(Map:map, Map:other, bool:overwrite);
 native map_add_args_t(TagTag:key_tag_id=tagof(arg0), TagTag:value_tag_id=tagof(arg1), Map:map, AnyTag:arg0, AnyTag:arg1, AnyTag:...) = map_add_args;
-#define map_add_args(%0) map_add_args_t(_,_,%0)
+native map_add_args_packed(Map:map, ArgTag:...);
+/*
+native map_add_args(Map:map, AnyTag:...);
+*/
+#define map_add_args(%0,%1) map_add_args_packed(%0,_PP@TAGGED_PACK(%1))
 native map_add_args_str_t(TagTag:key_tag_id=tagof(arg0), Map:map, AnyTag:arg0, arg1[], AnyTag:...) = map_add_args_str;
-#define map_add_args_str(%0) map_add_args_str_t(_,%0)
+native map_add_args_str_packed(Map:map, {ArgTag,_}:...);
+/*
+native map_add_args_str(Map:map, AnyTag:...);
+*/
+#define map_add_args_str(%0,%1) map_add_args_str_packed(%0,_PP@TAGGED1_PACK(%1))
 native map_add_args_var_t(TagTag:key_tag_id=tagof(arg0), Map:map, AnyTag:arg0, ConstVariantTag:arg1, AnyTag:...) = map_add_args_var;
-#define map_add_args_var(%0) map_add_args_var_t(_,%0)
+native map_add_args_var_packed(Map:map, {ArgTag,ConstVariantTags}:...);
+/*
+native map_add_args_var(Map:map, {AnyTag,ConstVariantTags}:...);
+*/
+#define map_add_args_var(%0,%1) map_add_args_var_packed(%0,_PP@TAGGED1_PACK(%1))
 native map_add_str_args_t(TagTag:value_tag_id=tagof(arg1), Map:map, arg0[], AnyTag:arg1, AnyTag:...) = map_add_str_args;
-#define map_add_str_args(%0) map_add_str_args_t(_,%0)
+native map_add_str_args_packed(Map:map, {_,ArgTag}:...);
+/*
+native map_add_str_args(Map:map, {_,AnyTag}:...);
+*/
+#define map_add_str_args(%0,%1) map_add_str_args_packed(%0,_PP@TAGGED2_PACK(%1))
 native map_add_str_args_str(Map:map, arg0[], arg1[], ...);
 native map_add_str_args_var(Map:map, arg0[], ConstVariantTag:arg1, {_,VariantTags}:...);
 native map_add_var_args_t(TagTag:value_tag_id=tagof(arg1), Map:map, ConstVariantTag:arg0, AnyTag:arg1, AnyTag:...) = map_add_var_args;
-#define map_add_var_args(%0) map_add_var_args_t(_,%0)
+native map_add_var_args_packed(Map:map, {ConstVariantTags,ArgTag}:...);
+/*
+native map_add_var_args(Map:map, {ConstVariantTags,AnyTag}:...);
+*/
+#define map_add_var_args(%0,%1) map_add_var_args_packed(%0,_PP@TAGGED2_PACK(%1))
 native map_add_var_args_str(Map:map, ConstVariantTag:arg0, arg1[], {_,VariantTags}:...);
 native map_add_var_args_var(Map:map, ConstVariantTag:arg0, ConstVariantTag:arg1, ConstVariantTag:...);
 
@@ -757,7 +815,11 @@ native Iter:map_iter_at_var(Map:map, ConstVariantTag:key);
 native LinkedList:linked_list_new();
 native LinkedList:linked_list_new_arr(AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
 native LinkedList:linked_list_new_args_t(TagTag:tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) = linked_list_new_args;
-#define linked_list_new_args(%0) linked_list_new_args_t(_,%0)
+native LinkedList:linked_list_new_args_packed(ArgTag:...);
+/*
+native LinkedList:linked_list_new_args(AnyTag:...);
+*/
+#define linked_list_new_args(%0) linked_list_new_args_packed(_PP@TAGGED_PACK(%0))
 native LinkedList:linked_list_new_args_str(arg0[], ...);
 native LinkedList:linked_list_new_args_var(ConstVariantTag:arg0, ConstVariantTag:...);
 native bool:linked_list_valid(LinkedList:linked_list);
@@ -773,7 +835,11 @@ native linked_list_add_str(LinkedList:linked_list, const value[], index=-1);
 native linked_list_add_var(LinkedList:linked_list, ConstVariantTag:value, index=-1);
 native linked_list_add_linked_list(LinkedList:linked_list, LinkedList:range, index=-1);
 native linked_list_add_args_t(TagTag:tag_id=tagof(arg0), LinkedList:linked_list, AnyTag:arg0, AnyTag:...) = linked_list_add_args;
-#define linked_list_add_args(%0) linked_list_add_args_t(_,%0)
+native linked_list_add_args_packed(LinkedList:linked_list, ArgTag:...);
+/*
+native linked_list_add_args(LinkedList:linked_list, AnyTag:...);
+*/
+#define linked_list_add_args(%0,%1) linked_list_add_args_packed(%0,_PP@TAGGED_PACK(%1))
 native linked_list_add_args_str(LinkedList:linked_list, arg0[], ...);
 native linked_list_add_args_var(LinkedList:linked_list, ConstVariantTag:arg0, ConstVariantTag:...);
 

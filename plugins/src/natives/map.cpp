@@ -202,7 +202,7 @@ namespace Natives
 				value_addr = &value;
 			}else{
 				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2]));
 		}
@@ -251,9 +251,66 @@ namespace Natives
 				value_addr = &value;
 			}else{
 				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr));
+		}
+		return map_pool.get_id(ptr);
+	}
+
+	// native Map:map_new_args_packed(ArgTag:...);
+	AMX_DEFINE_NATIVE(map_new_args_packed, 0)
+	{
+		auto ptr = map_pool.add();
+		cell numargs = params[0] / sizeof(cell);
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 1, numargs);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[1 + arg], &key);
+			amx_GetAddr(amx, params[2 + arg], &value);
+			ptr->insert(dyn_object(amx, key[0], key[1]), dyn_object(amx, value[0], value[1]));
+		}
+		return map_pool.get_id(ptr);
+	}
+
+	// native Map:map_new_args_var_packed({ArgTag,ConstVariantTags}:...);
+	AMX_DEFINE_NATIVE(map_new_args_var_packed, 0)
+	{
+		auto ptr = map_pool.add();
+		cell numargs = params[0] / sizeof(cell);
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 1, numargs);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[1 + arg], &key);
+			amx_GetAddr(amx, params[2 + arg], &value);
+			ptr->insert(dyn_object(amx, key[0], key[1]), variants::get(*value));
+		}
+		return map_pool.get_id(ptr);
+	}
+
+	// native Map:map_new_args_str_packed({ArgTag,_}:...);
+	AMX_DEFINE_NATIVE(map_new_args_str_packed, 0)
+	{
+		auto ptr = map_pool.add();
+		cell numargs = params[0] / sizeof(cell);
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 1, numargs);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[1 + arg], &key);
+			amx_GetAddr(amx, params[2 + arg], &value);
+			ptr->insert(dyn_object(amx, key[0], key[1]), dyn_object(value));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -275,7 +332,7 @@ namespace Natives
 			{
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(dyn_object(key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
@@ -318,9 +375,28 @@ namespace Natives
 			{
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(dyn_object(key_addr), variants::get(*value_addr));
+		}
+		return map_pool.get_id(ptr);
+	}
+
+	// native Map:map_new_str_args_packed({_,ArgTag}:...);
+	AMX_DEFINE_NATIVE(map_new_str_args_packed, 0)
+	{
+		auto ptr = map_pool.add();
+		cell numargs = params[0] / sizeof(cell);
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 1, numargs);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[1 + arg], &key);
+			amx_GetAddr(amx, params[2 + arg], &value);
+			ptr->insert(dyn_object(key), dyn_object(amx, value[0], value[1]));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -343,7 +419,7 @@ namespace Natives
 				value_addr = &value;
 			}else{
 				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
@@ -392,9 +468,28 @@ namespace Natives
 				value_addr = &value;
 			}else{
 				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(variants::get(*key_addr), variants::get(*value_addr));
+		}
+		return map_pool.get_id(ptr);
+	}
+
+	// native Map:map_new_var_args_packed({_,ArgTag}:...);
+	AMX_DEFINE_NATIVE(map_new_var_args_packed, 0)
+	{
+		auto ptr = map_pool.add();
+		cell numargs = params[0] / sizeof(cell);
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 1, numargs);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[1 + arg], &key);
+			amx_GetAddr(amx, params[2 + arg], &value);
+			ptr->insert(variants::get(*key), dyn_object(amx, value[0], value[1]));
 		}
 		return map_pool.get_id(ptr);
 	}
@@ -613,7 +708,7 @@ namespace Natives
 				value_addr = &value;
 			}else{
 				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2]));
 		}
@@ -664,9 +759,69 @@ namespace Natives
 				value_addr = &value;
 			}else{
 				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr));
+		}
+		return numargs / 2;
+	}
+
+	// native map_add_args_packed(Map:map, ArgTag:...);
+	AMX_DEFINE_NATIVE(map_add_args_packed, 1)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[2 + arg], &key);
+			amx_GetAddr(amx, params[3 + arg], &value);
+			ptr->insert(dyn_object(amx, key[0], key[1]), dyn_object(amx, value[0], value[1]));
+		}
+		return numargs / 2;
+	}
+
+	// native map_add_args_var_packed(Map:map, {ArgTag,_}:...);
+	AMX_DEFINE_NATIVE(map_add_args_var_packed, 1)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[2 + arg], &key);
+			amx_GetAddr(amx, params[3 + arg], &value);
+			ptr->insert(dyn_object(amx, key[0], key[1]), variants::get(*value));
+		}
+		return numargs / 2;
+	}
+
+	// native map_add_args_str_packed(Map:map, {ArgTag,_}:...);
+	AMX_DEFINE_NATIVE(map_add_args_str_packed, 1)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[2 + arg], &key);
+			amx_GetAddr(amx, params[3 + arg], &value);
+			ptr->insert(dyn_object(amx, key[0], key[1]), dyn_object(value));
 		}
 		return numargs / 2;
 	}
@@ -689,7 +844,7 @@ namespace Natives
 			{
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(dyn_object(key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
@@ -734,9 +889,29 @@ namespace Natives
 			{
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(dyn_object(key_addr), variants::get(*value_addr));
+		}
+		return numargs / 2;
+	}
+	
+	// native map_add_str_args_packed(Map:map, {_,ArgTag}:...);
+	AMX_DEFINE_NATIVE(map_add_str_args_packed, 1)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[2 + arg], &key);
+			amx_GetAddr(amx, params[3 + arg], &value);
+			ptr->insert(dyn_object(key), dyn_object(amx, value[0], value[1]));
 		}
 		return numargs / 2;
 	}
@@ -760,7 +935,7 @@ namespace Natives
 				value_addr = &value;
 			}else{
 				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
@@ -811,9 +986,29 @@ namespace Natives
 				value_addr = &value;
 			}else{
 				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, key, &value_addr);
+				amx_GetAddr(amx, value, &value_addr);
 			}
 			ptr->insert(variants::get(*key_addr), variants::get(*value_addr));
+		}
+		return numargs / 2;
+	}
+
+	// native map_add_var_args_packed(Map:map, {ConstVariantTags,ArgTag}:...);
+	AMX_DEFINE_NATIVE(map_add_var_args_packed, 1)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		cell numargs = params[0] / sizeof(cell) - 1;
+		if(numargs % 2 != 0)
+		{
+			amx_FormalError(errors::not_enough_args, numargs + 2, numargs + 1);
+		}
+		for(cell arg = 0; arg < numargs; arg += 2)
+		{
+			cell *key, *value;
+			amx_GetAddr(amx, params[2 + arg], &key);
+			amx_GetAddr(amx, params[3 + arg], &value);
+			ptr->insert(variants::get(*key), dyn_object(amx, value[0], value[1]));
 		}
 		return numargs / 2;
 	}
@@ -1245,12 +1440,17 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_new_args),
 	AMX_DECLARE_NATIVE(map_new_args_str),
 	AMX_DECLARE_NATIVE(map_new_args_var),
+	AMX_DECLARE_NATIVE(map_new_args_packed),
+	AMX_DECLARE_NATIVE(map_new_args_str_packed),
+	AMX_DECLARE_NATIVE(map_new_args_var_packed),
 	AMX_DECLARE_NATIVE(map_new_str_args),
 	AMX_DECLARE_NATIVE(map_new_str_args_str),
 	AMX_DECLARE_NATIVE(map_new_str_args_var),
+	AMX_DECLARE_NATIVE(map_new_str_args_packed),
 	AMX_DECLARE_NATIVE(map_new_var_args),
 	AMX_DECLARE_NATIVE(map_new_var_args_str),
 	AMX_DECLARE_NATIVE(map_new_var_args_var),
+	AMX_DECLARE_NATIVE(map_new_var_args_packed),
 	AMX_DECLARE_NATIVE(map_valid),
 	AMX_DECLARE_NATIVE(map_delete),
 	AMX_DECLARE_NATIVE(map_delete_deep),
@@ -1279,12 +1479,15 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_add_args),
 	AMX_DECLARE_NATIVE(map_add_args_str),
 	AMX_DECLARE_NATIVE(map_add_args_var),
+	AMX_DECLARE_NATIVE(map_add_args_packed),
 	AMX_DECLARE_NATIVE(map_add_str_args),
 	AMX_DECLARE_NATIVE(map_add_str_args_str),
 	AMX_DECLARE_NATIVE(map_add_str_args_var),
+	AMX_DECLARE_NATIVE(map_add_str_args_packed),
 	AMX_DECLARE_NATIVE(map_add_var_args),
 	AMX_DECLARE_NATIVE(map_add_var_args_str),
 	AMX_DECLARE_NATIVE(map_add_var_args_var),
+	AMX_DECLARE_NATIVE(map_add_var_args_packed),
 	AMX_DECLARE_NATIVE(map_remove),
 	AMX_DECLARE_NATIVE(map_arr_remove),
 	AMX_DECLARE_NATIVE(map_str_remove),
