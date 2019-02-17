@@ -1129,6 +1129,7 @@ native bool:task_bind(Task:task, const function[], const format[], AnyTag:...);
 native task_config(task_restore:heap=task_restore_full, task_restore:stack=task_restore_full);
 native task_continue_with(Task:task, const handler[], const additional_format[]="", AnyTag:...);
 native Task:task_continue_with_bound(Task:task, Task:bound, const handler[], const additional_format[]="", AnyTag:...);
+native task_detach();
 
 const task_state:task_state_default = task_state:0;
 const task_state:task_state_completed = task_state:1;

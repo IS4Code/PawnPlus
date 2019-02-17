@@ -664,6 +664,13 @@ namespace Natives
 
 		return params[2];
 	}
+
+	// native task_detach();
+	AMX_DEFINE_NATIVE(task_detach, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return SleepReturnTaskDetach;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -709,6 +716,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_config),
 	AMX_DECLARE_NATIVE(task_continue_with),
 	AMX_DECLARE_NATIVE(task_continue_with_bound),
+	AMX_DECLARE_NATIVE(task_detach),
 };
 
 int RegisterTasksNatives(AMX *amx)

@@ -542,6 +542,26 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					}
 				}
 				break;
+				case SleepReturnTaskDetach:
+				{
+					amx->error = ret = AMX_ERR_NONE;
+					amx->pri = 1;
+					auto hdr = (AMX_HEADER *)amx->base;
+					auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+					auto frame = reinterpret_cast<cell*>(data + amx->frm);
+					cell frm = frame[0];
+					cell cip = frame[1];
+					cell reset_stk = amx->reset_stk;
+					frame[0] = frame[1] = 0;
+					amx->reset_stk = amx->frm + 3 * sizeof(cell) + frame[2];
+					amx_Exec(amx, &amx->pri, AMX_EXEC_CONT);
+					amx->stk = amx->reset_stk;
+					amx->reset_stk = reset_stk;
+					amx->frm = frm;
+					amx->cip = cip;
+					continue;
+				}
+				break;
 			}
 
 			if(handled)

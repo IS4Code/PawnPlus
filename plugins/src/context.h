@@ -13,6 +13,7 @@ constexpr cell SleepReturnAwait = 0xA0000000;
 constexpr cell SleepReturnWaitMs = 0xA1000000;
 constexpr cell SleepReturnWaitTicks = 0xA2000000;
 constexpr cell SleepReturnWaitInf = 0xA3000000;
+constexpr cell SleepReturnTaskDetach = 0xA4000000;
 
 constexpr cell SleepReturnDetach = 0xB0000000;
 constexpr cell SleepReturnAttach = 0xB1000000;
