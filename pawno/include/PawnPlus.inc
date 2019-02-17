@@ -62,7 +62,7 @@
 #define TagTag {TagTags}
 
 #if !defined PP_ALL_TAGS
-#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map,IterTags,HandleTags
+#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map,IterTags,HandleTags,Task
 #if defined PP_ADDITIONAL_TAGS
 #define AnyTag {PP_ALL_TAGS,PP_ADDITIONAL_TAGS}
 #else
