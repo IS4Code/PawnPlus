@@ -12,6 +12,7 @@
 #else
 #include <stdio.h>
 #include <cstring>
+#include <unistd.h>
 #endif
 #include <fcntl.h>
 
