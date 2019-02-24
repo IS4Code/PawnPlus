@@ -135,7 +135,13 @@ AMX_DBG *debug::create_last()
 
 void debug::init()
 {
-	fopen_hook = subhook_new(reinterpret_cast<void*>(fopen), reinterpret_cast<void*>(hook_fopen), {});
+	auto func = reinterpret_cast<void*>(fopen);
+	auto dst = subhook_read_dst(func);
+	if(dst != nullptr)
+	{
+		func = dst; // crashdetect may remove its hook, so hook crashdetect instead
+	}
+	fopen_hook = subhook_new(func, reinterpret_cast<void*>(hook_fopen), {});
 	fopen_trampoline = reinterpret_cast<decltype(&fopen)>(subhook_get_trampoline(fopen_hook));
 	subhook_install(fopen_hook);
 }
