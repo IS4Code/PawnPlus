@@ -61,16 +61,49 @@ public:
 	static cell AMX_NATIVE_CALL list_find(AMX *amx, cell *params)
 	{
 		cell index = optparam(3, 0);
-		if(index < 0) amx_LogicError(errors::out_of_range, "list index");
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
-		if(static_cast<ucell>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "list index");
-		auto find = Factory(amx, params[Indices]...);
-		for(size_t i = static_cast<size_t>(index); i < ptr->size(); i++)
+		if(index < 0)
 		{
-			if((*ptr)[i] == find)
+			index = ptr->size() + index;
+		}
+		if(index != ptr->size())
+		{
+			if(index < 0 || static_cast<ucell>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "list index");
+			auto find = Factory(amx, params[Indices]...);
+			for(size_t i = static_cast<size_t>(index); i < ptr->size(); i++)
 			{
-				return static_cast<cell>(i);
+				if((*ptr)[i] == find)
+				{
+					return static_cast<cell>(i);
+				}
+			}
+		}
+		return -1;
+	}
+
+	// native list_find_last(List:list, value, index=-1, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL list_find_last(AMX *amx, cell *params)
+	{
+		cell index = optparam(3, 0);
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		if(index < 0)
+		{
+			index = ptr->size() + index;
+		}
+		if(index != -1)
+		{
+			if(index < 0 || static_cast<ucell>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "list index");
+			auto find = Factory(amx, params[Indices]...);
+			while(index >= 0)
+			{
+				if((*ptr)[index] == find)
+				{
+					return index;
+				}
+				index--;
 			}
 		}
 		return -1;
@@ -478,6 +511,30 @@ namespace Natives
 	{
 		return value_at<2>::list_find<dyn_func_var>(amx, params);
 	}
+
+	// native list_find_last(List:list, AnyTag:value, index=0, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(list_find_last, 4)
+	{
+		return value_at<2, 4>::list_find_last<dyn_func>(amx, params);
+	}
+
+	// native list_find_last_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(list_find_last_arr, 5)
+	{
+		return value_at<2, 4, 5>::list_find_last<dyn_func_arr>(amx, params);
+	}
+
+	// native list_find_last_str(List:list, const value[], index=0);
+	AMX_DEFINE_NATIVE(list_find_last_str, 2)
+	{
+		return value_at<2>::list_find_last<dyn_func_str>(amx, params);
+	}
+
+	// native list_find_last_var(List:list, VariantTag:value, index=0);
+	AMX_DEFINE_NATIVE(list_find_last_var, 2)
+	{
+		return value_at<2>::list_find_last<dyn_func_var>(amx, params);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -519,6 +576,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_find_arr),
 	AMX_DECLARE_NATIVE(list_find_str),
 	AMX_DECLARE_NATIVE(list_find_var),
+	AMX_DECLARE_NATIVE(list_find_last),
+	AMX_DECLARE_NATIVE(list_find_last_arr),
+	AMX_DECLARE_NATIVE(list_find_last_str),
+	AMX_DECLARE_NATIVE(list_find_last_var),
 	AMX_DECLARE_NATIVE(list_tagof),
 	AMX_DECLARE_NATIVE(list_sizeof),
 };

@@ -530,6 +530,10 @@ native list_find(List:list, AnyTag:value, index=0, TagTag:tag_id=tagof(value));
 native list_find_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), TagTag:tag_id=tagof(value));
 native list_find_str(List:list, const value[], index=0);
 native list_find_var(List:list, ConstVariantTag:value, index=0);
+native list_find_last(List:list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
+native list_find_last_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), TagTag:tag_id=tagof(value));
+native list_find_last_str(List:list, const value[], index=-1);
+native list_find_last_var(List:list, ConstVariantTag:value, index=-1);
 
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);
