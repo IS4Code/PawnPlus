@@ -1,5 +1,5 @@
-GPP = g++ -m32 -std=c++11 -Ilib -Isrc -fno-stack-protector -nodefaultlibs
-GCC = gcc -m32 -Ilib -Isrc -fno-stack-protector -nodefaultlibs
+GPP = g++ -m32 -std=c++11 -Ilib -Isrc -fno-stack-protector
+GCC = gcc -m32 -Ilib -Isrc -fno-stack-protector
 LINK = $(GCC)
 PP_OUTFILE = "./PawnPlus.so"
 
