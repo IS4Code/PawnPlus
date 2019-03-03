@@ -5,6 +5,7 @@
 #include "modules/debug.h"
 #include "modules/strings.h"
 #include "modules/tags.h"
+#include "modules/containers.h"
 
 #include <limits>
 #include <cstring>
@@ -34,6 +35,219 @@ cell get_level(AMX *amx, cell level)
 	}
 	return cip - 2 * sizeof(cell);
 }
+
+AMX_DBG *get_debug(AMX *amx)
+{
+	auto obj = amx::load_lock(amx);
+	if(!obj->has_extra<debug::info>())
+	{
+		amx_LogicError(errors::no_debug_error);
+		return nullptr;
+	}
+	return obj->get_extra<debug::info>().dbg;
+}
+
+cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG *&dbg, AMX_DBG_SYMBOL *&sym)
+{
+	dbg = get_debug(amx);
+
+	if(index < 0 || index > dbg->hdr->symbols)
+	{
+		amx_LogicError(errors::out_of_range, "symbol");
+		return 0;
+	}
+	sym = dbg->symboltbl[index];
+
+	ucell cip;
+	if(level < 0 || (cip = get_level(amx, level)) == -1)
+	{
+		amx_LogicError(errors::out_of_range, "level");
+		return 0;
+	}
+
+	if(sym->ident == iFUNCTN || (sym->vclass == 1 && (sym->codestart > cip || cip >= sym->codeend)))
+	{
+		amx_LogicError(errors::operation_not_supported, "symbol");
+		return 0;
+	}
+
+	auto hdr = (AMX_HEADER *)amx->base;
+	auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+	cell *ptr;
+	if(sym->vclass == 0 || sym->vclass == 2)
+	{
+		ptr = reinterpret_cast<cell*>(data + sym->address);
+	}else{
+		cell frm = amx->frm;
+		for(cell i = 1; i < level; i++)
+		{
+			frm = *reinterpret_cast<cell*>(data + frm);
+		}
+		ptr = reinterpret_cast<cell*>(data + frm + sym->address);
+	}
+
+	if(sym->ident == iREFERENCE || sym->ident == iREFARRAY)
+	{
+		ptr = reinterpret_cast<cell*>(data + *ptr);
+	}
+	return ptr;
+}
+
+cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG_SYMBOL *&sym)
+{
+	AMX_DBG *dbg;
+	return find_symbol_addr(amx, index, level, dbg, sym);
+}
+
+class debug_symbol_var_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
+{
+	amx::handle amx;
+	AMX_DBG *dbg;
+	cell func;
+
+	cell index;
+	cell current;
+
+public:
+	debug_symbol_var_iterator(AMX *amx, AMX_DBG *dbg, cell func) : amx(amx::load(amx)), dbg(dbg), func(func)
+	{
+
+	}
+
+	virtual bool expired() const override
+	{
+		return amx.expired();
+	}
+
+	virtual bool valid() const override
+	{
+		return !expired() && current >= 0 && current < dbg->hdr->symbols;
+	}
+
+	virtual bool move_next() override
+	{
+		if(current != -2)
+		{
+			ucell codestart = dbg->symboltbl[func]->codestart;
+			ucell codeend = dbg->symboltbl[func]->codeend;
+			while(++current < dbg->hdr->symbols)
+			{
+				auto var = dbg->symboltbl[current];
+				if(var->ident != iFUNCTN && var->codestart >= codestart && var->codeend <= codeend)
+				{
+					index++;
+					return true;
+				}
+			}
+		}
+		current = -2;
+		return false;
+	}
+
+	virtual bool move_previous() override
+	{
+		if(current != -2)
+		{
+			ucell codestart = dbg->symboltbl[func]->codestart;
+			ucell codeend = dbg->symboltbl[func]->codeend;
+			while(--current >= 0)
+			{
+				auto var = dbg->symboltbl[current];
+				if(var->ident != iFUNCTN && var->codestart >= codestart && var->codeend <= codeend)
+				{
+					index--;
+					return true;
+				}
+			}
+		}
+		current = -2;
+		return false;
+	}
+
+	virtual bool set_to_first() override
+	{
+		current = -1;
+		index = -1;
+		return move_next();
+	}
+
+	virtual bool set_to_last() override
+	{
+		current = dbg->hdr->symbols;
+		index = 0;
+		return move_previous();
+	}
+
+	virtual bool reset() override
+	{
+		current = -2;
+		return true;
+	}
+
+	virtual bool erase() override
+	{
+		return false;
+	}
+
+	virtual std::unique_ptr<dyn_iterator> clone() const override
+	{
+		return std::make_unique<debug_symbol_var_iterator>(*this);
+	}
+
+	virtual size_t get_hash() const override
+	{
+		return std::hash<cell>()(current);
+	}
+
+	virtual bool operator==(const dyn_iterator &obj) const override
+	{
+		auto other = dynamic_cast<const debug_symbol_var_iterator*>(&obj);
+		if(other != nullptr)
+		{
+			return !amx.owner_before(other->amx) && !other->amx.owner_before(amx) && current == other->current;
+		}
+		return false;
+	}
+
+protected:
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override
+	{
+		if(valid())
+		{
+			if(type == typeid(std::shared_ptr<dyn_object>))
+			{
+				*reinterpret_cast<std::shared_ptr<dyn_object>*>(value) = std::make_shared<dyn_object>(current, tags::find_tag(tags::tag_symbol));
+				return true;
+			}else if(type == typeid(std::shared_ptr<std::pair<const dyn_object, dyn_object>>))
+			{
+				*reinterpret_cast<std::shared_ptr<std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(index, tags::find_tag(tags::tag_cell)), dyn_object(current, tags::find_tag(tags::tag_symbol))));
+				return true;
+			}
+		}
+		return false;
+	}
+
+	virtual bool insert_dyn(const std::type_info &type, void *value) override
+	{
+		return false;
+	}
+
+	virtual bool insert_dyn(const std::type_info &type, const void *value) override
+	{
+		return false;
+	}
+
+public:
+	virtual dyn_iterator *get() override
+	{
+		return this;
+	}
+
+	virtual const dyn_iterator *get() const override
+	{
+		return this;
+	}
+};
 
 namespace Natives
 {
@@ -70,13 +284,7 @@ namespace Natives
 	// native debug_line(code=cellmin);
 	AMX_DEFINE_NATIVE(debug_line, 0)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 		
 		cell cip = optparam(1, std::numeric_limits<cell>::min());
 		if(cip == std::numeric_limits<cell>::min())
@@ -98,13 +306,7 @@ namespace Natives
 	// native String:debug_file_s(code=cellmin);
 	AMX_DEFINE_NATIVE(debug_file_s, 0)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell cip = optparam(1, std::numeric_limits<cell>::min());
 		if(cip == std::numeric_limits<cell>::min())
@@ -126,13 +328,7 @@ namespace Natives
 	// native Symbol:debug_symbol(const name[], code=cellmin, symbol_kind:kind=symbol_kind:-1, symbol_class:class=symbol_class:-1);
 	AMX_DEFINE_NATIVE(debug_symbol, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		const char *name;
 		amx_StrParam(amx, params[1], name);
@@ -170,13 +366,7 @@ namespace Natives
 	// native Symbol:debug_func(code=cellmin);
 	AMX_DEFINE_NATIVE(debug_func, 0)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 		
 		ucell cip = optparam(1, std::numeric_limits<cell>::min());
 		if(cip == std::numeric_limits<cell>::min())
@@ -208,14 +398,7 @@ namespace Natives
 	// native Symbol:debug_var(AnyTag:&var);
 	AMX_DEFINE_NATIVE(debug_var, 0)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
-
+		auto dbg = get_debug(amx);
 
 		cell addr = params[1];
 		if(addr < 0 || addr >= amx->stp || (addr >= amx->hea && addr < amx->stk))
@@ -285,13 +468,7 @@ namespace Natives
 	// native symbol_kind:debug_symbol_kind(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_kind, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -306,13 +483,7 @@ namespace Natives
 	// native symbol_class:debug_symbol_class(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_class, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -327,13 +498,7 @@ namespace Natives
 	// native debug_symbol_tag(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_tag, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -369,13 +534,7 @@ namespace Natives
 	// native Symbol:debug_symbol_func(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_func, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -410,13 +569,7 @@ namespace Natives
 	// native String:debug_symbol_name_s(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_name_s, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -431,13 +584,7 @@ namespace Natives
 	// native debug_symbol_addr(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_addr, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -452,13 +599,7 @@ namespace Natives
 	// native debug_symbol_range(Symbol:symbol, &codestart, &codeend);
 	AMX_DEFINE_NATIVE(debug_symbol_range, 3)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -485,13 +626,7 @@ namespace Natives
 	// native debug_symbol_line(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_line, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -512,13 +647,7 @@ namespace Natives
 	// native String:debug_symbol_file_s(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_file_s, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -539,13 +668,7 @@ namespace Natives
 	// native bool:debug_symbol_in_scope(Symbol:symbol, level=0);
 	AMX_DEFINE_NATIVE(debug_symbol_in_scope, 1)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -564,64 +687,6 @@ namespace Natives
 		}
 
 		return sym->codestart <= cip && cip < sym->codeend;
-	}
-
-	cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG *&dbg, AMX_DBG_SYMBOL *&sym)
-	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		dbg = obj->get_extra<debug::info>().dbg;
-
-		if(index < 0 || index > dbg->hdr->symbols)
-		{
-			amx_LogicError(errors::out_of_range, "symbol");
-			return 0;
-		}
-		sym = dbg->symboltbl[index];
-
-		ucell cip;
-		if(level < 0 || (cip = get_level(amx, level)) == -1)
-		{
-			amx_LogicError(errors::out_of_range, "level");
-			return 0;
-		}
-
-		if(sym->ident == iFUNCTN || (sym->vclass == 1 && (sym->codestart > cip || cip >= sym->codeend)))
-		{
-			amx_LogicError(errors::operation_not_supported, "symbol");
-			return 0;
-		}
-
-		auto hdr = (AMX_HEADER *)amx->base;
-		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
-		cell *ptr;
-		if(sym->vclass == 0 || sym->vclass == 2)
-		{
-			ptr = reinterpret_cast<cell*>(data + sym->address);
-		}else{
-			cell frm = amx->frm;
-			for(cell i = 1; i < level; i++)
-			{
-				frm = *reinterpret_cast<cell*>(data + frm);
-			}
-			ptr = reinterpret_cast<cell*>(data + frm + sym->address);
-		}
-
-		if(sym->ident == iREFERENCE || sym->ident == iREFARRAY)
-		{
-			ptr = reinterpret_cast<cell*>(data + *ptr);
-		}
-		return ptr;
-	}
-
-	cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG_SYMBOL *&sym)
-	{
-		AMX_DBG *dbg;
-		return find_symbol_addr(amx, index, level, dbg, sym);
 	}
 
 	// native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0);
@@ -697,13 +762,7 @@ namespace Natives
 	// native debug_symbol_call(Symbol:symbol, AnyTag:...);
 	AMX_DEFINE_NATIVE(debug_symbol_call, 2)
 	{
-		auto obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
-		{
-			amx_LogicError(errors::no_debug_error);
-			return 0;
-		}
-		auto dbg = obj->get_extra<debug::info>().dbg;
+		auto dbg = get_debug(amx);
 
 		cell index = params[1];
 		if(index < 0 || index > dbg->hdr->symbols)
@@ -746,6 +805,23 @@ namespace Natives
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnDebugCall | index;
 	}
+
+	// native Iter:debug_symbol_variables(Symbol:symbol);
+	AMX_DEFINE_NATIVE(debug_symbol_variables, 1)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index > dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+
+		auto &iter = iter_pool.add(std::make_unique<debug_symbol_var_iterator>(amx, dbg, index));
+		iter->set_to_first();
+		return iter_pool.get_id(iter);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -773,6 +849,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_symbol_set_safe),
 	AMX_DECLARE_NATIVE(debug_symbol_get_safe),
 	AMX_DECLARE_NATIVE(debug_symbol_call),
+	AMX_DECLARE_NATIVE(debug_symbol_variables),
 };
 
 int RegisterDebugNatives(AMX *amx)

@@ -202,6 +202,7 @@ const tag_uid:tag_uid_linked_list = tag_uid:13;
 const tag_uid:tag_uid_guard = tag_uid:14;
 const tag_uid:tag_uid_callback_handler = tag_uid:15;
 const tag_uid:tag_uid_native_hook = tag_uid:16;
+const tag_uid:tag_uid_symbol = tag_uid:17;
 
 const TAG_EXPORTED = 0x80000000;
 const TAG_STRONG = 0x40000000;
@@ -1314,6 +1315,7 @@ native debug_symbol_get(Symbol:symbol, level=0);
 native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, tag_id=tagof(value));
 native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, tag_id=tagof(value));
 native debug_symbol_call(Symbol:symbol, AnyTag:...);
+native Iter:debug_symbol_variables(Symbol:symbol);
 
 
 /*                 */

@@ -47,6 +47,11 @@ public:
 		{
 			return Factory(amx, *obj, params[Indices]...);
 		}
+		std::shared_ptr<dyn_object> sobj;
+		if(iter->extract(sobj))
+		{
+			return Factory(amx, *sobj, params[Indices]...);
+		}
 		std::pair<const dyn_object, dyn_object> *pair;
 		if(iter->extract(pair))
 		{
