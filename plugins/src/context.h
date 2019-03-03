@@ -33,6 +33,7 @@ constexpr cell SleepReturnParallel = 0xE0000000;
 constexpr cell SleepReturnParallelEnd = 0xE1000000;
 
 constexpr cell SleepReturnDebugCall = 0xF0000000;
+constexpr cell SleepReturnDebugCallList = 0xF1000000;
 
 namespace amx
 {

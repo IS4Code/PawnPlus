@@ -760,7 +760,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_call(Symbol:symbol, AnyTag:...);
-	AMX_DEFINE_NATIVE(debug_symbol_call, 2)
+	AMX_DEFINE_NATIVE(debug_symbol_call, 1)
 	{
 		auto dbg = get_debug(amx);
 
@@ -806,6 +806,60 @@ namespace Natives
 		return SleepReturnDebugCall | index;
 	}
 
+	// native debug_symbol_call_list(Symbol:symbol, List:args);
+	AMX_DEFINE_NATIVE(debug_symbol_call_list, 2)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index > dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		if(sym->ident != iFUNCTN)
+		{
+			amx_LogicError(errors::operation_not_supported, "symbol");
+			return 0;
+		}
+
+		list_t *list;
+		if(!list_pool.get_by_id(params[2], list))
+		{
+			amx_LogicError(errors::pointer_invalid, "list", params[2]);
+			return 0;
+		}
+
+		cell argslen = list->size() * sizeof(cell);
+		cell argsneeded = 0;
+		bool error = false;
+		for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
+		{
+			auto vsym = dbg->symboltbl[i];
+			if(vsym->ident != iFUNCTN && vsym->vclass == 1 && vsym->codestart >= sym->codestart && vsym->codeend <= sym->codeend)
+			{
+				cell addr = vsym->address - 2 * sizeof(cell);
+				if(addr > argslen)
+				{
+					error = true;
+					if(addr > argsneeded)
+					{
+						argsneeded = addr;
+					}
+				}
+			}
+		}
+		if(error)
+		{
+			amx_FormalError(errors::not_enough_args, argsneeded / sizeof(cell), argslen / sizeof(cell));
+			return 0;
+		}
+
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return SleepReturnDebugCallList | index;
+	}
+
 	// native Iter:debug_symbol_variables(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_variables, 1)
 	{
@@ -849,6 +903,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_symbol_set_safe),
 	AMX_DECLARE_NATIVE(debug_symbol_get_safe),
 	AMX_DECLARE_NATIVE(debug_symbol_call),
+	AMX_DECLARE_NATIVE(debug_symbol_call_list),
 	AMX_DECLARE_NATIVE(debug_symbol_variables),
 };
 

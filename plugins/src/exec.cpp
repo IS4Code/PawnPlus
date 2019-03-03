@@ -9,6 +9,7 @@
 #include "modules/tasks.h"
 #include "modules/amxutils.h"
 #include "modules/debug.h"
+#include "modules/containers.h"
 #include "fixes/linux.h"
 
 #include <cstring>
@@ -539,6 +540,37 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						amx->error = ret = AMX_ERR_NONE;
 						amx->pri = 0;
 						continue;
+					}
+				}
+				break;
+				case SleepReturnDebugCallList:
+				{
+					cell index = SleepReturnValueMask & amx->pri;
+					auto dbg = amx::load_lock(amx)->get_extra<debug::info>().dbg;
+					if(dbg)
+					{
+						auto hdr = (AMX_HEADER *)amx->base;
+						auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+						auto stk = reinterpret_cast<cell*>(data + amx->stk);
+
+						list_t *list;
+						if(list_pool.get_by_id(stk[2], list))
+						{
+							cell num = list->size() * sizeof(cell);
+							amx->stk -= num + 2 * sizeof(cell);
+							for(cell i = list->size() - 1; i >= 0; i--)
+							{
+								cell val = (*list)[i].store(amx);
+								*--stk = val;
+							}
+							*--stk = num;
+							auto sym = dbg->symboltbl[index];
+							*--stk = amx->cip;
+							amx->cip = sym->address;
+							amx->error = ret = AMX_ERR_NONE;
+							amx->pri = 0;
+							continue;
+						}
 					}
 				}
 				break;
