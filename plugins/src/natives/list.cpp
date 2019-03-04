@@ -113,7 +113,7 @@ public:
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL list_resize(AMX *amx, cell *params)
 	{
-		if(params[2] < 0) amx_LogicError(errors::out_of_range, "size");
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "newsize");
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
 		ucell newsize = params[2];

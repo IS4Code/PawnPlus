@@ -41,6 +41,7 @@ namespace errors
 	extern error arg_empty;
 	extern error inner_error;
 	extern error no_debug_error;
+	extern error unhandled_exception;
 }
 
 namespace amx

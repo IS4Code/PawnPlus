@@ -509,9 +509,10 @@ namespace Natives
 		return params[1];
 	}
 
-	// native String:str_resize(StringTag:str, capacity, padding=0);
+	// native String:str_resize(StringTag:str, size, padding=0);
 	AMX_DEFINE_NATIVE(str_resize, 2)
 	{
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "size");
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 		str->resize(static_cast<size_t>(params[2]), optparam(3, 0));

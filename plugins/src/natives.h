@@ -42,6 +42,12 @@ namespace impl
 		{
 			return handle_error(amx, params, native_info<Native>::name(), err);
 		}
+#ifndef _DEBUG
+		catch(const std::exception &err)
+		{
+			return handle_error(amx, params, native_info<Native>::name(), errors::native_error(errors::unhandled_exception, 2, err.what()));
+		}
+#endif
 	}
 }
 
