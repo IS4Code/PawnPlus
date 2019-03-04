@@ -527,6 +527,11 @@ native list_set_var(List:list, index, ConstVariantTag:value);
 native bool:list_set_cell(List:list, index, offset, AnyTag:value);
 native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
+native list_resize(List:list, newsize, AnyTag:padding, TagTag:tag_id=tagof(padding));
+native list_resize_arr(List:list, newsize, const AnyTag:padding[], size=sizeof(padding), TagTag:tag_id=tagof(padding));
+native list_resize_str(List:list, newsize, const padding[]);
+native list_resize_var(List:list, newsize, ConstVariantTag:padding);
+
 native list_find(List:list, AnyTag:value, index=0, TagTag:tag_id=tagof(value));
 native list_find_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), TagTag:tag_id=tagof(value));
 native list_find_str(List:list, const value[], index=0);

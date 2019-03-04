@@ -115,6 +115,9 @@ public:
 		data.insert(position, first, last);
 		++revision;
 	}
+
+	void resize(size_t count);
+	void resize(size_t count, const dyn_object &value);
 };
 
 class map_t : public collection_base<aux::hybrid_map<dyn_object, dyn_object>>

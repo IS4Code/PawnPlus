@@ -108,6 +108,23 @@ public:
 		}
 		return -1;
 	}
+
+	// native list_resize(List:list, newsize, padding);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL list_resize(AMX *amx, cell *params)
+	{
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "size");
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		ucell newsize = params[2];
+		if(ptr->size() >= newsize)
+		{
+			ptr->resize(newsize);
+		}else{
+			ptr->resize(newsize, Factory(amx, params[Indices]...));
+		}
+		return 1;
+	}
 };
 
 // native bool:list_set_cell(List:list, index, offset, AnyTag:value, ...);
@@ -466,6 +483,30 @@ namespace Natives
 		return ::list_set_cell<5>(amx, params);
 	}
 
+	// native list_resize(List:list, newsize, AnyTag:padding, TagTag:tag_id=tagof(padding));
+	AMX_DEFINE_NATIVE(list_resize, 4)
+	{
+		return value_at<3, 4>::list_resize<dyn_func>(amx, params);
+	}
+
+	// native list_resize_arr(List:list, newsize, const AnyTag:padding[], size=sizeof(padding), TagTag:tag_id=tagof(padding));
+	AMX_DEFINE_NATIVE(list_resize_arr, 5)
+	{
+		return value_at<3, 4, 5>::list_resize<dyn_func_arr>(amx, params);
+	}
+
+	// native list_resize_str(List:list, newsize, const padding[]);
+	AMX_DEFINE_NATIVE(list_resize_str, 3)
+	{
+		return value_at<3>::list_resize<dyn_func_str>(amx, params);
+	}
+
+	// native list_resize_var(List:list, newsize, ConstVariantTag:padding);
+	AMX_DEFINE_NATIVE(list_resize_var, 3)
+	{
+		return value_at<3>::list_resize<dyn_func_var>(amx, params);
+	}
+
 	// native list_tagof(List:list, index);
 	AMX_DEFINE_NATIVE(list_tagof, 2)
 	{
@@ -572,6 +613,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_set_var),
 	AMX_DECLARE_NATIVE(list_set_cell),
 	AMX_DECLARE_NATIVE(list_set_cell_safe),
+	AMX_DECLARE_NATIVE(list_resize),
+	AMX_DECLARE_NATIVE(list_resize_arr),
+	AMX_DECLARE_NATIVE(list_resize_str),
+	AMX_DECLARE_NATIVE(list_resize_var),
 	AMX_DECLARE_NATIVE(list_find),
 	AMX_DECLARE_NATIVE(list_find_arr),
 	AMX_DECLARE_NATIVE(list_find_str),

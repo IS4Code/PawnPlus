@@ -68,6 +68,16 @@ bool list_t::insert_dyn(iterator position, const std::type_info &type, const voi
 	return false;
 }
 
+void list_t::resize(size_t count)
+{
+	data.resize(count);
+}
+
+void list_t::resize(size_t count, const dyn_object &value)
+{
+	data.resize(count, value);
+}
+
 
 
 dyn_object &map_t::operator[](const dyn_object &key)
