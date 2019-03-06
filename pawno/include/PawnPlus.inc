@@ -443,21 +443,34 @@ native var_delete(VariantTag:var);
 native bool:var_valid(ConstVariantTag:var);
 native Variant:var_clone(ConstVariantTag:var);
 
-native var_get(ConstVariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-native var_get_arr(ConstVariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
-native var_get_str(ConstVariantTag:var, value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets)) = var_get_arr;
-native String:var_get_str_s(ConstVariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-native bool:var_get_safe(ConstVariantTag:var, &AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
-native var_get_arr_safe(ConstVariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
-native var_get_str_safe(ConstVariantTag:var, value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
-native String:var_get_str_safe_s(ConstVariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+native var_get(ConstVariantTag:var, offset=0);
+native var_get_arr(ConstVariantTag:var, AnyTag:value[], size=sizeof(value));
+native var_get_str(ConstVariantTag:var, value[], size=sizeof(value)) = var_get_arr;
+native String:var_get_str_s(ConstVariantTag:var);
+native bool:var_get_safe(ConstVariantTag:var, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
+native var_get_arr_safe(ConstVariantTag:var, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native var_get_str_safe(ConstVariantTag:var, value[], size=sizeof(value));
+native String:var_get_str_safe_s(ConstVariantTag:var);
 
-native bool:var_set_cell(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-native bool:var_set_cell_safe(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+native bool:var_set_cell(VariantTag:var, offset, AnyTag:value);
+native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, TagTag:tag_id=tagof(value));
+
+native var_get_md(ConstVariantTag:var, const offsets[], offsets_size=sizeof(offsets));
+native var_get_md_arr(ConstVariantTag:var, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets));
+native var_get_md_str(ConstVariantTag:var, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets)) = var_get_md_arr;
+native String:var_get_md_str_s(ConstVariantTag:var, const offsets[], offsets_size=sizeof(offsets));
+native bool:var_get_md_safe(ConstVariantTag:var, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+native var_get_md_arr_safe(ConstVariantTag:var, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+native var_get_md_str_safe(ConstVariantTag:var, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets));
+native String:var_get_md_str_safe_s(ConstVariantTag:var, const offsets[], offsets_size=sizeof(offsets));
+
+native bool:var_set_cell_md(VariantTag:var, const offsets[], AnyTag:value, offsets_size=sizeof(offsets));
+native bool:var_set_cell_md_safe(VariantTag:var, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 
 native var_tagof(ConstVariantTag:var);
 native tag_uid:var_tag_uid(ConstVariantTag:var);
-native var_sizeof(ConstVariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+native var_sizeof(ConstVariantTag:var);
+native var_sizeof_md(ConstVariantTag:var, const offsets[], offsets_size=sizeof(offsets));
 native Variant:var_add(ConstVariantTag:var1, ConstVariantTag:var2);
 native Variant:var_sub(ConstVariantTag:var1, ConstVariantTag:var2);
 native Variant:var_mul(ConstVariantTag:var1, ConstVariantTag:var2);
@@ -927,9 +940,13 @@ native bool:iter_eq(IterTag:iter1, IterTag:iter2);
 
 native iter_get(IterTag:iter, offset=0);
 native iter_get_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
+native iter_get_str(IterTag:iter, value[], size=sizeof(value)) = iter_get_arr;
+native String:iter_get_str_s(IterTag:iter);
 native Variant:iter_get_var(IterTag:iter);
 native bool:iter_get_safe(IterTag:iter, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 native iter_get_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native iter_get_str_safe(IterTag:iter, value[], size=sizeof(value));
+native String:iter_get_str_safe_s(IterTag:iter);
 
 native bool:iter_set(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
 native bool:iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
@@ -938,6 +955,18 @@ native bool:iter_set_var(IterTag:iter, ConstVariantTag:value);
 native bool:iter_set_cell(IterTag:iter, offset, AnyTag:value);
 native bool:iter_set_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
+native iter_get_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+native iter_get_md_arr(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets));
+native iter_get_md_str(IterTag:iter, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets)) = iter_get_md_arr;
+native String:iter_get_md_str_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+native bool:iter_get_md_safe(IterTag:iter, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+native iter_get_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+native iter_get_md_str_safe(IterTag:iter, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets));
+native String:iter_get_md_str_safe_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+
+native bool:iter_set_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets));
+native bool:iter_set_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+
 native bool:iter_insert(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
 native bool:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native bool:iter_insert_str(IterTag:iter, const value[]);
@@ -945,21 +974,43 @@ native bool:iter_insert_var(IterTag:iter, ConstVariantTag:value);
 
 native iter_tagof(IterTag:iter);
 native iter_sizeof(IterTag:iter);
+native iter_sizeof_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
 
 native iter_get_key(IterTag:iter, offset=0);
 native iter_get_key_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
+native iter_get_key_str(IterTag:iter, value[], size=sizeof(value)) = iter_get_key_arr;
+native String:iter_get_key_str_s(IterTag:iter);
 native Variant:iter_get_key_var(IterTag:iter);
 native bool:iter_get_key_safe(IterTag:iter, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 native iter_get_key_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native iter_get_key_str_safe(IterTag:iter, value[], size=sizeof(value));
+native String:iter_get_key_str_safe_s(IterTag:iter);
+
+native iter_get_key_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+native iter_get_key_md_arr(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets));
+native iter_get_key_md_str(IterTag:iter, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets)) = iter_get_key_md_arr;
+native String:iter_get_key_md_str_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+native bool:iter_get_key_md_safe(IterTag:iter, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+native iter_get_key_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
+native iter_get_key_md_str_safe(IterTag:iter, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets));
+native String:iter_get_key_md_str_safe_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+
+native bool:iter_set_key_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets)) = iter_set_cell_md;
+native bool:iter_set_key_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 
 native iter_tagof_key(IterTag:iter);
 native iter_sizeof_key(IterTag:iter);
+native iter_sizeof_key_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
 
 native iter_get_value(IterTag:iter, offset=0) = iter_get;
 native iter_get_value_arr(IterTag:iter, AnyTag:value[], size=sizeof(value)) = iter_get_arr;
+native iter_get_value_str(IterTag:iter, value[], size=sizeof(value)) = iter_get_arr;
+native String:iter_get_value_str_s(IterTag:iter) = iter_get_str_s;
 native Variant:iter_get_value_var(IterTag:iter) = iter_get_var;
 native bool:iter_get_value_safe(IterTag:iter, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value)) = iter_get_safe;
 native iter_get_value_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value)) = iter_get_arr_safe;
+native iter_get_value_str_safe(IterTag:iter, value[], size=sizeof(value)) = iter_get_str_safe;
+native String:iter_get_value_str_safe_s(IterTag:iter) = iter_get_str_safe_s;
 
 native bool:iter_set_value(IterTag:iter, AnyTag:value, TagTag:value_tag_id=tagof(value)) = iter_set;
 native bool:iter_set_value_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:value_tag_id=tagof(value)) = iter_set_arr;
@@ -968,8 +1019,21 @@ native bool:iter_set_value_var(IterTag:iter, ConstVariantTag:value) = iter_set_v
 native bool:iter_set_value_cell(IterTag:iter, offset, AnyTag:value) = iter_set_cell;
 native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:value_tag_id=tagof(value)) = iter_set_cell_safe;
 
+native iter_get_value_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets)) = iter_get_md;
+native iter_get_value_md_arr(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets)) = iter_get_md_arr;
+native iter_get_value_md_str(IterTag:iter, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets)) = iter_get_md_arr;
+native String:iter_get_value_md_str_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets)) = iter_get_md_str_s;
+native bool:iter_get_value_md_safe(IterTag:iter, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value)) = iter_get_md_safe;
+native iter_get_value_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value)) = iter_get_md_arr_safe;
+native iter_get_value_md_str_safe(IterTag:iter, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets)) = iter_get_md_str_safe;
+native String:iter_get_value_md_str_safe_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets)) = iter_get_md_str_safe_s;
+
+native bool:iter_set_value_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets)) = iter_set_cell_md;
+native bool:iter_set_value_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value)) = iter_set_cell_md_safe;
+
 native iter_tagof_value(IterTag:iter) = iter_tagof;
 native iter_sizeof_value(IterTag:iter) = iter_sizeof;
+native iter_sizeof_value_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets)) = iter_sizeof_md;
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -995,19 +1059,27 @@ native iter_sizeof_value(IterTag:iter) = iter_sizeof;
 #define iter_set_cell<%0>(%1,%2,%3) iter_set_cell(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST[%0](%3))
 #define iter_insert<%0>(%1,%2) iter_insert(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST[%0](%2))
 #define iter_insert_arr<%0>(%1,%2) iter_insert_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2))
+#define iter_get_md<%0>(%1) (%0:iter_get_md(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_get_md_arr<%0>(%1,%2,%3) iter_get_md_arr(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 
 #define iter_sizeof<%0>(%1) iter_sizeof(Iter:_PP@CAST[Iter<%0>](%1))
+#define iter_sizeof_md<%0>(%1) iter_sizeof_md(Iter:_PP@CAST[Iter<%0>](%1))
 
 #define iter_get_key<%0,%1>(%2) (%0:iter_get_key(Iter:_PP@CAST[PairIter<%0,%1>](%2)))
 #define iter_get_key_arr<%0,%1>(%2,%3) iter_get_key_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
 #define iter_get_value<%0,%1>(%2) (%1:iter_get_value(Iter:_PP@CAST[PairIter<%0,%1>](%2)))
 #define iter_get_value_arr<%0,%1>(%2,%3) iter_get_value_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%1](%3))
+#define iter_get_value_md<%0,%1>(%2) (%0:iter_get_value_md(Iter:_PP@CAST[PairIter<%0,%1>](%2)))
+#define iter_get_value_md_arr<%0,%1>(%2,%3,%4) iter_get_value_md_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST_ARR[%0](%4))
 #define iter_set_value<%0,%1>(%2,%3) iter_set_value(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST[%1](%3))
 #define iter_set_value_arr(%2,%3) iter_set_value_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%1](%3))
 #define iter_set_value_cell<%0,%1>(%2,%3,%4) iter_set_value_cell(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST[%1](%4))
+#define iter_set_value_cell_md<%0,%1>(%2,%3,%4) iter_set_value_cell(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST[%1](%4))
 
-#define iter_sizeof_key<%0,%1>(%2) iter_sizeof(Iter:_PP@CAST[PairIter<%0,%1>](%2))
-#define iter_sizeof_value<%0,%1>(%2) iter_sizeof(Iter:_PP@CAST[PairIter<%0,%1>](%2))
+#define iter_sizeof_key<%0,%1>(%2) iter_sizeof_key(Iter:_PP@CAST[PairIter<%0,%1>](%2))
+#define iter_sizeof_key_md<%0,%1>(%2) iter_sizeof_key_md(Iter:_PP@CAST[PairIter<%0,%1>](%2))
+#define iter_sizeof_value<%0,%1>(%2) iter_sizeof_value(Iter:_PP@CAST[PairIter<%0,%1>](%2))
+#define iter_sizeof_value_md<%0,%1>(%2) iter_sizeof_value_md(Iter:_PP@CAST[PairIter<%0,%1>](%2))
 
 #if defined PP_SYNTAX_FOR_LIST
 #define for_list_of<%2>(%0:%1) for(new Iter<%2>:%0=list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))

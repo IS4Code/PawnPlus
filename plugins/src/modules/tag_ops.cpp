@@ -1254,7 +1254,7 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(arg, iter))
 		{
-			std::pair<const dyn_object, dyn_object> *pair;
+			const std::pair<const dyn_object, dyn_object> *pair;
 			if(iter->extract(pair))
 			{
 				str.append(pair->first.to_string());
@@ -1262,7 +1262,7 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 				str.push_back('>');
 				str.append(pair->second.to_string());
 			}else{
-				std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+				std::shared_ptr<const std::pair<const dyn_object, dyn_object>> spair;
 				if(iter->extract(spair))
 				{
 					str.append(spair->first.to_string());

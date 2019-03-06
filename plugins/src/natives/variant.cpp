@@ -63,13 +63,13 @@ namespace Natives
 		return value_at<1>::var_new<dyn_func_str>(amx, params);
 	}
 
-	// native Variant:var_new_str_s(StringTag:value);
+	// native Variant:var_new_str_s(ConstStringTag:value);
 	AMX_DEFINE_NATIVE(var_new_str_s, 1)
 	{
 		return value_at<1>::var_new<dyn_func_str_s>(amx, params);
 	}
 
-	// native Variant:var_new_var(VariantTag:value);
+	// native Variant:var_new_var(ConstVariantTag:value);
 	AMX_DEFINE_NATIVE(var_new_var, 1)
 	{
 		return value_at<1>::var_new<dyn_func_var>(amx, params);
@@ -99,14 +99,14 @@ namespace Natives
 		return variants::pool.remove_by_id(params[1]);
 	}
 
-	// native bool:var_valid(VariantTag:var);
+	// native bool:var_valid(ConstVariantTag:var);
 	AMX_DEFINE_NATIVE(var_valid, 1)
 	{
 		dyn_object *var;
 		return variants::pool.get_by_id(params[1], var);
 	}
 
-	// native Variant:var_clone(VariantTag:var);
+	// native Variant:var_clone(ConstVariantTag:var);
 	AMX_DEFINE_NATIVE(var_clone, 1)
 	{
 		dyn_object *var;
@@ -114,70 +114,129 @@ namespace Natives
 		return variants::pool.get_id(variants::pool.add(var->clone()));
 	}
 
-	// native var_get(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-	AMX_DEFINE_NATIVE(var_get, 3)
+	// native var_get(ConstVariantTag:var, offset=0);
+	AMX_DEFINE_NATIVE(var_get, 2)
+	{
+		return value_at<2>::var_get<dyn_func>(amx, params);
+	}
+
+	// native var_get_arr(ConstVariantTag:var, AnyTag:value[], size=sizeof(value));
+	AMX_DEFINE_NATIVE(var_get_arr, 3)
+	{
+		return value_at<2, 3>::var_get<dyn_func_arr>(amx, params);
+	}
+
+	// native String:var_get_str_s(ConstVariantTag:var);
+	AMX_DEFINE_NATIVE(var_get_str_s, 3)
+	{
+		return value_at<>::var_get<dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:var_get_safe(ConstVariantTag:var, &AnyTag:value, offset=0, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(var_get_safe, 4)
+	{
+		return value_at<2, 3, 4>::var_get<dyn_func>(amx, params);
+	}
+
+	// native var_get_arr_safe(ConstVariantTag:var, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(var_get_arr_safe, 4)
+	{
+		return value_at<2, 3, 4>::var_get<dyn_func_arr>(amx, params);
+	}
+
+	// native var_get_str_safe(ConstVariantTag:var, value[], size=sizeof(value));
+	AMX_DEFINE_NATIVE(var_get_str_safe, 5)
+	{
+		return value_at<2, 3>::var_get<dyn_func_str>(amx, params);
+	}
+
+	// native String:var_get_str_safe_s(ConstVariantTag:var);
+	AMX_DEFINE_NATIVE(var_get_str_safe_s, 3)
+	{
+		return value_at<0>::var_get<dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:var_set_cell(VariantTag:var, offset, AnyTag:value);
+	AMX_DEFINE_NATIVE(var_set_cell, 3)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		return var->set_cell(params[2], params[3]);
+	}
+
+	// native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(var_set_cell_safe, 4)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if(!var->tag_assignable(amx, params[4])) return 0;
+		return var->set_cell(params[2], params[3]);
+	}
+
+	// native var_get_md(ConstVariantTag:var, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(var_get_md, 3)
 	{
 		return value_at<2, 3>::var_get<dyn_func>(amx, params);
 	}
 
-	// native var_get_arr(VariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
-	AMX_DEFINE_NATIVE(var_get_arr, 5)
+	// native var_get_md_arr(ConstVariantTag:var, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(var_get_md_arr, 5)
 	{
-		return value_at<2, 3, 4, 5>::var_get<dyn_func_arr>(amx, params);
+		return value_at<3, 2, 4, 5>::var_get<dyn_func_arr>(amx, params);
 	}
 
-	// native String:var_get_str_s(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-	AMX_DEFINE_NATIVE(var_get_str_s, 3)
+	// native String:var_get_md_str_s(ConstVariantTag:var, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(var_get_md_str_s, 3)
 	{
 		return value_at<2, 3>::var_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:var_get_safe(VariantTag:var, &AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(var_get_safe, 5)
+	// native bool:var_get_md_safe(ConstVariantTag:var, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(var_get_md_safe, 5)
 	{
-		return value_at<2, 3, 4, 5>::var_get<dyn_func>(amx, params);
+		return value_at<3, 2, 4, 5>::var_get<dyn_func>(amx, params);
 	}
 
-	// native var_get_arr_safe(VariantTag:var, AnyTag:value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets), tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(var_get_arr_safe, 6)
+	// native var_get_md_arr_safe(ConstVariantTag:var, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(var_get_md_arr_safe, 6)
 	{
-		return value_at<2, 3, 4, 5, 6>::var_get<dyn_func_arr>(amx, params);
+		return value_at<3, 2, 4, 5, 6>::var_get<dyn_func_arr>(amx, params);
 	}
 
-	// native var_get_str_safe(VariantTag:var, value[], const offsets[]={cellmin}, size=sizeof(value), offsets_size=sizeof(offsets));
-	AMX_DEFINE_NATIVE(var_get_str_safe, 5)
+	// native var_get_md_str_safe(ConstVariantTag:var, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(var_get_md_str_safe, 5)
 	{
-		return value_at<2, 3, 4, 5>::var_get<dyn_func_str>(amx, params);
+		return value_at<3, 2, 4, 5>::var_get<dyn_func_str>(amx, params);
 	}
 
-	// native String:var_get_str_safe_s(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-	AMX_DEFINE_NATIVE(var_get_str_safe_s, 3)
+	// native String:var_get_md_str_safe_s(ConstVariantTag:var, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(var_get_md_str_safe_s, 3)
 	{
 		return value_at<2, 3, 0>::var_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:var_set_cell(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
-	AMX_DEFINE_NATIVE(var_set_cell, 4)
+	// native bool:var_set_cell_md(VariantTag:var, const offsets[], AnyTag:value, offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(var_set_cell_md, 4)
 	{
 		dyn_object *var;
 		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		cell offsets_size = params[4];
-		cell *offsets_addr = get_offsets(amx, params[3], offsets_size);
-		return var->set_cell(offsets_addr, offsets_size, params[2]);
+		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
+		return var->set_cell(offsets_addr, offsets_size, params[3]);
 	}
 
-	// native bool:var_set_cell_safe(VariantTag:var, AnyTag:value, const offsets[]={cellmin}, offsets_size=sizeof(offsets), tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(var_set_cell_safe, 5)
+	// native bool:var_set_cell_md_safe(VariantTag:var, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(var_set_cell_md_safe, 5)
 	{
 		dyn_object *var;
 		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		if(!var->tag_assignable(amx, params[5])) return 0;
 		cell offsets_size = params[4];
-		cell *offsets_addr = get_offsets(amx, params[3], offsets_size);
-		return var->set_cell(offsets_addr, offsets_size, params[2]);
+		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
+		return var->set_cell(offsets_addr, offsets_size, params[3]);
 	}
 
-	// native var_tagof(VariantTag:var);
+	// native var_tagof(ConstVariantTag:var);
 	AMX_DEFINE_NATIVE(var_tagof, 1)
 	{
 		dyn_object *var;
@@ -185,7 +244,7 @@ namespace Natives
 		return var->get_tag(amx);
 	}
 
-	// native tag_uid:var_tag_uid(VariantTag:var);
+	// native tag_uid:var_tag_uid(ConstVariantTag:var);
 	AMX_DEFINE_NATIVE(var_tag_uid, 1)
 	{
 		dyn_object *var;
@@ -193,8 +252,16 @@ namespace Natives
 		return var->get_tag()->uid;
 	}
 
-	// native var_sizeof(VariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+	// native var_sizeof(ConstVariantTag:var);
 	AMX_DEFINE_NATIVE(var_sizeof, 3)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		return var->get_size();
+	}
+
+	// native var_sizeof_md(ConstVariantTag:var, const offsets[]={cellmin}, offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(var_sizeof_md, 3)
 	{
 		dyn_object *var;
 		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
@@ -203,7 +270,7 @@ namespace Natives
 		return var->get_size(offsets_addr, offsets_size);
 	}
 	
-	// native Variant:var_bin_op(VariantTag:var1, VariantTag:var2);
+	// native Variant:var_bin_op(ConstVariantTag:var1, ConstVariantTag:var2);
 	template <dyn_object (dyn_object::*op)(const dyn_object&) const>
 	static cell AMX_NATIVE_CALL var_bin_op(AMX *amx, cell *params)
 	{
@@ -216,37 +283,37 @@ namespace Natives
 		return variants::create(std::move(var));
 	}
 
-	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	// native Variant:var_add(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_add, 2)
 	{
 		return var_bin_op<&dyn_object::operator+>(amx, params);
 	}
 
-	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	// native Variant:var_add(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_sub, 2)
 	{
 		return var_bin_op<&dyn_object::operator- >(amx, params);
 	}
 
-	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	// native Variant:var_add(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_mul, 2)
 	{
 		return var_bin_op<&dyn_object::operator*>(amx, params);
 	}
 
-	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	// native Variant:var_add(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_div, 2)
 	{
 		return var_bin_op<&dyn_object::operator/>(amx, params);
 	}
 
-	// native Variant:var_add(VariantTag:var1, VariantTag:var2);
+	// native Variant:var_add(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_mod, 2)
 	{
 		return var_bin_op<&dyn_object::operator% >(amx, params);
 	}
 	
-	// native Variant:var_un_op(VariantTag:var);
+	// native Variant:var_un_op(ConstVariantTag:var);
 	template <dyn_object (dyn_object::*op)() const>
 	static cell AMX_NATIVE_CALL var_un_op(AMX *amx, cell *params)
 	{
@@ -257,25 +324,25 @@ namespace Natives
 		return variants::create(std::move(result));
 	}
 
-	// native Variant:var_neg(VariantTag:var);
+	// native Variant:var_neg(ConstVariantTag:var);
 	AMX_DEFINE_NATIVE(var_neg, 1)
 	{
 		return var_un_op<&dyn_object::operator- >(amx, params);
 	}
 
-	// native Variant:var_neg(VariantTag:var);
+	// native Variant:var_neg(ConstVariantTag:var);
 	AMX_DEFINE_NATIVE(var_inc, 1)
 	{
 		return var_un_op<&dyn_object::inc>(amx, params);
 	}
 
-	// native Variant:var_neg(VariantTag:var);
+	// native Variant:var_neg(ConstVariantTag:var);
 	AMX_DEFINE_NATIVE(var_dec, 1)
 	{
 		return var_un_op<&dyn_object::dec>(amx, params);
 	}
 
-	// native bool:var_log_op(VariantTag:var1, VariantTag:var2);
+	// native bool:var_log_op(ConstVariantTag:var1, ConstVariantTag:var2);
 	template <bool(dyn_object::*op)(const dyn_object&) const>
 	static cell AMX_NATIVE_CALL var_log_op(AMX *amx, cell *params)
 	{
@@ -305,43 +372,43 @@ namespace Natives
 		return result;
 	}
 
-	// native bool:var_eq(VariantTag:var1, VariantTag:var2);
+	// native bool:var_eq(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_eq, 2)
 	{
 		return var_log_op<&dyn_object::operator==>(amx, params);
 	}
 
-	// native bool:var_neq(VariantTag:var1, VariantTag:var2);
+	// native bool:var_neq(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_neq, 2)
 	{
 		return var_log_op<&dyn_object::operator!=>(amx, params);
 	}
 
-	// native bool:var_lt(VariantTag:var1, VariantTag:var2);
+	// native bool:var_lt(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_lt, 2)
 	{
 		return var_log_op<&dyn_object::operator<>(amx, params);
 	}
 
-	// native bool:var_gt(VariantTag:var1, VariantTag:var2);
+	// native bool:var_gt(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_gt, 2)
 	{
 		return var_log_op<(&dyn_object::operator>)>(amx, params);
 	}
 
-	// native bool:var_lte(VariantTag:var1, VariantTag:var2);
+	// native bool:var_lte(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_lte, 2)
 	{
 		return var_log_op<&dyn_object::operator<=>(amx, params);
 	}
 
-	// native bool:var_gte(VariantTag:var1, VariantTag:var2);
+	// native bool:var_gte(ConstVariantTag:var1, ConstVariantTag:var2);
 	AMX_DEFINE_NATIVE(var_gte, 2)
 	{
 		return var_log_op<&dyn_object::operator>=>(amx, params);
 	}
 
-	// native bool:var_not(VariantTag:var);
+	// native bool:var_not(ConstVariantTag:var);
 	AMX_DEFINE_NATIVE(var_not, 1)
 	{
 		dyn_object *var;
@@ -419,9 +486,21 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_set_cell),
 	AMX_DECLARE_NATIVE(var_set_cell_safe),
 
+	AMX_DECLARE_NATIVE(var_get_md),
+	AMX_DECLARE_NATIVE(var_get_md_arr),
+	AMX_DECLARE_NATIVE(var_get_md_str_s),
+	AMX_DECLARE_NATIVE(var_get_md_safe),
+	AMX_DECLARE_NATIVE(var_get_md_arr_safe),
+	AMX_DECLARE_NATIVE(var_get_md_str_safe),
+	AMX_DECLARE_NATIVE(var_get_md_str_safe_s),
+
+	AMX_DECLARE_NATIVE(var_set_cell_md),
+	AMX_DECLARE_NATIVE(var_set_cell_md_safe),
+
 	AMX_DECLARE_NATIVE(var_tagof),
 	AMX_DECLARE_NATIVE(var_tag_uid),
 	AMX_DECLARE_NATIVE(var_sizeof),
+	AMX_DECLARE_NATIVE(var_sizeof_md),
 	AMX_DECLARE_NATIVE(var_add),
 	AMX_DECLARE_NATIVE(var_sub),
 	AMX_DECLARE_NATIVE(var_mul),

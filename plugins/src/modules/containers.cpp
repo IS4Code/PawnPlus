@@ -293,19 +293,26 @@ bool dyn_iterator::insert_dyn(const std::type_info &type, const void *value)
 
 bool list_iterator_t::extract_dyn(const std::type_info &type, void *value) const
 {
-	if(type == typeid(value_type*) && valid())
+	if(valid())
 	{
-		*reinterpret_cast<value_type**>(value) = &*_position;
-		return true;
-	}else if(type == typeid(std::shared_ptr<std::pair<const dyn_object, dyn_object>>))
-	{
-		if(auto source = lock_same())
+		if(type == typeid(value_type*))
 		{
-			if(_position != source->end())
+			*reinterpret_cast<value_type**>(value) = &*_position;
+			return true;
+		}else if(type == typeid(const value_type*))
+		{
+			*reinterpret_cast<const value_type**>(value) = &*_position;
+			return true;
+		}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
+		{
+			if(auto source = lock_same())
 			{
-				auto fake_pair = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(static_cast<cell>(std::distance(source->begin(), _position)), tags::find_tag(tags::tag_cell)), *_position));
-				*reinterpret_cast<std::shared_ptr<std::pair<const dyn_object, dyn_object>>*>(value) = std::move(fake_pair);
-				return true;
+				if(_position != source->end())
+				{
+					auto fake_pair = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(static_cast<cell>(std::distance(source->begin(), _position)), tags::find_tag(tags::tag_cell)), *_position));
+					*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::move(fake_pair);
+					return true;
+				}
 			}
 		}
 	}
@@ -490,6 +497,10 @@ bool linked_list_iterator_t::extract_dyn(const std::type_info &type, void *value
 		if(type == typeid(dyn_object*))
 		{
 			*reinterpret_cast<dyn_object**>(value) = &**_position;
+			return true;
+		}else if(type == typeid(const dyn_object*))
+		{
+			*reinterpret_cast<const dyn_object**>(value) = &**_position;
 			return true;
 		}else if(type == typeid(value_type*))
 		{

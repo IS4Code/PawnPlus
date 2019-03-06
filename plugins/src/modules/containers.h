@@ -377,10 +377,17 @@ public:
 protected:
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override
 	{
-		if(type == typeid(value_type*) && valid())
+		if(valid())
 		{
-			*reinterpret_cast<value_type**>(value) = &*_position;
-			return true;
+			if(type == typeid(value_type*))
+			{
+				*reinterpret_cast<value_type**>(value) = &*_position;
+				return true;
+			}else if(type == typeid(const value_type*))
+			{
+				*reinterpret_cast<const value_type**>(value) = &*_position;
+				return true;
+			}
 		}
 		return false;
 	}

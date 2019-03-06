@@ -214,13 +214,13 @@ protected:
 	{
 		if(valid())
 		{
-			if(type == typeid(std::shared_ptr<dyn_object>))
+			if(type == typeid(std::shared_ptr<const dyn_object>))
 			{
-				*reinterpret_cast<std::shared_ptr<dyn_object>*>(value) = std::make_shared<dyn_object>(current, tags::find_tag(tags::tag_symbol));
+				*reinterpret_cast<std::shared_ptr<const dyn_object>*>(value) = std::make_shared<dyn_object>(current, tags::find_tag(tags::tag_symbol));
 				return true;
-			}else if(type == typeid(std::shared_ptr<std::pair<const dyn_object, dyn_object>>))
+			}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
 			{
-				*reinterpret_cast<std::shared_ptr<std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(index, tags::find_tag(tags::tag_cell)), dyn_object(current, tags::find_tag(tags::tag_symbol))));
+				*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(index, tags::find_tag(tags::tag_cell)), dyn_object(current, tags::find_tag(tags::tag_symbol))));
 				return true;
 			}
 		}

@@ -5,6 +5,95 @@
 #include "objects/dyn_object.h"
 #include "fixes/linux.h"
 
+template <class Func>
+auto value_write(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)>::type
+{
+	dyn_iterator *iter;
+	if(iter_pool.get_by_id(arg, iter))
+	{
+		dyn_object *obj;
+		if(iter->extract(obj))
+		{
+			return f(*obj);
+		}
+		std::shared_ptr<dyn_object> sobj;
+		if(iter->extract(sobj))
+		{
+			return f(*sobj);
+		}
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
+		{
+			return f(pair->second);
+		}
+		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return f(spair->second);
+		}
+		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+	}
+	amx_LogicError(errors::pointer_invalid, "iterator", arg);
+	dyn_object tmp;
+	return f(tmp);
+}
+
+template <class Func>
+auto value_read(cell arg, Func f) -> typename std::result_of<Func(const dyn_object&)>::type
+{
+	dyn_iterator *iter;
+	if(iter_pool.get_by_id(arg, iter))
+	{
+		const dyn_object *obj;
+		if(iter->extract(obj))
+		{
+			return f(*obj);
+		}
+		std::shared_ptr<const dyn_object> sobj;
+		if(iter->extract(sobj))
+		{
+			return f(*sobj);
+		}
+		const std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
+		{
+			return f(pair->second);
+		}
+		std::shared_ptr<const std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return f(spair->second);
+		}
+		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+	}
+	amx_LogicError(errors::pointer_invalid, "iterator", arg);
+	dyn_object tmp;
+	return f(tmp);
+}
+
+template <class Func>
+auto key_read(cell arg, Func f) -> typename std::result_of<Func(const dyn_object&)>::type
+{
+	dyn_iterator *iter;
+	if(iter_pool.get_by_id(arg, iter))
+	{
+		const std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
+		{
+			return f(pair->first);
+		}
+		std::shared_ptr<const std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return f(spair->first);
+		}
+		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+	}
+	amx_LogicError(errors::pointer_invalid, "iterator", arg);
+	dyn_object tmp;
+	return f(tmp);
+}
+
 template <size_t... Indices>
 class value_at
 {
@@ -16,55 +105,21 @@ public:
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_set(AMX *amx, cell *params)
 	{
-		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-
-		dyn_object *obj;
-		if(iter->extract(obj))
+		return value_write(params[1], [&](dyn_object &obj)
 		{
-			*obj = Factory(amx, params[Indices]...);
+			obj = Factory(amx, params[Indices]...);
 			return 1;
-		}
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			pair->second = Factory(amx, params[Indices]...);
-			return 1;
-		}
-		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
-		return 0;
+		});
 	}
 
 	// native iter_get(IterTag:iter, ...);
 	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_get(AMX *amx, cell *params)
 	{
-		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-
-		dyn_object *obj;
-		if(iter->extract(obj))
+		return value_read(params[1], [&](const dyn_object &obj)
 		{
-			return Factory(amx, *obj, params[Indices]...);
-		}
-		std::shared_ptr<dyn_object> sobj;
-		if(iter->extract(sobj))
-		{
-			return Factory(amx, *sobj, params[Indices]...);
-		}
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			return Factory(amx, pair->second, params[Indices]...);
-		}
-		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return Factory(amx, spair->second, params[Indices]...);
-		}
-
-		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
-		return 0;
+			return Factory(amx, obj, params[Indices]...);
+		});
 	}
 
 	// native bool:iter_insert(IterTag:iter, ...);
@@ -83,22 +138,10 @@ public:
 	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_get_key(AMX *amx, cell *params)
 	{
-		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
+		return key_read(params[1], [&](const dyn_object &obj)
 		{
-			return Factory(amx, pair->first, params[Indices]...);
-		}
-		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return Factory(amx, spair->first, params[Indices]...);
-		}
-
-		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
-		return 0;
+			return Factory(amx, obj, params[Indices]...);
+		});
 	}
 };
 
@@ -126,25 +169,24 @@ static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
 {
 	if(params[2] < 0) amx_LogicError(errors::out_of_range, "array offset");
 
-	dyn_iterator *iter;
-	if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-
-	dyn_object *obj;
-	if(iter->extract(obj))
+	return value_write(params[1], [&](dyn_object &obj)
 	{
-		if(TagIndex && !obj->tag_assignable(amx, params[TagIndex])) return 0;
-		return obj->set_cell(params[2], params[3]);
-	}
-	std::pair<const dyn_object, dyn_object> *pair;
-	if(iter->extract(pair))
-	{
-		auto &obj = pair->second;
-		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
+		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return false;
 		return obj.set_cell(params[2], params[3]);
-	}
+	});
+}
 
-	amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
-	return 0;
+// native bool:iter_set_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), ...);
+template <size_t TagIndex = 0>
+static cell AMX_NATIVE_CALL iter_set_cell_md(AMX *amx, cell *params)
+{
+	return value_write(params[1], [&](dyn_object &obj)
+	{
+		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return false;
+		cell offsets_size = params[4];
+		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
+		return obj.set_cell(offsets_addr, offsets_size, params[3]);
+	});
 }
 
 namespace Natives
@@ -445,6 +487,12 @@ namespace Natives
 		return value_at<2, 3>::iter_get<dyn_func_arr>(amx, params);
 	}
 
+	// native String:iter_get_str_s(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_get_str_s, 1)
+	{
+		return value_at<>::iter_get<dyn_func_str_s>(amx, params);
+	}
+
 	// native Variant:iter_get_var(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_get_var, 1)
 	{
@@ -461,6 +509,18 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_get_arr_safe, 4)
 	{
 		return value_at<2, 3, 4>::iter_get<dyn_func_arr>(amx, params);
+	}
+
+	// native iter_get_str_safe(IterTag:iter, value[], size=sizeof(value));
+	AMX_DEFINE_NATIVE(iter_get_str_safe, 5)
+	{
+		return value_at<2, 3>::iter_get<dyn_func_str>(amx, params);
+	}
+
+	// native String:iter_get_str_safe_s(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_get_str_safe_s, 3)
+	{
+		return value_at<0>::iter_get<dyn_func_str_s>(amx, params);
 	}
 
 	// native bool:iter_set(IterTag:iter, AnyTag:value, tag_id=tagof(value));
@@ -499,6 +559,60 @@ namespace Natives
 		return ::iter_set_cell<4>(amx, params);
 	}
 
+	// native iter_get_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_md, 3)
+	{
+		return value_at<2, 3>::iter_get<dyn_func>(amx, params);
+	}
+
+	// native iter_get_md_arr(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_md_arr, 5)
+	{
+		return value_at<3, 2, 4, 5>::iter_get<dyn_func_arr>(amx, params);
+	}
+
+	// native String:iter_get_md_str_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_md_str_s, 3)
+	{
+		return value_at<2, 3>::iter_get<dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:iter_get_md_safe(IterTag:iter, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_get_md_safe, 5)
+	{
+		return value_at<3, 2, 4, 5>::iter_get<dyn_func>(amx, params);
+	}
+
+	// native iter_get_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_get_md_arr_safe, 6)
+	{
+		return value_at<3, 2, 4, 5, 6>::iter_get<dyn_func_arr>(amx, params);
+	}
+
+	// native iter_get_md_str_safe(IterTag:iter, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_md_str_safe, 5)
+	{
+		return value_at<3, 2, 4, 5>::iter_get<dyn_func_str>(amx, params);
+	}
+
+	// native String:iter_get_md_str_safe_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_md_str_safe_s, 3)
+	{
+		return value_at<2, 3, 0>::iter_get<dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:iter_set_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_set_cell_md, 4)
+	{
+		return ::iter_set_cell_md(amx, params);
+	}
+
+	// native bool:iter_set_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_set_cell_md_safe, 5)
+	{
+		return ::iter_set_cell_md<5>(amx, params);
+	}
+
 	// native bool:iter_insert(IterTag:iter, AnyTag:value, tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_insert, 3)
 	{
@@ -535,6 +649,12 @@ namespace Natives
 		return value_at<2, 3>::iter_get_key<dyn_func_arr>(amx, params);
 	}
 
+	// native String:iter_get_key_str_s(IterTag:iter));
+	AMX_DEFINE_NATIVE(iter_get_key_str_s, 1)
+	{
+		return value_at<>::iter_get_key<dyn_func_str_s>(amx, params);
+	}
+
 	// native Variant:iter_get_key_var(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_get_key_var, 1)
 	{
@@ -553,98 +673,116 @@ namespace Natives
 		return value_at<2, 3, 4>::iter_get_key<dyn_func_arr>(amx, params);
 	}
 
+	// native iter_get_key_str_safe(IterTag:iter, value[], size=sizeof(value));
+	AMX_DEFINE_NATIVE(iter_get_key_str_safe, 3)
+	{
+		return value_at<2, 3>::iter_get_key<dyn_func_str>(amx, params);
+	}
+
+	// native String:iter_get_key_str_safe_s(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_get_key_str_safe_s, 1)
+	{
+		return value_at<0>::iter_get_key<dyn_func_str_s>(amx, params);
+	}
+
+	// native iter_get_key_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_key_md, 3)
+	{
+		return value_at<2, 3>::iter_get_key<dyn_func>(amx, params);
+	}
+
+	// native iter_get_key_md_arr(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_key_md_arr, 5)
+	{
+		return value_at<3, 2, 4, 5>::iter_get_key<dyn_func_arr>(amx, params);
+	}
+
+	// native String:iter_get_key_md_str_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_key_md_str_s, 3)
+	{
+		return value_at<2, 3>::iter_get_key<dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:iter_get_key_md_safe(IterTag:iter, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_get_key_md_safe, 5)
+	{
+		return value_at<3, 2, 4, 5>::iter_get_key<dyn_func>(amx, params);
+	}
+
+	// native iter_get_key_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_get_key_md_arr_safe, 6)
+	{
+		return value_at<3, 2, 4, 5, 6>::iter_get_key<dyn_func_arr>(amx, params);
+	}
+
+	// native iter_get_key_md_str_safe(IterTag:iter, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_key_md_str_safe, 5)
+	{
+		return value_at<3, 2, 4, 5>::iter_get_key<dyn_func_str>(amx, params);
+	}
+
+	// native String:iter_get_key_md_str_safe_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_get_key_md_str_safe_s, 3)
+	{
+		return value_at<2, 3, 0>::iter_get_key<dyn_func_str_s>(amx, params);
+	}
+	
 	// native iter_tagof(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_tagof, 1)
 	{
-		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-		
-		dyn_object *obj;
-		if(iter->extract(obj))
+		return value_read(params[1], [&](const dyn_object &obj)
 		{
-			return obj->get_tag(amx);
-		}
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			return pair->second.get_tag(amx);
-		}
-		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return pair->second.get_tag(amx);
-		}
-		
-		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
-		return 0;
+			return obj.get_tag(amx);
+		});
 	}
 
 	// native iter_sizeof(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_sizeof, 1)
 	{
-		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-		
-		dyn_object *obj;
-		if(iter->extract(obj))
+		return value_read(params[1], [&](const dyn_object &obj)
 		{
-			return obj->get_size();
-		}
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			return pair->second.get_size();
-		}
-		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return pair->second.get_size();
-		}
+			return obj.get_size();
+		});
+	}
 
-		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
-		return 0;
+	// native iter_sizeof_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_sizeof_md, 3)
+	{
+		return value_read(params[1], [&](const dyn_object &obj)
+		{
+			cell offsets_size = params[3];
+			cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
+			return obj.get_size(offsets_addr, offsets_size);
+		});
 	}
 
 	// native iter_tagof_key(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_tagof_key, 1)
 	{
-		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-		
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
+		return key_read(params[1], [&](const dyn_object &obj)
 		{
-			return pair->first.get_tag(amx);
-		}
-		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return pair->first.get_tag(amx);
-		}
-
-		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
-		return 0;
+			return obj.get_tag(amx);
+		});
 	}
 
 	// native iter_sizeof_key(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_sizeof_key, 1)
 	{
-		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-		
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
+		return key_read(params[1], [&](const dyn_object &obj)
 		{
-			return pair->first.get_size();
-		}
-		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return pair->first.get_size();
-		}
+			return obj.get_size();
+		});
+	}
 
-		amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
-		return 0;
+	// native iter_sizeof_key_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+	AMX_DEFINE_NATIVE(iter_sizeof_key_md, 3)
+	{
+		return key_read(params[1], [&](const dyn_object &obj)
+		{
+			cell offsets_size = params[3];
+			cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
+			return obj.get_size(offsets_addr, offsets_size);
+		});
 	}
 }
 
@@ -657,6 +795,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_iter_at_str),
 	AMX_DECLARE_NATIVE(map_iter_at_var),
 	AMX_DECLARE_NATIVE(linked_list_iter),
+
 	AMX_DECLARE_NATIVE(iter_valid),
 	AMX_DECLARE_NATIVE(iter_acquire),
 	AMX_DECLARE_NATIVE(iter_release),
@@ -667,33 +806,67 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_reset),
 	AMX_DECLARE_NATIVE(iter_clone),
 	AMX_DECLARE_NATIVE(iter_eq),
+
 	AMX_DECLARE_NATIVE(iter_move_next),
 	AMX_DECLARE_NATIVE(iter_move_previous),
 	AMX_DECLARE_NATIVE(iter_to_first),
 	AMX_DECLARE_NATIVE(iter_to_last),
+
 	AMX_DECLARE_NATIVE(iter_get),
 	AMX_DECLARE_NATIVE(iter_get_arr),
+	AMX_DECLARE_NATIVE(iter_get_str_s),
 	AMX_DECLARE_NATIVE(iter_get_var),
 	AMX_DECLARE_NATIVE(iter_get_safe),
 	AMX_DECLARE_NATIVE(iter_get_arr_safe),
+	AMX_DECLARE_NATIVE(iter_get_str_safe),
+	AMX_DECLARE_NATIVE(iter_get_str_safe_s),
+
 	AMX_DECLARE_NATIVE(iter_set),
 	AMX_DECLARE_NATIVE(iter_set_arr),
 	AMX_DECLARE_NATIVE(iter_set_str),
 	AMX_DECLARE_NATIVE(iter_set_var),
+
 	AMX_DECLARE_NATIVE(iter_set_cell),
 	AMX_DECLARE_NATIVE(iter_set_cell_safe),
+
+	AMX_DECLARE_NATIVE(iter_get_md),
+	AMX_DECLARE_NATIVE(iter_get_md_arr),
+	AMX_DECLARE_NATIVE(iter_get_md_str_s),
+	AMX_DECLARE_NATIVE(iter_get_md_safe),
+	AMX_DECLARE_NATIVE(iter_get_md_arr_safe),
+	AMX_DECLARE_NATIVE(iter_get_md_str_safe),
+	AMX_DECLARE_NATIVE(iter_get_md_str_safe_s),
+
+	AMX_DECLARE_NATIVE(iter_set_cell_md),
+	AMX_DECLARE_NATIVE(iter_set_cell_md_safe),
+
 	AMX_DECLARE_NATIVE(iter_insert),
 	AMX_DECLARE_NATIVE(iter_insert_arr),
 	AMX_DECLARE_NATIVE(iter_insert_str),
 	AMX_DECLARE_NATIVE(iter_insert_var),
+
 	AMX_DECLARE_NATIVE(iter_get_key),
 	AMX_DECLARE_NATIVE(iter_get_key_arr),
+	AMX_DECLARE_NATIVE(iter_get_key_str_s),
 	AMX_DECLARE_NATIVE(iter_get_key_var),
 	AMX_DECLARE_NATIVE(iter_get_key_safe),
 	AMX_DECLARE_NATIVE(iter_get_key_arr_safe),
+	AMX_DECLARE_NATIVE(iter_get_key_str_safe),
+	AMX_DECLARE_NATIVE(iter_get_key_str_safe_s),
+
+	AMX_DECLARE_NATIVE(iter_get_key_md),
+	AMX_DECLARE_NATIVE(iter_get_key_md_arr),
+	AMX_DECLARE_NATIVE(iter_get_key_md_str_s),
+	AMX_DECLARE_NATIVE(iter_get_key_md_safe),
+	AMX_DECLARE_NATIVE(iter_get_key_md_arr_safe),
+	AMX_DECLARE_NATIVE(iter_get_key_md_str_safe),
+	AMX_DECLARE_NATIVE(iter_get_key_md_str_safe_s),
+
 	AMX_DECLARE_NATIVE(iter_sizeof),
+	AMX_DECLARE_NATIVE(iter_sizeof_md),
 	AMX_DECLARE_NATIVE(iter_tagof),
 	AMX_DECLARE_NATIVE(iter_sizeof_key),
+	AMX_DECLARE_NATIVE(iter_sizeof_key_md),
 	AMX_DECLARE_NATIVE(iter_tagof_key),
 };
 
