@@ -2,6 +2,7 @@
 #include "errors.h"
 #include "modules/containers.h"
 #include "modules/variants.h"
+#include "modules/strings.h"
 #include "objects/dyn_object.h"
 #include "fixes/linux.h"
 
@@ -332,6 +333,24 @@ namespace Natives
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
 
 		return iter->valid();
+	}
+
+	// native iter_type(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_type, 1)
+	{
+		dyn_iterator *iter;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		return reinterpret_cast<cell>(&typeid(*iter));
+	}
+
+	// native String:iter_type_str_s(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_type_str_s, 1)
+	{
+		dyn_iterator *iter;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+
+		return strings::create(typeid(*iter).name());
 	}
 
 	// native Iterator:iter_erase(IterTag:iter);
@@ -802,6 +821,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_delete),
 	AMX_DECLARE_NATIVE(iter_linked),
 	AMX_DECLARE_NATIVE(iter_inside),
+	AMX_DECLARE_NATIVE(iter_type),
+	AMX_DECLARE_NATIVE(iter_type_str_s),
 	AMX_DECLARE_NATIVE(iter_erase),
 	AMX_DECLARE_NATIVE(iter_reset),
 	AMX_DECLARE_NATIVE(iter_clone),
