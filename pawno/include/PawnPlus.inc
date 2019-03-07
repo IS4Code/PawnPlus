@@ -940,6 +940,13 @@ native Iter:iter_to_first(IterTag:iter, index=0);
 native Iter:iter_to_last(IterTag:iter, index=0);
 native bool:iter_eq(IterTag:iter1, IterTag:iter2);
 
+native Iter:iter_range(AnyTag:start, count, skip=1, tag_id=tagof(start));
+native Iter:iter_range_arr(AnyTag:start[], count, skip=1, size=sizeof(start), tag_id=tagof(start));
+native Iter:iter_range_var(ConstVariantTag:start, count, skip=1);
+native Iter:iter_repeat(AnyTag:value, count, tag_id=tagof(value));
+native Iter:iter_repeat_arr(AnyTag:value[], count, size=sizeof(value), tag_id=tagof(value));
+native Iter:iter_repeat_var(ConstVariantTag:value, count);
+
 native iter_get(IterTag:iter, offset=0);
 native iter_get_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
 native iter_get_str(IterTag:iter, value[], size=sizeof(value)) = iter_get_arr;

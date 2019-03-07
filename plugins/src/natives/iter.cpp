@@ -6,6 +6,329 @@
 #include "objects/dyn_object.h"
 #include "fixes/linux.h"
 
+class range_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
+{
+	cell index;
+	cell count;
+	cell skip;
+	dyn_object begin;
+	dyn_object current;
+
+public:
+	range_iterator(dyn_object &&start, cell count, cell skip) : count(count), skip(skip), index(-1), begin(std::move(start))
+	{
+
+	}
+
+	virtual bool expired() const override
+	{
+		return false;
+	}
+
+	virtual bool valid() const override
+	{
+		return index != -1;
+	}
+
+	virtual bool move_next() override
+	{
+		if(valid())
+		{
+			index++;
+			if(index != count)
+			{
+				if(skip > 0)
+				{
+					for(cell i = 0; i < skip; i++)
+					{
+						current = current.inc();
+					}
+				}else if(skip < 0)
+				{
+					for(cell i = skip; i < 0; i++)
+					{
+						current = current.dec();
+					}
+				}
+				return true;
+			}else{
+				reset();
+			}
+		}
+		return false;
+	}
+
+	virtual bool move_previous() override
+	{
+		if(valid())
+		{
+			if(index != 0)
+			{
+				if(skip > 0)
+				{
+					for(cell i = 0; i < skip; i++)
+					{
+						current = current.dec();
+					}
+				}else if(skip < 0)
+				{
+					for(cell i = skip; i < 0; i++)
+					{
+						current = current.inc();
+					}
+				}
+				index--;
+			}else{
+				reset();
+			}
+		}
+		return false;
+	}
+
+	virtual bool set_to_first() override
+	{
+		if(count == 0)
+		{
+			return false;
+		}
+		current = begin;
+		index = 0;
+		return true;
+	}
+
+	virtual bool set_to_last() override
+	{
+		return false;
+	}
+
+	virtual bool reset() override
+	{
+		index = -1;
+		return true;
+	}
+
+	virtual bool erase() override
+	{
+		return false;
+	}
+
+	virtual std::unique_ptr<dyn_iterator> clone() const override
+	{
+		return std::make_unique<range_iterator>(*this);
+	}
+
+	virtual size_t get_hash() const override
+	{
+		if(valid())
+		{
+			return current.get_hash();
+		}else{
+			return begin.get_hash();
+		}
+	}
+
+	virtual bool operator==(const dyn_iterator &obj) const override
+	{
+		auto other = dynamic_cast<const range_iterator*>(&obj);
+		if(other != nullptr)
+		{
+			if(valid())
+			{
+				return other->valid() && current == other->current;
+			}else{
+				return !other->valid();
+			}
+		}
+		return false;
+	}
+
+protected:
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override
+	{
+		if(valid())
+		{
+			if(type == typeid(const dyn_object*))
+			{
+				*reinterpret_cast<const dyn_object**>(value) = &current;
+				return true;
+			}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
+			{
+				*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(index, tags::find_tag(tags::tag_cell)), current));
+				return true;
+			}
+		}
+		return false;
+	}
+
+	virtual bool insert_dyn(const std::type_info &type, void *value) override
+	{
+		return false;
+	}
+
+	virtual bool insert_dyn(const std::type_info &type, const void *value) override
+	{
+		return false;
+	}
+
+public:
+	virtual dyn_iterator *get() override
+	{
+		return this;
+	}
+
+	virtual const dyn_iterator *get() const override
+	{
+		return this;
+	}
+};
+
+class repeat_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
+{
+	cell index;
+	cell count;
+	dyn_object value;
+
+public:
+	repeat_iterator(dyn_object &&value, cell count) : count(count), index(-1), value(std::move(value))
+	{
+
+	}
+
+	virtual bool expired() const override
+	{
+		return false;
+	}
+
+	virtual bool valid() const override
+	{
+		return index != -1;
+	}
+
+	virtual bool move_next() override
+	{
+		if(valid())
+		{
+			index++;
+			if(index != count)
+			{
+				return true;
+			}else{
+				reset();
+			}
+		}
+		return false;
+	}
+
+	virtual bool move_previous() override
+	{
+		if(valid())
+		{
+			if(index != 0)
+			{
+				index--;
+			}else{
+				reset();
+			}
+		}
+		return false;
+	}
+
+	virtual bool set_to_first() override
+	{
+		if(count == 0)
+		{
+			return false;
+		}
+		index = 0;
+		return true;
+	}
+
+	virtual bool set_to_last() override
+	{
+		if(count == 0)
+		{
+			return false;
+		}
+		index = count - 1;
+		return true;
+	}
+
+	virtual bool reset() override
+	{
+		index = -1;
+		return true;
+	}
+
+	virtual bool erase() override
+	{
+		return false;
+	}
+
+	virtual std::unique_ptr<dyn_iterator> clone() const override
+	{
+		return std::make_unique<repeat_iterator>(*this);
+	}
+
+	virtual size_t get_hash() const override
+	{
+		return value.get_hash();
+	}
+
+	virtual bool operator==(const dyn_iterator &obj) const override
+	{
+		auto other = dynamic_cast<const repeat_iterator*>(&obj);
+		if(other != nullptr)
+		{
+			if(valid())
+			{
+				return other->valid() && index == other->index && value == other->value;
+			}else{
+				return !other->valid();
+			}
+		}
+		return false;
+	}
+
+protected:
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override
+	{
+		if(valid())
+		{
+			if(type == typeid(const dyn_object*))
+			{
+				*reinterpret_cast<const dyn_object**>(value) = &this->value;
+				return true;
+			}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
+			{
+				*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(index, tags::find_tag(tags::tag_cell)), this->value));
+				return true;
+			}
+		}
+		return false;
+	}
+
+	virtual bool insert_dyn(const std::type_info &type, void *value) override
+	{
+		return false;
+	}
+
+	virtual bool insert_dyn(const std::type_info &type, const void *value) override
+	{
+		return false;
+	}
+
+public:
+	virtual dyn_iterator *get() override
+	{
+		return this;
+	}
+
+	virtual const dyn_iterator *get() const override
+	{
+		return this;
+	}
+};
+
 template <class Func>
 auto value_write(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)>::type
 {
@@ -143,6 +466,24 @@ public:
 		{
 			return Factory(amx, obj, params[Indices]...);
 		});
+	}
+
+	// native Iter:iter_range(AnyTag:start, count, skip=1, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL iter_range(AMX *amx, cell *params)
+	{
+		auto &iter = iter_pool.add(std::make_unique<range_iterator>(Factory(amx, params[Indices]...), params[2], optparam(3, 1)));
+		iter->set_to_first();
+		return iter_pool.get_id(iter);
+	}
+
+	// native Iter:iter_repeat(AnyTag:value, count, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL iter_repeat(AMX *amx, cell *params)
+	{
+		auto &iter = iter_pool.add(std::make_unique<repeat_iterator>(Factory(amx, params[Indices]...), params[2]));
+		iter->set_to_first();
+		return iter_pool.get_id(iter);
 	}
 };
 
@@ -390,6 +731,42 @@ namespace Natives
 		dyn_iterator *iter2;
 		if(!iter_pool.get_by_id(params[2], iter2)) amx_LogicError(errors::pointer_invalid, "iterator", params[2]);
 		return *iter1 == *iter2;
+	}
+
+	// native Iter:iter_range(AnyTag:start, count, skip=1, tag_id=tagof(start));
+	AMX_DEFINE_NATIVE(iter_range, 4)
+	{
+		return value_at<1, 4>::iter_range<dyn_func>(amx, params);
+	}
+
+	// native Iter:iter_range_arr(AnyTag:start[], count, skip=1, size=sizeof(start), tag_id=tagof(start));
+	AMX_DEFINE_NATIVE(iter_range_arr, 5)
+	{
+		return value_at<1, 4, 5>::iter_range<dyn_func_arr>(amx, params);
+	}
+
+	// native Iter:iter_range_var(ConstVariantTag:start, count, skip=1);
+	AMX_DEFINE_NATIVE(iter_range_var, 3)
+	{
+		return value_at<1>::iter_range<dyn_func_var>(amx, params);
+	}
+
+	// native Iter:iter_repeat(AnyTag:value, count, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_repeat, 3)
+	{
+		return value_at<1, 3>::iter_repeat<dyn_func>(amx, params);
+	}
+
+	// native Iter:iter_repeat_arr(AnyTag:value[], count, size=sizeof(value), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_repeat_arr, 4)
+	{
+		return value_at<1, 3, 4>::iter_repeat<dyn_func_arr>(amx, params);
+	}
+
+	// native Iter:iter_repeat_var(ConstVariantTag:value, count);
+	AMX_DEFINE_NATIVE(iter_repeat_var, 2)
+	{
+		return value_at<1>::iter_repeat<dyn_func_var>(amx, params);
 	}
 
 	// native Iterator:iter_move_next(IterTag:iter, steps=1);
@@ -827,6 +1204,13 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_reset),
 	AMX_DECLARE_NATIVE(iter_clone),
 	AMX_DECLARE_NATIVE(iter_eq),
+
+	AMX_DECLARE_NATIVE(iter_range),
+	AMX_DECLARE_NATIVE(iter_range_arr),
+	AMX_DECLARE_NATIVE(iter_range_var),
+	AMX_DECLARE_NATIVE(iter_repeat),
+	AMX_DECLARE_NATIVE(iter_repeat_arr),
+	AMX_DECLARE_NATIVE(iter_repeat_var),
 
 	AMX_DECLARE_NATIVE(iter_move_next),
 	AMX_DECLARE_NATIVE(iter_move_previous),
