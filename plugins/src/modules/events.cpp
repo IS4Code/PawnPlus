@@ -147,7 +147,7 @@ bool event_info::handler_index(AMX *amx, int &index)
 		this->index = index;
 		return true;
 	}
-	logwarn(amx, "[PP] Callback handler %s was not found.", handler.c_str());
+	logwarn(amx, "[PawnPlus] Callback handler %s was not found.", handler.c_str());
 	return false;
 }
 

@@ -93,7 +93,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 {
 	if(amx::context_level >= maxRecursionLevel)
 	{
-		return logerror(amx, AMX_ERR_GENERAL, "[PP] native recursion depth %d too high (limit is %d, use pp_max_recursion to increase it)", amx::context_level, maxRecursionLevel);
+		return logerror(amx, AMX_ERR_GENERAL, "[PawnPlus] native recursion depth %d too high (limit is %d, use pp_max_recursion to increase it)", amx::context_level, maxRecursionLevel);
 	}
 
 	if(events::invoke_callbacks(amx, index, retval)) return AMX_ERR_NONE;
@@ -252,14 +252,14 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				case SleepReturnAttach:
 				{
 					amx->pri = 0;
-					logwarn(amx, "[PP] thread_attach was called in a non-threaded code.");
+					logwarn(amx, "[PawnPlus] thread_attach was called in a non-threaded code.");
 					continue;
 				}
 				break;
 				case SleepReturnSync:
 				{
 					amx->pri = 0;
-					logwarn(amx, "[PP] thread_sync was called in a non-threaded code.");
+					logwarn(amx, "[PawnPlus] thread_sync was called in a non-threaded code.");
 					continue;
 				}
 				break;
@@ -360,7 +360,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 							delete[] amx_fork->base;
 							delete amx_fork;
 							amx::unload(amx_fork);
-							logwarn(amx, "[PP] amx_fork: couldn't create the fork (error %d).", initret);
+							logwarn(amx, "[PawnPlus] amx_fork: couldn't create the fork (error %d).", initret);
 							continue;
 						}
 						if(flags & SleepReturnForkFlagsCopyData)
@@ -418,9 +418,9 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						amx->pri = 0;
 						if(ctx.has_extra<forked_context>())
 						{
-							logwarn(amx, "[PP] amx_commit: the original context is no longer present.");
+							logwarn(amx, "[PawnPlus] amx_commit: the original context is no longer present.");
 						}else{
-							logwarn(amx, "[PP] amx_commit was called from a non-forked code.");
+							logwarn(amx, "[PawnPlus] amx_commit was called from a non-forked code.");
 						}
 						continue;
 					}else{
@@ -433,7 +433,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					if(!forked && !ctx.has_extra<forked_context>())
 					{
 						amx->pri = 0;
-						logwarn(amx, "[PP] amx_fork_end was called from a non-forked code.");
+						logwarn(amx, "[PawnPlus] amx_fork_end was called from a non-forked code.");
 						continue;
 					}else{
 						if(retval != nullptr) *retval = info.result;
@@ -474,7 +474,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					if(ctx.has_extra<parallel_context>())
 					{
 						amx->pri = 0;
-						logwarn(amx, "[PP] amx_parallel_begin was called from a parallel code.");
+						logwarn(amx, "[PawnPlus] amx_parallel_begin was called from a parallel code.");
 						continue;
 					}
 					auto &extra = ctx.get_extra<parallel_context>();
@@ -490,7 +490,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				{
 					if(!ctx.has_extra<parallel_context>())
 					{
-						logwarn(amx, "[PP] amx_parallel_end was called from a non-parallel code.");
+						logwarn(amx, "[PawnPlus] amx_parallel_end was called from a non-parallel code.");
 					}else{
 						auto &extra = ctx.get_extra<parallel_context>();
 						amx->debug = extra.old_debug;

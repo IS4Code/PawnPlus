@@ -85,7 +85,7 @@ cell native_hook_handler(size_t index, AMX *amx, cell *params)
 	{
 		return hook->invoke(amx, params);
 	}
-	throw std::logic_error("[PP] Hook was not properly unregistered.");
+	throw std::logic_error("[PawnPlus] Hook was not properly unregistered.");
 }
 
 using func_pool = aux::func<cell(AMX*, cell*)>::pool<max_hooked_funcs, native_hook_handler>;
@@ -298,7 +298,7 @@ bool hook_handler::handler_index(AMX *&amx, int &index)
 		this->index = index;
 		return true;
 	}
-	logwarn(amx, "[PP] Hook handler %s was not found.", handler.c_str());
+	logwarn(amx, "[PawnPlus] Hook handler %s was not found.", handler.c_str());
 	return false;
 }
 
@@ -317,7 +317,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 	if(params[0] < numargs * static_cast<int>(sizeof(cell)))
 	{
 		int argi = 1 + params[0] / sizeof(cell);
-		logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, format[argi]);
+		logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, format[argi]);
 		return false;
 	}
 
@@ -375,7 +375,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 			case '+':
 			case '-':
 			{
-				logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') must be at the end of the format string.", handler.c_str(), parent.get_name().c_str(), argi, c);
+				logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') must be at the end of the format string.", handler.c_str(), parent.get_name().c_str(), argi, c);
 				return false;
 			}
 			case '_': //ignore
@@ -408,7 +408,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 
 					if(argi + 1 >= numargs)
 					{
-						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+						logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
 						return false;
 					}
 					int length = params[2 + argi];
@@ -430,7 +430,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 
 					if(argi + 1 >= numargs)
 					{
-						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+						logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
 						return false;
 					}
 					int length = params[2 + argi];
@@ -453,7 +453,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 
 					if(argi + 1 >= numargs)
 					{
-						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+						logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
 						return false;
 					}
 					int length = params[2 + argi];
@@ -553,7 +553,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 	if(params[0] < numargs * static_cast<int>(sizeof(cell)))
 	{
 		int argi = 1 + params[0] / sizeof(cell);
-		logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, format[argi]);
+		logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, format[argi]);
 		return false;
 	}
 
@@ -621,7 +621,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 			case '+':
 			case '-':
 			{
-				logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') must be at the end of the format string.", handler.c_str(), parent.get_name().c_str(), argi, c);
+				logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the parameter #%d ('%c') must be at the end of the format string.", handler.c_str(), parent.get_name().c_str(), argi, c);
 				return false;
 			}
 			case '_': //ignore
@@ -654,7 +654,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 
 					if(argi + 1 >= numargs)
 					{
-						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+						logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
 						return false;
 					}
 					int length = params[2 + argi];
@@ -676,7 +676,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 
 					if(argi + 1 >= numargs)
 					{
-						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+						logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
 						return false;
 					}
 					int length = params[2 + argi];
@@ -699,7 +699,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 
 					if(argi + 1 >= numargs)
 					{
-						logwarn(amx, "[PP] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
+						logwarn(amx, "[PawnPlus] Hook handler %s was not able to handle a call to %s, because the length of array #%d was not passed to the native function.", handler.c_str(), parent.get_name().c_str(), argi, c);
 						return false;
 					}
 					int length = params[2 + argi];

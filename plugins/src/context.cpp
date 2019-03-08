@@ -68,7 +68,7 @@ int amx::pop(AMX *amx)
 {
 	if(globalExecLevel == 0)
 	{
-		throw std::logic_error("[PP] Context stack imbalance.");
+		throw std::logic_error("[PawnPlus] Context stack imbalance.");
 	}
 
 	amx::object obj;

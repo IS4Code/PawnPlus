@@ -25,7 +25,7 @@ cell impl::handle_error(AMX *amx, cell *params, const char *native, const errors
 		}
 	}
 
-	logprintf("[PP] %s: %s", native, error.message.c_str());
+	logprintf("[PawnPlus] %s: %s", native, error.message.c_str());
 	if(error.level >= amx::load_lock(amx)->get_extra<native_error_level>().level)
 	{
 		amx_RaiseError(amx, AMX_ERR_NATIVE);

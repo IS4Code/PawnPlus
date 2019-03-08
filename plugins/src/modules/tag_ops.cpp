@@ -1539,7 +1539,7 @@ class dynamic_operations : public null_operations, public tag_control
 				this->_index = index;
 				return true;
 			}
-			logwarn(amx, "[PP] Tag operation handler %s was not found.", _handler.c_str());
+			logwarn(amx, "[PawnPlus] Tag operation handler %s was not found.", _handler.c_str());
 			return false;
 		}
 
