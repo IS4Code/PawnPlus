@@ -418,6 +418,40 @@ auto key_read(cell arg, Func f) -> typename std::result_of<Func(const dyn_object
 	return f(tmp);
 }
 
+template <class Func>
+auto key_value_access(cell arg, dyn_iterator *&iter, Func f) -> typename std::result_of<Func(const dyn_object&)>::type
+{
+	if(iter_pool.get_by_id(arg, iter))
+	{
+		dyn_object *obj;
+		if(iter->extract(obj))
+		{
+			return f(*obj);
+		}
+		std::shared_ptr<dyn_object> sobj;
+		if(iter->extract(sobj))
+		{
+			return f(*sobj);
+		}
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
+		{
+			f(pair->first);
+			return f(pair->second);
+		}
+		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			f(spair->first);
+			return f(spair->second);
+		}
+		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+	}
+	amx_LogicError(errors::pointer_invalid, "iterator", arg);
+	dyn_object tmp;
+	return f(tmp);
+}
+
 template <size_t... Indices>
 class value_at
 {
@@ -700,6 +734,18 @@ namespace Natives
 		dyn_iterator *iter;
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
 
+		if(!iter->erase()) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
+		return params[1];
+	}
+
+	// native Iterator:iter_erase_deep(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_erase_deep, 1)
+	{
+		dyn_iterator *iter;
+		key_value_access(params[1], iter, [&](const dyn_object &obj)
+		{
+			obj.release();
+		});
 		if(!iter->erase()) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return params[1];
 	}
@@ -1201,6 +1247,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_type),
 	AMX_DECLARE_NATIVE(iter_type_str_s),
 	AMX_DECLARE_NATIVE(iter_erase),
+	AMX_DECLARE_NATIVE(iter_erase_deep),
 	AMX_DECLARE_NATIVE(iter_reset),
 	AMX_DECLARE_NATIVE(iter_clone),
 	AMX_DECLARE_NATIVE(iter_eq),

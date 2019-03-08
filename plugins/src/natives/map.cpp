@@ -68,6 +68,23 @@ public:
 		return 0;
 	}
 
+	// native bool:map_remove_deep(Map:map, key, ...);
+	template <key_ftype KeyFactory>
+	static cell AMX_NATIVE_CALL map_remove_deep(AMX *amx, cell *params)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
+		if(it != ptr->end())
+		{
+			it->first.release();
+			it->second.release();
+			ptr->erase(it);
+			return 1;
+		}
+		return 0;
+	}
+
 	// native bool:map_has_key(Map:map, key, ...);
 	template <key_ftype KeyFactory>
 	static cell AMX_NATIVE_CALL map_has_key(AMX *amx, cell *params)
@@ -1037,6 +1054,30 @@ namespace Natives
 		return key_at<2>::map_remove<dyn_func_var>(amx, params);
 	}
 
+	// native bool:map_remove_deep(Map:map, AnyTag:key, key_tag_id=tagof(key));
+	AMX_DEFINE_NATIVE(map_remove_deep, 3)
+	{
+		return key_at<2, 3>::map_remove_deep<dyn_func>(amx, params);
+	}
+
+	// native bool:map_arr_remove_deep(Map:map, const AnyTag:key[], key_size=sizeof(key), key_tag_id=tagof(key));
+	AMX_DEFINE_NATIVE(map_arr_remove_deep, 4)
+	{
+		return key_at<2, 3, 4>::map_remove_deep<dyn_func_arr>(amx, params);
+	}
+
+	// native bool:map_str_remove_deep(Map:map, const key[]);
+	AMX_DEFINE_NATIVE(map_str_remove_deep, 2)
+	{
+		return key_at<2>::map_remove_deep<dyn_func_str>(amx, params);
+	}
+
+	// native bool:map_str_remove_deep(Map:map, VariantTag:key);
+	AMX_DEFINE_NATIVE(map_var_remove_deep, 2)
+	{
+		return key_at<2>::map_remove_deep<dyn_func_var>(amx, params);
+	}
+
 	// native bool:map_has_key(Map:map, AnyTag:key, key_tag_id=tagof(key));
 	AMX_DEFINE_NATIVE(map_has_key, 3)
 	{
@@ -1451,6 +1492,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_new_var_args_str),
 	AMX_DECLARE_NATIVE(map_new_var_args_var),
 	AMX_DECLARE_NATIVE(map_new_var_args_packed),
+
 	AMX_DECLARE_NATIVE(map_valid),
 	AMX_DECLARE_NATIVE(map_delete),
 	AMX_DECLARE_NATIVE(map_delete_deep),
@@ -1459,6 +1501,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_clear),
 	AMX_DECLARE_NATIVE(map_set_ordered),
 	AMX_DECLARE_NATIVE(map_is_ordered),
+
 	AMX_DECLARE_NATIVE(map_add),
 	AMX_DECLARE_NATIVE(map_add_arr),
 	AMX_DECLARE_NATIVE(map_add_str),
@@ -1488,14 +1531,21 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_add_var_args_str),
 	AMX_DECLARE_NATIVE(map_add_var_args_var),
 	AMX_DECLARE_NATIVE(map_add_var_args_packed),
+
 	AMX_DECLARE_NATIVE(map_remove),
 	AMX_DECLARE_NATIVE(map_arr_remove),
 	AMX_DECLARE_NATIVE(map_str_remove),
 	AMX_DECLARE_NATIVE(map_var_remove),
+	AMX_DECLARE_NATIVE(map_remove_deep),
+	AMX_DECLARE_NATIVE(map_arr_remove_deep),
+	AMX_DECLARE_NATIVE(map_str_remove_deep),
+	AMX_DECLARE_NATIVE(map_var_remove_deep),
+
 	AMX_DECLARE_NATIVE(map_has_key),
 	AMX_DECLARE_NATIVE(map_has_arr_key),
 	AMX_DECLARE_NATIVE(map_has_str_key),
 	AMX_DECLARE_NATIVE(map_has_var_key),
+
 	AMX_DECLARE_NATIVE(map_get),
 	AMX_DECLARE_NATIVE(map_get_arr),
 	AMX_DECLARE_NATIVE(map_get_var),
@@ -1516,6 +1566,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_var_get_var),
 	AMX_DECLARE_NATIVE(map_var_get_safe),
 	AMX_DECLARE_NATIVE(map_var_get_arr_safe),
+
 	AMX_DECLARE_NATIVE(map_set),
 	AMX_DECLARE_NATIVE(map_set_arr),
 	AMX_DECLARE_NATIVE(map_set_str),
@@ -1550,6 +1601,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_var_value_at),
 	AMX_DECLARE_NATIVE(map_value_at_safe),
 	AMX_DECLARE_NATIVE(map_arr_value_at_safe),
+
 	AMX_DECLARE_NATIVE(map_tagof),
 	AMX_DECLARE_NATIVE(map_sizeof),
 	AMX_DECLARE_NATIVE(map_arr_tagof),

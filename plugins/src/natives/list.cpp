@@ -417,6 +417,20 @@ namespace Natives
 		return 1;
 	}
 
+	// native bool:list_remove_deep(List:list, index);
+	AMX_DEFINE_NATIVE(list_remove_deep, 2)
+	{
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "list index");
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "list index");
+
+		auto it = ptr->begin() + params[2];
+		it->release();
+		ptr->erase(it);
+		return 1;
+	}
+
 	// native list_get(List:list, index, offset=0);
 	AMX_DEFINE_NATIVE(list_get, 3)
 	{
@@ -586,12 +600,14 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_new_args_str),
 	AMX_DECLARE_NATIVE(list_new_args_var),
 	AMX_DECLARE_NATIVE(list_new_args_packed),
+
 	AMX_DECLARE_NATIVE(list_valid),
 	AMX_DECLARE_NATIVE(list_delete),
 	AMX_DECLARE_NATIVE(list_delete_deep),
 	AMX_DECLARE_NATIVE(list_clone),
 	AMX_DECLARE_NATIVE(list_size),
 	AMX_DECLARE_NATIVE(list_clear),
+
 	AMX_DECLARE_NATIVE(list_add),
 	AMX_DECLARE_NATIVE(list_add_arr),
 	AMX_DECLARE_NATIVE(list_add_str),
@@ -601,22 +617,28 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_add_args_str),
 	AMX_DECLARE_NATIVE(list_add_args_var),
 	AMX_DECLARE_NATIVE(list_add_args_packed),
+
 	AMX_DECLARE_NATIVE(list_remove),
+	AMX_DECLARE_NATIVE(list_remove_deep),
+
 	AMX_DECLARE_NATIVE(list_get),
 	AMX_DECLARE_NATIVE(list_get_arr),
 	AMX_DECLARE_NATIVE(list_get_var),
 	AMX_DECLARE_NATIVE(list_get_safe),
 	AMX_DECLARE_NATIVE(list_get_arr_safe),
+
 	AMX_DECLARE_NATIVE(list_set),
 	AMX_DECLARE_NATIVE(list_set_arr),
 	AMX_DECLARE_NATIVE(list_set_str),
 	AMX_DECLARE_NATIVE(list_set_var),
 	AMX_DECLARE_NATIVE(list_set_cell),
 	AMX_DECLARE_NATIVE(list_set_cell_safe),
+
 	AMX_DECLARE_NATIVE(list_resize),
 	AMX_DECLARE_NATIVE(list_resize_arr),
 	AMX_DECLARE_NATIVE(list_resize_str),
 	AMX_DECLARE_NATIVE(list_resize_var),
+
 	AMX_DECLARE_NATIVE(list_find),
 	AMX_DECLARE_NATIVE(list_find_arr),
 	AMX_DECLARE_NATIVE(list_find_str),
@@ -625,6 +647,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_find_last_arr),
 	AMX_DECLARE_NATIVE(list_find_last_str),
 	AMX_DECLARE_NATIVE(list_find_last_var),
+
 	AMX_DECLARE_NATIVE(list_tagof),
 	AMX_DECLARE_NATIVE(list_sizeof),
 };

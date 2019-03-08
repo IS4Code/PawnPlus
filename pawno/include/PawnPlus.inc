@@ -526,6 +526,7 @@ native list_add_args_str(List:list, arg0[], ...);
 native list_add_args_var(List:list, ConstVariantTag:arg0, ConstVariantTag:...);
 
 native bool:list_remove(List:list, index);
+native bool:list_remove_deep(List:list, index);
 
 native list_get(List:list, index, offset=0);
 native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
@@ -577,6 +578,7 @@ native Iter:list_iter(List:list, index=0);
 #define list_add_args_of<%0>(%1,%2) list_add_args_t(_,List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
 
 #define list_remove<%0>(%1,%2) list_remove(List:_PP@CAST[List<%0>](%1),%2)
+#define list_remove_deep<%0>(%1,%2) list_remove_deep(List:_PP@CAST[List<%0>](%1),%2)
 
 #define list_get<%0>(%1,%2) (%0:list_get(List:_PP@CAST[List<%0>](%1),%2))
 #define list_get_arr<%0>(%1,%2,%3) list_get_arr(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
@@ -699,6 +701,10 @@ native bool:map_remove(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native bool:map_arr_remove(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native bool:map_str_remove(Map:map, const key[]);
 native bool:map_var_remove(Map:map, ConstVariantTag:key);
+native bool:map_remove_deep(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
+native bool:map_arr_remove_deep(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native bool:map_str_remove_deep(Map:map, const key[]);
+native bool:map_var_remove_deep(Map:map, ConstVariantTag:key);
 
 native bool:map_has_key(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native bool:map_has_arr_key(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
@@ -799,6 +805,8 @@ native Iter:map_iter_at_var(Map:map, ConstVariantTag:key);
 
 #define map_remove<%0,%1>(%2,%3) map_remove(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3))
 #define map_arr_remove<%0,%1>(%2,%3) map_arr_remove(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
+#define map_remove_deep<%0,%1>(%2,%3) map_remove_deep(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3))
+#define map_arr_remove_deep<%0,%1>(%2,%3) map_arr_remove_deep(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
 
 #define map_has_key<%0,%1>(%2,%3) map_has_key(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3))
 #define map_has_arr_key<%0,%1>(%2,%3) map_has_arr_key(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
@@ -867,6 +875,7 @@ native linked_list_add_args_str(LinkedList:linked_list, arg0[], ...);
 native linked_list_add_args_var(LinkedList:linked_list, ConstVariantTag:arg0, ConstVariantTag:...);
 
 native bool:linked_list_remove(LinkedList:linked_list, index);
+native bool:linked_list_remove_deep(LinkedList:linked_list, index);
 
 native linked_list_get(LinkedList:linked_list, index, offset=0);
 native linked_list_get_arr(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value));
@@ -904,6 +913,7 @@ native Iter:linked_list_iter(LinkedList:linked_list, index=0);
 #define linked_list_add_args_of<%0>(%1,%2) linked_list_add_args_t(_,LinkedList:_PP@CAST[LinkedList<%0>](%1),_PP@CAST[%0](%2))
 
 #define linked_list_remove<%0>(%1,%2) linked_list_remove(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2)
+#define linked_list_remove_deep<%0>(%1,%2) linked_list_remove_deep(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2)
 
 #define linked_list_get<%0>(%1,%2) (%0:linked_list_get(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2))
 #define linked_list_get_arr<%0>(%1,%2,%3) linked_list_get_arr(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
@@ -932,6 +942,7 @@ native bool:iter_inside(IterTag:iter);
 native iter_type(IterTag:iter);
 native String:iter_type_str_s(IterTag:iter);
 native Iter:iter_erase(IterTag:iter);
+native Iter:iter_erase_deep(IterTag:iter);
 native Iter:iter_reset(IterTag:iter);
 native Iter:iter_clone(IterTag:iter);
 native Iter:iter_move_next(IterTag:iter, steps=1);
@@ -1053,6 +1064,7 @@ native iter_sizeof_value_md(IterTag:iter, const offsets[], offsets_size=sizeof(o
 #define iter_linked<%0>(%1) iter_linked(Iter:_PP@CAST[Iter<%0>](%1))
 #define iter_inside<%0>(%1) iter_inside(Iter:_PP@CAST[Iter<%0>](%1))
 #define iter_erase<%0>(%1) (Iter<%0>:iter_erase(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_erase_deep<%0>(%1) (Iter<%0>:iter_erase_deep(Iter:_PP@CAST[Iter<%0>](%1)))
 #define iter_reset<%0>(%1) (Iter<%0>:iter_reset(Iter:_PP@CAST[Iter<%0>](%1)))
 #define iter_clone<%0>(%1) (Iter<%0>:iter_clone(Iter:_PP@CAST[Iter<%0>](%1)))
 #define iter_move_next<%0>(%1) (Iter<%0>:iter_move_next(Iter:_PP@CAST[Iter<%0>](%1)))

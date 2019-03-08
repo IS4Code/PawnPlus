@@ -353,6 +353,20 @@ namespace Natives
 		return 1;
 	}
 
+	// native bool:linked_list_remove_deep(LinkedList:linked_list, index);
+	AMX_DEFINE_NATIVE(linked_list_remove_deep, 2)
+	{
+		if(params[2] < 0) return 0;
+		linked_list_t *ptr;
+		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
+		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "linked list index");
+		auto it = ptr->begin();
+		std::advance(it, params[2]);
+		(*it)->release();
+		ptr->erase(it);
+		return 1;
+	}
+
 	// native linked_list_get(LinkedList:linked_list, index, offset=0);
 	AMX_DEFINE_NATIVE(linked_list_get, 3)
 	{
@@ -450,12 +464,14 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(linked_list_new_args_str),
 	AMX_DECLARE_NATIVE(linked_list_new_args_var),
 	AMX_DECLARE_NATIVE(linked_list_new_args_packed),
+
 	AMX_DECLARE_NATIVE(linked_list_valid),
 	AMX_DECLARE_NATIVE(linked_list_delete),
 	AMX_DECLARE_NATIVE(linked_list_delete_deep),
 	AMX_DECLARE_NATIVE(linked_list_clone),
 	AMX_DECLARE_NATIVE(linked_list_size),
 	AMX_DECLARE_NATIVE(linked_list_clear),
+
 	AMX_DECLARE_NATIVE(linked_list_add),
 	AMX_DECLARE_NATIVE(linked_list_add_arr),
 	AMX_DECLARE_NATIVE(linked_list_add_str),
@@ -465,18 +481,23 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(linked_list_add_args_str),
 	AMX_DECLARE_NATIVE(linked_list_add_args_var),
 	AMX_DECLARE_NATIVE(linked_list_add_args_packed),
+
 	AMX_DECLARE_NATIVE(linked_list_remove),
+	AMX_DECLARE_NATIVE(linked_list_remove_deep),
+
 	AMX_DECLARE_NATIVE(linked_list_get),
 	AMX_DECLARE_NATIVE(linked_list_get_arr),
 	AMX_DECLARE_NATIVE(linked_list_get_var),
 	AMX_DECLARE_NATIVE(linked_list_get_safe),
 	AMX_DECLARE_NATIVE(linked_list_get_arr_safe),
+
 	AMX_DECLARE_NATIVE(linked_list_set),
 	AMX_DECLARE_NATIVE(linked_list_set_arr),
 	AMX_DECLARE_NATIVE(linked_list_set_str),
 	AMX_DECLARE_NATIVE(linked_list_set_var),
 	AMX_DECLARE_NATIVE(linked_list_set_cell),
 	AMX_DECLARE_NATIVE(linked_list_set_cell_safe),
+
 	AMX_DECLARE_NATIVE(linked_list_tagof),
 	AMX_DECLARE_NATIVE(linked_list_sizeof),
 };
