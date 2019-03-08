@@ -18,6 +18,7 @@ namespace errors
 
 		native_error(const char *format, va_list args, int level);
 		native_error(const char *format, int level, ...);
+		native_error(std::string &&message, int level);
 	};
 
 	struct end_of_arguments_error

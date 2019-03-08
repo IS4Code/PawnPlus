@@ -153,6 +153,14 @@ namespace Natives
 		extra.level = params[1];
 		return old;
 	}
+
+	// native pp_raise_error(const message[], error_level:level=error_logic);
+	AMX_DEFINE_NATIVE(pp_raise_error, 1)
+	{
+		const char *message;
+		amx_StrParam(amx, params[1], message);
+		throw errors::native_error(std::string(message), optparam(2, 2));
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -176,6 +184,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_num_natives),
 	AMX_DECLARE_NATIVE(pp_max_recursion),
 	AMX_DECLARE_NATIVE(pp_error_level),
+	AMX_DECLARE_NATIVE(pp_raise_error),
 };
 
 int RegisterConfigNatives(AMX *amx)

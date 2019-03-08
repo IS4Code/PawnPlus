@@ -30,6 +30,11 @@ errors::native_error::native_error(const char *format, int code, ...) : level(le
 	va_end(args);
 }
 
+errors::native_error::native_error(std::string &&message, int level) : level(level), message(std::move(message))
+{
+
+}
+
 errors::end_of_arguments_error::end_of_arguments_error(const cell *argbase, size_t required) : argbase(argbase), required(required)
 {
 
