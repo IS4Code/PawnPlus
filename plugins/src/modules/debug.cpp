@@ -75,7 +75,13 @@ AMX_DBG *debug::create_last()
 
 void debug::init()
 {
-	CreateFileA_Hook = subhook_new(reinterpret_cast<void*>(CreateFileA), reinterpret_cast<void*>(HookCreateFileA), {});
+	auto func = reinterpret_cast<void*>(CreateFileA);
+	auto dst = subhook_read_dst(func);
+	if(dst != nullptr)
+	{
+		func = dst; // crashdetect may remove its hook, so hook crashdetect instead
+	}
+	CreateFileA_Hook = subhook_new(dst, reinterpret_cast<void*>(HookCreateFileA), {});
 	CreateFileA_Trampoline = reinterpret_cast<decltype(&CreateFileA)>(subhook_get_trampoline(CreateFileA_Hook));
 	subhook_install(CreateFileA_Hook);
 }
