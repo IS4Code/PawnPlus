@@ -9,6 +9,15 @@
 #include "modules/guards.h"
 #include "modules/containers.h"
 
+#include <algorithm>
+#include <cstring>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
+
 namespace Natives
 {
 	// native pp_hook_strlen(bool:hook);
@@ -161,6 +170,62 @@ namespace Natives
 		amx_StrParam(amx, params[1], message);
 		throw errors::native_error(std::string(message), optparam(2, 2));
 	}
+
+	// native String:pp_module_name_s(const function[]);
+	AMX_DEFINE_NATIVE(pp_module_name_s, 1)
+	{
+		const char *function;
+		amx_StrParam(amx, params[1], function);
+		auto func = amx::find_native(amx, function);
+		if(!func)
+		{
+			amx_FormalError(errors::func_not_found, "native", function);
+			return 0;
+		}
+
+		const char* name;
+		size_t len;
+#ifdef _WIN32
+		HMODULE hmod;
+		if(!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, reinterpret_cast<LPCSTR>(func), &hmod))
+		{
+			return 0;
+		}
+		char filename[MAX_PATH];
+		len = GetModuleFileNameA(hmod, filename, sizeof(filename));
+		name = filename;
+#else
+		Dl_info info;
+		if(dladdr(reintepret_cast<void*>(func), &info) != 0)
+		{
+			return 0;
+		}
+		name = info.dli_fname;
+		len = std::strlen(name);
+#endif
+		if(len > 0)
+		{
+			const char *last = name + len;
+			const char *dot = nullptr;
+			while(last > name)
+			{
+				last -= 1;
+				if(*last == '.' && !dot)
+				{
+					dot = last;
+				}else if(*last == '/' || *last == '\\')
+				{
+					name = last + 1;
+					break;
+				}
+			}
+			if(dot)
+			{
+				return strings::create(std::string(name, dot));
+			}
+		}
+		return strings::create(name);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -185,6 +250,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_max_recursion),
 	AMX_DECLARE_NATIVE(pp_error_level),
 	AMX_DECLARE_NATIVE(pp_raise_error),
+	AMX_DECLARE_NATIVE(pp_module_name_s),
 };
 
 int RegisterConfigNatives(AMX *amx)
