@@ -2,7 +2,9 @@
 #include "errors.h"
 #include "modules/containers.h"
 #include "modules/variants.h"
+
 #include <vector>
+#include <algorithm>
 
 template <size_t... Indices>
 class value_at
@@ -590,6 +592,35 @@ namespace Natives
 	{
 		return value_at<2>::list_find_last<dyn_func_var>(amx, params);
 	}
+
+	// native list_sort(List:list, bool:reverse=false, bool:stable=false);
+	AMX_DEFINE_NATIVE(list_sort, 1)
+	{
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr))
+		{
+			amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		}
+		if(!optparam(2, 0))
+		{
+			auto begin = ptr->begin(), end = ptr->end();
+			if(!optparam(3, 0))
+			{
+				std::sort(begin, end);
+			}else{
+				std::stable_sort(begin, end);
+			}
+		}else{
+			auto begin = ptr->rbegin(), end = ptr->rend();
+			if(!optparam(3, 0))
+			{
+				std::sort(begin, end);
+			}else{
+				std::stable_sort(begin, end);
+			}
+		}
+		return 1;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -647,6 +678,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_find_last_arr),
 	AMX_DECLARE_NATIVE(list_find_last_str),
 	AMX_DECLARE_NATIVE(list_find_last_var),
+
+	AMX_DECLARE_NATIVE(list_sort),
 
 	AMX_DECLARE_NATIVE(list_tagof),
 	AMX_DECLARE_NATIVE(list_sizeof),

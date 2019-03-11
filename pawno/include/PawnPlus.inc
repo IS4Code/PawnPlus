@@ -558,6 +558,8 @@ native list_find_last_arr(List:list, const AnyTag:value[], index=-1, size=sizeof
 native list_find_last_str(List:list, const value[], index=-1);
 native list_find_last_var(List:list, ConstVariantTag:value, index=-1);
 
+native list_sort(List:list, bool:reverse=false, bool:stable=false);
+
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);
 
