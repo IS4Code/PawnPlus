@@ -595,6 +595,8 @@ native Iter:list_iter(List:list, index=0);
 #define list_find<%0>(%1,%2) list_find(List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
 #define list_find_arr<%0>(%1,%2) list_find_arr(List:_PP@CAST[List<%0>](%1),_PP@CAST_ARR[%0](%2))
 
+#define list_sort<%0>(%1) list_sort(List:_PP@CAST[List<%0>](%1))
+
 #define list_sizeof<%0>(%1) list_sizeof(List:_PP@CAST[List<%0>](%1))
 
 #define list_iter<%0>(%1) (Iter<%0>:list_iter(List:_PP@CAST[List<%0>](%1)))
