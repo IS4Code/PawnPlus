@@ -1318,6 +1318,9 @@ stock operator~(PP@ts:arr[], count)
 /*       Math      */
 /*                 */
 
+native math_random(min=0, max=cellmax);
+native Float:math_random_float(Float:min=0.0, Float:max=1.0);
+
 native math_iadd({_,signed}:a, {_,signed}:b);
 native math_iadd_ovf({_,signed}:a, {_,signed}:b);
 native math_isub({_,signed}:a, {_,signed}:b);

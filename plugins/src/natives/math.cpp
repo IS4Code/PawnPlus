@@ -8,7 +8,10 @@
 #include "modules/variants.h"
 #include "modules/guards.h"
 #include "modules/containers.h"
+
 #include <limits>
+#include <random>
+#include <cmath>
 
 namespace Natives
 {
@@ -267,6 +270,55 @@ namespace Natives
 	{
 		return (ucell)params[1] >= (ucell)params[2];
 	}
+
+	thread_local std::default_random_engine generator;
+
+	// native math_random(min=0, max=cellmax);
+	AMX_DEFINE_NATIVE(math_random, 0)
+	{
+		cell min = optparam(1, 0);
+		cell max = optparam(2, std::numeric_limits<cell>::max());
+		if(max < min)
+		{
+			amx_LogicError(errors::out_of_range, "max");
+		}
+		return std::uniform_int_distribution<cell>(min, max)(generator);
+	}
+
+	// native Float:math_random_float(Float:min=0.0, Float:max=1.0);
+	AMX_DEFINE_NATIVE(math_random_float, 0)
+	{
+		cell cmin = optparam(1, 0);
+		cell cmax = optparam(2, 0x3F800000);
+		float min = amx_ctof(cmin);
+		if(std::isnan(min))
+		{
+			amx_LogicError(errors::out_of_range, "min");
+		}
+		float max = amx_ctof(cmax);
+		if(std::isnan(max) || max < min)
+		{
+			amx_LogicError(errors::out_of_range, "max");
+		}
+		if(cmin == cmax)
+		{
+			return cmin;
+		}
+		if(std::isinf(min))
+		{
+			if(std::isinf(max))
+			{
+				return std::uniform_int_distribution<int>(0, 1)(generator) == 0 ? cmin : cmax;
+			}else{
+				return cmin;
+			}
+		}else if(std::isinf(max))
+		{
+			return cmax;
+		}
+		float result = std::uniform_real_distribution<float>(min, max)(generator);
+		return amx_ftoc(result);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -304,6 +356,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(math_ulte),
 	AMX_DECLARE_NATIVE(math_ugt),
 	AMX_DECLARE_NATIVE(math_ugte),
+
+	AMX_DECLARE_NATIVE(math_random),
+	AMX_DECLARE_NATIVE(math_random_float),
 };
 
 int RegisterMathNatives(AMX *amx)
