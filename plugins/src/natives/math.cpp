@@ -74,12 +74,22 @@ namespace Natives
 	// native math_idiv({_,signed}:a, {_,signed}:b);
 	AMX_DEFINE_NATIVE(math_idiv, 2)
 	{
+		if(params[2] == 0)
+		{
+			amx_RaiseError(amx, AMX_ERR_DIVIDE);
+			return 0;
+		}
 		return params[1] / params[2];
 	}
 
 	// native math_idiv({_,signed}:a, {_,signed}:b);
 	AMX_DEFINE_NATIVE(math_imod, 2)
 	{
+		if(params[2] == 0)
+		{
+			amx_RaiseError(amx, AMX_ERR_DIVIDE);
+			return 0;
+		}
 		return params[1] % params[2];
 	}
 
@@ -178,12 +188,22 @@ namespace Natives
 	// native math_udiv({_,unsigned}:a, {_,unsigned}:b);
 	AMX_DEFINE_NATIVE(math_udiv, 2)
 	{
+		if((ucell)params[2] == 0)
+		{
+			amx_RaiseError(amx, AMX_ERR_DIVIDE);
+			return 0;
+		}
 		return (ucell)params[1] / (ucell)params[2];
 	}
 
 	// native math_umod({_,unsigned}:a, {_,unsigned}:b);
 	AMX_DEFINE_NATIVE(math_umod, 2)
 	{
+		if((ucell)params[2] == 0)
+		{
+			amx_RaiseError(amx, AMX_ERR_DIVIDE);
+			return 0;
+		}
 		return (ucell)params[1] % (ucell)params[2];
 	}
 
