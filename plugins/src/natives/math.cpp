@@ -339,6 +339,47 @@ namespace Natives
 		float result = std::uniform_real_distribution<float>(min, max)(generator);
 		return amx_ftoc(result);
 	}
+
+	template <float (&Func)(float)>
+	cell AMX_NATIVE_CALL math_tointeger(AMX *amx, cell *params)
+	{
+		float val = amx_ctof(params[1]);
+		if(std::isnan(val))
+		{
+			amx_LogicError(errors::out_of_range, "val");
+		}
+		val = Func(val);
+		if((double)val > (double)std::numeric_limits<cell>::max() || (double)val < (double)std::numeric_limits<cell>::min())
+		{
+			amx_RaiseError(amx, AMX_ERR_DOMAIN);
+			return 0;
+		}
+		return static_cast<cell>(val);
+	}
+
+	// native math_round(Float:val);
+	AMX_DEFINE_NATIVE(math_round, 1)
+	{
+		return math_tointeger<std::roundf>(amx, params);
+	}
+
+	// native math_floor(Float:val);
+	AMX_DEFINE_NATIVE(math_floor, 1)
+	{
+		return math_tointeger<std::floorf>(amx, params);
+	}
+
+	// native math_ceiling(Float:val);
+	AMX_DEFINE_NATIVE(math_ceiling, 1)
+	{
+		return math_tointeger<std::ceilf>(amx, params);
+	}
+
+	// native math_truncate(Float:val);
+	AMX_DEFINE_NATIVE(math_truncate, 1)
+	{
+		return math_tointeger<std::truncf>(amx, params);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -379,6 +420,10 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(math_random),
 	AMX_DECLARE_NATIVE(math_random_float),
+	AMX_DECLARE_NATIVE(math_round),
+	AMX_DECLARE_NATIVE(math_floor),
+	AMX_DECLARE_NATIVE(math_ceiling),
+	AMX_DECLARE_NATIVE(math_truncate),
 };
 
 int RegisterMathNatives(AMX *amx)
