@@ -53,6 +53,17 @@ namespace Natives
 		buf << std::this_thread::get_id();
 		return strings::create(buf.str());
 	}
+
+	// native bool:thread_fix();
+	AMX_DEFINE_NATIVE(thread_fix, 0)
+	{
+		if(is_main_thread)
+		{
+			return false;
+		}
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return SleepReturnThreadFix;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -63,6 +74,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(thread_sleep),
 	AMX_DECLARE_NATIVE(thread_id),
 	AMX_DECLARE_NATIVE(thread_id_s),
+	AMX_DECLARE_NATIVE(thread_fix),
 };
 
 int RegisterThreadNatives(AMX *amx)

@@ -26,6 +26,8 @@ namespace Threads
 	void JoinThreads(AMX *amx);
 	void StartThreads();
 	void SyncThreads();
+
+	void QueueAndWait(AMX *amx, cell &retval, int &error);
 }
 
 #endif

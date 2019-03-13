@@ -4,11 +4,15 @@
 #include "objects/reset.h"
 #include "modules/tasks.h"
 #include "utils/thread.h"
+
 #include <unordered_map>
 #include <mutex>
 #include <condition_variable>
 #include <tuple>
 #include <limits>
+#include <queue>
+#include <atomic>
+#include <memory>
 
 class thread_state;
 extern std::unordered_multimap<AMX*, thread_state*> running_threads;
@@ -295,6 +299,11 @@ namespace Threads
 		}
 	}
 
+	std::queue<std::tuple<amx::reset, cell&, int&>> fix_queue;
+	std::mutex queue_mutex;
+	std::condition_variable queue_cond;
+	std::atomic_bool queue_signal = false;
+
 	void SyncThreads()
 	{
 		auto it = running_threads.begin();
@@ -306,6 +315,40 @@ namespace Threads
 			}else{
 				it++;
 			}
+		}
+
+		if(queue_signal)
+		{
+			std::unique_lock<std::mutex> lock(queue_mutex);
+			while(!fix_queue.empty())
+			{
+				auto tuple = std::move(fix_queue.front());
+				auto &reset = std::get<0>(tuple);
+				fix_queue.pop();
+
+				if(auto lock = reset.amx.lock())
+				{
+					AMX *amx = *lock;
+					int old_error = amx->error;
+					std::get<2>(tuple) = amx_ExecContext(amx, &std::get<1>(tuple), AMX_EXEC_CONT, true, &reset);
+					amx->error = old_error;
+				}
+			}
+			queue_signal = false;
+			queue_cond.notify_all();
+		}
+	}
+
+	void QueueAndWait(AMX *amx, cell &retval, int &error)
+	{
+		std::unique_lock<std::mutex> lock(queue_mutex);
+		fix_queue.emplace(amx::reset(amx, false), retval, error);
+		amx->stk = amx->reset_stk;
+		amx->hea = amx->reset_hea;
+		queue_signal = true;
+		while(!fix_queue.empty())
+		{
+			queue_cond.wait(lock);
 		}
 	}
 }

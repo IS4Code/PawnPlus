@@ -18,6 +18,8 @@
 logprintf_t logprintf;
 extern void *pAMXFunctions;
 
+thread_local bool is_main_thread = false;
+
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports() noexcept
 {
 	return SUPPORTS_VERSION | SUPPORTS_AMX_NATIVES | SUPPORTS_PROCESS_TICK;
@@ -27,6 +29,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData) noexcept
 {
 	pAMXFunctions = ppData[PLUGIN_DATA_AMX_EXPORTS];
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
+	is_main_thread = true;
 
 	Hooks::Register();
 	debug::init();

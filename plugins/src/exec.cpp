@@ -91,68 +91,72 @@ int AMXAPI amx_on_debug(AMX *amx)
 
 int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset, bool forked)
 {
-	if(amx::context_level >= maxRecursionLevel)
-	{
-		return logerror(amx, AMX_ERR_GENERAL, "[PawnPlus] native recursion depth %d too high (limit is %d, use pp_max_recursion to increase it)", amx::context_level, maxRecursionLevel);
-	}
-
-	if(events::invoke_callbacks(amx, index, retval)) return AMX_ERR_NONE;
-
-	if(!forked)
-	{
-		Threads::PauseThreads(amx);
-		Threads::JoinThreads(amx);
-	}
+	bool main_thread = is_main_thread;
 
 	amx::reset *old = nullptr;
 	bool restore_context = false;
-	if(restore)
-	{
-		if(amx::has_context(amx))
-		{
-			restore_context = true;
-			old = new amx::reset(amx, true);
-		}else{
-			old = new amx::reset(amx, false);
-		}
-	}
-
-	amx::push(amx, index);
-	if(reset != nullptr)
-	{
-		reset->restore();
-	}
-
-	if(forked)
-	{
-		amx::object owner;
-		auto &ctx = amx::get_context(amx, owner);
-		ctx.get_extra<forked_context>().cloned = owner->has_extra<forked_amx_holder>();
-	}
-
 	AMX_DEBUG old_debug;
 	bool restore_debug = false;
-
-	if(restore)
+	if(main_thread)
 	{
-		amx::object owner;
-		auto &ctx = amx::get_context(amx, owner);
-		if(ctx.has_extra<parallel_context>())
+		if(amx::context_level >= maxRecursionLevel)
 		{
-			ctx.get_extra<parallel_context>().old_debug = old_debug = amx->debug;
-			amx->debug = amx_on_debug;
-			restore_debug = true;
+			return logerror(amx, AMX_ERR_GENERAL, "[PawnPlus] native recursion depth %d too high (limit is %d, use pp_max_recursion to increase it)", amx::context_level, maxRecursionLevel);
 		}
-	}else if(amx->debug == amx_on_debug && amx::has_parent_context(amx))
-	{
-		amx::object owner;
-		auto &ctx = amx::get_parent_context(amx, owner);
-		if(ctx.has_extra<parallel_context>())
+
+		if(events::invoke_callbacks(amx, index, retval)) return AMX_ERR_NONE;
+
+		if(!forked)
 		{
-			auto &extra = ctx.get_extra<parallel_context>();
-			amx->debug = extra.old_debug;
-			old_debug = amx_on_debug;
-			restore_debug = true;
+			Threads::PauseThreads(amx);
+			Threads::JoinThreads(amx);
+		}
+
+		if(restore)
+		{
+			if(amx::has_context(amx))
+			{
+				restore_context = true;
+				old = new amx::reset(amx, true);
+			}else{
+				old = new amx::reset(amx, false);
+			}
+		}
+
+		amx::push(amx, index);
+		if(reset != nullptr)
+		{
+			reset->restore();
+		}
+
+		if(forked)
+		{
+			amx::object owner;
+			auto &ctx = amx::get_context(amx, owner);
+			ctx.get_extra<forked_context>().cloned = owner->has_extra<forked_amx_holder>();
+		}
+
+		if(restore)
+		{
+			amx::object owner;
+			auto &ctx = amx::get_context(amx, owner);
+			if(ctx.has_extra<parallel_context>())
+			{
+				ctx.get_extra<parallel_context>().old_debug = old_debug = amx->debug;
+				amx->debug = amx_on_debug;
+				restore_debug = true;
+			}
+		}else if(amx->debug == amx_on_debug && amx::has_parent_context(amx))
+		{
+			amx::object owner;
+			auto &ctx = amx::get_parent_context(amx, owner);
+			if(ctx.has_extra<parallel_context>())
+			{
+				auto &extra = ctx.get_extra<parallel_context>();
+				amx->debug = extra.old_debug;
+				old_debug = amx_on_debug;
+				restore_debug = true;
+			}
 		}
 	}
 
@@ -166,11 +170,11 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 		{
 			index = AMX_EXEC_CONT;
 
+			handled = true;
+
 			amx::object owner;
 			auto &ctx = amx::get_context(amx, owner);
 			tasks::extra &info = tasks::get_extra(amx, owner);
-
-			handled = true;
 
 			if(ctx.has_extra<parallel_context>())
 			{
@@ -594,6 +598,13 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					continue;
 				}
 				break;
+				case SleepReturnThreadFix:
+				{
+					amx->error = ret = AMX_ERR_NONE;
+					amx->pri = 1;
+					Threads::QueueAndWait(amx, *retval, ret);
+				}
+				break;
 			}
 
 			if(handled)
@@ -608,17 +619,20 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 			amx->debug = old_debug;
 		}
 
-		if(restore && !handled && ret != AMX_ERR_SLEEP)
+		if(main_thread)
 		{
-			amx::object owner;
-			tasks::extra &info = tasks::get_extra(amx, owner);
-			if(auto task = info.bound_task.lock())
+			if(restore && !handled && ret != AMX_ERR_SLEEP)
 			{
-				if(ret == AMX_ERR_NONE)
+				amx::object owner;
+				tasks::extra &info = tasks::get_extra(amx, owner);
+				if(auto task = info.bound_task.lock())
 				{
-					task->set_completed(dyn_object(*retval, tags::find_tag(tags::tag_cell)));
-				}else{
-					task->set_faulted(ret);
+					if(ret == AMX_ERR_NONE)
+					{
+						task->set_completed(dyn_object(*retval, tags::find_tag(tags::tag_cell)));
+					}else{
+						task->set_faulted(ret);
+					}
 				}
 			}
 		}
@@ -626,20 +640,23 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 		break;
 	}
 
-	amx::pop(amx);
-	if(old != nullptr)
+	if(main_thread)
 	{
-		if(restore_context)
+		amx::pop(amx);
+		if(old != nullptr)
 		{
-			old->restore();
-		}else{
-			old->restore_no_context();
+			if(restore_context)
+			{
+				old->restore();
+			} else {
+				old->restore_no_context();
+			}
+			delete old;
 		}
-		delete old;
-	}
-	if(!forked)
-	{
-		Threads::ResumeThreads(amx);
+		if(!forked)
+		{
+			Threads::ResumeThreads(amx);
+		}
 	}
 	return ret;
 }

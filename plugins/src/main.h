@@ -7,6 +7,8 @@
 typedef void(*logprintf_t)(const char* format, ...);
 extern logprintf_t logprintf;
 
+extern thread_local bool is_main_thread;
+
 template <class... Args>
 int logerror(AMX *amx, int error, const char *format, Args&&... args)
 {

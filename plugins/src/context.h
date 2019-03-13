@@ -18,6 +18,7 @@ constexpr cell SleepReturnTaskDetach = 0xA4000000;
 constexpr cell SleepReturnDetach = 0xB0000000;
 constexpr cell SleepReturnAttach = 0xB1000000;
 constexpr cell SleepReturnSync = 0xB2000000;
+constexpr cell SleepReturnThreadFix = 0xB3000000;
 
 constexpr cell SleepReturnFork = 0xC0000000;
 constexpr cell SleepReturnForkFlagsMethodMask = 0x0000FFFF;
@@ -46,7 +47,7 @@ namespace amx
 		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
 
 	public:
-		context()
+		context() : _amx(nullptr), _index(0)
 		{
 
 		}

@@ -1,4 +1,5 @@
 #include "context.h"
+#include "main.h"
 
 #include <unordered_map>
 #include <forward_list>
@@ -99,30 +100,49 @@ int amx::pop(AMX *amx)
 
 bool amx::has_context(AMX *amx)
 {
+	if(!is_main_thread)
+	{
+		return false;
+	}
 	amx::object obj;
 	return get_state(amx, obj).contexts.size() > 0;
 }
 
 amx::context &amx::get_context(AMX *amx, amx::object &obj)
 {
+	if(!is_main_thread)
+	{
+		obj = std::make_shared<amx::instance>(amx);
+		auto &state = obj->get_extra<AMX_STATE>();
+		state.contexts.emplace_back(amx, 0);
+		return state.contexts.back();
+	}
 	return get_state(amx, obj).contexts.back();
 }
 
 bool amx::has_parent_context(AMX *amx)
 {
+	if(!is_main_thread)
+	{
+		return false;
+	}
 	amx::object obj;
 	return get_state(amx, obj).contexts.size() > 1;
 }
 
 amx::context &amx::get_parent_context(AMX *amx, amx::object &obj)
 {
+	if(!is_main_thread)
+	{
+		return get_context(amx, obj);
+	}
 	return *std::prev(get_state(amx, obj).contexts.end(), 2);
 }
 
 void amx::restore(AMX *amx, context &&context)
 {
 	amx::object obj;
-	get_state(amx, obj).contexts.back() = std::move(context);
+	get_context(amx, obj) = std::move(context);
 }
 
 void amx::on_bottom(const std::function<void(AMX*)> &callback)

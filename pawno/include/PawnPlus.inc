@@ -1299,6 +1299,7 @@ native thread_sync();
 native thread_sleep(ms);
 native thread_id(id[], size=sizeof id);
 native String:thread_id_s();
+native bool:thread_fix();
 
 #if defined PP_SYNTAX_THREADED
 
