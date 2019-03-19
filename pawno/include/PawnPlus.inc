@@ -133,7 +133,7 @@ enum error_level
     error_logic = 2,
     error_formal = 3,
     error_none = cellmax,
-};
+}
 
 native error_level:pp_error_level(error_level:level);
 native pp_raise_error(const message[], error_level:level=error_logic);
@@ -269,7 +269,7 @@ enum fork_level
     fork_exec = 0,
     fork_data = 1,
     fork_machine = 2,
-};
+}
 
 native AMX:amx_this();
 native Var:amx_var(&AnyTag:var);
@@ -332,7 +332,7 @@ enum amx_err
     amx_err_params,
     amx_err_domain,
     amx_err_general,
-};
+}
 
 #if defined PP_SYNTAX_AMX_FORKED
 
@@ -421,6 +421,43 @@ native String:str_format(const format[], {StringTags,Float,_}:...);
 native String:str_format_s(ConstStringTag:format, {StringTags,Float,_}:...);
 native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
 native String:str_set_format_s(StringTag:target, ConstStringTag:format, {StringTags,Float,_}:...);
+
+enum regex_options (<<= 1)
+{
+    regex_default = 0,
+    regex_basic = 1,
+    regex_extended = 2,
+    regex_awk = 3,
+    regex_grep = 4,
+    regex_egrep = 5,
+    
+    regex_icase = 8,
+    regex_nosubs,
+    regex_optimize,
+    regex_collate,
+    
+    regex_not_bol = 256,
+    regex_not_eol,
+    regex_not_bow,
+    regex_not_eow,
+    regex_any,
+    regex_not_null,
+    regex_continuous,
+    
+    regex_no_copy = 65536,
+    regex_first_only,
+    
+    regex_cached = 4194304
+}
+
+native bool:str_match(ConstStringTag:str, const pattern[], regex_options:options=regex_default);
+native bool:str_match_s(ConstStringTag:str, ConstStringTag:pattern, regex_options:options=regex_default);
+native List:str_extract(ConstStringTag:str, const pattern[], regex_options:options=regex_default);
+native List:str_extract_s(ConstStringTag:str, ConstStringTag:pattern, regex_options:options=regex_default);
+native String:str_replace(ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
+native String:str_replace_s(ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, regex_options:options=regex_default);
+native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
+native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, const replacement[], regex_options:options=regex_default);
 
 #if defined PP_SYNTAX_@
 #define @ str_new_static
@@ -1197,7 +1234,7 @@ enum task_restore
     task_restore_frame = 1,
     task_restore_context = 2,
     task_restore_full = 3,
-};
+}
 
 native wait_ms(interval);
 native wait_ticks(ticks);
