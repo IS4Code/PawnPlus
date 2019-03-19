@@ -1,4 +1,5 @@
 #include "strings.h"
+#include "errors.h"
 
 #include <stddef.h>
 #include <vector>
@@ -272,6 +273,11 @@ void add_format(strings::cell_string &buf, const cell *begin, const cell *end, c
 			buf.append(convert(std::to_string(static_cast<ucell>(*arg))));
 		}
 		break;
+		default:
+		{
+			amx_FormalError("invalid format specifier '%c'", *end);
+		}
+		break;
 	}
 }
 
@@ -299,7 +305,7 @@ void strings::format(AMX *amx, strings::cell_string &buf, const cell *format, in
 				if(flen < 0) break;
 				if(argn >= argc)
 				{
-					//error
+					throw errors::end_of_arguments_error(args, argn + 1);
 				}else{
 					cell *argv;
 					amx_GetAddr(amx, args[argn++], &argv);

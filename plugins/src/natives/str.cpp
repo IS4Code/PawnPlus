@@ -679,7 +679,7 @@ namespace Natives
 		amx_StrLen(format, &flen);
 
 		auto &str = strings::pool.add();
-		strings::format(amx, *str, format, flen, params[0] - 1, params + 2);
+		strings::format(amx, *str, format, flen, params[0] / sizeof(cell) - 1, params + 2);
 		return strings::pool.get_id(str);
 	}
 
