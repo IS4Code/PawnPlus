@@ -457,7 +457,7 @@ native List:str_extract_s(ConstStringTag:str, ConstStringTag:pattern, regex_opti
 native String:str_replace(ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
 native String:str_replace_s(ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, regex_options:options=regex_default);
 native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
-native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, const replacement[], regex_options:options=regex_default);
+native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, regex_options:options=regex_default);
 
 #if defined PP_SYNTAX_@
 #define @ str_new_static

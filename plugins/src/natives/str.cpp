@@ -1063,7 +1063,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[2], str)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		cell options = optparam(4, 0);
+		cell options = optparam(5, 0);
 		std::regex_constants::syntax_option_type syntax_options;
 		std::regex_constants::match_flag_type match_options;
 		regex_options(options, syntax_options, match_options);
@@ -1084,7 +1084,7 @@ namespace Natives
 		}
 	}
 
-	// native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, const replacement[], regex_options:options=regex_default);
+	// native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, regex_options:options=regex_default);
 	AMX_DEFINE_NATIVE(str_set_replace_s, 4)
 	{
 		cell_string *target;
@@ -1094,7 +1094,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[2], str)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		cell options = optparam(4, 0);
+		cell options = optparam(5, 0);
 		std::regex_constants::syntax_option_type syntax_options;
 		std::regex_constants::match_flag_type match_options;
 		regex_options(options, syntax_options, match_options);
