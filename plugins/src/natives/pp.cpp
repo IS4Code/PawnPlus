@@ -8,6 +8,7 @@
 #include "modules/variants.h"
 #include "modules/guards.h"
 #include "modules/containers.h"
+#include "modules/amxhook.h"
 
 #include <cstring>
 #ifdef _WIN32
@@ -133,6 +134,18 @@ namespace Natives
 		return handle_pool.global_size();
 	}
 
+	// native pp_max_hooked_natives();
+	AMX_DEFINE_NATIVE(pp_max_hooked_natives, 0)
+	{
+		return amxhook::hook_pool_size();
+	}
+
+	// native pp_num_hooked_natives();
+	AMX_DEFINE_NATIVE(pp_num_hooked_natives, 0)
+	{
+		return amxhook::hook_count();
+	}
+
 	// native pp_collect();
 	AMX_DEFINE_NATIVE(pp_collect, 0)
 	{
@@ -243,6 +256,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_num_global_iters),
 	AMX_DECLARE_NATIVE(pp_num_local_handles),
 	AMX_DECLARE_NATIVE(pp_num_global_handles),
+	AMX_DECLARE_NATIVE(pp_max_hooked_natives),
+	AMX_DECLARE_NATIVE(pp_num_hooked_natives),
 	AMX_DECLARE_NATIVE(pp_entry_s),
 	AMX_DECLARE_NATIVE(pp_collect),
 	AMX_DECLARE_NATIVE(pp_num_natives),

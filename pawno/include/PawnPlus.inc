@@ -120,6 +120,8 @@ native pp_num_local_iters();
 native pp_num_global_iters();
 native pp_num_local_handles();
 native pp_num_global_handles();
+native pp_max_hooked_natives();
+native pp_num_hooked_natives();
 native pp_collect();
 native pp_num_natives();
 native String:pp_module_name_s(const function[]);

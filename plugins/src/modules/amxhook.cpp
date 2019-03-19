@@ -73,8 +73,8 @@ public:
 	size_t get_index() const { return index; }
 };
 
-constexpr const size_t max_hooked_funcs = 1024;
-std::array<std::unique_ptr<hooked_func>, max_hooked_funcs> native_hooks;
+constexpr const size_t max_hooked_natives = 1024;
+std::array<std::unique_ptr<hooked_func>, max_hooked_natives> native_hooks;
 std::unordered_map<AMX_NATIVE, size_t> hooks_map;
 std::unordered_map<cell, size_t> hook_handlers;
 
@@ -88,7 +88,25 @@ cell native_hook_handler(size_t index, AMX *amx, cell *params)
 	throw std::logic_error("[PawnPlus] Hook was not properly unregistered.");
 }
 
-using func_pool = aux::func<cell(AMX*, cell*)>::pool<max_hooked_funcs, native_hook_handler>;
+using func_pool = aux::func<cell(AMX*, cell*)>::pool<max_hooked_natives, native_hook_handler>;
+
+size_t amxhook::hook_pool_size()
+{
+	return max_hooked_natives;
+}
+
+size_t amxhook::hook_count()
+{
+	size_t count = 0;
+	for(size_t i = 0; i < max_hooked_natives; i++)
+	{
+		if(native_hooks[i])
+		{
+			count++;
+		}
+	}
+	return count;
+}
 
 cell register_handler(AMX *amx, const char *native, std::unique_ptr<hook_handler> &&handler)
 {
@@ -104,7 +122,7 @@ cell register_handler(AMX *amx, const char *native, std::unique_ptr<hook_handler
 		size_t index = p.first;
 		if(index == -1)
 		{
-			amx_LogicError("Hook pool full. Adjust max_hooked_funcs (currently %d) and recompile.", max_hooked_funcs);
+			amx_LogicError("Hook pool full. Adjust max_hooked_natives (currently %d) and recompile.", max_hooked_natives);
 		}
 		native_hooks[index] = std::make_unique<hooked_func>(name, func, p.second, index);
 		it = hooks_map.emplace(func, index).first;
