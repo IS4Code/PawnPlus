@@ -157,6 +157,9 @@ enum handler_flags
     handler_args = 2,
 }
 
+native bool:pawn_native_exists(const function[]);
+native bool:pawn_native_imported(const function[]);
+native bool:pawn_public_exists(const function[]);
 native pawn_call_native(const function[], const format[], AnyTag:...);
 native pawn_call_public(const function[], const format[], AnyTag:...);
 native amx_err:pawn_try_call_native(const function[], &result, const format[], AnyTag:...);

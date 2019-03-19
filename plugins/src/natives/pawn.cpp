@@ -256,6 +256,33 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 
 namespace Natives
 {
+	// native bool:pawn_native_exists(const function[]);
+	AMX_DEFINE_NATIVE(pawn_native_exists, 1)
+	{
+		char *name;
+		amx_StrParam(amx, params[1], name);
+
+		return name && amx::find_native(amx, name);
+	}
+
+	// native bool:pawn_native_imported(const function[]);
+	AMX_DEFINE_NATIVE(pawn_native_imported, 1)
+	{
+		char *name;
+		amx_StrParam(amx, params[1], name);
+		int index;
+		return name && amx_FindNative(amx, name, &index) == AMX_ERR_NONE;
+	}
+
+	// native bool:pawn_public_exists(const function[]);
+	AMX_DEFINE_NATIVE(pawn_public_exists, 1)
+	{
+		char *name;
+		amx_StrParam(amx, params[1], name);
+		int index;
+		return name && amx_FindPublic(amx, name, &index) == AMX_ERR_NONE;
+	}
+
 	// native pawn_call_native(const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_call_native, 2)
 	{
@@ -558,6 +585,9 @@ namespace Natives
 
 static AMX_NATIVE_INFO native_list[] =
 {
+	AMX_DECLARE_NATIVE(pawn_native_exists),
+	AMX_DECLARE_NATIVE(pawn_native_imported),
+	AMX_DECLARE_NATIVE(pawn_public_exists),
 	AMX_DECLARE_NATIVE(pawn_call_native),
 	AMX_DECLARE_NATIVE(pawn_call_public),
 	AMX_DECLARE_NATIVE(pawn_try_call_native),
