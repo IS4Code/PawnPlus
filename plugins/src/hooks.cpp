@@ -114,7 +114,13 @@ namespace Hooks
 		auto dbg = debug::create_last();
 		if(dbg)
 		{
-			amx::load_lock(amx)->get_extra<debug::info>().dbg = dbg;
+			if(((AMX_HEADER*)amx->base)->flags & AMX_FLAG_DEBUG)
+			{
+				amx::load_lock(amx)->get_extra<debug::info>().dbg = dbg;
+			}else{
+				dbg_FreeInfo(dbg);
+				delete dbg;
+			}
 		}
 		return ret;
 	}
