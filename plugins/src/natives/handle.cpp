@@ -18,6 +18,15 @@ public:
 		return handle_pool.get_id(handle_pool.add(handle_t(Factory(amx, params[Indices]...))));
 	}
 
+	// native Handle:handle_alias(HandleTag:handle, value, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL handle_alias(AMX *amx, cell *params)
+	{
+		handle_t *handle;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		return handle_pool.get_id(handle_pool.add(handle_t(*handle, Factory(amx, params[Indices]...))));
+	}
+
 	// native handle_get(HandleTag:handle, ...);
 	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL handle_get(AMX *amx, cell *params)
@@ -50,6 +59,24 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_new_var, 1)
 	{
 		return value_at<1>::handle_new<dyn_func_var>(amx, params);
+	}
+
+	// native Handle:handle_alias(HandleTag:handle, AnyTag:value, TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(handle_alias, 3)
+	{
+		return value_at<2, 3>::handle_alias<dyn_func>(amx, params);
+	}
+
+	// native Handle:handle_alias_arr(HandleTag:handle, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(handle_alias_arr, 4)
+	{
+		return value_at<2, 3, 4>::handle_alias<dyn_func_arr>(amx, params);
+	}
+
+	// native Handle:handle_alias_var(HandleTag:handle, ConstVariantTag:value);
+	AMX_DEFINE_NATIVE(handle_alias_var, 2)
+	{
+		return value_at<2>::handle_alias<dyn_func_var>(amx, params);
 	}
 
 	// native Handle:handle_acquire(HandleTag:handle);
@@ -179,6 +206,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(handle_new),
 	AMX_DECLARE_NATIVE(handle_new_arr),
 	AMX_DECLARE_NATIVE(handle_new_var),
+	AMX_DECLARE_NATIVE(handle_alias),
+	AMX_DECLARE_NATIVE(handle_alias_arr),
+	AMX_DECLARE_NATIVE(handle_alias_var),
 	AMX_DECLARE_NATIVE(handle_acquire),
 	AMX_DECLARE_NATIVE(handle_release),
 	AMX_DECLARE_NATIVE(handle_delete),

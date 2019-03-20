@@ -1187,6 +1187,9 @@ const Handle:HANDLE_NULL = Handle:0;
 native Handle:handle_new(AnyTag:value, TagTag:tag_id=tagof(value));
 native Handle:handle_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native Handle:handle_new_var(ConstVariantTag:value);
+native Handle:handle_alias(HandleTag:handle, AnyTag:value, TagTag:tag_id=tagof(value));
+native Handle:handle_alias_arr(HandleTag:handle, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native Handle:handle_alias_var(HandleTag:handle, ConstVariantTag:value);
 native Handle:handle_acquire(HandleTag:handle);
 native Handle:handle_release(HandleTag:handle);
 native bool:handle_delete(HandleTag:handle);
@@ -1209,6 +1212,8 @@ native handle_sizeof(HandleTag:handle);
 
 #define handle_new<%0>(%1) (Handle<%0>:handle_new(_PP@CAST[%0](%1)))
 #define handle_new_arr<%0>(%1) (Handle<%0>:handle_new_arr(_PP@CAST_ARR[%0](%1)))
+#define handle_alias<%0>(%1,%2) (Handle<%0>:handle_new(%1,_PP@CAST[%0](%2)))
+#define handle_alias_arr<%0>(%1,%2) (Handle<%0>:handle_new_arr(%1,_PP@CAST_ARR[%0](%2)))
 #define handle_acquire<%0>(%1) (Handle<%0>:handle_acquire(Handle:_PP@CAST[Handle<%0>](%1)))
 #define handle_release<%0>(%1) (Handle<%0>:handle_release(Handle:_PP@CAST[Handle<%0>](%1)))
 #define handle_delete<%0>(%1) handle_delete(Handle:_PP@CAST[Handle<%0>](%1))

@@ -635,6 +635,11 @@ public:
 
 	}
 
+	handle_t(const handle_t &owner, dyn_object &&obj) : object(std::move(obj)), bond(owner.bond)
+	{
+
+	}
+
 	handle_t(handle_t &&handle) : object(std::move(handle.object)), bond(std::move(handle.bond))
 	{
 
@@ -696,7 +701,7 @@ public:
 
 	bool alive() const
 	{
-		return !object.empty() && (!bond.expired() || (!bond.owner_before(std::weak_ptr<void>{}) && !std::weak_ptr<void>{}.owner_before(bond)));
+		return !bond.expired() || (!bond.owner_before(std::weak_ptr<void>{}) && !std::weak_ptr<void>{}.owner_before(bond));
 	}
 
 	~handle_t()
