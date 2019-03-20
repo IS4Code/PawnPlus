@@ -11,6 +11,7 @@
 
 #include <limits>
 #include <random>
+#include <math.h>
 #include <cmath>
 
 namespace Natives
@@ -360,25 +361,25 @@ namespace Natives
 	// native math_round(Float:val);
 	AMX_DEFINE_NATIVE(math_round, 1)
 	{
-		return math_tointeger<std::roundf>(amx, params);
+		return math_tointeger<roundf>(amx, params);
 	}
 
 	// native math_floor(Float:val);
 	AMX_DEFINE_NATIVE(math_floor, 1)
 	{
-		return math_tointeger<std::floorf>(amx, params);
+		return math_tointeger<floorf>(amx, params);
 	}
 
 	// native math_ceiling(Float:val);
 	AMX_DEFINE_NATIVE(math_ceiling, 1)
 	{
-		return math_tointeger<std::ceilf>(amx, params);
+		return math_tointeger<ceilf>(amx, params);
 	}
 
 	// native math_truncate(Float:val);
 	AMX_DEFINE_NATIVE(math_truncate, 1)
 	{
-		return math_tointeger<std::truncf>(amx, params);
+		return math_tointeger<truncf>(amx, params);
 	}
 }
 

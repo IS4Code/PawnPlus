@@ -302,7 +302,7 @@ namespace Threads
 	std::queue<std::tuple<amx::reset, cell&, int&>> fix_queue;
 	std::mutex queue_mutex;
 	std::condition_variable queue_cond;
-	std::atomic_bool queue_signal = false;
+	std::atomic_bool queue_signal(false);
 
 	void SyncThreads()
 	{

@@ -9,6 +9,7 @@
 #include <limits>
 #include <regex>
 #include <unordered_map>
+#include <iterator>
 
 typedef strings::cell_string cell_string;
 
@@ -24,6 +25,13 @@ static cell to_upper(cell c)
 	return c;
 }
 
+template <class T>
+inline void hash_combine(size_t& seed, const T& v)
+{
+	std::hash<T> hasher;
+	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
 namespace std
 {
 	template <class Type1, class Type2>
@@ -32,6 +40,20 @@ namespace std
 		size_t operator()(const std::pair<Type1, Type2> &obj) const
 		{
 			return std::hash<Type1>()(obj.first) ^ std::hash<Type2>()(obj.second);
+		}
+	};
+
+	template <class Type>
+	struct hash<std::basic_string<Type>>
+	{
+		size_t operator()(const std::basic_string<Type> &obj) const
+		{
+			size_t seed = 0;
+			for(const auto &c : obj)
+			{
+				hash_combine(seed, c);
+			}
+			return seed;
 		}
 	};
 }
@@ -58,8 +80,7 @@ struct regex_traits
 		_Ch_punct = std::ctype_base::punct,
 		_Ch_space = std::ctype_base::space,
 		_Ch_upper = std::ctype_base::upper,
-		_Ch_xdigit = std::ctype_base::xdigit,
-		_Ch_blank = std::ctype_base::blank
+		_Ch_xdigit = std::ctype_base::xdigit
 	};
 
 	int value(cell ch, int base) const
@@ -868,25 +889,13 @@ namespace Natives
 	static const std::basic_regex<cell, regex_traits> &get_cached(const cell *pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
 	{
 		options &= 255;
-		std::pair<cell_string, cell> key(pattern, options);
-		auto it = regex_cache.find(key);
-		if(it != regex_cache.end())
-		{
-			return it->second;
-		}
-		return regex_cache[std::move(key)] = std::basic_regex<cell, regex_traits>(pattern, syntax_options);
+		return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(pattern, options), std::forward_as_tuple(pattern, syntax_options)).first->second;
 	}
 
 	static const std::basic_regex<cell, regex_traits> &get_cached(const cell_string &pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
 	{
 		options &= 255;
-		std::pair<cell_string, cell> key(pattern, options);
-		auto it = regex_cache.find(key);
-		if(it != regex_cache.end())
-		{
-			return it->second;
-		}
-		return regex_cache[std::move(key)] = std::basic_regex<cell, regex_traits>(pattern, syntax_options);
+		return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(pattern, options), std::forward_as_tuple(pattern, syntax_options)).first->second;
 	}
 
 	// native bool:str_match(ConstStringTag:str, const pattern[], regex_options:options=regex_default);
@@ -1019,7 +1028,9 @@ namespace Natives
 			cell *replacement;
 			amx_GetAddr(amx, params[3], &replacement);
 
-			return strings::pool.get_id(strings::pool.add(std::regex_replace(*str, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), replacement, match_options)));
+			auto &target = strings::pool.add();
+			std::regex_replace(std::back_inserter(*target), str->cbegin(), str->cend(), options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), {replacement}, match_options);
+			return strings::pool.get_id(target);
 		}catch(const std::regex_error &err)
 		{
 			amx_FormalError("%s", err.what());
@@ -1075,7 +1086,7 @@ namespace Natives
 			cell *replacement;
 			amx_GetAddr(amx, params[4], &replacement);
 
-			*target = std::regex_replace(*str, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), replacement, match_options);
+			std::regex_replace(std::back_inserter(*target), str->cbegin(), str->cend(), options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), {replacement}, match_options);
 			return params[1];
 		}catch(const std::regex_error &err)
 		{
