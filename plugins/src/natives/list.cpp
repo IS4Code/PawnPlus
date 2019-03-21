@@ -593,7 +593,37 @@ namespace Natives
 		return value_at<2>::list_find_last<dyn_func_var>(amx, params);
 	}
 
-	// native list_sort(List:list, bool:reverse=false, bool:stable=false);
+	struct cell_sorter
+	{
+		cell offset;
+
+		cell_sorter(cell offset) : offset(offset)
+		{
+
+		}
+
+		bool operator()(const dyn_object &a, const dyn_object &b)
+		{
+			cell ac, bc;
+			if(!b.get_cell(offset, bc))
+			{
+				return false;
+			}
+			if(!a.get_cell(offset, ac))
+			{
+				return true;
+			}
+			cell at = a.get_tag()->find_top_base()->uid;
+			cell bt = b.get_tag()->find_top_base()->uid;
+			if(at < bt) return true;
+			if(at > bt) return false;
+			auto tag = a.get_tag();
+			const auto &ops = tag->get_ops();
+			return ops.lt(tag, ac, bc);
+		}
+	};
+
+	// native list_sort(List:list, offset=-1, bool:reverse=false, bool:stable=true);
 	AMX_DEFINE_NATIVE(list_sort, 1)
 	{
 		list_t *ptr;
@@ -601,22 +631,53 @@ namespace Natives
 		{
 			amx_LogicError(errors::pointer_invalid, "list", params[1]);
 		}
-		if(!optparam(2, 0))
+
+		cell offset = optparam(2, -1);
+
+		if(offset < -1)
+		{
+			amx_LogicError(errors::out_of_range, "offset");
+		}
+
+		bool reverse = optparam(3, 0);
+		bool stable = optparam(4, 1);
+
+		if(!reverse)
 		{
 			auto begin = ptr->begin(), end = ptr->end();
-			if(!optparam(3, 0))
+			if(stable)
 			{
-				std::sort(begin, end);
+				if(offset == -1)
+				{
+					std::stable_sort(begin, end);
+				}else{
+					std::stable_sort(begin, end, cell_sorter(offset));
+				}
 			}else{
-				std::stable_sort(begin, end);
+				if(offset == -1)
+				{
+					std::sort(begin, end);
+				}else{
+					std::sort(begin, end, cell_sorter(offset));
+				}
 			}
 		}else{
 			auto begin = ptr->rbegin(), end = ptr->rend();
-			if(!optparam(3, 0))
+			if(stable)
 			{
-				std::sort(begin, end);
+				if(offset == -1)
+				{
+					std::stable_sort(begin, end);
+				}else{
+					std::stable_sort(begin, end, cell_sorter(offset));
+				}
 			}else{
-				std::stable_sort(begin, end);
+				if(offset == -1)
+				{
+					std::sort(begin, end);
+				}else{
+					std::sort(begin, end, cell_sorter(offset));
+				}
 			}
 		}
 		return 1;
