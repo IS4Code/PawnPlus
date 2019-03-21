@@ -1510,7 +1510,33 @@ class dynamic_operations : public null_operations, public tag_control
 {
 	class op_handler
 	{
+	protected:
 		op_type _type;
+
+	public:
+		op_handler(op_type type) : _type(type)
+		{
+
+		}
+
+		virtual cell invoke(tag_ptr tag, cell *args, size_t numargs) = 0;
+
+		cell invoke(tag_ptr tag, cell arg1, cell arg2)
+		{
+			cell args[2] = {arg1, arg2};
+			return invoke(tag, args, 2);
+		}
+
+		cell invoke(tag_ptr tag, cell arg)
+		{
+			return invoke(tag, &arg, 1);
+		}
+
+		virtual ~op_handler() = default;
+	};
+
+	class amx_op_handler : public op_handler
+	{
 		amx::handle _amx;
 		std::vector<stored_param> _args;
 		std::string _handler;
@@ -1544,10 +1570,10 @@ class dynamic_operations : public null_operations, public tag_control
 		}
 
 	public:
-		op_handler() = default;
+		amx_op_handler() = default;
 
-		op_handler(op_type type, AMX *amx, const char *handler, const char *add_format, const cell *args, int numargs)
-			: _type(type), _amx(amx::load(amx)), _handler(handler)
+		amx_op_handler(op_type type, AMX *amx, const char *handler, const char *add_format, const cell *args, int numargs)
+			: op_handler(type), _amx(amx::load(amx)), _handler(handler)
 		{
 			if(add_format)
 			{
@@ -1560,7 +1586,7 @@ class dynamic_operations : public null_operations, public tag_control
 			}
 		}
 
-		cell invoke(tag_ptr tag, cell *args, size_t numargs)
+		virtual cell invoke(tag_ptr tag, cell *args, size_t numargs) override
 		{
 			if(auto lock = _amx.lock())
 			{
@@ -1588,16 +1614,29 @@ class dynamic_operations : public null_operations, public tag_control
 			}
 			return 0;
 		}
+	};
 
-		cell invoke(tag_ptr tag, cell arg1, cell arg2)
+	class func_op_handler : public op_handler
+	{
+		cell(*func)(void *cookie, const void *tag, cell *args, cell numargs);
+		void *cookie;
+
+	public:
+		func_op_handler() = default;
+
+		func_op_handler(op_type type, cell(*func)(void *cookie, const void *tag, cell *args, cell numargs), void *cookie)
+			: op_handler(type), func(func), cookie(cookie)
 		{
-			cell args[2] = {arg1, arg2};
-			return invoke(tag, args, 2);
+
 		}
 
-		cell invoke(tag_ptr tag, cell arg)
+		virtual cell invoke(tag_ptr tag, cell *args, size_t numargs) override
 		{
-			return invoke(tag, &arg, 1);
+			if(func != nullptr)
+			{
+				return func(cookie, tag, args, numargs);
+			}
+			return 0;
 		}
 	};
 
@@ -1817,7 +1856,14 @@ public:
 	virtual bool set_op(op_type type, AMX *amx, const char *handler, const char *add_format, const cell *args, int numargs) override
 	{
 		if(_locked) return false;
-		dyn_ops[type] = std::make_unique<op_handler>(type, amx, handler, add_format, args, numargs);
+		dyn_ops[type] = std::make_unique<amx_op_handler>(type, amx, handler, add_format, args, numargs);
+		return true;
+	}
+
+	virtual bool set_op(op_type type, cell(*handler)(void *cookie, const void *tag, cell *args, cell numargs), void *cookie) override
+	{
+		if(_locked) return false;
+		dyn_ops[type] = std::make_unique<func_op_handler>(type, handler, cookie);
 		return true;
 	}
 

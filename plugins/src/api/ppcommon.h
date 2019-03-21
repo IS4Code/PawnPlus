@@ -37,6 +37,25 @@ namespace pp
 		}
 	};
 
+	class main_table : public api_table
+	{
+	public:
+		const void collect() const
+		{
+			return get<void()>(0)();
+		}
+
+		void *register_on_collect(void(*func)()) const
+		{
+			return get<void*(void(*func)())>(1)(func);
+		}
+
+		void unregister_on_collect(void *id) const
+		{
+			return get<void(void *id)>(2)(id);
+		}
+	};
+
 	class tag_table : public api_table
 	{
 	public:
@@ -45,9 +64,19 @@ namespace pp
 			return get<const void*(const char *name)>(0)(name);
 		}
 
-		const void *find_id(cell tag_uid) const
+		const void *find_uid(cell tag_uid) const
 		{
 			return get<const void*(cell tag_uid)>(1)(tag_uid);
+		}
+
+		cell get_uid(const void *tag) const
+		{
+			return get<cell(const void *tag)>(2)(tag);
+		}
+
+		bool set_op(const void *tag, cell optype, cell(*handler)(void *cookie, const void *tag, cell *args, cell numargs), void *cookie) const
+		{
+			return get<cell(const void *tag, cell optype, cell(*handler)(void *cookie, const void *tag, cell *args, cell numargs), void *cookie)>(3)(tag, optype, handler, cookie);
 		}
 	};
 
@@ -297,6 +326,7 @@ namespace pp
 		}
 	};
 
+	extern main_table main;
 	extern tag_table tag;
 	extern dyn_object_table dyn_object;
 	extern list_table list;

@@ -30,5 +30,7 @@ void logwarn(AMX *amx, const char *format, Args&&... args)
 }
 
 void gc_collect();
+void *gc_register(void(*func)());
+void gc_unregister(void *id);
 
 #endif

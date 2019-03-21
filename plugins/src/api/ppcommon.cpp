@@ -12,6 +12,7 @@ stored as the flags.
 
 namespace pp
 {
+	main_table main;
 	tag_table tag;
 	dyn_object_table dyn_object;
 	list_table list;
@@ -32,11 +33,12 @@ bool pp::load()
 	{
 		auto table = reinterpret_cast<void***>(result);
 
-		tag.load(table[0]);
-		dyn_object.load(table[1]);
-		list.load(table[2]);
-		linked_list.load(table[3]);
-		map.load(table[4]);
+		main.load(table[0]);
+		tag.load(table[1]);
+		dyn_object.load(table[2]);
+		list.load(table[3]);
+		linked_list.load(table[4]);
+		map.load(table[5]);
 		return true;
 	}
 	return false;

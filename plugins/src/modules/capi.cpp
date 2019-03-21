@@ -1,4 +1,5 @@
 #include "capi.h"
+#include "main.h"
 #include "tags.h"
 #include "variants.h"
 #include "containers.h"
@@ -22,14 +23,39 @@ struct func_ptr
 	}
 };
 
+static func_ptr main_functions[] = {
+	+[]/*collect*/() -> void
+	{
+		gc_collect();
+	},
+	+[]/*register_on_collect*/(void(*func)()) -> void*
+	{
+		return gc_register(func);
+	},
+	+[]/*unregister_on_collect*/(void *id) -> void
+	{
+		gc_unregister(id);
+	},
+	nullptr
+};
+
 static func_ptr tag_functions[] = {
 	+[]/*find_tag_name*/(const char *name) -> const void*
 	{
 		return tags::find_tag(name);
 	},
-	+[]/*find_tag_id*/(cell tag_uid) -> const void*
+	+[]/*find_tag_uid*/(cell tag_uid) -> const void*
 	{
 		return tags::find_tag(tag_uid);
+	},
+	+[]/*get_tag_uid*/(const void *tag) -> cell
+	{
+		return static_cast<tag_ptr>(tag)->uid;
+	},
+	+[]/*tag_set_op*/(const void *tag, cell optype, cell(*handler)(void *cookie, const void *tag, cell *args, cell numargs), void *cookie) -> cell
+	{
+		auto ctl = static_cast<tag_ptr>(tag)->get_control();
+		return ctl->set_op(static_cast<op_type>(optype), handler, cookie);
 	},
 	nullptr
 };
@@ -314,6 +340,7 @@ static func_ptr string_functions[] = {
 };
 
 static void *func_table[] = {
+	&main_functions,
 	&tag_functions,
 	&dyn_object_functions,
 	&list_functions,

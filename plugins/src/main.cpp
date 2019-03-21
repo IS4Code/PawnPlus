@@ -15,6 +15,8 @@
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
 
+#include <list>
+
 logprintf_t logprintf;
 extern void *pAMXFunctions;
 
@@ -83,10 +85,31 @@ PLUGIN_EXPORT void PLUGIN_CALL ProcessTick() noexcept
 	Threads::SyncThreads();
 }
 
+std::list<void(*)()> gc_list;
+
 void gc_collect()
 {
 	variants::pool.clear_tmp();
 	handle_pool.clear_tmp();
 	iter_pool.clear_tmp();
 	strings::pool.clear_tmp();
+	for(const auto &it : gc_list)
+	{
+		it();
+	}
+}
+
+void *gc_register(void(*func)())
+{
+	gc_list.push_back(func);
+	auto it = gc_list.end();
+	--it;
+	return new decltype(it)(it);
+}
+
+void gc_unregister(void *id)
+{
+	auto it = static_cast<decltype(gc_list.end())*>(id);
+	gc_list.erase(*it);
+	delete it;
 }
