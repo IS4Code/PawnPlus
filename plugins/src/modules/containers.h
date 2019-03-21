@@ -626,21 +626,22 @@ class handle_t
 {
 	dyn_object object;
 	std::weak_ptr<void> bond;
+	bool weak;
 
 public:
 	handle_t() = default;
 
-	handle_t(dyn_object &&obj) : object(std::move(obj)), bond((object.acquire(), object.handle()))
+	handle_t(dyn_object &&obj, bool weak = false) : object(std::move(obj)), bond((object.acquire(), object.handle())), weak(weak)
 	{
 
 	}
 
-	handle_t(const handle_t &owner, dyn_object &&obj) : object(std::move(obj)), bond(owner.bond)
+	handle_t(const handle_t &owner, dyn_object &&obj, bool weak = false) : object(std::move(obj)), bond(owner.bond), weak(weak)
 	{
 
 	}
 
-	handle_t(handle_t &&handle) : object(std::move(handle.object)), bond(std::move(handle.bond))
+	handle_t(handle_t &&handle) : object(std::move(handle.object)), bond(std::move(handle.bond)), weak(handle.weak)
 	{
 
 	}
@@ -669,6 +670,7 @@ public:
 		{
 			object = std::move(handle.object);
 			bond = std::move(handle.bond);
+			weak = handle.weak;
 		}
 		return *this;
 	}
@@ -680,21 +682,10 @@ public:
 
 	void release()
 	{
-		if(alive())
+		if(!weak && alive())
 		{
 			object.release();
 		}
-	}
-
-	void reset()
-	{
-		object = {};
-		bond = {};
-	}
-
-	void kill()
-	{
-		bond = std::make_shared<char>();
 	}
 
 	handle_t &operator=(const handle_t&) = delete;

@@ -11,20 +11,20 @@ class value_at
 	using result_ftype = typename dyn_result<Indices...>::type;
 
 public:
-	// native Handle:handle_new(value, ...);
+	// native Handle:handle_new(value, bool:weak=false, ...);
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL handle_new(AMX *amx, cell *params)
 	{
-		return handle_pool.get_id(handle_pool.add(handle_t(Factory(amx, params[Indices]...))));
+		return handle_pool.get_id(handle_pool.add(handle_t(Factory(amx, params[Indices]...), optparam(2, 0))));
 	}
 
-	// native Handle:handle_alias(HandleTag:handle, value, ...);
+	// native Handle:handle_alias(HandleTag:handle, value);
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL handle_alias(AMX *amx, cell *params)
 	{
 		handle_t *handle;
 		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
-		return handle_pool.get_id(handle_pool.add(handle_t(*handle, Factory(amx, params[Indices]...))));
+		return handle_pool.get_id(handle_pool.add(handle_t(*handle, Factory(amx, params[Indices]...), true)));
 	}
 
 	// native handle_get(HandleTag:handle, ...);
@@ -43,20 +43,20 @@ public:
 
 namespace Natives
 {
-	// native Handle:handle_new(AnyTag:value, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(handle_new, 2)
+	// native Handle:handle_new(AnyTag:value, bool:weak=false, TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(handle_new, 3)
 	{
-		return value_at<1, 2>::handle_new<dyn_func>(amx, params);
+		return value_at<1, 3>::handle_new<dyn_func>(amx, params);
 	}
 
-	// native Handle:handle_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(handle_new_arr, 3)
+	// native Handle:handle_new_arr(const AnyTag:value[], bool:weak=false, size=sizeof(value), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(handle_new_arr, 4)
 	{
-		return value_at<1, 2, 3>::handle_new<dyn_func_arr>(amx, params);
+		return value_at<1, 3, 4>::handle_new<dyn_func_arr>(amx, params);
 	}
 
-	// native Handle:handle_new_var(ConstVariantTag:value);
-	AMX_DEFINE_NATIVE(handle_new_var, 1)
+	// native Handle:handle_new_var(ConstVariantTag:value, bool:weak=false);
+	AMX_DEFINE_NATIVE(handle_new_var, 2)
 	{
 		return value_at<1>::handle_new<dyn_func_var>(amx, params);
 	}
@@ -173,32 +173,6 @@ namespace Natives
 		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		return handle->alive();
 	}
-
-	// native handle_reset(HandleTag:handle, bool:release=false);
-	AMX_DEFINE_NATIVE(handle_reset, 1)
-	{
-		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
-		if(optparam(2, 0))
-		{
-			handle->release();
-		}
-		handle->reset();
-		return 1;
-	}
-
-	// native handle_kill(HandleTag:handle, bool:release=false);
-	AMX_DEFINE_NATIVE(handle_kill, 1)
-	{
-		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
-		if(optparam(2, 0))
-		{
-			handle->release();
-		}
-		handle->kill();
-		return 1;
-	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -215,8 +189,6 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(handle_valid),
 	AMX_DECLARE_NATIVE(handle_linked),
 	AMX_DECLARE_NATIVE(handle_alive),
-	AMX_DECLARE_NATIVE(handle_reset),
-	AMX_DECLARE_NATIVE(handle_kill),
 
 	AMX_DECLARE_NATIVE(handle_get),
 	AMX_DECLARE_NATIVE(handle_get_arr),

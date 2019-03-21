@@ -1184,9 +1184,9 @@ native iter_sizeof_value_md(IterTag:iter, const offsets[], offsets_size=sizeof(o
 
 const Handle:HANDLE_NULL = Handle:0;
 
-native Handle:handle_new(AnyTag:value, TagTag:tag_id=tagof(value));
-native Handle:handle_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-native Handle:handle_new_var(ConstVariantTag:value);
+native Handle:handle_new(AnyTag:value, bool:weak=false, TagTag:tag_id=tagof(value));
+native Handle:handle_new_arr(const AnyTag:value[], bool:weak=false, size=sizeof(value), TagTag:tag_id=tagof(value));
+native Handle:handle_new_var(ConstVariantTag:value, bool:weak=false);
 native Handle:handle_alias(HandleTag:handle, AnyTag:value, TagTag:tag_id=tagof(value));
 native Handle:handle_alias_arr(HandleTag:handle, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native Handle:handle_alias_var(HandleTag:handle, ConstVariantTag:value);
@@ -1196,8 +1196,6 @@ native bool:handle_delete(HandleTag:handle);
 native bool:handle_valid(HandleTag:handle);
 native bool:handle_linked(HandleTag:handle);
 native bool:handle_alive(HandleTag:handle);
-native handle_reset(HandleTag:handle, bool:release=false);
-native handle_kill(HandleTag:handle, bool:release=false);
 
 native handle_get(HandleTag:handle, offset=0);
 native handle_get_arr(HandleTag:handle, AnyTag:value[], size=sizeof(value));
