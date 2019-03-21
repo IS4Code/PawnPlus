@@ -561,6 +561,7 @@ native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value
 native list_add_str(List:list, const value[], index=-1);
 native list_add_var(List:list, ConstVariantTag:value, index=-1);
 native list_add_list(List:list, List:range, index=-1);
+native list_add_iter(List:list, Iter:iter, index=-1);
 native list_add_args_t(TagTag:tag_id=tagof(arg0), List:list, AnyTag:arg0, AnyTag:...) = list_add_args;
 native list_add_args_packed(List:list, ArgTag:...);
 /*
@@ -622,6 +623,7 @@ native Iter:list_iter(List:list, index=0);
 #define list_add<%0>(%1,%2) list_add(List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
 #define list_add_arr<%0>(%1,%2) list_add_arr(List:_PP@CAST[List<%0>](%1),_PP@CAST_ARR[%0](%2))
 #define list_add_list<%0>(%1,%2) list_add_list(List:_PP@CAST[List<%0>](%1),List:_PP@CAST[List<%0>](%2))
+#define list_add_iter<%0>(%1,%2) list_add_iter(List:_PP@CAST[List<%0>](%1),Iter:_PP@CAST[Iter<%0>](%2))
 #define list_add_args_of<%0>(%1,%2) list_add_args_t(_,List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
 
 #define list_remove<%0>(%1,%2) list_remove(List:_PP@CAST[List<%0>](%1),%2)

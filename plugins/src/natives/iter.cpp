@@ -363,32 +363,40 @@ auto value_write(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)>
 }
 
 template <class Func>
+auto value_read(cell arg, dyn_iterator *iter, Func f) -> typename std::result_of<Func(const dyn_object&)>::type
+{
+	const dyn_object *obj;
+	if(iter->extract(obj))
+	{
+		return f(*obj);
+	}
+	std::shared_ptr<const dyn_object> sobj;
+	if(iter->extract(sobj))
+	{
+		return f(*sobj);
+	}
+	const std::pair<const dyn_object, dyn_object> *pair;
+	if(iter->extract(pair))
+	{
+		return f(pair->second);
+	}
+	std::shared_ptr<const std::pair<const dyn_object, dyn_object>> spair;
+	if(iter->extract(spair))
+	{
+		return f(spair->second);
+	}
+	amx_LogicError(errors::operation_not_supported, "iterator", arg);
+	dyn_object tmp;
+	return f(tmp);
+}
+
+template <class Func>
 auto value_read(cell arg, Func f) -> typename std::result_of<Func(const dyn_object&)>::type
 {
 	dyn_iterator *iter;
 	if(iter_pool.get_by_id(arg, iter))
 	{
-		const dyn_object *obj;
-		if(iter->extract(obj))
-		{
-			return f(*obj);
-		}
-		std::shared_ptr<const dyn_object> sobj;
-		if(iter->extract(sobj))
-		{
-			return f(*sobj);
-		}
-		const std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			return f(pair->second);
-		}
-		std::shared_ptr<const std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return f(spair->second);
-		}
-		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+		return value_read(arg, iter, f);
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
 	dyn_object tmp;
@@ -588,6 +596,40 @@ namespace Natives
 			}
 		}
 		return iter_pool.get_id(iter);
+	}
+
+	// native list_add_iter(List:list, Iter:iter, index=-1);
+	AMX_DEFINE_NATIVE(list_add_iter, 2)
+	{
+		cell index = optparam(3, -1);
+		if(index < -1) amx_LogicError(errors::out_of_range, "list index");
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		dyn_iterator *iter;
+		if(!iter_pool.get_by_id(params[2], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[2]);
+		auto pos = ptr->end();
+		if(index == -1)
+		{
+			index = ptr->size();
+		}else if(static_cast<ucell>(index) > ptr->size())
+		{
+			amx_LogicError(errors::out_of_range, "list index");
+		}else{
+			pos = ptr->begin() + index;
+		}
+		while(iter->valid())
+		{
+			value_read(params[2], iter, [&](const dyn_object &obj)
+			{
+				pos = ptr->insert(pos, obj);
+				++pos;
+			});
+			if(!iter->move_next())
+			{
+				break;
+			}
+		}
+		return index;
 	}
 
 	// native Iter:map_iter(Map:map, index=0);
@@ -1231,6 +1273,7 @@ namespace Natives
 static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(list_iter),
+	AMX_DECLARE_NATIVE(list_add_iter),
 	AMX_DECLARE_NATIVE(map_iter),
 	AMX_DECLARE_NATIVE(map_iter_at),
 	AMX_DECLARE_NATIVE(map_iter_at_arr),

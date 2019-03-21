@@ -318,23 +318,24 @@ namespace Natives
 	// native list_add_list(List:list, List:range, index=-1);
 	AMX_DEFINE_NATIVE(list_add_list, 2)
 	{
-		if(params[3] < -1) amx_LogicError(errors::out_of_range, "list index");
+		cell index = optparam(3, -1);
+		if(index < -1) amx_LogicError(errors::out_of_range, "list index");
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
 		list_t *ptr2;
 		if(!list_pool.get_by_id(params[2], ptr2)) amx_LogicError(errors::pointer_invalid, "list", params[2]);
-		if(params[3] == -1)
+		if(index == -1)
 		{
 			size_t index = ptr->size();
 			ptr->insert(ptr->end(), ptr2->begin(), ptr2->end());
 			return static_cast<cell>(index);
-		}else if(static_cast<ucell>(params[3]) > ptr->size())
+		}else if(static_cast<ucell>(index) > ptr->size())
 		{
 			amx_LogicError(errors::out_of_range, "list index");
 			return 0;
 		}else{
-			ptr->insert(ptr->begin() + params[3], ptr2->begin(), ptr2->end());
-			return params[3];
+			ptr->insert(ptr->begin() + index, ptr2->begin(), ptr2->end());
+			return index;
 		}
 	}
 
