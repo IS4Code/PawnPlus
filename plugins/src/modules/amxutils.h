@@ -2,7 +2,7 @@
 #define AMXUTILS_H_INCLUDED
 
 #include "amxinfo.h"
-#include "utils/id_set_pool.h"
+#include "utils/shared_id_set_pool.h"
 #include "sdk/amx/amx.h"
 
 struct fork_info_extra : public amx::extra
@@ -49,6 +49,6 @@ public:
 	bool fill(unsigned char value);
 };
 
-extern aux::id_set_pool<amx_var_info> amx_var_pool;
+extern aux::shared_id_set_pool<amx_var_info> amx_var_pool;
 
 #endif

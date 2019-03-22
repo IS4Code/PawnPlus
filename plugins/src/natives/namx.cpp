@@ -3,7 +3,7 @@
 #include "context.h"
 #include "errors.h"
 #include "modules/amxutils.h"
-#include "utils/id_set_pool.h"
+#include "utils/shared_id_set_pool.h"
 
 namespace Natives
 {
@@ -16,13 +16,13 @@ namespace Natives
 	// native Var:amx_var(&AnyTag:var);
 	AMX_DEFINE_NATIVE(amx_var, 1)
 	{
-		return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx, params[1], 1)));
+		return amx_var_pool.get_id(amx_var_pool.emplace(amx, params[1], 1));
 	}
 
 	// native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
 	AMX_DEFINE_NATIVE(amx_var_arr, 2)
 	{
-		return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx, params[1], params[2])));
+		return amx_var_pool.get_id(amx_var_pool.emplace(amx, params[1], params[2]));
 	}
 
 	// native Var:amx_public_var(AMX:amx, const name[]);
@@ -38,7 +38,7 @@ namespace Natives
 			cell amx_addr;
 			if(amx_FindPubVar(amx2, name, &amx_addr) == AMX_ERR_NONE)
 			{
-				return amx_var_pool.get_id(amx_var_pool.add(amx_var_info(amx2, amx_addr, 1)));
+				return amx_var_pool.get_id(amx_var_pool.emplace(amx2, amx_addr, 1));
 			}
 		}
 		return 0;

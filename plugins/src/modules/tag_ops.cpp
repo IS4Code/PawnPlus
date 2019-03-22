@@ -654,6 +654,17 @@ struct string_operations : public null_operations
 			str.append(*ptr);
 		}
 	}
+
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<cell_string> ptr;
+		if(strings::pool.get_by_id(arg, ptr))
+		{
+			return ptr;
+		}
+		return {};
+	}
 };
 
 struct variant_operations : public null_operations
@@ -860,6 +871,16 @@ struct variant_operations : public null_operations
 	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
 	{
 		return std::make_unique<variant_operations>();
+	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<dyn_object> ptr;
+		if(variants::pool.get_by_id(arg, ptr))
+		{
+			return ptr;
+		}
+		return {};
 	}
 };
 
@@ -1280,6 +1301,16 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 		}
 		str.push_back(']');
 	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<dyn_iterator> ptr;
+		if(iter_pool.get_by_id(arg, ptr))
+		{
+			return ptr;
+		}
+		return {};
+	}
 };
 
 struct ref_operations : public generic_operations<ref_operations, tags::tag_ref>
@@ -1404,7 +1435,7 @@ struct var_operations : public null_operations
 		amx_var_info *info;
 		if(amx_var_pool.get_by_id(arg, info))
 		{
-			return amx_var_pool.get_id(&(*amx_var_pool.add() = *info));
+			return amx_var_pool.get_id(amx_var_pool.emplace(*info));
 		}
 		return 0;
 	}
@@ -1412,6 +1443,16 @@ struct var_operations : public null_operations
 	virtual cell clone(tag_ptr tag, cell arg) const override
 	{
 		return copy(tag, arg);
+	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<amx_var_info> ptr;
+		if(amx_var_pool.get_by_id(arg, ptr))
+		{
+			return ptr;
+		}
+		return {};
 	}
 };
 

@@ -441,6 +441,30 @@ public:
 		return false;
 	}
 
+	bool get_by_id(cell id, std::shared_ptr<ref_container> &obj)
+	{
+		if(local_object_list.get_by_id(id, obj))
+		{
+			return true;
+		}
+		if(global_object_list.get_by_id(id, obj))
+		{
+			return true;
+		}
+		return false;
+	}
+
+	bool get_by_id(cell id, std::shared_ptr<ObjType> &obj)
+	{
+		std::shared_ptr<ref_container> ptr;
+		if(get_by_id(id, ptr))
+		{
+			obj = std::shared_ptr<ObjType>(ptr, *ptr);
+			return true;
+		}
+		return false;
+	}
+
 	cell get_id(const_object_ptr obj) const
 	{
 		return reinterpret_cast<cell>(&obj);
