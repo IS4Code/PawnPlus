@@ -20,7 +20,7 @@ namespace aux
 		const std::shared_ptr<Type> &add(std::shared_ptr<Type> &&value)
 		{
 			auto ptr = value.get();
-			return data[ptr] = std::move(value);
+			return data.emplace(ptr, std::move(value)).first->second;
 		}
 
 		const std::shared_ptr<Type> &add()
@@ -33,9 +33,21 @@ namespace aux
 			return add(std::make_shared<Type>(std::move(value)));
 		}
 
-		const std::shared_ptr<Type> &add(std::unique_ptr<Type> &&value)
+		/*const std::shared_ptr<Type> &add(std::unique_ptr<Type> &&value)
 		{
 			return add(std::shared_ptr<Type>(value.release()));
+		}*/
+
+		template <class... Args>
+		const std::shared_ptr<Type> &emplace(Args &&... args)
+		{
+			return add(std::make_shared<Type>(std::forward<Args>(args)...));
+		}
+
+		template <class NewType, class... Args>
+		std::shared_ptr<Type> emplace_derived(Args &&... args)
+		{
+			return std::dynamic_pointer_cast<Type>(add(std::make_shared<NewType>(std::forward<Args>(args)...)));
 		}
 
 		size_t size() const

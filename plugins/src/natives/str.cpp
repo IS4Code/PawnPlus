@@ -217,7 +217,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(str_new_buf, 1)
 	{
 		cell size = params[1];
-		return strings::pool.get_id(strings::pool.add(cell_string(size - 1, 0)));
+		return strings::pool.get_id(strings::pool.emplace(size - 1, 0));
 	}
 
 	// native AmxString:str_addr(StringTag:str);
@@ -273,7 +273,7 @@ namespace Natives
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		return strings::pool.get_id(strings::pool.add(cell_string(*str)));
+		return strings::pool.get_id(strings::pool.emplace(*str));
 	}
 
 
@@ -290,25 +290,25 @@ namespace Natives
 		}
 		if(str1 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(cell_string(*str2)));
+			return strings::pool.get_id(strings::pool.emplace(*str2));
 		}
 		if(str2 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(cell_string(*str1)));
+			return strings::pool.get_id(strings::pool.emplace(*str1));
 		}
 
 		auto str = *str1 + *str2;
 		return strings::pool.get_id(strings::pool.add(std::move(str)));
 	}
 
-	// native String:str_val(AnyTag:val, tag=tagof(value));
+	// native String:str_val(AnyTag:val, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(str_val, 2)
 	{
 		dyn_object obj{amx, params[1], params[2]};
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
 
-	// native String:str_val_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native String:str_val_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(str_val_arr, 3)
 	{
 		cell *addr;

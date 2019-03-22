@@ -64,9 +64,6 @@
     <ClCompile Include="src\objects\stored_param.cpp">
       <Filter>src\objects</Filter>
     </ClCompile>
-    <ClCompile Include="src\objects\object_pool.cpp">
-      <Filter>src\objects</Filter>
-    </ClCompile>
     <ClCompile Include="src\objects\reset.cpp">
       <Filter>src\objects</Filter>
     </ClCompile>

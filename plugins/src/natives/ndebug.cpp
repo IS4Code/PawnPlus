@@ -194,6 +194,11 @@ public:
 		return std::make_unique<debug_symbol_var_iterator>(*this);
 	}
 
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
+	{
+		return std::make_shared<debug_symbol_var_iterator>(*this);
+	}
+
 	virtual size_t get_hash() const override
 	{
 		return std::hash<cell>()(current);
@@ -944,7 +949,7 @@ namespace Natives
 			return 0;
 		}
 
-		auto &iter = iter_pool.add(std::make_unique<debug_symbol_var_iterator>(amx, dbg, index));
+		auto &iter = iter_pool.emplace_derived<debug_symbol_var_iterator>(amx, dbg, index);
 		iter->set_to_first();
 		return iter_pool.get_id(iter);
 	}

@@ -117,6 +117,11 @@ public:
 		return std::make_unique<range_iterator>(*this);
 	}
 
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
+	{
+		return std::make_shared<range_iterator>(*this);
+	}
+
 	virtual size_t get_hash() const override
 	{
 		if(valid())
@@ -267,6 +272,11 @@ public:
 	virtual std::unique_ptr<dyn_iterator> clone() const override
 	{
 		return std::make_unique<repeat_iterator>(*this);
+	}
+
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
+	{
+		return std::make_shared<repeat_iterator>(*this);
 	}
 
 	virtual size_t get_hash() const override
@@ -581,7 +591,7 @@ namespace Natives
 		std::shared_ptr<list_t> ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
 		
-		auto &iter = iter_pool.add(std::make_unique<list_iterator_t>(ptr));
+		auto &iter = iter_pool.emplace_derived<list_iterator_t>(ptr);
 		cell index = optparam(2, 0);
 		if(index < 0)
 		{
@@ -638,7 +648,7 @@ namespace Natives
 		std::shared_ptr<map_t> ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		
-		auto &iter = iter_pool.add(std::make_unique<map_iterator_t>(ptr));
+		auto &iter = iter_pool.emplace_derived<map_iterator_t>(ptr);
 		cell index = optparam(2, 0);
 		if(index < 0)
 		{
@@ -685,7 +695,7 @@ namespace Natives
 		std::shared_ptr<linked_list_t> ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
 		
-		auto &iter = iter_pool.add(std::make_unique<linked_list_iterator_t>(ptr));
+		auto &iter = iter_pool.emplace_derived<linked_list_iterator_t>(ptr);
 		cell index = optparam(2, 0);
 		if(index < 0)
 		{
@@ -808,7 +818,7 @@ namespace Natives
 		dyn_iterator *iter;
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
 
-		return iter_pool.get_id(iter_pool.add(std::unique_ptr<object_pool<dyn_iterator>::ref_container>(&dynamic_cast<object_pool<dyn_iterator>::ref_container&>(*iter->clone().release()))));
+		return iter_pool.get_id(iter_pool.add(std::dynamic_pointer_cast<object_pool<dyn_iterator>::ref_container>(iter->clone_shared())));
 	}
 
 	// native bool:iter_eq(IterTag:iter1, IterTag:iter2);

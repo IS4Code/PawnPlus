@@ -259,6 +259,11 @@ std::unique_ptr<dyn_iterator> dyn_iterator::clone() const
 	return std::make_unique<dyn_iterator>();
 }
 
+std::shared_ptr<dyn_iterator> dyn_iterator::clone_shared() const
+{
+	return std::make_shared<dyn_iterator>();
+}
+
 size_t dyn_iterator::get_hash() const
 {
 	return 0;
@@ -478,6 +483,11 @@ bool linked_list_iterator_t::erase()
 std::unique_ptr<dyn_iterator> linked_list_iterator_t::clone() const
 {
 	return std::make_unique<linked_list_iterator_t>(*this);
+}
+
+std::shared_ptr<dyn_iterator> linked_list_iterator_t::clone_shared() const
+{
+	return std::make_shared<linked_list_iterator_t>(*this);
 }
 
 bool linked_list_iterator_t::operator==(const dyn_iterator &obj) const

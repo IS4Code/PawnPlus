@@ -549,11 +549,11 @@ struct string_operations : public null_operations
 		}
 		if(str1 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(cell_string(*str2)));
+			return strings::pool.get_id(strings::pool.emplace(*str2));
 		}
 		if(str2 == nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(cell_string(*str1)));
+			return strings::pool.get_id(strings::pool.emplace(*str1));
 		}
 
 		auto str = *str1 + *str2;
@@ -621,7 +621,7 @@ struct string_operations : public null_operations
 		cell_string *str;
 		if(strings::pool.get_by_id(arg, str))
 		{
-			return strings::pool.get_id(strings::pool.add(cell_string(*str)));
+			return strings::pool.get_id(strings::pool.emplace(*str));
 		}
 		return 0;
 	}
@@ -821,7 +821,7 @@ struct variant_operations : public null_operations
 		dyn_object *var;
 		if(variants::pool.get_by_id(arg, var))
 		{
-			return variants::pool.get_id(variants::pool.add(dyn_object(*var)));
+			return variants::pool.get_id(variants::pool.emplace(*var));
 		}
 		return 0;
 	}
@@ -1228,7 +1228,7 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(arg, iter))
 		{
-			return iter_pool.get_id(iter_pool.add(std::unique_ptr< object_pool<dyn_iterator>::ref_container>(&dynamic_cast<object_pool<dyn_iterator>::ref_container&>(*iter->clone().release()))));
+			return iter_pool.get_id(iter_pool.add(std::dynamic_pointer_cast<object_pool<dyn_iterator>::ref_container>(iter->clone_shared())));
 		}
 		return 0;
 	}

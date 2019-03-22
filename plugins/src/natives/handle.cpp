@@ -15,7 +15,7 @@ public:
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL handle_new(AMX *amx, cell *params)
 	{
-		return handle_pool.get_id(handle_pool.add(handle_t(Factory(amx, params[Indices]...), optparam(2, 0))));
+		return handle_pool.get_id(handle_pool.emplace(Factory(amx, params[Indices]...), optparam(2, 0)));
 	}
 
 	// native Handle:handle_alias(HandleTag:handle, value);
@@ -24,7 +24,7 @@ public:
 	{
 		handle_t *handle;
 		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
-		return handle_pool.get_id(handle_pool.add(handle_t(*handle, Factory(amx, params[Indices]...), true)));
+		return handle_pool.get_id(handle_pool.emplace(*handle, Factory(amx, params[Indices]...), true));
 	}
 
 	// native handle_get(HandleTag:handle, ...);

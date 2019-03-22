@@ -169,7 +169,6 @@
     <ClCompile Include="src\natives\task.cpp" />
     <ClCompile Include="src\natives\variant.cpp" />
     <ClCompile Include="src\objects\dyn_object.cpp" />
-    <ClCompile Include="src\objects\object_pool.cpp" />
     <ClCompile Include="src\objects\reset.cpp" />
     <ClCompile Include="src\objects\stored_param.cpp" />
     <ClCompile Include="src\utils\thread.cpp" />

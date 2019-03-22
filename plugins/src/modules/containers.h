@@ -185,6 +185,7 @@ public:
 	virtual bool reset();
 	virtual bool erase();
 	virtual std::unique_ptr<dyn_iterator> clone() const;
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const;
 	virtual size_t get_hash() const;
 	virtual bool operator==(const dyn_iterator &obj) const;
 	int &operator[](size_t index) const;
@@ -492,6 +493,11 @@ public:
 		return std::make_unique<list_iterator_t>(*this);
 	}
 
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
+	{
+		return std::make_shared<list_iterator_t>(*this);
+	}
+
 protected:
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
 };
@@ -561,6 +567,11 @@ public:
 	{
 		return std::make_unique<map_iterator_t>(*this);
 	}
+
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
+	{
+		return std::make_shared<map_iterator_t>(*this);
+	}
 };
 
 class linked_list_iterator_t : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
@@ -603,6 +614,7 @@ public:
 	virtual size_t get_hash() const override;
 	virtual bool erase() override;
 	virtual std::unique_ptr<dyn_iterator> clone() const override;
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override;
 	virtual bool operator==(const dyn_iterator &obj) const override;
 
 protected:
