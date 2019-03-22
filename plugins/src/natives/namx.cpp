@@ -3,6 +3,7 @@
 #include "context.h"
 #include "errors.h"
 #include "modules/amxutils.h"
+#include "modules/containers.h"
 #include "utils/shared_id_set_pool.h"
 
 namespace Natives
@@ -11,6 +12,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE(amx_this, 0)
 	{
 		return reinterpret_cast<cell>(amx);
+	}
+
+	// native Handle:amx_handle();
+	AMX_DEFINE_NATIVE(amx_handle, 0)
+	{
+		return handle_pool.get_id(handle_pool.emplace(dyn_object(reinterpret_cast<cell>(amx), tags::find_tag("AMX")), amx::load(amx), true));
 	}
 
 	// native Var:amx_var(&AnyTag:var);
@@ -214,6 +221,7 @@ namespace Natives
 static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(amx_this),
+	AMX_DECLARE_NATIVE(amx_handle),
 	AMX_DECLARE_NATIVE(amx_var),
 	AMX_DECLARE_NATIVE(amx_var_arr),
 	AMX_DECLARE_NATIVE(amx_public_var),

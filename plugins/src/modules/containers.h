@@ -648,6 +648,11 @@ public:
 
 	}
 
+	handle_t(dyn_object &&obj, std::weak_ptr<void> &&bond, bool weak = false) : object(std::move(obj)), bond(std::move(bond)), weak(weak)
+	{
+
+	}
+
 	handle_t(const handle_t &owner, dyn_object &&obj, bool weak = false) : object(std::move(obj)), bond(owner.bond), weak(weak)
 	{
 
@@ -698,6 +703,11 @@ public:
 		{
 			object.release();
 		}
+	}
+
+	bool is_weak() const
+	{
+		return weak;
 	}
 
 	handle_t &operator=(const handle_t&) = delete;

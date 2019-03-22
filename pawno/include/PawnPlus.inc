@@ -275,6 +275,7 @@ enum fork_level
 }
 
 native AMX:amx_this();
+native Handle:amx_handle();
 native Var:amx_var(&AnyTag:var);
 native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
 native Var:amx_public_var(AMX:amx, const name[]);
@@ -1227,6 +1228,7 @@ native bool:handle_delete(HandleTag:handle);
 native bool:handle_valid(HandleTag:handle);
 native bool:handle_linked(HandleTag:handle);
 native bool:handle_alive(HandleTag:handle);
+native bool:handle_weak(HandleTag:handle);
 
 native handle_get(HandleTag:handle, offset=0);
 native handle_get_arr(HandleTag:handle, AnyTag:value[], size=sizeof(value));
