@@ -82,8 +82,8 @@ namespace Natives
 		return guards::count(amx);
 	}
 
-	// native String:pp_entry_s();
-	AMX_DEFINE_NATIVE(pp_entry_s, 0)
+	template <class Func>
+	static cell pp_entry_string(AMX *amx, cell *params, Func f)
 	{
 		if(!amx::has_context(amx)) return 0;
 
@@ -93,23 +93,48 @@ namespace Natives
 		
 		if(index == AMX_EXEC_CONT)
 		{
-			return strings::create("#cont");
+			return f("#cont");
 		}else if(index == AMX_EXEC_MAIN)
 		{
-			return strings::create("#main");
+			return f("#main");
 		}else{
 			int len;
 			amx_NameLength(amx, &len);
 			char *func_name = static_cast<char*>(alloca(len + 1));
 			if(amx_GetPublic(amx, index, func_name) == AMX_ERR_NONE)
 			{
-				return strings::create(std::string(func_name));
+				return f(func_name);
 			}else{
-				return 0;
+				return f(nullptr);
 			}
 		}
 	}
 
+	// native pp_entry(name[], size=sizeof(name));
+	AMX_DEFINE_NATIVE(pp_entry, 2)
+	{
+		cell *addr;
+		amx_GetAddr(amx, params[1], &addr);
+		return pp_entry_string(amx, params, [&](const char *str) -> cell
+		{
+			if(str)
+			{
+				amx_SetString(addr, str, false, false, params[2]);
+				return std::strlen(str);
+			}
+			return 0;
+		});
+	}
+
+	// native String:pp_entry_s();
+	AMX_DEFINE_NATIVE(pp_entry_s, 0)
+	{
+		return pp_entry_string(amx, params, [&](const char *str)
+		{
+			return strings::create(str);
+		});
+	}
+	
 	// native pp_num_local_iters();
 	AMX_DEFINE_NATIVE(pp_num_local_iters, 0)
 	{
@@ -183,8 +208,8 @@ namespace Natives
 		throw errors::native_error(std::string(message), optparam(2, 2));
 	}
 
-	// native String:pp_module_name_s(const function[]);
-	AMX_DEFINE_NATIVE(pp_module_name_s, 1)
+	template <class Func>
+	static cell pp_module_name_string(AMX *amx, cell *params, Func f)
 	{
 		const char *function;
 		amx_StrParam(amx, params[1], function);
@@ -233,10 +258,31 @@ namespace Natives
 			}
 			if(dot)
 			{
-				return strings::create(std::string(name, dot));
+				return f(std::string(name, dot));
 			}
 		}
-		return strings::create(name);
+		return f(name);
+	}
+
+	// native pp_module_name(const function[], name[], size=sizeof(name));
+	AMX_DEFINE_NATIVE(pp_module_name, 3)
+	{
+		cell *addr;
+		amx_GetAddr(amx, params[2], &addr);
+		return pp_module_name_string(amx, params, [&](const std::string &str)
+		{
+			amx_SetString(addr, str.c_str(), false, false, params[3]);
+			return str.size();
+		});
+	}
+
+	// native String:pp_module_name_s(const function[]);
+	AMX_DEFINE_NATIVE(pp_module_name_s, 1)
+	{
+		return pp_module_name_string(amx, params, [&](std::string &&str)
+		{
+			return strings::create(std::move(str));
+		});
 	}
 }
 
@@ -258,12 +304,14 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_num_global_handles),
 	AMX_DECLARE_NATIVE(pp_max_hooked_natives),
 	AMX_DECLARE_NATIVE(pp_num_hooked_natives),
+	AMX_DECLARE_NATIVE(pp_entry),
 	AMX_DECLARE_NATIVE(pp_entry_s),
 	AMX_DECLARE_NATIVE(pp_collect),
 	AMX_DECLARE_NATIVE(pp_num_natives),
 	AMX_DECLARE_NATIVE(pp_max_recursion),
 	AMX_DECLARE_NATIVE(pp_error_level),
 	AMX_DECLARE_NATIVE(pp_raise_error),
+	AMX_DECLARE_NATIVE(pp_module_name),
 	AMX_DECLARE_NATIVE(pp_module_name_s),
 };
 

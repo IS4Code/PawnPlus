@@ -303,16 +303,16 @@ namespace Natives
 		return -1;
 	}
 
-	// native String:debug_file_s(code=cellmin);
-	AMX_DEFINE_NATIVE(debug_file_s, 0)
+	template <cell Param, class Func>
+	static cell debug_file_string(AMX *amx, cell *params, Func f)
 	{
 		auto dbg = get_debug(amx);
 
-		cell cip = optparam(1, std::numeric_limits<cell>::min());
+		cell cip = optparam(Param, std::numeric_limits<cell>::min());
 		if(cip == std::numeric_limits<cell>::min())
 		{
 			cip = get_level(amx, 0);
-		}else if(cip < 0)
+		} else if(cip < 0)
 		{
 			amx_LogicError(errors::out_of_range, "code");
 			return 0;
@@ -320,9 +320,38 @@ namespace Natives
 		const char *filename;
 		if(dbg_LookupFile(dbg, cip, &filename) == AMX_ERR_NONE)
 		{
-			return strings::create(filename);
+			return f(filename);
 		}
-		return 0;
+		return f(nullptr);
+	}
+
+	// native debug_file(file[], code=cellmin, size=sizeof(file));
+	AMX_DEFINE_NATIVE(debug_file, 3)
+	{
+		cell *addr;
+		amx_GetAddr(amx, params[1], &addr);
+		return debug_file_string<2>(amx, params, [&](const char *str) -> cell
+		{
+			if(str)
+			{
+				amx_SetString(addr, str, false, false, params[3]);
+				return std::strlen(str);
+			}
+			return 0;
+		});
+	}
+
+	// native String:debug_file_s(code=cellmin);
+	AMX_DEFINE_NATIVE(debug_file_s, 0)
+	{
+		return debug_file_string<1>(amx, params, [&](const char *str)
+		{
+			if(str)
+			{
+				return strings::create(str);
+			}
+			return 0;
+		});
 	}
 
 	// native Symbol:debug_symbol(const name[], code=cellmin, symbol_kind:kind=symbol_kind:-1, symbol_class:class=symbol_class:-1);
@@ -566,6 +595,24 @@ namespace Natives
 		return minindex;
 	}
 
+	// native debug_symbol_name(Symbol:symbol, name[], size=sizeof(name));
+	AMX_DEFINE_NATIVE(debug_symbol_name, 3)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index > dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		cell *addr;
+		amx_GetAddr(amx, params[2], &addr);
+		amx_SetString(addr, sym->name, false, false, params[3]);
+		return std::strlen(sym->name);
+	}
+	
 	// native String:debug_symbol_name_s(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_name_s, 1)
 	{
@@ -642,6 +689,31 @@ namespace Natives
 			return line;
 		}
 		return -1;
+	}
+
+	// native debug_symbol_file(Symbol:symbol, file[], size=sizeof(file));
+	AMX_DEFINE_NATIVE(debug_symbol_file, 3)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index > dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+
+		cell *addr;
+		amx_GetAddr(amx, params[2], &addr);
+
+		const char *filename;
+		if(dbg_LookupFile(dbg, sym->codestart, &filename) == AMX_ERR_NONE)
+		{
+			amx_SetString(addr, filename, false, false, params[3]);
+			return std::strlen(filename);
+		}
+		return 0;
 	}
 
 	// native String:debug_symbol_file_s(Symbol:symbol);
@@ -884,6 +956,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_get_ptr),
 	AMX_DECLARE_NATIVE(debug_code),
 	AMX_DECLARE_NATIVE(debug_line),
+	AMX_DECLARE_NATIVE(debug_file),
 	AMX_DECLARE_NATIVE(debug_file_s),
 	AMX_DECLARE_NATIVE(debug_symbol),
 	AMX_DECLARE_NATIVE(debug_func),
@@ -892,10 +965,12 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_symbol_class),
 	AMX_DECLARE_NATIVE(debug_symbol_tag),
 	AMX_DECLARE_NATIVE(debug_symbol_func),
+	AMX_DECLARE_NATIVE(debug_symbol_name),
 	AMX_DECLARE_NATIVE(debug_symbol_name_s),
 	AMX_DECLARE_NATIVE(debug_symbol_addr),
 	AMX_DECLARE_NATIVE(debug_symbol_range),
 	AMX_DECLARE_NATIVE(debug_symbol_line),
+	AMX_DECLARE_NATIVE(debug_symbol_file),
 	AMX_DECLARE_NATIVE(debug_symbol_file_s),
 	AMX_DECLARE_NATIVE(debug_symbol_in_scope),
 	AMX_DECLARE_NATIVE(debug_symbol_set),
