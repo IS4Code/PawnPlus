@@ -596,35 +596,43 @@ namespace Natives
 
 	struct cell_sorter
 	{
-		cell offset;
+		cell offset, size;
 
-		cell_sorter(cell offset) : offset(offset)
+		cell_sorter(cell offset, cell size) : offset(offset), size(size)
 		{
 
 		}
 
 		bool operator()(const dyn_object &a, const dyn_object &b)
 		{
-			cell ac, bc;
-			if(!b.get_cell(offset, bc))
-			{
-				return false;
-			}
-			if(!a.get_cell(offset, ac))
-			{
-				return true;
-			}
 			cell at = a.get_tag()->find_top_base()->uid;
 			cell bt = b.get_tag()->find_top_base()->uid;
 			if(at < bt) return true;
 			if(at > bt) return false;
 			auto tag = a.get_tag();
 			const auto &ops = tag->get_ops();
-			return ops.lt(tag, ac, bc);
+			for(cell i = 0; size == -1 || i < size; i++)
+			{
+				cell ac, bc;
+				if(!b.get_cell(offset + i, bc))
+				{
+					return false;
+				}else if(!a.get_cell(offset + i, ac))
+				{
+					return true;
+				}else if(ops.lt(tag, ac, bc))
+				{
+					return true;
+				}else if(i == size - 1 || ops.lt(tag, bc, ac))
+				{
+					return false;
+				}
+			}
+			return false;
 		}
 	};
 
-	// native list_sort(List:list, offset=-1, bool:reverse=false, bool:stable=true);
+	// native list_sort(List:list, offset=0, size=1, bool:reverse=false, bool:stable=true);
 	AMX_DEFINE_NATIVE(list_sort, 1)
 	{
 		list_t *ptr;
@@ -633,51 +641,59 @@ namespace Natives
 			amx_LogicError(errors::pointer_invalid, "list", params[1]);
 		}
 
-		cell offset = optparam(2, -1);
+		cell offset = optparam(2, 0);
 
-		if(offset < -1)
+		if(offset < 0)
 		{
 			amx_LogicError(errors::out_of_range, "offset");
 		}
 
-		bool reverse = optparam(3, 0);
-		bool stable = optparam(4, 1);
+		cell size = optparam(3, -1);
+		if(size < -1)
+		{
+			amx_LogicError(errors::out_of_range, "size");
+		}
+
+		bool reverse = optparam(4, 0);
+		bool stable = optparam(5, 1);
+
+		bool simple = offset == 0 && size == -1;
 
 		if(!reverse)
 		{
 			auto begin = ptr->begin(), end = ptr->end();
 			if(stable)
 			{
-				if(offset == -1)
+				if(simple)
 				{
 					std::stable_sort(begin, end);
 				}else{
-					std::stable_sort(begin, end, cell_sorter(offset));
+					std::stable_sort(begin, end, cell_sorter(offset, size));
 				}
 			}else{
-				if(offset == -1)
+				if(simple)
 				{
 					std::sort(begin, end);
 				}else{
-					std::sort(begin, end, cell_sorter(offset));
+					std::sort(begin, end, cell_sorter(offset, size));
 				}
 			}
 		}else{
 			auto begin = ptr->rbegin(), end = ptr->rend();
 			if(stable)
 			{
-				if(offset == -1)
+				if(simple)
 				{
 					std::stable_sort(begin, end);
 				}else{
-					std::stable_sort(begin, end, cell_sorter(offset));
+					std::stable_sort(begin, end, cell_sorter(offset, size));
 				}
 			}else{
-				if(offset == -1)
+				if(simple)
 				{
 					std::sort(begin, end);
 				}else{
-					std::sort(begin, end, cell_sorter(offset));
+					std::sort(begin, end, cell_sorter(offset, size));
 				}
 			}
 		}

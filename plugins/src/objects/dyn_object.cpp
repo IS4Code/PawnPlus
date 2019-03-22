@@ -807,15 +807,12 @@ bool dyn_object::operator<(const dyn_object &obj) const
 	const auto &ops = tag->get_ops();
 	while(true)
 	{
-		if(begin1 == end1 && begin2 == end2)
+		if(begin2 == end2)
 		{
 			return false;
 		}else if(begin1 == end1)
 		{
 			return true;
-		}else if(begin2 == end2)
-		{
-			return false;
 		}else if(ops.lt(tag, *begin1, *begin2))
 		{
 			return true;
