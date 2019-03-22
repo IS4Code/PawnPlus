@@ -151,7 +151,7 @@ namespace Natives
 		return list_pool.get_id(list_pool.add());
 	}
 
-	// native List:list_new_arr(AnyTag:values[], size=sizeof(values), tag_id=tagof(values));
+	// native List:list_new_arr(AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
 	AMX_DEFINE_NATIVE(list_new_arr, 3)
 	{
 		auto ptr = list_pool.add();
@@ -291,13 +291,13 @@ namespace Natives
 		return 1;
 	}
 
-	// native list_add(List:list, AnyTag:value, index=-1, tag_id=tagof(value));
+	// native list_add(List:list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_add, 4)
 	{
 		return value_at<2, 4>::list_add<dyn_func>(amx, params);
 	}
 
-	// native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), tag_id=tagof(value));
+	// native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_add_arr, 5)
 	{
 		return value_at<2, 4, 5>::list_add<dyn_func_arr>(amx, params);
@@ -458,13 +458,13 @@ namespace Natives
 		return value_at<>::list_get<dyn_func_var>(amx, params);
 	}
 
-	// native bool:list_get_safe(List:list, index, &AnyTag:value, offset=0, tag_id=tagof(value));
+	// native bool:list_get_safe(List:list, index, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_get_safe, 5)
 	{
 		return value_at<3, 4, 5>::list_get<dyn_func>(amx, params);
 	}
 
-	// native list_get_arr_safe(List:list, index, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native list_get_arr_safe(List:list, index, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_get_arr_safe, 5)
 	{
 		return value_at<3, 4, 5>::list_get<dyn_func_arr>(amx, params);
@@ -482,13 +482,13 @@ namespace Natives
 		return value_at<0>::list_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native list_set(List:list, index, AnyTag:value, tag_id=tagof(value));
+	// native list_set(List:list, index, AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_set, 4)
 	{
 		return value_at<3, 4>::list_set<dyn_func>(amx, params);
 	}
 
-	// native list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_set_arr, 5)
 	{
 		return value_at<3, 4, 5>::list_set<dyn_func_arr>(amx, params);
@@ -512,7 +512,7 @@ namespace Natives
 		return ::list_set_cell(amx, params);
 	}
 
-	// native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, tag_id=tagof(value));
+	// native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_set_cell_safe, 5)
 	{
 		return ::list_set_cell<5>(amx, params);
@@ -564,13 +564,13 @@ namespace Natives
 		return obj.get_size();
 	}
 
-	// native list_find(List:list, AnyTag:value, index=0, tag_id=tagof(value));
+	// native list_find(List:list, AnyTag:value, index=0, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_find, 4)
 	{
 		return value_at<2, 4>::list_find<dyn_func>(amx, params);
 	}
 
-	// native list_find_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), tag_id=tagof(value));
+	// native list_find_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_find_arr, 5)
 	{
 		return value_at<2, 4, 5>::list_find<dyn_func_arr>(amx, params);
@@ -588,13 +588,13 @@ namespace Natives
 		return value_at<2>::list_find<dyn_func_var>(amx, params);
 	}
 
-	// native list_find_last(List:list, AnyTag:value, index=0, tag_id=tagof(value));
+	// native list_find_last(List:list, AnyTag:value, index=0, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_find_last, 4)
 	{
 		return value_at<2, 4>::list_find_last<dyn_func>(amx, params);
 	}
 
-	// native list_find_last_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), tag_id=tagof(value));
+	// native list_find_last_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_find_last_arr, 5)
 	{
 		return value_at<2, 4, 5>::list_find_last<dyn_func_arr>(amx, params);

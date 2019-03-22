@@ -27,31 +27,31 @@ public:
 
 namespace Natives
 {
-	// native Variant:var_new(AnyTag:value, tag_id=tagof(value));
+	// native Variant:var_new(AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_new, 2)
 	{
 		return value_at<1, 2>::var_new<dyn_func>(amx, params);
 	}
 
-	// native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_new_arr, 3)
 	{
 		return value_at<1, 2, 3>::var_new<dyn_func_arr>(amx, params);
 	}
 
-	// native Variant:var_new_arr_2d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), tag_id=tagof(value));
+	// native Variant:var_new_arr_2d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_new_arr_2d, 4)
 	{
 		return value_at<1, 2, 3, 4>::var_new<dyn_func_arr>(amx, params);
 	}
 
-	// native Variant:var_new_arr_3d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[]), tag_id=tagof(value));
+	// native Variant:var_new_arr_3d(const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[]), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_new_arr_3d, 5)
 	{
 		return value_at<1, 2, 3, 4, 5>::var_new<dyn_func_arr>(amx, params);
 	}
 
-	// native Variant:var_new_buf(size, tag_id=0);
+	// native Variant:var_new_buf(size, TagTag:tag_id=0);
 	AMX_DEFINE_NATIVE(var_new_buf, 1)
 	{
 		return variants::create(amx, nullptr, params[1], optparam(2, 0));
@@ -132,13 +132,13 @@ namespace Natives
 		return value_at<>::var_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:var_get_safe(ConstVariantTag:var, &AnyTag:value, offset=0, tag_id=tagof(value));
+	// native bool:var_get_safe(ConstVariantTag:var, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_get_safe, 4)
 	{
 		return value_at<2, 3, 4>::var_get<dyn_func>(amx, params);
 	}
 
-	// native var_get_arr_safe(ConstVariantTag:var, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native var_get_arr_safe(ConstVariantTag:var, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_get_arr_safe, 4)
 	{
 		return value_at<2, 3, 4>::var_get<dyn_func_arr>(amx, params);
@@ -164,7 +164,7 @@ namespace Natives
 		return var->set_cell(params[2], params[3]);
 	}
 
-	// native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, tag_id=tagof(value));
+	// native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_set_cell_safe, 4)
 	{
 		dyn_object *var;
@@ -191,13 +191,13 @@ namespace Natives
 		return value_at<2, 3>::var_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:var_get_md_safe(ConstVariantTag:var, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	// native bool:var_get_md_safe(ConstVariantTag:var, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_get_md_safe, 5)
 	{
 		return value_at<3, 2, 4, 5>::var_get<dyn_func>(amx, params);
 	}
 
-	// native var_get_md_arr_safe(ConstVariantTag:var, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), tag_id=tagof(value));
+	// native var_get_md_arr_safe(ConstVariantTag:var, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_get_md_arr_safe, 6)
 	{
 		return value_at<3, 2, 4, 5, 6>::var_get<dyn_func_arr>(amx, params);
@@ -225,7 +225,7 @@ namespace Natives
 		return var->set_cell(offsets_addr, offsets_size, params[3]);
 	}
 
-	// native bool:var_set_cell_md_safe(VariantTag:var, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	// native bool:var_set_cell_md_safe(VariantTag:var, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(var_set_cell_md_safe, 5)
 	{
 		dyn_object *var;
