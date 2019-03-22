@@ -173,6 +173,16 @@ namespace Natives
 		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		return handle->alive();
 	}
+
+	// native bool:handle_eq(HandleTag:handle1, HandleTag:handle2);
+	AMX_DEFINE_NATIVE(handle_eq, 2)
+	{
+		handle_t *handle1;
+		if(!handle_pool.get_by_id(params[1], handle1)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		handle_t *handle2;
+		if(!handle_pool.get_by_id(params[2], handle2)) amx_LogicError(errors::pointer_invalid, "handle", params[2]);
+		return *handle1 == *handle2;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -198,6 +208,7 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(handle_tagof),
 	AMX_DECLARE_NATIVE(handle_sizeof),
+	AMX_DECLARE_NATIVE(handle_eq),
 };
 
 int RegisterHandleNatives(AMX *amx)

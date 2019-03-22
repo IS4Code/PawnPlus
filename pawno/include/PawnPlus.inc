@@ -212,7 +212,8 @@ const tag_uid:tag_uid_linked_list = tag_uid:13;
 const tag_uid:tag_uid_guard = tag_uid:14;
 const tag_uid:tag_uid_callback_handler = tag_uid:15;
 const tag_uid:tag_uid_native_hook = tag_uid:16;
-const tag_uid:tag_uid_symbol = tag_uid:17;
+const tag_uid:tag_uid_handle = tag_uid:17;
+const tag_uid:tag_uid_symbol = tag_uid:18;
 
 const TAG_EXPORTED = 0x80000000;
 const TAG_STRONG = 0x40000000;
@@ -1233,6 +1234,8 @@ native Variant:handle_get_var(HandleTag:handle);
 native bool:handle_get_safe(HandleTag:handle, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 native handle_get_arr_safe(ConstVariantTag:var, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 
+native bool:handle_eq(HandleTag:handle1, HandleTag:handle2);
+
 native handle_tagof(HandleTag:handle);
 native handle_sizeof(HandleTag:handle);
 
@@ -1647,6 +1650,10 @@ PP_VARIANT_LOG_UN_OP(!, var_not);
 
 native bool:operator==(Iter:arg1, Iter:arg2) = iter_eq;
 stock bool:operator!=(Iter:arg1, Iter:arg2) return !(arg1 == arg2);
+
+native bool:operator==(Handle:arg1, Handle:arg2) = handle_eq;
+stock bool:operator!=(Handle:arg1, Handle:arg2) return !(arg1 == arg2);
+stock bool:operator!(Handle:handle) return !handle_alive(handle);
 
 #if defined PP_SYNTAX_GENERIC
 

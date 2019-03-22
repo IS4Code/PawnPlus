@@ -148,7 +148,8 @@ namespace tags
 	constexpr const cell tag_guard = 14;
 	constexpr const cell tag_callback_handler = 15;
 	constexpr const cell tag_native_hook = 16;
-	constexpr const cell tag_symbol = 17;
+	constexpr const cell tag_handle = 17;
+	constexpr const cell tag_symbol = 18;
 
 	tag_ptr find_tag(const char *name, size_t sublen=-1);
 	tag_ptr find_tag(AMX *amx, cell tag_id);

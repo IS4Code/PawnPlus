@@ -707,6 +707,11 @@ public:
 		return !bond.expired() || (!bond.owner_before(std::weak_ptr<void>{}) && !std::weak_ptr<void>{}.owner_before(bond));
 	}
 
+	bool operator==(const handle_t &obj)
+	{
+		return object == obj.object && (!bond.owner_before(obj.bond) && !obj.bond.owner_before(bond));
+	}
+
 	~handle_t()
 	{
 		release();

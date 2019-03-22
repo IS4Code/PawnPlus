@@ -884,6 +884,88 @@ struct variant_operations : public null_operations
 	}
 };
 
+
+struct handle_operations : public null_operations
+{
+	handle_operations() : null_operations(tags::tag_handle)
+	{
+
+	}
+	
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
+	{
+		handle_t *handle1;
+		if(!handle_pool.get_by_id(a, handle1)) return false;
+		handle_t *handle2;
+		if(!handle_pool.get_by_id(b, handle2)) return false;
+		return *handle1 == *handle2;
+	}
+	
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		handle_t *handle;
+		if(!handle_pool.get_by_id(a, handle)) return true;
+		return !handle->alive();
+	}
+	
+	virtual bool del(tag_ptr tag, cell arg) const override
+	{
+		return handle_pool.remove_by_id(arg);
+	}
+
+	virtual bool release(tag_ptr tag, cell arg) const override
+	{
+		decltype(handle_pool)::ref_container *handle;
+		if(!handle_pool.get_by_id(arg, handle)) return false;
+		if(!handle_pool.release_ref(*handle)) return false;
+		return true;
+	}
+
+	virtual bool acquire(tag_ptr tag, cell arg) const override
+	{
+		decltype(handle_pool)::ref_container *handle;
+		if(!handle_pool.get_by_id(arg, handle)) return false;
+		if(!handle_pool.acquire_ref(*handle)) return false;
+		return true;
+	}
+
+	virtual size_t hash(tag_ptr tag, cell arg) const override
+	{
+		handle_t *handle;
+		if(handle_pool.get_by_id(arg, handle))
+		{
+			return handle->get().get_hash();
+		}
+		return null_operations::hash(tag, arg);
+	}
+
+	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	{
+		str.push_back('<');
+		handle_t *handle;
+		if(handle_pool.get_by_id(arg, handle))
+		{
+			str.append(handle->get().to_string());
+		}
+		str.push_back('>');
+	}
+
+	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
+	{
+		return std::make_unique<handle_operations>();
+	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<handle_t> ptr;
+		if(handle_pool.get_by_id(arg, ptr))
+		{
+			return ptr;
+		}
+		return {};
+	}
+};
+
 template <class Self, cell Tag>
 struct generic_operations : public null_operations
 {
@@ -1508,8 +1590,8 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	std::vector<std::unique_ptr<tag_info>> v;
 	auto unknown = std::make_unique<tag_info>(0, "{...}", nullptr, std::make_unique<null_operations>(tags::tag_unknown));
 	auto unknown_tag = unknown.get();
-	auto string_const = std::make_unique<tag_info>(18, "String@Const", unknown_tag, std::make_unique<string_operations>());
-	auto variant_const = std::make_unique<tag_info>(19, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
+	auto string_const = std::make_unique<tag_info>(19, "String@Const", unknown_tag, std::make_unique<string_operations>());
+	auto variant_const = std::make_unique<tag_info>(20, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
 	v.push_back(std::move(unknown));
 	v.push_back(std::make_unique<tag_info>(1, "", unknown_tag, std::make_unique<cell_operations>(tags::tag_cell)));
 	v.push_back(std::make_unique<tag_info>(2, "bool", unknown_tag, std::make_unique<bool_operations>()));
@@ -1527,10 +1609,11 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::make_unique<tag_info>(14, "Guard", unknown_tag, std::make_unique<guard_operations>()));
 	v.push_back(std::make_unique<tag_info>(15, "CallbackHandler", unknown_tag, std::make_unique<callback_handler_operations>()));
 	v.push_back(std::make_unique<tag_info>(16, "NativeHook", unknown_tag, std::make_unique<native_hook_operations>()));
-	v.push_back(std::make_unique<tag_info>(17, "Symbol", unknown_tag, std::make_unique<symbol_operations>()));
+	v.push_back(std::make_unique<tag_info>(17, "Handle", unknown_tag, std::make_unique<handle_operations>()));
+	v.push_back(std::make_unique<tag_info>(18, "Symbol", unknown_tag, std::make_unique<symbol_operations>()));
 	v.push_back(std::move(string_const));
 	v.push_back(std::move(variant_const));
-	v.push_back(std::make_unique<tag_info>(20, "char@", v[3].get(), std::make_unique<char_operations>()));
+	v.push_back(std::make_unique<tag_info>(21, "char@", v[3].get(), std::make_unique<char_operations>()));
 	return v;
 }());
 
