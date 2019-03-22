@@ -379,6 +379,12 @@ namespace Natives
 		return value_at<3, 4>::linked_list_get<dyn_func_arr>(amx, params);
 	}
 
+	// native String:linked_list_get_str_s(LinkedList:linked_list, index);
+	AMX_DEFINE_NATIVE(linked_list_get_str_s, 2)
+	{
+		return value_at<>::linked_list_get<dyn_func_str_s>(amx, params);
+	}
+
 	// native Variant:linked_list_get_var(LinkedList:linked_list, index);
 	AMX_DEFINE_NATIVE(linked_list_get_var, 2)
 	{
@@ -395,6 +401,18 @@ namespace Natives
 	AMX_DEFINE_NATIVE(linked_list_get_arr_safe, 5)
 	{
 		return value_at<3, 4, 5>::linked_list_get<dyn_func_arr>(amx, params);
+	}
+
+	// native linked_list_get_str_safe(LinkedList:linked_list, index, value[], size=sizeof(value));
+	AMX_DEFINE_NATIVE(linked_list_get_str_safe, 4)
+	{
+		return value_at<3, 4>::linked_list_get<dyn_func_str>(amx, params);
+	}
+
+	// native String:linked_list_get_str_safe_s(LinkedList:linked_list, index);
+	AMX_DEFINE_NATIVE(linked_list_get_str_safe_s, 2)
+	{
+		return value_at<0>::linked_list_get<dyn_func_str_s>(amx, params);
 	}
 
 	// native linked_list_set(LinkedList:linked_list, index, AnyTag:value, tag_id=tagof(value));
@@ -487,9 +505,12 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(linked_list_get),
 	AMX_DECLARE_NATIVE(linked_list_get_arr),
+	AMX_DECLARE_NATIVE(linked_list_get_str_s),
 	AMX_DECLARE_NATIVE(linked_list_get_var),
 	AMX_DECLARE_NATIVE(linked_list_get_safe),
 	AMX_DECLARE_NATIVE(linked_list_get_arr_safe),
+	AMX_DECLARE_NATIVE(linked_list_get_str_safe),
+	AMX_DECLARE_NATIVE(linked_list_get_str_safe_s),
 
 	AMX_DECLARE_NATIVE(linked_list_set),
 	AMX_DECLARE_NATIVE(linked_list_set_arr),

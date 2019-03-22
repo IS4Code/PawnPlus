@@ -578,9 +578,13 @@ native bool:list_remove_deep(List:list, index);
 
 native list_get(List:list, index, offset=0);
 native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
+native list_get_str(List:list, index, value[], size=sizeof(value)) = list_get_arr;
+native String:list_get_str_s(List:list, index);
 native Variant:list_get_var(List:list, index);
 native bool:list_get_safe(List:list, index, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 native list_get_arr_safe(List:list, index, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native list_get_str_safe(List:list, index, value[], size=sizeof(value));
+native String:list_get_str_safe_s(List:list, index);
 
 native list_set(List:list, index, AnyTag:value, TagTag:tag_id=tagof(value));
 native list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
@@ -766,24 +770,40 @@ native bool:map_has_var_key(Map:map, ConstVariantTag:key);
 
 native map_get(Map:map, AnyTag:key, offset=0, TagTag:key_tag_id=tagof(key));
 native map_get_arr(Map:map, AnyTag:key, AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key));
+native map_get_str(Map:map, AnyTag:key, value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key)) = map_get_arr;
+native String:map_get_str_s(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native Variant:map_get_var(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native bool:map_get_safe(Map:map, AnyTag:key, &AnyTag:value, offset=0, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native map_get_arr_safe(Map:map, AnyTag:key, AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
+native map_get_str_safe(Map:map, AnyTag:key, value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key));
+native String:map_get_str_safe_s(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native map_arr_get(Map:map, const AnyTag:key[], offset=0, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native map_arr_get_arr(Map:map, const AnyTag:key[], AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native map_arr_get_str(Map:map, const AnyTag:key[], AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), TagTag:key_tag_id=tagof(key)) = map_arr_get_arr;
+native String:map_arr_get_str_s(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native Variant:map_arr_get_var(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native bool:map_arr_get_safe(Map:map, const AnyTag:key[], &AnyTag:value, offset=0, key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native map_arr_get_arr_safe(Map:map, const AnyTag:key[], AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
+native map_arr_get_str_safe(Map:map, const AnyTag:key[], value[], value_size=sizeof(value), key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native String:map_arr_get_str_safe_s(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native map_str_get(Map:map, const key[], offset=0);
 native map_str_get_arr(Map:map, const key[], AnyTag:value[], value_size=sizeof(value));
+native map_str_get_str(Map:map, const key[], value[], value_size=sizeof(value)) = map_str_get_arr;
+native String:map_str_get_str_s(Map:map, const key[]);
 native Variant:map_str_get_var(Map:map, const key[]);
 native bool:map_str_get_safe(Map:map, const key[], &AnyTag:value, offset=0, TagTag:value_tag_id=tagof(value));
 native map_str_get_arr_safe(Map:map, const key[], AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+native map_str_get_str_safe(Map:map, const key[], value[], value_size=sizeof(value));
+native String:map_str_get_str_safe_s(Map:map, const key[]);
 native map_var_get(Map:map, ConstVariantTag:key, offset=0);
 native map_var_get_arr(Map:map, ConstVariantTag:key, AnyTag:value[], value_size=sizeof(value));
+native map_var_get_str(Map:map, ConstVariantTag:key, AnyTag:value[], value_size=sizeof(value)) = map_var_get_arr;
+native String:map_var_get_str_s(Map:map, ConstVariantTag:key);
 native Variant:map_var_get_var(Map:map, ConstVariantTag:key);
 native bool:map_var_get_safe(Map:map, ConstVariantTag:key, &AnyTag:value, offset=0, TagTag:value_tag_id=tagof(value));
 native map_var_get_arr_safe(Map:map, ConstVariantTag:key, AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+native map_var_get_str_safe(Map:map, ConstVariantTag:key, value[], value_size=sizeof(value));
+native String:map_var_get_str_safe_s(Map:map, ConstVariantTag:key);
 
 native map_set(Map:map, AnyTag:key, AnyTag:value, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
 native map_set_arr(Map:map, AnyTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
@@ -932,9 +952,13 @@ native bool:linked_list_remove_deep(LinkedList:linked_list, index);
 
 native linked_list_get(LinkedList:linked_list, index, offset=0);
 native linked_list_get_arr(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value));
+native linked_list_get_str(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value)) = linked_list_get_arr;
+native String:linked_list_get_str_s(LinkedList:linked_list, index);
 native Variant:linked_list_get_var(LinkedList:linked_list, index);
 native bool:linked_list_get_safe(LinkedList:linked_list, index, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 native linked_list_get_arr_safe(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native linked_list_get_str_safe(LinkedList:linked_list, index, value[], size=sizeof(value));
+native String:linked_list_get_str_safe_s(LinkedList:linked_list, index);
 
 native linked_list_set(LinkedList:linked_list, index, AnyTag:value, TagTag:tag_id=tagof(value));
 native linked_list_set_arr(LinkedList:linked_list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));

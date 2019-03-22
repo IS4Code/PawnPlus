@@ -446,6 +446,12 @@ namespace Natives
 		return value_at<3, 4>::list_get<dyn_func_arr>(amx, params);
 	}
 
+	// native String:list_get_str_s(List:list, index);
+	AMX_DEFINE_NATIVE(list_get_str_s, 2)
+	{
+		return value_at<>::list_get<dyn_func_str_s>(amx, params);
+	}
+
 	// native Variant:list_get_var(List:list, index);
 	AMX_DEFINE_NATIVE(list_get_var, 2)
 	{
@@ -462,6 +468,18 @@ namespace Natives
 	AMX_DEFINE_NATIVE(list_get_arr_safe, 5)
 	{
 		return value_at<3, 4, 5>::list_get<dyn_func_arr>(amx, params);
+	}
+
+	// native list_get_str_safe(List:list, index, value[], size=sizeof(value));
+	AMX_DEFINE_NATIVE(list_get_str_safe, 4)
+	{
+		return value_at<3, 4>::list_get<dyn_func_str>(amx, params);
+	}
+
+	// native String:list_get_str_safe_s(List:list, index);
+	AMX_DEFINE_NATIVE(list_get_str_safe_s, 2)
+	{
+		return value_at<0>::list_get<dyn_func_str_s>(amx, params);
 	}
 
 	// native list_set(List:list, index, AnyTag:value, tag_id=tagof(value));
@@ -732,9 +750,12 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(list_get),
 	AMX_DECLARE_NATIVE(list_get_arr),
+	AMX_DECLARE_NATIVE(list_get_str_s),
 	AMX_DECLARE_NATIVE(list_get_var),
 	AMX_DECLARE_NATIVE(list_get_safe),
 	AMX_DECLARE_NATIVE(list_get_arr_safe),
+	AMX_DECLARE_NATIVE(list_get_str_safe),
+	AMX_DECLARE_NATIVE(list_get_str_safe_s),
 
 	AMX_DECLARE_NATIVE(list_set),
 	AMX_DECLARE_NATIVE(list_set_arr),
