@@ -1,7 +1,7 @@
 #ifndef OBJECT_POOL_H_INCLUDED
 #define OBJECT_POOL_H_INCLUDED
 
-#include "utils/id_set_pool.h"
+#include "utils/shared_id_set_pool.h"
 #include "sdk/amx/amx.h"
 #include <vector>
 #include <unordered_map>
@@ -237,7 +237,7 @@ public:
 	typedef decltype(&static_cast<ObjType*>(nullptr)->operator[](0)) inner_ptr;
 	typedef decltype(&static_cast<const ObjType*>(nullptr)->operator[](0)) const_inner_ptr;
 
-	typedef aux::id_set_pool<ref_container> list_type;
+	typedef aux::shared_id_set_pool<ref_container> list_type;
 	static ref_container_null &null_ref();
 private:
 

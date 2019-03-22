@@ -13,21 +13,29 @@ namespace aux
 	{
 		std::unordered_map<Type*, std::shared_ptr<Type>> data;
 
-		std::shared_ptr<Type> add(std::shared_ptr<Type> &&value)
+		typedef typename std::unordered_map<Type*, std::shared_ptr<Type>>::iterator iterator;
+		typedef typename std::unordered_map<Type*, std::shared_ptr<Type>>::const_iterator const_iterator;
+
+	public:
+		const std::shared_ptr<Type> &add(std::shared_ptr<Type> &&value)
 		{
 			auto ptr = value.get();
 			return data[ptr] = std::move(value);
 		}
 
-	public:
-		std::shared_ptr<Type> add()
+		const std::shared_ptr<Type> &add()
 		{
 			return add(std::make_shared<Type>());
 		}
 
-		std::shared_ptr<Type> add(Type&& value)
+		const std::shared_ptr<Type> &add(Type&& value)
 		{
 			return add(std::make_shared<Type>(std::move(value)));
+		}
+
+		const std::shared_ptr<Type> &add(std::unique_ptr<Type> &&value)
+		{
+			return add(std::shared_ptr<Type>(value.release()));
 		}
 
 		size_t size() const
@@ -50,6 +58,16 @@ namespace aux
 		void clear()
 		{
 			data.clear();
+		}
+
+		iterator begin()
+		{
+			return data.begin();
+		}
+
+		iterator end()
+		{
+			return data.end();
 		}
 
 		bool get_by_id(cell id, Type *&value)
@@ -86,6 +104,28 @@ namespace aux
 		bool contains(const Type *value) const
 		{
 			return data.find(const_cast<Type*>(value)) != data.cend();
+		}
+
+		iterator find(const Type *value)
+		{
+			return data.find(const_cast<Type*>(value));
+		}
+
+		const_iterator find(const Type *value) const
+		{
+			return data.find(const_cast<Type*>(value));
+		}
+
+		iterator erase(iterator it)
+		{
+			return data.erase(it);
+		}
+
+		std::shared_ptr<Type> extract(iterator it)
+		{
+			auto ptr = std::move(it->second);
+			data.erase(it);
+			return ptr;
 		}
 
 		std::shared_ptr<Type> get(Type *value)

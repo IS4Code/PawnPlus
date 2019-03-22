@@ -180,12 +180,12 @@ auto object_pool<ObjType>::get(AMX *amx, cell addr) -> object_ptr
 	auto it = local_object_list.find(obj);
 	if(it != local_object_list.end())
 	{
-		return **it;
+		return *it->second;
 	}
 	it = global_object_list.find(obj);
 	if(it != global_object_list.end())
 	{
-		return **it;
+		return *it->second;
 	}
 	return null_ref();
 }
