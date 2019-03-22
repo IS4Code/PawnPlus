@@ -303,6 +303,8 @@ native amx_error(amx_err:code, result=0);
 native amx_parallel_begin(count=1);
 native amx_parallel_end();
 
+native amx_tailcall();
+
 enum amx_err
 {
     amx_err_none = 0,

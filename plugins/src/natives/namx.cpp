@@ -202,6 +202,13 @@ namespace Natives
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnParallelEnd;
 	}
+
+	// native amx_tailcall();
+	AMX_DEFINE_NATIVE(amx_tailcall, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return SleepReturnTailCall;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -227,6 +234,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_error),
 	AMX_DECLARE_NATIVE(amx_parallel_begin),
 	AMX_DECLARE_NATIVE(amx_parallel_end),
+	AMX_DECLARE_NATIVE(amx_tailcall),
 };
 
 int RegisterAmxNatives(AMX *amx)

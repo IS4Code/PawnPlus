@@ -29,6 +29,7 @@ constexpr cell SleepReturnForkEnd = 0xC2000000;
 constexpr cell SleepReturnAllocVar = 0xD0000000;
 constexpr cell SleepReturnAllocVarZero = 0xD1000000;
 constexpr cell SleepReturnFreeVar = 0xD2000000;
+constexpr cell SleepReturnTailCall = 0xD3000000;
 
 constexpr cell SleepReturnParallel = 0xE0000000;
 constexpr cell SleepReturnParallelEnd = 0xE1000000;
