@@ -83,7 +83,7 @@ public:
 
 	bool tag_compatible(const dyn_object &obj) const
 	{
-		return tag->same_base(obj.tag);
+		return (empty() && obj.empty()) || tag->same_base(obj.tag);
 	}
 
 	bool get_cell(cell index, cell &value) const
