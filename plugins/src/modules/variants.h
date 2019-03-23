@@ -3,6 +3,7 @@
 
 #include "objects/object_pool.h"
 #include "objects/dyn_object.h"
+#include "errors.h"
 #include "sdk/amx/amx.h"
 
 namespace variants
@@ -13,6 +14,12 @@ namespace variants
 	{
 		if(obj.empty()) return 0;
 		return pool.get_id(pool.add(std::move(obj)));
+	}
+
+	inline cell create(const dyn_object &obj)
+	{
+		if(obj.empty()) return 0;
+		return pool.get_id(pool.emplace(obj));
 	}
 
 	template <class... Args>
@@ -27,6 +34,10 @@ namespace variants
 		if(pool.get_by_id(ptr, obj))
 		{
 			return *obj;
+		}
+		if(ptr != 0)
+		{
+			amx_LogicError(errors::pointer_invalid, "variant", ptr);
 		}
 		return dyn_object();
 	}

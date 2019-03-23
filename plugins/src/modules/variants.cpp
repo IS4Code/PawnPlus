@@ -1,5 +1,6 @@
 #include "variants.h"
 #include "strings.h"
+#include "errors.h"
 
 object_pool<dyn_object> variants::pool;
 
@@ -42,6 +43,10 @@ dyn_object dyn_func_str_s(AMX *amx, cell str)
 	if(strings::pool.get_by_id(str, ptr))
 	{
 		return dyn_object(ptr->data(), ptr->size() + 1, tags::find_tag(tags::tag_char));
+	}
+	if(str != 0)
+	{
+		amx_LogicError(errors::pointer_invalid, "string", str);
 	}
 	str = 0;
 	return dyn_object(&str, 1, tags::find_tag(tags::tag_char));
@@ -202,5 +207,5 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_
 
 cell dyn_func_var(AMX *amx, const dyn_object &obj)
 {
-	return variants::emplace(obj);
+	return variants::create(obj);
 }

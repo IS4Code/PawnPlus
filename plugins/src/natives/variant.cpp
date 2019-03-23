@@ -127,7 +127,7 @@ namespace Natives
 	}
 
 	// native String:var_get_str_s(ConstVariantTag:var);
-	AMX_DEFINE_NATIVE(var_get_str_s, 3)
+	AMX_DEFINE_NATIVE(var_get_str_s, 1)
 	{
 		return value_at<>::var_get<dyn_func_str_s>(amx, params);
 	}
@@ -151,7 +151,7 @@ namespace Natives
 	}
 
 	// native String:var_get_str_safe_s(ConstVariantTag:var);
-	AMX_DEFINE_NATIVE(var_get_str_safe_s, 3)
+	AMX_DEFINE_NATIVE(var_get_str_safe_s, 1)
 	{
 		return value_at<0>::var_get<dyn_func_str_s>(amx, params);
 	}
@@ -253,7 +253,7 @@ namespace Natives
 	}
 
 	// native var_sizeof(ConstVariantTag:var);
-	AMX_DEFINE_NATIVE(var_sizeof, 3)
+	AMX_DEFINE_NATIVE(var_sizeof, 1)
 	{
 		dyn_object *var;
 		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
