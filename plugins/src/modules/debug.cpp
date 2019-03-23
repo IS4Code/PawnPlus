@@ -57,20 +57,29 @@ static void set_script_name(const char *name)
 static subhook_t CreateFileA_Hook;
 static decltype(&CreateFileA) CreateFileA_Trampoline;
 
-static thread_local HANDLE _last_file = nullptr;
+struct handle_delete
+{
+	void operator()(HANDLE ptr) const
+	{
+		if(ptr)
+		{
+			CloseHandle(ptr);
+		}
+	}
+};
+
+static thread_local std::unique_ptr<typename std::remove_pointer<HANDLE>::type, handle_delete> _last_file = nullptr;
 
 static HANDLE WINAPI HookCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 {
 	auto &last_file = _last_file;
-	if(last_file)
-	{
-		CloseHandle(last_file);
-		last_file = nullptr;
-	}
+	last_file = nullptr;
 	HANDLE hfile = CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	if(hfile && (dwDesiredAccess & GENERIC_READ))
 	{
-		DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &last_file, 0, TRUE, DUPLICATE_SAME_ACCESS);
+		HANDLE handle;
+		DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &handle, 0, TRUE, DUPLICATE_SAME_ACCESS);
+		last_file = std::unique_ptr<void, handle_delete>(handle);
 		set_script_name(lpFileName);
 	}
 	return hfile;
@@ -83,21 +92,19 @@ AMX_DBG *debug::create_last(std::unique_ptr<char[]> &name)
 	{
 		return nullptr;
 	}
-	int fd = _open_osfhandle(reinterpret_cast<intptr_t>(last_file), _O_RDONLY);
+	int fd = _open_osfhandle(reinterpret_cast<intptr_t>(last_file.get()), _O_RDONLY);
 	if(fd == -1)
 	{
-		CloseHandle(last_file);
 		last_file = nullptr;
 		return nullptr;
 	}
+	last_file.release();
 	auto f = _fdopen(fd, "rb");
 	if(!f)
 	{
 		_close(fd);
-		last_file = nullptr;
 		return nullptr;
 	}
-	last_file = nullptr;
 
 	name = std::move(_last_name);
 
@@ -129,23 +136,30 @@ void debug::init()
 static subhook_t fopen_hook;
 static decltype(&fopen) fopen_trampoline;
 
-static thread_local int _last_file = -1;
+struct descriptor_delete
+{
+	void operator()(void *ptr) const
+	{
+		if(ptr)
+		{
+			close(reinterpret_cast<int>(ptr) - 1);
+		}
+	}
+};
+
+static thread_local std::unique_ptr<void, descriptor_delete> _last_file;
 
 static FILE *hook_fopen(const char *pathname, const char *mode)
 {
 	auto &last_file = _last_file;
-	if(last_file != -1)
-	{
-		close(last_file);
-		last_file = -1;
-	}
+	last_file = nullptr;
 	auto file = fopen_trampoline(pathname, mode);
 	if(file && !std::strcmp(mode, "rb"))
 	{
 		int fd = fileno(file);
 		if(fd != -1)
 		{
-			last_file = dup(fd);
+			last_file = std::unique_ptr<void, descriptor_delete>(reinterpret_cast<void*>(dup(fd) + 1));
 			set_script_name(pathname);
 		}
 	}
@@ -155,18 +169,17 @@ static FILE *hook_fopen(const char *pathname, const char *mode)
 AMX_DBG *debug::create_last(std::unique_ptr<char[]> &name)
 {
 	auto &last_file = _last_file;
-	if(last_file == -1)
+	if(!last_file)
 	{
 		return nullptr;
 	}
-	auto f = fdopen(last_file, "rb");
+	auto f = fdopen(reinterpret_cast<int>(last_file.get()) - 1, "rb");
 	if(!f)
 	{
-		close(last_file);
-		last_file = -1;
+		last_file = nullptr;
 		return nullptr;
 	}
-	last_file = -1;
+	last_file.release();
 
 	name = std::move(_last_name);
 
