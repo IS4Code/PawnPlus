@@ -13,16 +13,6 @@ bool memequal(void const* ptr1, void const* ptr2, size_t size)
 	return !std::memcmp(ptr1, ptr2, size);
 }
 
-dyn_object::dyn_object() noexcept : rank(1), array_data(nullptr), tag(tags::find_tag(tags::tag_cell))
-{
-
-}
-
-dyn_object::dyn_object(AMX *amx, cell value, cell tag_id) noexcept : rank(0), cell_value(value), tag(tags::find_tag(amx, tag_id))
-{
-	init_op();
-}
-
 dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : rank(1), tag(tags::find_tag(amx, tag_id))
 {
 	if(arr != nullptr)
@@ -162,11 +152,6 @@ dyn_object::dyn_object(const cell *str) : rank(1), tag(tags::find_tag(tags::tag_
 	array_data[size + 1] = 0;
 }
 
-dyn_object::dyn_object(cell value, tag_ptr tag) noexcept : dyn_object(value, tag, true)
-{
-
-}
-
 dyn_object::dyn_object(cell value, tag_ptr tag, bool assign) noexcept : rank(0), cell_value(value), tag(tag)
 {
 	if(assign)
@@ -188,11 +173,6 @@ dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(t
 	init_op();
 }
 
-dyn_object::dyn_object(const dyn_object &obj) : dyn_object(obj, true)
-{
-
-}
-
 dyn_object::dyn_object(const dyn_object &obj, bool assign) : rank(obj.rank), tag(obj.tag)
 {
 	if(is_array())
@@ -212,23 +192,6 @@ dyn_object::dyn_object(const dyn_object &obj, bool assign) : rank(obj.rank), tag
 	{
 		assign_op();
 	}
-}
-
-dyn_object::dyn_object(dyn_object &&obj) noexcept : rank(obj.rank), tag(obj.tag)
-{
-	if(is_array())
-	{
-		array_data = obj.array_data;
-	}else{
-		cell_value = obj.cell_value;
-	}
-	obj.array_data = nullptr;
-	obj.rank = 1;
-}
-
-bool dyn_object::tag_assignable(AMX *amx, cell tag_id) const
-{
-	return tag_assignable(tags::find_tag(amx, tag_id));
 }
 
 bool dyn_object::tag_assignable(tag_ptr test_tag) const
@@ -284,11 +247,6 @@ bool array_bounds(const cell *data, cell &begin, cell &end, cell data_begin, cel
 	return true;
 }
 
-bool dyn_object::get_cell(cell index, cell &value) const
-{
-	return get_cell(&index, 1, value);
-}
-
 bool dyn_object::get_cell(const cell *indices, cell num_indices, cell &value) const
 {
 	auto addr = get_cell_addr(indices, num_indices);
@@ -299,11 +257,6 @@ bool dyn_object::get_cell(const cell *indices, cell num_indices, cell &value) co
 		return true;
 	}
 	return false;
-}
-
-bool dyn_object::set_cell(cell index, cell value)
-{
-	return set_cell(&index, 1, value);
 }
 
 bool dyn_object::set_cell(const cell *indices, cell num_indices, cell value)
@@ -318,11 +271,6 @@ bool dyn_object::set_cell(const cell *indices, cell num_indices, cell value)
 		return true;
 	}
 	return false;
-}
-
-cell dyn_object::get_array(cell *arr, cell maxsize) const
-{
-	return get_array(nullptr, 0, arr, maxsize);
 }
 
 cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cell maxsize) const
@@ -462,11 +410,6 @@ const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) con
 	return &block[begin];
 }
 
-cell dyn_object::get_tag(AMX *amx) const
-{
-	return tag->get_id(amx);
-}
-
 cell dyn_object::store(AMX *amx) const
 {
 	if(is_array())
@@ -497,11 +440,6 @@ void dyn_object::load(AMX *amx, cell amx_addr)
 
 		assign_op();
 	}
-}
-
-bool dyn_object::is_array() const
-{
-	return rank > 0;
 }
 
 cell *dyn_object::begin()
@@ -549,14 +487,9 @@ cell dyn_object::array_size() const
 	if(is_array())
 	{
 		return end() - begin();
-	} else {
+	}else{
 		return 1;
 	}
-}
-
-cell dyn_object::get_size() const
-{
-	return get_size(nullptr, 0);
 }
 
 cell dyn_object::get_size(const cell *indices, cell num_indices) const
@@ -589,11 +522,6 @@ cell dyn_object::get_size(const cell *indices, cell num_indices) const
 	return end - begin;
 }
 
-char dyn_object::get_specifier() const
-{
-	return tag->get_ops().format_spec(tag, is_array());
-}
-
 template <class T>
 inline void hash_combine(size_t& seed, const T& v)
 {
@@ -614,21 +542,6 @@ size_t dyn_object::get_hash() const
 
 	hash_combine(hash, tag->find_top_base());
 	return hash;
-}
-
-bool dyn_object::empty() const
-{
-	return is_array() ? array_data == nullptr : false;
-}
-
-bool dyn_object::tag_compatible(const dyn_object &obj) const
-{
-	return tag->same_base(obj.tag);
-}
-
-tag_ptr dyn_object::get_tag() const
-{
-	return tag;
 }
 
 void dyn_object::acquire() const
@@ -734,16 +647,6 @@ bool dyn_object::assign_op(cell *start, cell size) const
 {
 	const auto &ops = tag->get_ops();
 	return ops.assign(tag, start, size);
-}
-
-cell &dyn_object::operator[](cell index)
-{
-	return begin()[index];
-}
-
-const cell &dyn_object::operator[](cell index) const
-{
-	return begin()[index];
 }
 
 bool dyn_object::struct_compatible(const dyn_object &obj) const
