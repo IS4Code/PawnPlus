@@ -9,13 +9,26 @@ namespace variants
 {
 	extern object_pool<dyn_object> pool;
 
-	cell create(dyn_object &&obj);
-	dyn_object get(cell ptr);
+	inline cell create(dyn_object &&obj)
+	{
+		if(obj.empty()) return 0;
+		return pool.get_id(pool.add(std::move(obj)));
+	}
 
 	template <class... Args>
-	cell create(Args&&... args)
+	inline cell emplace(Args&&... args)
 	{
-		return create(dyn_object(std::forward<Args>(args)...));
+		return pool.get_id(pool.emplace(std::forward<Args>(args)...));
+	}
+	
+	inline dyn_object get(cell ptr)
+	{
+		dyn_object *obj;
+		if(pool.get_by_id(ptr, obj))
+		{
+			return *obj;
+		}
+		return dyn_object();
 	}
 }
 

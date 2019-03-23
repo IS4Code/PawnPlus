@@ -261,6 +261,11 @@ public:
 		return *local_object_list.add();
 	}
 
+	object_ptr add(ObjType &&obj)
+	{
+		return *local_object_list.emplace(std::move(obj));
+	}
+
 	object_ptr add(ref_container &&obj)
 	{
 		return *local_object_list.add(std::move(obj));

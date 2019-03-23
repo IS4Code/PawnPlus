@@ -3,22 +3,6 @@
 
 object_pool<dyn_object> variants::pool;
 
-cell variants::create(dyn_object &&obj)
-{
-	if(obj.empty()) return 0;
-	return pool.get_id(pool.add(std::move(obj)));
-}
-
-dyn_object variants::get(cell ptr)
-{
-	dyn_object *obj;
-	if(pool.get_by_id(ptr, obj))
-	{
-		return *obj;
-	}
-	return dyn_object();
-}
-
 dyn_object dyn_func(AMX *amx, cell value, cell tag_id)
 {
 	return dyn_object(amx, value, tag_id);
@@ -218,5 +202,5 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_
 
 cell dyn_func_var(AMX *amx, const dyn_object &obj)
 {
-	return variants::create(obj);
+	return variants::emplace(obj);
 }

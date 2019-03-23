@@ -54,7 +54,7 @@ namespace Natives
 	// native Variant:var_new_buf(size, TagTag:tag_id=0);
 	AMX_DEFINE_NATIVE(var_new_buf, 1)
 	{
-		return variants::create(amx, nullptr, params[1], optparam(2, 0));
+		return variants::emplace(amx, nullptr, params[1], optparam(2, 0));
 	}
 
 	// native Variant:var_new_str(const value[]);
