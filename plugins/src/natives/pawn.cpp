@@ -63,16 +63,15 @@ struct amx_stack
 	}
 };
 
-template <bool native, bool try_>
-static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
+cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, AMX *target_amx)
 {
-	constexpr size_t args_start = try_ ? 3 : 2;
+	size_t args_start = try_ ? 3 : 2;
 
 	char *fname;
-	amx_StrParam(amx, params[1], fname);
+	amx_StrParam(amx, params[0], fname);
 
 	char *format;
-	amx_StrParam(amx, params[args_start], format);
+	amx_StrParam(amx, params[args_start - 1], format);
 
 	if(fname == nullptr)
 	{
@@ -85,15 +84,15 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 		numargs--;
 	}
 
-	if(params[0] < (2 + numargs) * static_cast<int>(sizeof(cell)))
+	if(paramsize < (2 + numargs) * static_cast<int>(sizeof(cell)))
 	{
-		amx_FormalError(errors::not_enough_args, 2 + numargs, params[0] / static_cast<cell>(sizeof(cell)));
+		throw errors::end_of_arguments_error(params, 2 + numargs);
 	}
 
 	int pubindex = 0;
 	AMX_NATIVE func = nullptr;
 
-	if(native ? (func = amx::find_native(amx, fname)) == nullptr : amx_FindPublic(amx, fname, &pubindex) != AMX_ERR_NONE)
+	if(native ? (func = amx::find_native(target_amx, fname)) == nullptr : amx_FindPublic(target_amx, fname, &pubindex) != AMX_ERR_NONE)
 	{
 		if(try_)
 		{
@@ -103,20 +102,36 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 		}
 	}
 
-	amx_stack stack(amx, native);
+	amx_stack stack(target_amx, native);
 	std::unordered_map<dyn_object*, cell> storage;
 
 	if(format[numargs] == '+')
 	{
-		for(int i = (params[0] / sizeof(cell)) - 1; i >= numargs; i--)
+		for(int i = (paramsize / sizeof(cell)) - 1; i >= numargs; i--)
 		{
-			stack.push(params[args_start + 1 + i]);
+			cell param = params[args_start + i];
+			if(amx != target_amx)
+			{
+				cell *addr;
+				amx_GetAddr(amx, param, &addr);
+				int length;
+				amx_StrLen(addr, &length);
+				if(addr[0] & 0xFF000000)
+				{
+					length = 1 + ((length - 1) / sizeof(cell));
+				}
+				length += 1;
+				cell *newaddr;
+				amx_Allot(target_amx, length, &param, &newaddr);
+				std::memcpy(newaddr, addr, length * sizeof(cell));
+			}
+			stack.push(param);
 		}
 	}
 
 	for(int i = numargs - 1; i >= 0; i--)
 	{
-		cell param = params[args_start + 1 + i];
+		cell param = params[args_start + i];
 		cell *addr;
 
 		switch(format[i])
@@ -125,6 +140,25 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 			case 's':
 			case '*':
 			{
+				if(amx != target_amx)
+				{
+					amx_GetAddr(amx, param, &addr);
+					int length;
+					if(format[i] == '*')
+					{
+						length = 1;
+					}else{
+						amx_StrLen(addr, &length);
+						if(addr[0] & 0xFF000000)
+						{
+							length = 1 + ((length - 1) / sizeof(cell));
+						}
+						length += 1;
+					}
+					cell *newaddr;
+					amx_Allot(target_amx, length, &param, &newaddr);
+					std::memcpy(newaddr, addr, length * sizeof(cell));
+				}
 				stack.push(param);
 				break;
 			}
@@ -135,11 +169,11 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 				if(strings::pool.get_by_id(*addr, ptr))
 				{
 					size_t size = ptr->size();
-					amx_Allot(amx, size + 1, &param, &addr);
+					amx_Allot(target_amx, size + 1, &param, &addr);
 					std::memcpy(addr, ptr->c_str(), size * sizeof(cell));
 					addr[size] = 0;
 				}else{
-					amx_Allot(amx, 1, &param, &addr);
+					amx_Allot(target_amx, 1, &param, &addr);
 					addr[0] = 0;
 				}
 				stack.push(param);
@@ -153,12 +187,12 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 				{
 					for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
 					{
-						cell addr = it->store(amx);
+						cell addr = it->store(target_amx);
 						storage[&*it] = addr;
 						stack.push(addr);
 					}
 					cell fmt_value;
-					amx_Allot(amx, ptr->size() + 1, &fmt_value, &addr);
+					amx_Allot(target_amx, ptr->size() + 1, &fmt_value, &addr);
 					for(auto it = ptr->begin(); it != ptr->end(); it++)
 					{
 						*(addr++) = it->get_specifier();
@@ -167,7 +201,7 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 					stack.push(fmt_value);
 				}else{
 					cell fmt_value;
-					amx_Allot(amx, 1, &fmt_value, &addr);
+					amx_Allot(target_amx, 1, &fmt_value, &addr);
 					addr[0] = 0;
 					stack.push(fmt_value);
 				}
@@ -181,7 +215,7 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 				{
 					for(auto it = ptr->rbegin(); it != ptr->rend(); it++)
 					{
-						cell addr = it->store(amx);
+						cell addr = it->store(target_amx);
 						storage[&*it] = addr;
 						stack.push(addr);
 					}
@@ -194,7 +228,7 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 				dyn_object *ptr;
 				if(variants::pool.get_by_id(*addr, ptr))
 				{
-					param = ptr->store(amx);
+					param = ptr->store(target_amx);
 					storage[ptr] = param;
 				}else{
 					param = 0;
@@ -222,24 +256,24 @@ static cell AMX_NATIVE_CALL pawn_call(AMX *amx, cell *params)
 	cell result = 0, *resultptr;
 	if(try_)
 	{
-		amx_GetAddr(amx, params[2], &resultptr);
+		amx_GetAddr(amx, params[1], &resultptr);
 	}else{
 		resultptr = &result;
 	}
 
 	int ret;
-	amx->error = AMX_ERR_NONE;
+	target_amx->error = AMX_ERR_NONE;
 	if(native)
 	{
-		*resultptr = func(amx, reinterpret_cast<cell*>(stack.data + amx->stk));
-		ret = amx->error;
+		*resultptr = func(target_amx, reinterpret_cast<cell*>(stack.data + target_amx->stk));
+		ret = target_amx->error;
 	}else{
-		ret = amx_Exec(amx, resultptr, pubindex);
+		ret = amx_Exec(target_amx, resultptr, pubindex);
 	}
-	amx->error = AMX_ERR_NONE;
+	target_amx->error = AMX_ERR_NONE;
 	for(auto &pair : storage)
 	{
-		pair.first->load(amx, pair.second);
+		pair.first->load(target_amx, pair.second);
 	}
 	stack.reset();
 	if(try_)
@@ -286,25 +320,25 @@ namespace Natives
 	// native pawn_call_native(const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_call_native, 2)
 	{
-		return pawn_call<true, false>(amx, params);
+		return pawn_call(amx, params[0], params + 1, true, false, amx);
 	}
 
 	// native pawn_call_public(const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_call_public, 2)
 	{
-		return pawn_call<false, false>(amx, params);
+		return pawn_call(amx, params[0], params + 1, false, false, amx);
 	}
 
-	// native amx_err:pawn_try_call_native(const function[], const format[], AnyTag:...);
+	// native amx_err:pawn_try_call_native(const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_try_call_native, 3)
 	{
-		return pawn_call<true, true>(amx, params);
+		return pawn_call(amx, params[0], params + 1, true, true, amx);
 	}
 
-	// native amx_err:pawn_try_call_public(const function[], const format[], AnyTag:...);
+	// native amx_err:pawn_try_call_public(const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_try_call_public, 3)
 	{
-		return pawn_call<false, true>(amx, params);
+		return pawn_call(amx, params[0], params + 1, false, true, amx);
 	}
 
 	// native CallbackHandler:pawn_register_callback(const callback[], const function[], handler_flags:flags=handler_default, const additional_format[], AnyTag:...);

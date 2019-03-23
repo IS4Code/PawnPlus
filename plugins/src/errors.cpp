@@ -10,6 +10,7 @@ namespace errors
 	error out_of_range = "%s is out of range";
 	error key_not_present = "the key is not present in the map";
 	error func_not_found = "%s function '%s' was not found";
+	error var_not_found = "%s variable '%s' was not found";
 	error arg_empty = "argument is empty";
 	error inner_error = "%s function '%s' has raised an AMX error %d: %s";
 	error no_debug_error = "debug info is not available";

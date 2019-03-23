@@ -320,6 +320,8 @@ bool hook_handler::handler_index(AMX *&amx, int &index)
 	return false;
 }
 
+extern AMX *source_amx;
+
 bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &result)
 {
 	AMX *my_amx;
@@ -544,7 +546,10 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 		it->push(my_amx, reinterpret_cast<cell>(this));
 	}
 
+	auto old_source_amx = source_amx;
+	source_amx = amx;
 	amx_Exec(my_amx, &result, index);
+	source_amx = old_source_amx;
 
 	for(auto mem : storage)
 	{
@@ -803,7 +808,10 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 	}
 
 	cell retval;
+	auto old_source_amx = source_amx;
+	source_amx = amx;
 	amx_Exec(my_amx, &retval, index);
+	source_amx = old_source_amx;
 
 	for(auto mem : storage)
 	{

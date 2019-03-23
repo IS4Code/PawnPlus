@@ -274,11 +274,20 @@ enum fork_level
     fork_machine = 2,
 }
 
+const AMX:AMX_ALL = AMX:-1;
+const AMX:AMX_OTHERS = AMX:-2;
+
 native AMX:amx_this();
 native Handle:amx_handle();
+native AMX:amx_source();
+native Handle:amx_source_handle();
+native amx_call_native(AMX:amx, const function[], const format[], AnyTag:...);
+native amx_call_public(AMX:amx, const function[], const format[], AnyTag:...);
+native amx_err:amx_try_call_native(AMX:amx, const function[], &result, const format[], AnyTag:...);
+native amx_err:amx_try_call_public(AMX:amx, const function[], &result, const format[], AnyTag:...);
 native Var:amx_var(&AnyTag:var);
 native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
-native Var:amx_public_var(AMX:amx, const name[]);
+native Var:amx_public_var(const name[]);
 native bool:amx_valid(Var:var);
 native amx_delete(Var:var);
 native bool:amx_linked(Var:var);

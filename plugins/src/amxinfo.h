@@ -37,8 +37,8 @@ namespace amx
 
 	class instance
 	{
-		friend object load_lock(AMX *amx);
-		friend object clone_lock(AMX *amx, AMX *new_amx);
+		friend const object &load_lock(AMX *amx);
+		friend const object &clone_lock(AMX *amx, AMX *new_amx);
 		friend bool invalidate(AMX *amx);
 
 		AMX *_amx;
@@ -146,10 +146,32 @@ namespace amx
 		}
 	};
 
-	handle load(AMX *amx);
-	object load_lock(AMX *amx);
-	handle clone(AMX *amx, AMX *new_amx);
-	object clone_lock(AMX *amx, AMX *new_amx);
+	bool valid(AMX *amx);
+
+	void call_all(void(*func)(void *cookie, AMX *amx), void *cookie);
+
+	template <class Func>
+	void call_all(Func func)
+	{
+		call_all([](void *cookie, AMX *amx)
+		{
+			(*reinterpret_cast<Func*>(cookie))(amx);
+		}, &func);
+	}
+
+	inline handle load(AMX *amx)
+	{
+		return load_lock(amx);
+	}
+
+	const object &load_lock(AMX *amx);
+
+	inline handle clone(AMX *amx, AMX *new_amx)
+	{
+		return clone_lock(amx, new_amx);
+	}
+
+	const object &clone_lock(AMX *amx, AMX *new_amx);
 	bool unload(AMX *amx);
 	bool invalidate(AMX *amx);
 	void register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number);

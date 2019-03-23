@@ -284,6 +284,118 @@ namespace Natives
 			return strings::create(std::move(str));
 		});
 	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved1, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved2, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved3, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved4, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved5, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved6, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved7, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved8, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved9, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved10, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved11, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved12, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved13, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved14, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved15, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
+
+	// native pp__reserved1();
+	AMX_DEFINE_NATIVE(pp__reserved16, 0)
+	{
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
+		return 0;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -313,6 +425,24 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_raise_error),
 	AMX_DECLARE_NATIVE(pp_module_name),
 	AMX_DECLARE_NATIVE(pp_module_name_s),
+
+	//Reserved for private use
+	AMX_DECLARE_NATIVE(pp__reserved1),
+	AMX_DECLARE_NATIVE(pp__reserved2),
+	AMX_DECLARE_NATIVE(pp__reserved3),
+	AMX_DECLARE_NATIVE(pp__reserved4),
+	AMX_DECLARE_NATIVE(pp__reserved5),
+	AMX_DECLARE_NATIVE(pp__reserved6),
+	AMX_DECLARE_NATIVE(pp__reserved7),
+	AMX_DECLARE_NATIVE(pp__reserved8),
+	AMX_DECLARE_NATIVE(pp__reserved9),
+	AMX_DECLARE_NATIVE(pp__reserved10),
+	AMX_DECLARE_NATIVE(pp__reserved11),
+	AMX_DECLARE_NATIVE(pp__reserved12),
+	AMX_DECLARE_NATIVE(pp__reserved13),
+	AMX_DECLARE_NATIVE(pp__reserved14),
+	AMX_DECLARE_NATIVE(pp__reserved15),
+	AMX_DECLARE_NATIVE(pp__reserved16),
 };
 
 int RegisterConfigNatives(AMX *amx)

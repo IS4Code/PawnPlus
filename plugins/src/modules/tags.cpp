@@ -189,7 +189,7 @@ bool tag_info::same_base(tag_ptr tag) const
 cell tag_info::get_id(AMX *amx) const
 {
 	if(uid == tags::tag_cell) return 0x80000000;
-	auto obj = amx::load_lock(amx);
+	const auto &obj = amx::load_lock(amx);
 	auto &map = obj->get_extra<tag_map_info>().tag_map;
 	for(auto &pair : map)
 	{

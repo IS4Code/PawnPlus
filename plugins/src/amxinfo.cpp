@@ -24,35 +24,37 @@ struct natives_extra : public amx::extra
 
 static std::unordered_map<AMX*, std::shared_ptr<amx::instance>> amx_map;
 
-amx::handle amx::load(AMX *amx)
+bool amx::valid(AMX *amx)
 {
-	return load_lock(amx);
+	return amx_map.find(amx) != amx_map.end();
+}
+
+void amx::call_all(void(*func)(void *cookie, AMX *amx), void *cookie)
+{
+	for(const auto &pair : amx_map)
+	{
+		if(pair.second->valid())
+		{
+			func(cookie, pair.first);
+		}
+	}
 }
 
 // Nothing should be loaded from the AMX here, since it may not even be initialized yet
-amx::object amx::load_lock(AMX *amx)
+const amx::object &amx::load_lock(AMX *amx)
 {
 	auto it = amx_map.find(amx);
 	if(it != amx_map.end())
 	{
 		return it->second;
 	}
-	auto ptr = std::make_shared<instance>(amx);
-	amx_map.insert(std::make_pair(amx, ptr));
-	return ptr;
+	return amx_map.emplace(amx, std::make_shared<instance>(amx)).first->second;
 }
 
-amx::handle amx::clone(AMX *amx, AMX *new_amx)
+const amx::object &amx::clone_lock(AMX *amx, AMX *new_amx)
 {
-	return clone_lock(amx, new_amx);
-}
-
-amx::object amx::clone_lock(AMX *amx, AMX *new_amx)
-{
-	auto obj = load_lock(amx);
-	auto ptr = std::make_shared<instance>(*obj, new_amx);
-	amx_map.insert(std::make_pair(new_amx, ptr));
-	return ptr;
+	const auto &obj = load_lock(amx);
+	return amx_map.emplace(new_amx, std::make_shared<instance>(*obj, new_amx)).first->second;
 }
 
 
@@ -80,7 +82,7 @@ bool amx::invalidate(AMX *amx)
 
 void amx::register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number)
 {
-	auto obj = load_lock(amx);
+	const auto &obj = load_lock(amx);
 	auto &natives = obj->get_extra<natives_extra>().natives;
 	for(int i = 0; nativelist[i].name != nullptr && (i < number || number == -1); i++)
 	{
@@ -95,7 +97,7 @@ AMX_NATIVE amx::find_native(AMX *amx, const char *name)
 
 AMX_NATIVE amx::find_native(AMX *amx, const std::string &name)
 {
-	auto obj = load_lock(amx);
+	const auto &obj = load_lock(amx);
 	auto &natives = obj->get_extra<natives_extra>().natives;
 
 	auto it = natives.find(name);
@@ -117,7 +119,7 @@ AMX_NATIVE amx::find_native(AMX *amx, const std::string &name)
 
 size_t amx::num_natives(AMX *amx)
 {
-	auto obj = load_lock(amx);
+	const auto &obj = load_lock(amx);
 	auto &natives = obj->get_extra<natives_extra>().natives;
 	return natives.size();
 }

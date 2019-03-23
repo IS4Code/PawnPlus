@@ -38,7 +38,7 @@ cell get_level(AMX *amx, cell level)
 
 AMX_DBG *get_debug(AMX *amx)
 {
-	auto obj = amx::load_lock(amx);
+	const auto &obj = amx::load_lock(amx);
 	if(!obj->has_extra<debug::info>())
 	{
 		amx_LogicError(errors::no_debug_error);
@@ -259,14 +259,14 @@ namespace Natives
 	// native bool:debug_loaded();
 	AMX_DEFINE_NATIVE(debug_loaded, 0)
 	{
-		auto obj = amx::load_lock(amx);
+		const auto &obj = amx::load_lock(amx);
 		return obj->has_extra<debug::info>();
 	}
 
 	// native AmxDebug:debug_get_ptr();
 	AMX_DEFINE_NATIVE(debug_get_ptr, 0)
 	{
-		auto obj = amx::load_lock(amx);
+		const auto &obj = amx::load_lock(amx);
 		if(!obj->has_extra<debug::info>())
 		{
 			return 0;

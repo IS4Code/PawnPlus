@@ -6,6 +6,9 @@
 #include "modules/containers.h"
 #include "utils/shared_id_set_pool.h"
 
+cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, AMX *target_amx);
+AMX *source_amx;
+
 namespace Natives
 {
 	// native AMX:amx_this();
@@ -20,6 +23,72 @@ namespace Natives
 		return handle_pool.get_id(handle_pool.emplace(dyn_object(reinterpret_cast<cell>(amx), tags::find_tag("AMX")), amx::load(amx), true));
 	}
 
+	// native AMX:amx_source();
+	AMX_DEFINE_NATIVE(amx_source, 0)
+	{
+		return reinterpret_cast<cell>(source_amx);
+	}
+
+	// native Handle:amx_source_handle();
+	AMX_DEFINE_NATIVE(amx_source_handle, 0)
+	{
+		if(!source_amx) return 0;
+		return handle_pool.get_id(handle_pool.emplace(dyn_object(reinterpret_cast<cell>(source_amx), tags::find_tag("AMX")), amx::load(source_amx), true));
+	}
+
+	cell amx_call(AMX *amx, cell *params, bool native, bool try_)
+	{
+		cell result = 0;
+		switch(params[1])
+		{
+			case -1:
+				amx::call_all([&](AMX *target_amx)
+				{
+					result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, target_amx);
+				});
+				break;
+			case -2:
+				amx::call_all([&](AMX *target_amx)
+				{
+					if(amx != target_amx)
+					{
+						result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, target_amx);
+					}
+				});
+				break;
+			default:
+				auto target_amx = reinterpret_cast<AMX*>(params[1]);
+				if(!amx::valid(target_amx)) amx_LogicError(errors::pointer_invalid, "AMX", params[1]);
+				result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, target_amx);
+				break;
+		}
+		return result;
+	}
+
+	// native amx_call_native(AMX:amx, const function[], const format[], AnyTag:...);
+	AMX_DEFINE_NATIVE(amx_call_native, 3)
+	{
+		return amx_call(amx, params, true, false);
+	}
+
+	// native amx_call_public(AMX:amx, const function[], const format[], AnyTag:...);
+	AMX_DEFINE_NATIVE(amx_call_public, 3)
+	{
+		return amx_call(amx, params, false, false);
+	}
+
+	// native amx_err:amx_try_call_native(AMX:amx, const function[], &result, const format[], AnyTag:...);
+	AMX_DEFINE_NATIVE(amx_try_call_native, 4)
+	{
+		return amx_call(amx, params, true, true);
+	}
+
+	// native amx_err:amx_try_call_public(AMX:amx, const function[], &result, const format[], AnyTag:...);
+	AMX_DEFINE_NATIVE(amx_try_call_public, 4)
+	{
+		return amx_call(amx, params, false, true);
+	}
+
 	// native Var:amx_var(&AnyTag:var);
 	AMX_DEFINE_NATIVE(amx_var, 1)
 	{
@@ -32,23 +101,23 @@ namespace Natives
 		return amx_var_pool.get_id(amx_var_pool.emplace(amx, params[1], params[2]));
 	}
 
-	// native Var:amx_public_var(AMX:amx, const name[]);
-	AMX_DEFINE_NATIVE(amx_public_var, 2)
+	// native Var:amx_public_var(const name[]);
+	AMX_DEFINE_NATIVE(amx_public_var, 1)
 	{
-		if(auto lock = amx::load_lock(reinterpret_cast<AMX*>(params[1])))
+		char *name;
+		amx_StrParam(amx, params[1], name);
+
+		if(name == nullptr)
 		{
-			auto amx2 = lock->get();
-
-			char *name;
-			amx_StrParam(amx2, params[2], name);
-
-			cell amx_addr;
-			if(amx_FindPubVar(amx2, name, &amx_addr) == AMX_ERR_NONE)
-			{
-				return amx_var_pool.get_id(amx_var_pool.emplace(amx2, amx_addr, 1));
-			}
+			amx_FormalError(errors::arg_empty);
 		}
-		return 0;
+
+		cell amx_addr;
+		if(amx_FindPubVar(amx, name, &amx_addr) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::var_not_found, "public", name);
+		}
+		return amx_var_pool.get_id(amx_var_pool.emplace(amx, amx_addr, 1));
 	}
 
 	// native amx_set(Var:var, AnyTag:value, index=0);
@@ -222,6 +291,12 @@ static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(amx_this),
 	AMX_DECLARE_NATIVE(amx_handle),
+	AMX_DECLARE_NATIVE(amx_source),
+	AMX_DECLARE_NATIVE(amx_source_handle),
+	AMX_DECLARE_NATIVE(amx_call_native),
+	AMX_DECLARE_NATIVE(amx_call_public),
+	AMX_DECLARE_NATIVE(amx_try_call_native),
+	AMX_DECLARE_NATIVE(amx_try_call_public),
 	AMX_DECLARE_NATIVE(amx_var),
 	AMX_DECLARE_NATIVE(amx_var_arr),
 	AMX_DECLARE_NATIVE(amx_public_var),
