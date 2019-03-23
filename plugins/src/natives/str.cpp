@@ -7,180 +7,8 @@
 #include <cstring>
 #include <algorithm>
 #include <limits>
-#include <regex>
-#include <unordered_map>
-#include <iterator>
 
 typedef strings::cell_string cell_string;
-
-static cell to_lower(cell c)
-{
-	if(65 <= c && c <= 90) return c + 32;
-	return c;
-}
-
-static cell to_upper(cell c)
-{
-	if(97 <= c && c <= 122) return c - 32;
-	return c;
-}
-
-template <class T>
-inline void hash_combine(size_t& seed, const T& v)
-{
-	std::hash<T> hasher;
-	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-}
-
-namespace std
-{
-	template <class Type1, class Type2>
-	struct hash<std::pair<Type1, Type2>>
-	{
-		size_t operator()(const std::pair<Type1, Type2> &obj) const
-		{
-			return std::hash<Type1>()(obj.first) ^ std::hash<Type2>()(obj.second);
-		}
-	};
-
-	template <class Type>
-	struct hash<std::basic_string<Type>>
-	{
-		size_t operator()(const std::basic_string<Type> &obj) const
-		{
-			size_t seed = 0;
-			for(const auto &c : obj)
-			{
-				hash_combine(seed, c);
-			}
-			return seed;
-		}
-	};
-}
-
-struct regex_traits
-{
-	typedef cell char_type;
-	typedef cell_string string_type;
-	typedef size_t size_type;
-	typedef std::locale locale_type;
-	typedef std::ctype_base::mask char_class_type;
-
-	typedef ucell _Uelem;
-	enum _Char_class_type
-	{
-		_Ch_none = 0,
-		_Ch_alnum = std::ctype_base::alnum,
-		_Ch_alpha = std::ctype_base::alpha,
-		_Ch_cntrl = std::ctype_base::cntrl,
-		_Ch_digit = std::ctype_base::digit,
-		_Ch_graph = std::ctype_base::graph,
-		_Ch_lower = std::ctype_base::lower,
-		_Ch_print = std::ctype_base::print,
-		_Ch_punct = std::ctype_base::punct,
-		_Ch_space = std::ctype_base::space,
-		_Ch_upper = std::ctype_base::upper,
-		_Ch_xdigit = std::ctype_base::xdigit
-	};
-
-	int value(cell ch, int base) const
-	{
-		if((base != 8 && '0' <= ch && ch <= '9') || (base == 8 && '0' <= ch && ch <= '7'))
-		{
-			return (ch - '0');
-		}
-
-		if(base != 16)
-		{
-			return (-1);
-		}
-
-		if('a' <= ch && ch <= 'f')
-		{
-			return (ch - 'a' + 10);
-		}
-
-		if('A' <= ch && ch <= 'F')
-		{
-			return (ch - 'A' + 10);
-		}
-
-		return -1;
-	}
-
-	static size_type length(const cell *str)
-	{
-		return std::char_traits<cell>::length(str);
-	}
-
-	cell translate(cell ch) const
-	{
-		return ch;
-	}
-
-	cell translate_nocase(cell ch) const
-	{
-		return to_lower(ch);
-	}
-
-	template<class Iterator>
-	string_type transform(Iterator first, Iterator last) const
-	{
-		return string_type(first, last);
-	}
-
-	template<class Iterator>
-	string_type transform_primary(Iterator first, Iterator last) const
-	{
-		string_type res(first, last);
-		std::transform(res.begin(), res.end(), res.begin(), to_lower);
-		return res;
-	}
-
-	bool isctype(cell ch, std::ctype_base::mask ctype) const
-	{
-		if(ctype != (std::ctype_base::mask)(-1))
-		{
-			return _ctype->is(ctype, ch);
-		}else{
-			return ch == '_'|| _ctype->is(std::ctype_base::alnum, ch);
-		}
-	}
-
-	template<class Iterator>
-	std::ctype_base::mask lookup_classname(Iterator first, Iterator last, bool icase = false) const
-	{
-		return _base_traits.lookup_classname(first, last, icase);
-	}
-
-	template<class Iterator>
-	string_type lookup_collatename(Iterator first, Iterator last) const
-	{
-		return string_type(first, last);
-	}
-
-	locale_type imbue(locale_type loc)
-	{
-		locale_type tmp = _locale;
-		_locale = loc;
-		return tmp;
-	}
-
-	locale_type getloc() const
-	{
-		return _locale;
-	}
-
-private:
-	void cache_locale()
-	{
-		_ctype = &std::use_facet<std::ctype<cell>>(_locale);
-	}
-
-	const std::ctype<cell> *_ctype;
-	locale_type _locale;
-	const std::regex_traits<wchar_t> _base_traits;
-};
 
 namespace Natives
 {
@@ -760,7 +588,7 @@ namespace Natives
 			return strings::pool.get_id(strings::pool.add());
 		}
 		auto str2 = *str;
-		std::transform(str2.begin(), str2.end(), str2.begin(), to_lower);
+		std::transform(str2.begin(), str2.end(), str2.begin(), strings::to_lower);
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
@@ -774,7 +602,7 @@ namespace Natives
 			return strings::pool.get_id(strings::pool.add());
 		}
 		auto str2 = *str;
-		std::transform(str2.begin(), str2.end(), str2.begin(), to_upper);
+		std::transform(str2.begin(), str2.end(), str2.begin(), strings::to_upper);
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
@@ -783,7 +611,7 @@ namespace Natives
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		std::transform(str->begin(), str->end(), str->begin(), to_lower);
+		std::transform(str->begin(), str->end(), str->begin(), strings::to_lower);
 		return params[1];
 	}
 
@@ -792,110 +620,8 @@ namespace Natives
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		std::transform(str->begin(), str->end(), str->begin(), to_upper);
+		std::transform(str->begin(), str->end(), str->begin(), strings::to_upper);
 		return params[1];
-	}
-
-	template<class BidirIt, class CharT = typename std::iterator_traits<BidirIt>::value_type, class Traits = std::regex_traits<CharT>>
-	static std::regex_iterator<BidirIt, CharT, Traits> make_regex_iterator(BidirIt a, BidirIt b, const std::basic_regex<CharT, Traits>& re, std::regex_constants::match_flag_type m = std::regex_constants::match_default)
-	{
-		return {a, b, re, m};
-	}
-
-	constexpr const cell cache_flag = 4194304;
-
-	static void regex_options(cell options, std::regex_constants::syntax_option_type &syntax, std::regex_constants::match_flag_type &match)
-	{
-		switch(options & 7)
-		{
-			default:
-				syntax = std::regex_constants::ECMAScript;
-				break;
-			case 1:
-				syntax = std::regex_constants::basic;
-				break;
-			case 2:
-				syntax = std::regex_constants::extended;
-				break;
-			case 3:
-				syntax = std::regex_constants::awk;
-				break;
-			case 4:
-				syntax = std::regex_constants::grep;
-				break;
-			case 5:
-				syntax = std::regex_constants::egrep;
-				break;
-		}
-		options &= ~7;
-		if(options & 8)
-		{
-			syntax |= std::regex_constants::icase;
-		}
-		if(options & 16)
-		{
-			syntax |= std::regex_constants::nosubs;
-		}
-		if(options & 32)
-		{
-			syntax |= std::regex_constants::optimize;
-		}
-		if(options & 64)
-		{
-			syntax |= std::regex_constants::collate;
-		}
-
-		match = {};
-		if(options & 256)
-		{
-			match |= std::regex_constants::match_not_bol;
-		}
-		if(options & 512)
-		{
-			match |= std::regex_constants::match_not_eol;
-		}
-		if(options & 1024)
-		{
-			match |= std::regex_constants::match_not_bow;
-		}
-		if(options & 2048)
-		{
-			match |= std::regex_constants::match_not_eow;
-		}
-		if(options & 4096)
-		{
-			match |= std::regex_constants::match_any;
-		}
-		if(options & 8192)
-		{
-			match |= std::regex_constants::match_not_null;
-		}
-		if(options & 16384)
-		{
-			match |= std::regex_constants::match_continuous;
-		}
-		if(options & 65536)
-		{
-			match |= std::regex_constants::format_no_copy;
-		}
-		if(options & 131072)
-		{
-			match |= std::regex_constants::format_first_only;
-		}
-	}
-
-	static std::unordered_map<std::pair<cell_string, cell>, std::basic_regex<cell, regex_traits>> regex_cache;
-
-	static const std::basic_regex<cell, regex_traits> &get_cached(const cell *pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
-	{
-		options &= 255;
-		return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(pattern, options), std::forward_as_tuple(pattern, syntax_options)).first->second;
-	}
-
-	static const std::basic_regex<cell, regex_traits> &get_cached(const cell_string &pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
-	{
-		options &= 255;
-		return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(pattern, options), std::forward_as_tuple(pattern, syntax_options)).first->second;
 	}
 
 	// native bool:str_match(ConstStringTag:str, const pattern[], regex_options:options=regex_default);
@@ -904,20 +630,9 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell options = optparam(3, 0);
-		std::regex_constants::syntax_option_type syntax_options;
-		std::regex_constants::match_flag_type match_options;
-		regex_options(options, syntax_options, match_options);
-		
-		try{
-			cell *pattern;
-			amx_GetAddr(amx, params[2], &pattern);
-			return std::regex_search(*str, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), match_options);
-		}catch(const std::regex_error &err)
-		{
-			amx_FormalError("%s", err.what());
-			return 0;
-		}
+		cell *pattern;
+		amx_GetAddr(amx, params[2], &pattern);
+		return strings::regex_search(*str, pattern, optparam(3, 0));
 	}
 
 	// native bool:str_match_s(ConstStringTag:str, ConstStringTag:pattern, regex_options:options=regex_default);
@@ -926,20 +641,10 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell options = optparam(3, 0);
-		std::regex_constants::syntax_option_type syntax_options;
-		std::regex_constants::match_flag_type match_options;
-		regex_options(options, syntax_options, match_options);
-		
-		try{
-			cell_string *pattern;
-			if(!strings::pool.get_by_id(params[2], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
-			return std::regex_search(*str, options & cache_flag ? get_cached(*pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(*pattern, syntax_options), match_options);
-		}catch(const std::regex_error &err)
-		{
-			amx_FormalError("%s", err.what());
-			return 0;
-		}
+		cell_string *pattern;
+		if(!strings::pool.get_by_id(params[2], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+
+		return strings::regex_search(*str, *pattern, optparam(3, 0));
 	}
 
 	// native List:str_extract(ConstStringTag:str, const pattern[], regex_options:options=regex_default);
@@ -948,32 +653,10 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell options = optparam(3, 0);
-		std::regex_constants::syntax_option_type syntax_options;
-		std::regex_constants::match_flag_type match_options;
-		regex_options(options, syntax_options, match_options);
-		
-		try{
-			cell *pattern;
-			amx_GetAddr(amx, params[2], &pattern);
+		cell *pattern;
+		amx_GetAddr(amx, params[2], &pattern);
 
-			std::match_results<cell_string::const_iterator> match;
-			if(std::regex_search(*str, match, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), match_options))
-			{
-				tag_ptr chartag = tags::find_tag(tags::tag_char);
-				auto list = list_pool.add();
-				for(auto &group : match)
-				{
-					list->push_back(dyn_object(&*group.first, group.length(), chartag));
-				}
-				return list_pool.get_id(list);
-			}
-			return 0;
-		}catch(const std::regex_error &err)
-		{
-			amx_FormalError("%s", err.what());
-			return 0;
-		}
+		return strings::regex_extract(*str, pattern, optparam(3, 0));
 	}
 
 	// native List:str_extract_s(ConstStringTag:str, ConstStringTag:pattern, regex_options:options=regex_default);
@@ -982,32 +665,10 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell options = optparam(3, 0);
-		std::regex_constants::syntax_option_type syntax_options;
-		std::regex_constants::match_flag_type match_options;
-		regex_options(options, syntax_options, match_options);
-		
-		try{
-			cell_string *pattern;
-			if(!strings::pool.get_by_id(params[2], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+		cell_string *pattern;
+		if(!strings::pool.get_by_id(params[2], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-			std::match_results<cell_string::const_iterator> match;
-			if(std::regex_search(*str, match, options & cache_flag ? get_cached(*pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(*pattern, syntax_options), match_options))
-			{
-				tag_ptr chartag = tags::find_tag(tags::tag_char);
-				auto list = list_pool.add();
-				for(auto &group : match)
-				{
-					list->push_back(dyn_object(&*group.first, group.length(), chartag));
-				}
-				return list_pool.get_id(list);
-			}
-			return 0;
-		}catch(const std::regex_error &err)
-		{
-			amx_FormalError("%s", err.what());
-			return 0;
-		}
+		return strings::regex_extract(*str, *pattern, optparam(3, 0));
 	}
 
 	// native String:str_replace(ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
@@ -1016,52 +677,30 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell options = optparam(4, 0);
-		std::regex_constants::syntax_option_type syntax_options;
-		std::regex_constants::match_flag_type match_options;
-		regex_options(options, syntax_options, match_options);
+		cell *pattern;
+		amx_GetAddr(amx, params[2], &pattern);
 
-		try{
-			cell *pattern;
-			amx_GetAddr(amx, params[2], &pattern);
+		cell *replacement;
+		amx_GetAddr(amx, params[3], &replacement);
 
-			cell *replacement;
-			amx_GetAddr(amx, params[3], &replacement);
-
-			auto &target = strings::pool.add();
-			std::regex_replace(std::back_inserter(*target), str->cbegin(), str->cend(), options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), {replacement}, match_options);
-			return strings::pool.get_id(target);
-		}catch(const std::regex_error &err)
-		{
-			amx_FormalError("%s", err.what());
-			return 0;
-		}
+		auto &target = strings::pool.add();
+		strings::regex_replace(*target, *str, pattern, replacement, optparam(4, 0));
+		return strings::pool.get_id(target);
 	}
 
-	// native String:str_replace_s(ConstStringTag:str, ConstStringTag:pattern, const replacement[], regex_options:options=regex_default);
+	// native String:str_replace_s(ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, regex_options:options=regex_default);
 	AMX_DEFINE_NATIVE(str_replace_s, 3)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell options = optparam(4, 0);
-		std::regex_constants::syntax_option_type syntax_options;
-		std::regex_constants::match_flag_type match_options;
-		regex_options(options, syntax_options, match_options);
+		cell_string *pattern;
+		if(!strings::pool.get_by_id(params[2], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		try{
-			cell_string *pattern;
-			if(!strings::pool.get_by_id(params[2], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+		cell_string *replacement;
+		if(!strings::pool.get_by_id(params[3], replacement)) amx_LogicError(errors::pointer_invalid, "string", params[3]);
 
-			cell_string *replacement;
-			if(!strings::pool.get_by_id(params[3], replacement)) amx_LogicError(errors::pointer_invalid, "string", params[3]);
-
-			return strings::pool.get_id(strings::pool.add(std::regex_replace(*str, options & cache_flag ? get_cached(*pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(*pattern, syntax_options), *replacement, match_options)));
-		}catch(const std::regex_error &err)
-		{
-			amx_FormalError("%s", err.what());
-			return 0;
-		}
+		return strings::pool.get_id(strings::pool.add(strings::regex_replace(*str, *pattern, *replacement, optparam(4, 0))));
 	}
 
 	// native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
@@ -1074,25 +713,14 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[2], str)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		cell options = optparam(5, 0);
-		std::regex_constants::syntax_option_type syntax_options;
-		std::regex_constants::match_flag_type match_options;
-		regex_options(options, syntax_options, match_options);
+		cell *pattern;
+		amx_GetAddr(amx, params[3], &pattern);
 
-		try{
-			cell *pattern;
-			amx_GetAddr(amx, params[3], &pattern);
+		cell *replacement;
+		amx_GetAddr(amx, params[4], &replacement);
 
-			cell *replacement;
-			amx_GetAddr(amx, params[4], &replacement);
-
-			std::regex_replace(std::back_inserter(*target), str->cbegin(), str->cend(), options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), {replacement}, match_options);
-			return params[1];
-		}catch(const std::regex_error &err)
-		{
-			amx_FormalError("%s", err.what());
-			return 0;
-		}
+		strings::regex_replace(*target, *str, pattern, replacement, optparam(5, 0));
+		return params[1];
 	}
 
 	// native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, regex_options:options=regex_default);
@@ -1105,25 +733,14 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[2], str)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		cell options = optparam(5, 0);
-		std::regex_constants::syntax_option_type syntax_options;
-		std::regex_constants::match_flag_type match_options;
-		regex_options(options, syntax_options, match_options);
+		cell_string *pattern;
+		if(!strings::pool.get_by_id(params[3], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[3]);
 
-		try{
-			cell_string *pattern;
-			if(!strings::pool.get_by_id(params[3], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[3]);
+		cell_string *replacement;
+		if(!strings::pool.get_by_id(params[4], replacement)) amx_LogicError(errors::pointer_invalid, "string", params[4]);
 
-			cell_string *replacement;
-			if(!strings::pool.get_by_id(params[4], replacement)) amx_LogicError(errors::pointer_invalid, "string", params[4]);
-
-			*target = std::regex_replace(*str, options & cache_flag ? get_cached(*pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(*pattern, syntax_options), *replacement, match_options);
-			return params[1];
-		}catch(const std::regex_error &err)
-		{
-			amx_FormalError("%s", err.what());
-			return 0;
-		}
+		*target = strings::regex_replace(*str, *pattern, *replacement, optparam(5, 0));
+		return params[1];
 	}
 }
 

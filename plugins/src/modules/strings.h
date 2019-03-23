@@ -21,6 +21,25 @@ namespace strings
 	cell_string convert(const std::string &str);
 	bool clamp_range(const cell_string &str, cell &start, cell &end);
 	bool clamp_pos(const cell_string &str, cell &pos);
+
+	inline cell to_lower(cell c)
+	{
+		if(65 <= c && c <= 90) return c + 32;
+		return c;
+	}
+
+	inline cell to_upper(cell c)
+	{
+		if(97 <= c && c <= 122) return c - 32;
+		return c;
+	}
+
+	bool regex_search(const cell_string &str, const cell *pattern, cell options);
+	bool regex_search(const cell_string &str, const cell_string &pattern, cell options);
+	cell regex_extract(const cell_string &str, const cell *pattern, cell options);
+	cell regex_extract(const cell_string &str, const cell_string &pattern, cell options);
+	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const cell *replacement, cell options);
+	cell_string regex_replace(const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell options);
 }
 
 #endif
