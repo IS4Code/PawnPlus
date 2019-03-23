@@ -643,24 +643,24 @@ class handle_t
 public:
 	handle_t() = default;
 
-	handle_t(dyn_object &&obj, bool weak = false) : object(std::move(obj)), bond((object.acquire(), object.handle())), weak(weak)
+	handle_t(dyn_object &&obj, bool weak = false) : object(std::move(obj)), bond(weak ? object.handle() : (object.acquire(), object.handle())), weak(weak)
 	{
 
 	}
 
-	handle_t(dyn_object &&obj, std::weak_ptr<void> &&bond, bool weak = false) : object(std::move(obj)), bond(std::move(bond)), weak(weak)
+	handle_t(dyn_object &&obj, std::weak_ptr<void> &&bond, bool weak = false) : object(std::move(obj)), bond(weak ? std::move(bond) : (object.acquire(), std::move(bond))), weak(weak)
 	{
 
 	}
 
-	handle_t(const handle_t &owner, dyn_object &&obj, bool weak = false) : object(std::move(obj)), bond(owner.bond), weak(weak)
+	handle_t(const handle_t &owner, dyn_object &&obj, bool weak = false) : object(std::move(obj)), bond(weak ? owner.bond : (object.acquire(), owner.bond)), weak(weak)
 	{
 
 	}
 
 	handle_t(handle_t &&handle) : object(std::move(handle.object)), bond(std::move(handle.bond)), weak(handle.weak)
 	{
-
+		handle.weak = true;
 	}
 
 	handle_t(const handle_t&) = delete;
