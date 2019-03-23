@@ -3,6 +3,7 @@
 #include "context.h"
 #include "errors.h"
 #include "modules/amxutils.h"
+#include "modules/strings.h"
 #include "modules/containers.h"
 #include "utils/shared_id_set_pool.h"
 
@@ -34,6 +35,22 @@ namespace Natives
 	{
 		if(!source_amx) return 0;
 		return handle_pool.get_id(handle_pool.emplace(dyn_object(reinterpret_cast<cell>(source_amx), tags::find_tag("AMX")), amx::load(source_amx), true));
+	}
+
+	// native amx_name(name[], size=sizeof(name));
+	AMX_DEFINE_NATIVE(amx_name, 2)
+	{
+		const auto &name = amx::load_lock(amx)->get_name();
+		cell *addr;
+		amx_GetAddr(amx, params[1], &addr);
+		amx_SetString(addr, name.c_str(), false, false, params[2]);
+		return name.size();
+	}
+
+	// native String:amx_name_s();
+	AMX_DEFINE_NATIVE(amx_name_s, 0)
+	{
+		return strings::create(amx::load_lock(amx)->get_name());
 	}
 
 	cell amx_call(AMX *amx, cell *params, bool native, bool try_)
@@ -293,6 +310,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_handle),
 	AMX_DECLARE_NATIVE(amx_source),
 	AMX_DECLARE_NATIVE(amx_source_handle),
+	AMX_DECLARE_NATIVE(amx_name),
+	AMX_DECLARE_NATIVE(amx_name_s),
 	AMX_DECLARE_NATIVE(amx_call_native),
 	AMX_DECLARE_NATIVE(amx_call_public),
 	AMX_DECLARE_NATIVE(amx_try_call_native),

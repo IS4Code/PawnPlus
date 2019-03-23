@@ -111,7 +111,9 @@ namespace Hooks
 		{
 			amx::unload(amx);
 		}
-		auto dbg = debug::create_last();
+
+		std::unique_ptr<char[]> name;
+		auto dbg = debug::create_last(name);
 		if(dbg)
 		{
 			if(((AMX_HEADER*)amx->base)->flags & AMX_FLAG_DEBUG)
@@ -121,6 +123,10 @@ namespace Hooks
 				dbg_FreeInfo(dbg);
 				delete dbg;
 			}
+		}
+		if(name)
+		{
+			amx::load_lock(amx)->set_name(name.get());
 		}
 		return ret;
 	}

@@ -7,7 +7,7 @@
 namespace debug
 {
 	void init();
-	AMX_DBG *create_last();
+	AMX_DBG *create_last(std::unique_ptr<char[]> &name);
 
 	struct info : public amx::extra
 	{

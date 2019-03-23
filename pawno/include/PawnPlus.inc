@@ -281,6 +281,8 @@ native AMX:amx_this();
 native Handle:amx_handle();
 native AMX:amx_source();
 native Handle:amx_source_handle();
+native amx_name(name[], size=sizeof(name));
+native String:amx_name_s();
 native amx_call_native(AMX:amx, const function[], const format[], AnyTag:...);
 native amx_call_public(AMX:amx, const function[], const format[], AnyTag:...);
 native amx_err:amx_try_call_native(AMX:amx, const function[], &result, const format[], AnyTag:...);

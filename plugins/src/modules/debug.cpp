@@ -5,16 +5,53 @@
 #include "sdk/plugincommon.h"
 #include "subhook/subhook.h"
 
+#include "fixes/linux.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <io.h>
 #else
 #include <stdio.h>
-#include <cstring>
 #include <unistd.h>
 #endif
 #include <fcntl.h>
+#include <cstring>
+#include <memory>
+
+static thread_local std::unique_ptr<char[]> _last_name(nullptr);
+
+static void set_script_name(const char *name)
+{
+	size_t len = std::strlen(name);
+	if(len > 0)
+	{
+		const char *last = name + len;
+		const char *dot = nullptr;
+		while(last > name)
+		{
+			last -= 1;
+			if(*last == '.' && !dot)
+			{
+				dot = last;
+			}else if(*last == '/' || *last == '\\')
+			{
+				name = last + 1;
+				break;
+			}
+		}
+		if(dot)
+		{
+			if(!std::strcmp(dot + 1, "amx"))
+			{
+				len = dot - name;
+				_last_name = std::make_unique<char[]>(len + 1);
+				std::memcpy(_last_name.get(), name, dot - name);
+				_last_name[len] = '\0';
+			}
+		}
+	}
+}
 
 #ifdef _WIN32
 static subhook_t CreateFileA_Hook;
@@ -34,11 +71,12 @@ static HANDLE WINAPI HookCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, D
 	if(hfile && (dwDesiredAccess & GENERIC_READ))
 	{
 		DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &last_file, 0, TRUE, DUPLICATE_SAME_ACCESS);
+		set_script_name(lpFileName);
 	}
 	return hfile;
 }
 
-AMX_DBG *debug::create_last()
+AMX_DBG *debug::create_last(std::unique_ptr<char[]> &name)
 {
 	auto &last_file = _last_file;
 	if(!last_file)
@@ -60,6 +98,8 @@ AMX_DBG *debug::create_last()
 		return nullptr;
 	}
 	last_file = nullptr;
+
+	name = std::move(_last_name);
 
 	auto dbg = new AMX_DBG();
 	if(dbg_LoadInfo(dbg, f) != AMX_ERR_NONE)
@@ -106,12 +146,13 @@ static FILE *hook_fopen(const char *pathname, const char *mode)
 		if(fd != -1)
 		{
 			last_file = dup(fd);
+			set_script_name(pathname);
 		}
 	}
 	return file;
 }
 
-AMX_DBG *debug::create_last()
+AMX_DBG *debug::create_last(std::unique_ptr<char[]> &name)
 {
 	auto &last_file = _last_file;
 	if(last_file == -1)
@@ -126,6 +167,8 @@ AMX_DBG *debug::create_last()
 		return nullptr;
 	}
 	last_file = -1;
+
+	name = std::move(_last_name);
 
 	auto dbg = new AMX_DBG();
 	if(dbg_LoadInfo(dbg, f) != AMX_ERR_NONE)

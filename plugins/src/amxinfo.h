@@ -43,6 +43,7 @@ namespace amx
 
 		AMX *_amx;
 		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
+		std::string name;
 
 		void invalidate()
 		{
@@ -85,6 +86,16 @@ namespace amx
 		bool valid() const
 		{
 			return _amx != nullptr;
+		}
+
+		void set_name(const char *new_name)
+		{
+			name = new_name;
+		}
+
+		const std::string &get_name() const
+		{
+			return name;
 		}
 
 		instance &operator=(const instance &obj) = delete;
