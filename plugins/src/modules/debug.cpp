@@ -85,7 +85,7 @@ static HANDLE WINAPI HookCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, D
 	return hfile;
 }
 
-AMX_DBG *debug::create_last(std::unique_ptr<char[]> &name)
+std::shared_ptr<AMX_DBG> debug::create_last(std::unique_ptr<char[]> &name)
 {
 	auto &last_file = _last_file;
 	if(!last_file)
@@ -117,7 +117,14 @@ AMX_DBG *debug::create_last(std::unique_ptr<char[]> &name)
 	}
 	fclose(f);
 
-	return dbg;
+	return std::shared_ptr<AMX_DBG>(dbg, [](AMX_DBG *dbg)
+	{
+		if(dbg)
+		{
+			dbg_FreeInfo(dbg);
+			delete dbg;
+		}
+	});
 }
 
 void debug::init()
@@ -166,7 +173,7 @@ static FILE *hook_fopen(const char *pathname, const char *mode)
 	return file;
 }
 
-AMX_DBG *debug::create_last(std::unique_ptr<char[]> &name)
+std::shared_ptr<AMX_DBG> debug::create_last(std::unique_ptr<char[]> &name)
 {
 	auto &last_file = _last_file;
 	if(!last_file)
@@ -192,7 +199,14 @@ AMX_DBG *debug::create_last(std::unique_ptr<char[]> &name)
 	}
 	fclose(f);
 
-	return dbg;
+	return std::shared_ptr<AMX_DBG>(dbg, [](AMX_DBG *dbg)
+	{
+		if(dbg)
+		{
+			dbg_FreeInfo(dbg);
+			delete dbg;
+		}
+	});
 }
 
 void debug::init()

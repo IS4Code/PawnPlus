@@ -2,6 +2,7 @@
 #define AMXINFO_H_INCLUDED
 
 #include "sdk/amx/amx.h"
+#include "sdk/amx/amxdbg.h"
 #include <string>
 #include <vector>
 #include <typeindex>
@@ -43,7 +44,6 @@ namespace amx
 
 		AMX *_amx;
 		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
-		std::string name;
 
 		void invalidate()
 		{
@@ -51,6 +51,9 @@ namespace amx
 		}
 
 	public:
+		std::string name;
+		std::shared_ptr<AMX_DBG> dbg;
+
 		instance() : _amx(nullptr)
 		{
 
@@ -61,7 +64,7 @@ namespace amx
 
 		}
 
-		instance(const instance &obj, AMX *new_amx) : _amx(new_amx)
+		instance(const instance &obj, AMX *new_amx) : _amx(new_amx), name(obj.name), dbg(obj.dbg)
 		{
 			for(const auto &pair : obj.extras)
 			{
@@ -77,7 +80,7 @@ namespace amx
 		}
 
 		instance(const instance &obj) = delete;
-		instance(instance &&obj) : _amx(obj._amx), extras(std::move(obj.extras))
+		instance(instance &&obj) : _amx(obj._amx), extras(std::move(obj.extras)), name(std::move(obj.name)), dbg(std::move(obj.dbg))
 		{
 			obj._amx = nullptr;
 			obj.extras.clear();
@@ -88,16 +91,6 @@ namespace amx
 			return _amx != nullptr;
 		}
 
-		void set_name(const char *new_name)
-		{
-			name = new_name;
-		}
-
-		const std::string &get_name() const
-		{
-			return name;
-		}
-
 		instance &operator=(const instance &obj) = delete;
 		instance &operator=(instance &&obj)
 		{
@@ -105,8 +98,11 @@ namespace amx
 			{
 				_amx = obj._amx;
 				extras = std::move(obj.extras);
+				name = std::move(obj.name);
+				dbg = std::move(obj.dbg);
 				obj._amx = nullptr;
 				obj.extras.clear();
+				obj.dbg = {};
 			}
 			return *this;
 		}

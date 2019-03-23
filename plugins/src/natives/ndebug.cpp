@@ -39,12 +39,12 @@ cell get_level(AMX *amx, cell level)
 AMX_DBG *get_debug(AMX *amx)
 {
 	const auto &obj = amx::load_lock(amx);
-	if(!obj->has_extra<debug::info>())
+	if(!obj->dbg)
 	{
 		amx_LogicError(errors::no_debug_error);
 		return nullptr;
 	}
-	return obj->get_extra<debug::info>().dbg;
+	return obj->dbg.get();
 }
 
 cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG *&dbg, AMX_DBG_SYMBOL *&sym)
@@ -260,18 +260,18 @@ namespace Natives
 	AMX_DEFINE_NATIVE(debug_loaded, 0)
 	{
 		const auto &obj = amx::load_lock(amx);
-		return obj->has_extra<debug::info>();
+		return static_cast<bool>(obj->dbg);
 	}
 
 	// native AmxDebug:debug_get_ptr();
 	AMX_DEFINE_NATIVE(debug_get_ptr, 0)
 	{
 		const auto &obj = amx::load_lock(amx);
-		if(!obj->has_extra<debug::info>())
+		if(!obj->dbg)
 		{
 			return 0;
 		}
-		return reinterpret_cast<cell>(obj->get_extra<debug::info>().dbg);
+		return reinterpret_cast<cell>(obj->dbg.get());
 	}
 
 	// native debug_code(level=0);

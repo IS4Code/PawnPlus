@@ -12,7 +12,7 @@ AMX *source_amx;
 
 namespace Natives
 {
-	// native AMX:amx_this();
+	// native Amx:amx_this();
 	AMX_DEFINE_NATIVE(amx_this, 0)
 	{
 		return reinterpret_cast<cell>(amx);
@@ -21,10 +21,10 @@ namespace Natives
 	// native Handle:amx_handle();
 	AMX_DEFINE_NATIVE(amx_handle, 0)
 	{
-		return handle_pool.get_id(handle_pool.emplace(dyn_object(reinterpret_cast<cell>(amx), tags::find_tag("AMX")), amx::load(amx), true));
+		return handle_pool.get_id(handle_pool.emplace(dyn_object(reinterpret_cast<cell>(amx), tags::find_tag("Amx")), amx::load(amx), true));
 	}
 
-	// native AMX:amx_source();
+	// native Amx:amx_source();
 	AMX_DEFINE_NATIVE(amx_source, 0)
 	{
 		return reinterpret_cast<cell>(source_amx);
@@ -34,13 +34,13 @@ namespace Natives
 	AMX_DEFINE_NATIVE(amx_source_handle, 0)
 	{
 		if(!source_amx) return 0;
-		return handle_pool.get_id(handle_pool.emplace(dyn_object(reinterpret_cast<cell>(source_amx), tags::find_tag("AMX")), amx::load(source_amx), true));
+		return handle_pool.get_id(handle_pool.emplace(dyn_object(reinterpret_cast<cell>(source_amx), tags::find_tag("Amx")), amx::load(source_amx), true));
 	}
 
 	// native amx_name(name[], size=sizeof(name));
 	AMX_DEFINE_NATIVE(amx_name, 2)
 	{
-		const auto &name = amx::load_lock(amx)->get_name();
+		const auto &name = amx::load_lock(amx)->name;
 		cell *addr;
 		amx_GetAddr(amx, params[1], &addr);
 		amx_SetString(addr, name.c_str(), false, false, params[2]);
@@ -50,7 +50,7 @@ namespace Natives
 	// native String:amx_name_s();
 	AMX_DEFINE_NATIVE(amx_name_s, 0)
 	{
-		return strings::create(amx::load_lock(amx)->get_name());
+		return strings::create(amx::load_lock(amx)->name);
 	}
 
 	cell amx_call(AMX *amx, cell *params, bool native, bool try_)
@@ -82,25 +82,25 @@ namespace Natives
 		return result;
 	}
 
-	// native amx_call_native(AMX:amx, const function[], const format[], AnyTag:...);
+	// native amx_call_native(Amx:amx, const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(amx_call_native, 3)
 	{
 		return amx_call(amx, params, true, false);
 	}
 
-	// native amx_call_public(AMX:amx, const function[], const format[], AnyTag:...);
+	// native amx_call_public(Amx:amx, const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(amx_call_public, 3)
 	{
 		return amx_call(amx, params, false, false);
 	}
 
-	// native amx_err:amx_try_call_native(AMX:amx, const function[], &result, const format[], AnyTag:...);
+	// native amx_err:amx_try_call_native(Amx:amx, const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(amx_try_call_native, 4)
 	{
 		return amx_call(amx, params, true, true);
 	}
 
-	// native amx_err:amx_try_call_public(AMX:amx, const function[], &result, const format[], AnyTag:...);
+	// native amx_err:amx_try_call_public(Amx:amx, const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(amx_try_call_public, 4)
 	{
 		return amx_call(amx, params, false, true);

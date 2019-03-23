@@ -118,15 +118,12 @@ namespace Hooks
 		{
 			if(((AMX_HEADER*)amx->base)->flags & AMX_FLAG_DEBUG)
 			{
-				amx::load_lock(amx)->get_extra<debug::info>().dbg = dbg;
-			}else{
-				dbg_FreeInfo(dbg);
-				delete dbg;
+				amx::load_lock(amx)->dbg = dbg;
 			}
 		}
 		if(name)
 		{
-			amx::load_lock(amx)->set_name(name.get());
+			amx::load_lock(amx)->name = name.get();
 		}
 		return ret;
 	}

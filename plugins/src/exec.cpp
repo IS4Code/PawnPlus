@@ -508,7 +508,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				case SleepReturnDebugCall:
 				{
 					cell index = SleepReturnValueMask & amx->pri;
-					auto dbg = amx::load_lock(amx)->get_extra<debug::info>().dbg;
+					auto dbg = amx::load_lock(amx)->dbg.get();
 					if(dbg)
 					{
 						auto hdr = (AMX_HEADER *)amx->base;
@@ -550,7 +550,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				case SleepReturnDebugCallList:
 				{
 					cell index = SleepReturnValueMask & amx->pri;
-					auto dbg = amx::load_lock(amx)->get_extra<debug::info>().dbg;
+					auto dbg = amx::load_lock(amx)->dbg.get();
 					if(dbg)
 					{
 						auto hdr = (AMX_HEADER *)amx->base;
