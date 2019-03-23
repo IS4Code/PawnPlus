@@ -170,19 +170,20 @@ namespace amx
 		}, &func);
 	}
 
+	const object &load_lock(AMX *amx);
+
 	inline handle load(AMX *amx)
 	{
 		return load_lock(amx);
 	}
 
-	const object &load_lock(AMX *amx);
+	const object &clone_lock(AMX *amx, AMX *new_amx);
 
 	inline handle clone(AMX *amx, AMX *new_amx)
 	{
 		return clone_lock(amx, new_amx);
 	}
 
-	const object &clone_lock(AMX *amx, AMX *new_amx);
 	bool unload(AMX *amx);
 	bool invalidate(AMX *amx);
 	void register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number);
