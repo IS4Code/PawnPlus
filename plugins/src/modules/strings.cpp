@@ -14,6 +14,8 @@
 #include <regex>
 #include <unordered_map>
 #include <iterator>
+#include <limits>
+#include <locale>
 
 using namespace strings;
 
@@ -351,6 +353,8 @@ inline void hash_combine(size_t& seed, const T& v)
 	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
+const std::ctype<char> *const base_facet(&std::use_facet<std::ctype<char>>(std::locale::classic()));
+
 namespace std
 {
 	template <class Type1, class Type2>
@@ -375,7 +379,100 @@ namespace std
 			return seed;
 		}
 	};
+
+	template <>
+	struct hash<std::regex_constants::error_type>
+	{
+		size_t operator()(const std::regex_constants::error_type &obj) const
+		{
+			return std::hash<size_t>()(obj);
+		}
+	};
+
+	template <>
+	class ctype<cell> : public locale::facet
+	{
+	public:
+		typedef cell char_type;
+
+		enum
+		{
+			alnum = std::ctype_base::alnum,
+			alpha = std::ctype_base::alpha,
+			cntrl = std::ctype_base::cntrl,
+			digit = std::ctype_base::digit,
+			graph = std::ctype_base::graph,
+			lower = std::ctype_base::lower,
+			print = std::ctype_base::print,
+			punct = std::ctype_base::punct,
+			space = std::ctype_base::space,
+			upper = std::ctype_base::upper,
+			xdigit = std::ctype_base::xdigit
+		};
+		typedef std::ctype_base::mask mask;
+
+		static locale::id id;
+
+		bool is(mask mask, cell ch) const
+		{
+			if(ch < 0 || ch > std::numeric_limits<unsigned char>::max())
+			{
+				return false;
+			}
+			return base_facet->is(mask, static_cast<unsigned char>(ch));
+		}
+
+		char narrow(cell ch, char dflt = '\0') const
+		{
+			if(ch < 0 || ch > std::numeric_limits<unsigned char>::max())
+			{
+				return dflt;
+			}
+			return static_cast<unsigned char>(ch);
+		}
+
+		const char *narrow(const cell *first, const cell *last, char dflt, char *dest) const
+		{
+			return std::transform(first, last, dest, [&](cell c){return narrow(c, dflt);});
+		}
+
+		cell widen(char c) const
+		{
+			return static_cast<unsigned char>(c);
+		}
+
+		const cell *widen(const char *first, const char *last, cell *dest) const
+		{
+			return std::transform(first, last, dest, [&](char c){return widen(c);});
+		}
+
+		cell tolower(cell ch) const
+		{
+			return to_lower(ch);
+		}
+
+		const cell *tolower(cell *first, const cell *last) const
+		{
+			return std::transform(first, const_cast<cell*>(last), first, to_lower);
+		}
+
+		cell toupper(cell ch) const
+		{
+			return to_upper(ch);
+		}
+
+		const cell *toupper(cell *first, const cell *last) const
+		{
+			return std::transform(first, const_cast<cell*>(last), first, to_upper);
+		}
+	};
 }
+
+std::locale::id std::ctype<cell>::id;
+
+const std::ctype<cell> cell_ctype;
+
+const std::locale custom_locale(std::locale::classic(), &cell_ctype);
 
 struct regex_traits
 {
@@ -401,6 +498,11 @@ struct regex_traits
 		_Ch_upper = std::ctype_base::upper,
 		_Ch_xdigit = std::ctype_base::xdigit
 	};
+
+	regex_traits()
+	{
+		cache_locale();
+	}
 
 	int value(cell ch, int base) const
 	{
@@ -458,10 +560,10 @@ struct regex_traits
 
 	bool isctype(cell ch, std::ctype_base::mask ctype) const
 	{
-		if(ctype != (std::ctype_base::mask)(-1))
+		if(ctype != static_cast<std::ctype_base::mask>(-1))
 		{
 			return _ctype->is(ctype, ch);
-		} else {
+		}else{
 			return ch == '_' || _ctype->is(std::ctype_base::alnum, ch);
 		}
 	}
@@ -469,7 +571,32 @@ struct regex_traits
 	template<class Iterator>
 	std::ctype_base::mask lookup_classname(Iterator first, Iterator last, bool icase = false) const
 	{
-		return _base_traits.lookup_classname(first, last, icase);
+		static std::unordered_map<cell_string, std::ctype_base::mask> map{
+			{convert("alnum"), std::ctype_base::alnum},
+			{convert("alpha"), std::ctype_base::alpha},
+			{convert("cntrl"), std::ctype_base::cntrl},
+			{convert("digit"), std::ctype_base::digit},
+			{convert("graph"), std::ctype_base::graph},
+			{convert("lower"), std::ctype_base::lower},
+			{convert("print"), std::ctype_base::print},
+			{convert("punct"), std::ctype_base::punct},
+			{convert("space"), std::ctype_base::space},
+			{convert("upper"), std::ctype_base::upper},
+			{convert("xdigit"), std::ctype_base::xdigit}
+		};
+
+		cell_string key(first, last);
+		auto it = map.find(key);
+		if(it != map.end())
+		{
+			auto mask = it->second;
+			if(icase && (mask & (std::ctype_base::lower | std::ctype_base::upper)))
+			{
+				mask |= std::ctype_base::lower | std::ctype_base::upper;
+			}
+			return mask;
+		}
+		return {};
 	}
 
 	template<class Iterator>
@@ -482,6 +609,7 @@ struct regex_traits
 	{
 		locale_type tmp = _locale;
 		_locale = loc;
+		cache_locale();
 		return tmp;
 	}
 
@@ -498,7 +626,6 @@ private:
 
 	const std::ctype<cell> *_ctype;
 	locale_type _locale;
-	const std::regex_traits<wchar_t> _base_traits;
 };
 
 
@@ -588,6 +715,33 @@ static void regex_options(cell options, std::regex_constants::syntax_option_type
 	{
 		match |= std::regex_constants::format_first_only;
 	}
+
+	std::locale::global(custom_locale);
+}
+
+static const char *get_error(std::regex_constants::error_type code)
+{
+	static std::unordered_map<std::regex_constants::error_type, const char *> map{
+		{std::regex_constants::error_collate, "collate"},
+		{std::regex_constants::error_ctype, "ctype"},
+		{std::regex_constants::error_escape, "escape"},
+		{std::regex_constants::error_backref, "backref"},
+		{std::regex_constants::error_brack, "brack"},
+		{std::regex_constants::error_paren, "paren"},
+		{std::regex_constants::error_brace, "brace"},
+		{std::regex_constants::error_badbrace, "badbrace"},
+		{std::regex_constants::error_range, "range"},
+		{std::regex_constants::error_space, "space"},
+		{std::regex_constants::error_badrepeat, "badrepeat"},
+		{std::regex_constants::error_complexity, "complexity"},
+		{std::regex_constants::error_stack, "stack"}
+	};
+	auto it = map.find(code);
+	if(it != map.end())
+	{
+		return it->second;
+	}
+	return "unknown";
 }
 
 static std::unordered_map<std::pair<cell_string, cell>, std::basic_regex<cell, regex_traits>> regex_cache;
@@ -614,7 +768,7 @@ bool strings::regex_search(const cell_string &str, const cell *pattern, cell opt
 		return std::regex_search(str, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), match_options);
 	}catch(const std::regex_error &err)
 	{
-		amx_FormalError("%s", err.what());
+		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 		return 0;
 	}
 }
@@ -629,7 +783,7 @@ bool strings::regex_search(const cell_string &str, const cell_string &pattern, c
 		return std::regex_search(str, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), match_options);
 	}catch(const std::regex_error &err)
 	{
-		amx_FormalError("%s", err.what());
+		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 		return 0;
 	}
 }
@@ -655,7 +809,7 @@ cell strings::regex_extract(const cell_string &str, const cell *pattern, cell op
 		return 0;
 	}catch(const std::regex_error &err)
 	{
-		amx_FormalError("%s", err.what());
+		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 		return 0;
 	}
 }
@@ -681,7 +835,7 @@ cell strings::regex_extract(const cell_string &str, const cell_string &pattern, 
 		return 0;
 	}catch(const std::regex_error &err)
 	{
-		amx_FormalError("%s", err.what());
+		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 		return 0;
 	}
 }
@@ -696,7 +850,7 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 		std::regex_replace(std::back_inserter(target), str.cbegin(), str.cend(), options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), {replacement}, match_options);
 	}catch(const std::regex_error &err)
 	{
-		amx_FormalError("%s", err.what());
+		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 	}
 }
 
@@ -710,6 +864,6 @@ cell_string strings::regex_replace(const cell_string &str, const cell_string &pa
 		return std::regex_replace(str, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), replacement, match_options);
 	}catch(const std::regex_error &err)
 	{
-		amx_FormalError("%s", err.what());
+		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 	}
 }
