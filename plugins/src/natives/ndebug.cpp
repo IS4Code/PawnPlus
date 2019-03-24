@@ -359,6 +359,13 @@ namespace Natives
 		});
 	}
 
+	// native debug_num_symbols();
+	AMX_DEFINE_NATIVE(debug_num_symbols, 0)
+	{
+		auto dbg = get_debug(amx);
+		return dbg->hdr->symbols;
+	}
+
 	// native Symbol:debug_symbol(const name[], code=cellmin, symbol_kind:kind=symbol_kind:-1, symbol_class:class=symbol_class:-1);
 	AMX_DEFINE_NATIVE(debug_symbol, 1)
 	{
@@ -963,6 +970,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_line),
 	AMX_DECLARE_NATIVE(debug_file),
 	AMX_DECLARE_NATIVE(debug_file_s),
+	AMX_DECLARE_NATIVE(debug_num_symbols),
 	AMX_DECLARE_NATIVE(debug_symbol),
 	AMX_DECLARE_NATIVE(debug_func),
 	AMX_DECLARE_NATIVE(debug_var),

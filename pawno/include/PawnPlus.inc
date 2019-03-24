@@ -1501,6 +1501,7 @@ native debug_code(level=0);
 native debug_line(code=cellmin);
 native debug_file(file[], code=cellmin, size=sizeof(file));
 native String:debug_file_s(code=cellmin);
+native debug_num_symbols();
 native Symbol:debug_symbol(const name[], code=cellmin, symbol_kind:kind=symbol_kind:-1, symbol_class:class=symbol_class:-1);
 native Symbol:debug_func(code=cellmin);
 native Symbol:debug_var(&AnyTag:var);
