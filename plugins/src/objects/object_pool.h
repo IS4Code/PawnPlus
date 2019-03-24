@@ -290,7 +290,7 @@ public:
 	template <class Type, class... Args>
 	object_ptr emplace_derived(Args &&...args)
 	{
-		return *local_object_list.emplace_derived<Type>(std::forward<Args>(args)...);
+		return *local_object_list.template emplace_derived<Type>(std::forward<Args>(args)...);
 	}
 
 	cell get_address(AMX *amx, const_object_ptr obj) const
