@@ -22,10 +22,10 @@ errors::native_error::native_error(const char *format, va_list args, int level) 
 	vsprintf(&message[0], format, args);
 }
 
-errors::native_error::native_error(const char *format, int code, ...) : level(level)
+errors::native_error::native_error(const char *format, int level, ...) : level(level)
 {
 	va_list args;
-	va_start(args, code);
+	va_start(args, level);
 	message = std::string(vsnprintf(NULL, 0, format, args), '\0');
 	vsprintf(&message[0], format, args);
 	va_end(args);
