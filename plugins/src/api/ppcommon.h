@@ -40,19 +40,24 @@ namespace pp
 	class main_table : public api_table
 	{
 	public:
-		const void collect() const
+		cell version() const
 		{
-			return get<void()>(0)();
+			return get<cell()>(0)();
+		}
+
+		void collect() const
+		{
+			return get<void()>(1)();
 		}
 
 		void *register_on_collect(void(*func)()) const
 		{
-			return get<void*(void(*func)())>(1)(func);
+			return get<void*(void(*func)())>(2)(func);
 		}
 
 		void unregister_on_collect(void *id) const
 		{
-			return get<void(void *id)>(2)(id);
+			return get<void(void *id)>(3)(id);
 		}
 	};
 

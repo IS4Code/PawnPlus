@@ -20,6 +20,27 @@
 
 namespace Natives
 {
+	// native pp_version();
+	AMX_DEFINE_NATIVE(pp_version, 0)
+	{
+		return PP_VERSION_NUMBER;
+	}
+
+	// native pp_version_string(version[], size=sizeof(version));
+	AMX_DEFINE_NATIVE(pp_version_string, 2)
+	{
+		cell *addr;
+		amx_GetAddr(amx, params[1], &addr);
+		amx_SetString(addr, PP_VERSION_STRING, false, false, params[2]);
+		return sizeof(PP_VERSION_STRING) - 1;
+	}
+
+	// native String:pp_version_string_s();
+	AMX_DEFINE_NATIVE(pp_version_string_s, 0)
+	{
+		return strings::create(PP_VERSION_STRING);
+	}
+
 	// native pp_hook_strlen(bool:hook);
 	AMX_DEFINE_NATIVE(pp_hook_strlen, 1)
 	{
@@ -400,6 +421,9 @@ namespace Natives
 
 static AMX_NATIVE_INFO native_list[] =
 {
+	AMX_DECLARE_NATIVE(pp_version),
+	AMX_DECLARE_NATIVE(pp_version_string),
+	AMX_DECLARE_NATIVE(pp_version_string_s),
 	AMX_DECLARE_NATIVE(pp_hook_strlen),
 	AMX_DECLARE_NATIVE(pp_hook_check_ref_args),
 	AMX_DECLARE_NATIVE(pp_num_tasks),

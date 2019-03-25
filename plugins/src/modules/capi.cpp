@@ -24,6 +24,10 @@ struct func_ptr
 };
 
 static func_ptr main_functions[] = {
+	+[]/*version*/() -> cell
+	{
+		return PP_VERSION_NUMBER;
+	},
 	+[]/*collect*/() -> void
 	{
 		gc_collect();

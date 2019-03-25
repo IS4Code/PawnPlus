@@ -103,6 +103,10 @@ stock _PP@TMP1, _PP@TMP2, _PP@TMP3;
 /*  Configuration  */
 /*                 */
 
+native pp_version();
+native pp_version_string(version[], size=sizeof(version));
+native String:pp_version_string_s();
+
 native pp_hook_strlen(bool:hook);
 native pp_hook_check_ref_args(bool:hook);
 native pp_max_recursion(level);
