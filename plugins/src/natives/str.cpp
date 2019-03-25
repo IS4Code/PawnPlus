@@ -12,6 +12,31 @@ typedef strings::cell_string cell_string;
 
 namespace Natives
 {
+	// native print_s(ConstStringTag:string);
+	AMX_DEFINE_NATIVE(print_s, 1)
+	{
+		if(params[1] == 0)
+		{
+			logprintf("");
+		}else{
+			cell_string *str;
+			if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+			if(str->size() == 0)
+			{
+				logprintf("");
+			}else{
+				std::string msg;
+				msg.reserve(str->size());
+				for(const auto &c : *str)
+				{
+					msg.append(1, static_cast<unsigned char>(c));
+				}
+				logprintf("%s", msg.c_str());
+			}
+		}
+		return 1;
+	}
+
 	// native String:str_new(const str[], str_create_mode:mode=str_preserve);
 	AMX_DEFINE_NATIVE(str_new, 1)
 	{
@@ -746,6 +771,8 @@ namespace Natives
 
 static AMX_NATIVE_INFO native_list[] =
 {
+	AMX_DECLARE_NATIVE(print_s),
+
 	AMX_DECLARE_NATIVE(str_new),
 	AMX_DECLARE_NATIVE(str_new_arr),
 	AMX_DECLARE_NATIVE(str_new_static),

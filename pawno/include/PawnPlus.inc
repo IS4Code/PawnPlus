@@ -98,6 +98,12 @@ stock _PP@TMP1, _PP@TMP2, _PP@TMP3;
 #define _PP@TAGGED2:_PP@TAGGED2_END:%0,%1, %0,pawn_arg_pack(%1),ArgTag:_PP@TAGGED2:_PP@TAGGED2_END:
 #define _PP@TAGGED2_END:%0,%1) %0,pawn_arg_pack(%1))
 
+/*                 */
+/*    Adapters     */
+/*                 */
+
+native print_s(ConstStringTag:string);
+
 
 /*                 */
 /*  Configuration  */
