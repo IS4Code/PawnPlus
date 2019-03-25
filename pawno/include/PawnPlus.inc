@@ -1074,6 +1074,8 @@ native String:iter_get_str_safe_s(IterTag:iter);
 
 native bool:iter_set(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
 native bool:iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native bool:iter_set_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
+native bool:iter_set_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
 native bool:iter_set_str(IterTag:iter, const value[]);
 native bool:iter_set_var(IterTag:iter, ConstVariantTag:value);
 native bool:iter_set_cell(IterTag:iter, offset, AnyTag:value);
@@ -1093,6 +1095,8 @@ native bool:iter_set_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, o
 
 native bool:iter_insert(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
 native bool:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native bool:iter_insert_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
+native bool:iter_insert_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
 native bool:iter_insert_str(IterTag:iter, const value[]);
 native bool:iter_insert_var(IterTag:iter, ConstVariantTag:value);
 

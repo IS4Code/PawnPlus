@@ -852,13 +852,13 @@ namespace Natives
 		return *iter1 == *iter2;
 	}
 
-	// native Iter:iter_range(AnyTag:start, count, skip=1, tag_id=tagof(start));
+	// native Iter:iter_range(AnyTag:start, count, skip=1, TagTag:tag_id=tagof(start));
 	AMX_DEFINE_NATIVE(iter_range, 4)
 	{
 		return value_at<1, 4>::iter_range<dyn_func>(amx, params);
 	}
 
-	// native Iter:iter_range_arr(AnyTag:start[], count, skip=1, size=sizeof(start), tag_id=tagof(start));
+	// native Iter:iter_range_arr(AnyTag:start[], count, skip=1, size=sizeof(start), TagTag:tag_id=tagof(start));
 	AMX_DEFINE_NATIVE(iter_range_arr, 5)
 	{
 		return value_at<1, 4, 5>::iter_range<dyn_func_arr>(amx, params);
@@ -870,13 +870,13 @@ namespace Natives
 		return value_at<1>::iter_range<dyn_func_var>(amx, params);
 	}
 
-	// native Iter:iter_repeat(AnyTag:value, count, tag_id=tagof(value));
+	// native Iter:iter_repeat(AnyTag:value, count, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_repeat, 3)
 	{
 		return value_at<1, 3>::iter_repeat<dyn_func>(amx, params);
 	}
 
-	// native Iter:iter_repeat_arr(AnyTag:value[], count, size=sizeof(value), tag_id=tagof(value));
+	// native Iter:iter_repeat_arr(AnyTag:value[], count, size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_repeat_arr, 4)
 	{
 		return value_at<1, 3, 4>::iter_repeat<dyn_func_arr>(amx, params);
@@ -1014,13 +1014,13 @@ namespace Natives
 		return value_at<>::iter_get<dyn_func_var>(amx, params);
 	}
 
-	// native bool:iter_get_safe(IterTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+	// native bool:iter_get_safe(IterTag:iter, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_get_safe, 4)
 	{
 		return value_at<2, 3, 4>::iter_get<dyn_func>(amx, params);
 	}
 
-	// native iter_get_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native iter_get_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_get_arr_safe, 4)
 	{
 		return value_at<2, 3, 4>::iter_get<dyn_func_arr>(amx, params);
@@ -1038,16 +1038,28 @@ namespace Natives
 		return value_at<0>::iter_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:iter_set(IterTag:iter, AnyTag:value, tag_id=tagof(value));
+	// native bool:iter_set(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_set, 3)
 	{
 		return value_at<2, 3>::iter_set<dyn_func>(amx, params);
 	}
 
-	// native bool:iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native bool:iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_set_arr, 4)
 	{
 		return value_at<2, 3, 4>::iter_set<dyn_func_arr>(amx, params);
+	}
+
+	// native bool:iter_set_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_set_arr_2d, 5)
+	{
+		return value_at<2, 3, 4, 5>::iter_set<dyn_func_arr>(amx, params);
+	}
+
+	// native bool:iter_set_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_set_arr_3d, 6)
+	{
+		return value_at<2, 3, 4, 5, 6>::iter_set<dyn_func_arr>(amx, params);
 	}
 
 	// native bool:iter_set_str(IterTag:iter, const value[]);
@@ -1068,7 +1080,7 @@ namespace Natives
 		return ::iter_set_cell(amx, params);
 	}
 
-	// native bool:iter_set_cell_safe(IterTag:iter, offset, AnyTag:value, tag_id=tagof(value));
+	// native bool:iter_set_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_set_cell_safe, 4)
 	{
 		return ::iter_set_cell<4>(amx, params);
@@ -1092,13 +1104,13 @@ namespace Natives
 		return value_at<2, 3>::iter_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:iter_get_md_safe(IterTag:iter, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	// native bool:iter_get_md_safe(IterTag:iter, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_get_md_safe, 5)
 	{
 		return value_at<3, 2, 4, 5>::iter_get<dyn_func>(amx, params);
 	}
 
-	// native iter_get_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), tag_id=tagof(value));
+	// native iter_get_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_get_md_arr_safe, 6)
 	{
 		return value_at<3, 2, 4, 5, 6>::iter_get<dyn_func_arr>(amx, params);
@@ -1122,22 +1134,34 @@ namespace Natives
 		return ::iter_set_cell_md(amx, params);
 	}
 
-	// native bool:iter_set_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	// native bool:iter_set_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_set_cell_md_safe, 5)
 	{
 		return ::iter_set_cell_md<5>(amx, params);
 	}
 
-	// native bool:iter_insert(IterTag:iter, AnyTag:value, tag_id=tagof(value));
+	// native bool:iter_insert(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_insert, 3)
 	{
 		return value_at<2, 3>::iter_insert<dyn_func>(amx, params);
 	}
 
-	// native bool:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native bool:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_insert_arr, 4)
 	{
 		return value_at<2, 3, 4>::iter_insert<dyn_func_arr>(amx, params);
+	}
+
+	// native bool:iter_insert_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_insert_arr_2d, 5)
+	{
+		return value_at<2, 3, 4, 5>::iter_insert<dyn_func_arr>(amx, params);
+	}
+
+	// native bool:iter_insert_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(iter_insert_arr_3d, 6)
+	{
+		return value_at<2, 3, 4, 5, 6>::iter_insert<dyn_func_arr>(amx, params);
 	}
 
 	// native bool:iter_insert_str(IterTag:iter, const value[]);
@@ -1176,13 +1200,13 @@ namespace Natives
 		return value_at<>::iter_get_key<dyn_func_var>(amx, params);
 	}
 
-	// native bool:iter_get_key_safe(IterTag:iter, &AnyTag:value, offset=0, tag_id=tagof(value));
+	// native bool:iter_get_key_safe(IterTag:iter, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_get_key_safe, 4)
 	{
 		return value_at<2, 3, 4>::iter_get_key<dyn_func>(amx, params);
 	}
 
-	// native iter_get_key_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	// native iter_get_key_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_get_key_arr_safe, 4)
 	{
 		return value_at<2, 3, 4>::iter_get_key<dyn_func_arr>(amx, params);
@@ -1218,13 +1242,13 @@ namespace Natives
 		return value_at<2, 3>::iter_get_key<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:iter_get_key_md_safe(IterTag:iter, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), tag_id=tagof(value));
+	// native bool:iter_get_key_md_safe(IterTag:iter, const offsets[], &AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_get_key_md_safe, 5)
 	{
 		return value_at<3, 2, 4, 5>::iter_get_key<dyn_func>(amx, params);
 	}
 
-	// native iter_get_key_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), tag_id=tagof(value));
+	// native iter_get_key_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_get_key_md_arr_safe, 6)
 	{
 		return value_at<3, 2, 4, 5, 6>::iter_get_key<dyn_func_arr>(amx, params);
@@ -1349,6 +1373,8 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(iter_set),
 	AMX_DECLARE_NATIVE(iter_set_arr),
+	AMX_DECLARE_NATIVE(iter_set_arr_2d),
+	AMX_DECLARE_NATIVE(iter_set_arr_3d),
 	AMX_DECLARE_NATIVE(iter_set_str),
 	AMX_DECLARE_NATIVE(iter_set_var),
 
@@ -1368,6 +1394,8 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(iter_insert),
 	AMX_DECLARE_NATIVE(iter_insert_arr),
+	AMX_DECLARE_NATIVE(iter_insert_arr_2d),
+	AMX_DECLARE_NATIVE(iter_insert_arr_3d),
 	AMX_DECLARE_NATIVE(iter_insert_str),
 	AMX_DECLARE_NATIVE(iter_insert_var),
 
