@@ -23,7 +23,11 @@ public:
 	static cell AMX_NATIVE_CALL handle_alias(AMX *amx, cell *params)
 	{
 		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(!handle_pool.get_by_id(params[1], handle) && handle != nullptr) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(handle == nullptr)
+		{
+			return handle_pool.get_id(handle_pool.emplace(Factory(amx, params[Indices]...), true));
+		}
 		return handle_pool.get_id(handle_pool.emplace(*handle, Factory(amx, params[Indices]...), true));
 	}
 
@@ -145,7 +149,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_tagof, 1)
 	{
 		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(!handle_pool.get_by_id(params[1], handle) && handle != nullptr) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(handle == nullptr)
+		{
+			return 0x80000000;
+		}
 		return handle->get().get_tag(amx);
 	}
 
@@ -153,7 +161,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_sizeof, 1)
 	{
 		handle_t *handle;
-		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(!handle_pool.get_by_id(params[1], handle) && handle != nullptr) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(handle == nullptr)
+		{
+			return 0;
+		}
 		return handle->get().get_size();
 	}
 
@@ -170,6 +182,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_alive, 1)
 	{
 		handle_t *handle;
+		if(params[1] == 0) return true;
 		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		return handle->alive();
 	}
@@ -178,6 +191,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_weak, 1)
 	{
 		handle_t *handle;
+		if(params[1] == 0) return false;
 		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		return handle->is_weak();
 	}
@@ -186,10 +200,16 @@ namespace Natives
 	AMX_DEFINE_NATIVE(handle_eq, 2)
 	{
 		handle_t *handle1;
-		if(!handle_pool.get_by_id(params[1], handle1)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		if(!handle_pool.get_by_id(params[1], handle1) && handle1 != nullptr) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
 		handle_t *handle2;
-		if(!handle_pool.get_by_id(params[2], handle2)) amx_LogicError(errors::pointer_invalid, "handle", params[2]);
-		return *handle1 == *handle2;
+		if(!handle_pool.get_by_id(params[2], handle2) && handle2 != nullptr) amx_LogicError(errors::pointer_invalid, "handle", params[2]);
+		if(handle1 != nullptr && handle2 != nullptr)
+		{
+			return *handle1 == *handle2;
+		}else{
+			handle_t empty;
+			return (handle1 != nullptr ? *handle1 : empty) == (handle2 != nullptr ? *handle2 : empty);
+		}
 	}
 }
 

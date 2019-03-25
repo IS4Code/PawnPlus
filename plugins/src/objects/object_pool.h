@@ -443,6 +443,7 @@ public:
 			obj = *ptr;
 			return true;
 		}
+		obj = reinterpret_cast<ObjType*>(id);
 		return false;
 	}
 

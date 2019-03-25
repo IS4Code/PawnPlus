@@ -125,7 +125,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(str_clone, 1)
 	{
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str == nullptr)
+		{
+			return strings::pool.get_id(strings::pool.add());
+		}
 		return strings::pool.get_id(strings::pool.emplace(*str));
 	}
 
@@ -530,7 +534,10 @@ namespace Natives
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		str->clear();
+		if(str != nullptr)
+		{
+			str->clear();
+		}
 		return params[1];
 	}
 
@@ -539,8 +546,11 @@ namespace Natives
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "size");
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		str->resize(static_cast<size_t>(params[2]), optparam(3, 0));
+		if(!strings::pool.get_by_id(params[1], str) && (params[2] != 0 || str != nullptr)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str != nullptr)
+		{
+			str->resize(static_cast<size_t>(params[2]), optparam(3, 0));
+		}
 		return params[1];
 	}
 
@@ -635,8 +645,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(str_set_to_lower, 1)
 	{
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		std::transform(str->begin(), str->end(), str->begin(), strings::to_lower);
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str != nullptr)
+		{
+			std::transform(str->begin(), str->end(), str->begin(), strings::to_lower);
+		}
 		return params[1];
 	}
 
@@ -644,8 +657,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(str_set_to_upper, 1)
 	{
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		std::transform(str->begin(), str->end(), str->begin(), strings::to_upper);
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str != nullptr)
+		{
+			std::transform(str->begin(), str->end(), str->begin(), strings::to_upper);
+		}
 		return params[1];
 	}
 
@@ -653,54 +669,85 @@ namespace Natives
 	AMX_DEFINE_NATIVE(str_match, 2)
 	{
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
 		cell *pattern;
 		amx_GetAddr(amx, params[2], &pattern);
-		return strings::regex_search(*str, pattern, optparam(3, 0));
+
+		cell options = optparam(3, 0);
+
+		if(str != nullptr)
+		{
+			return strings::regex_search(*str, pattern, options);
+		}else{
+			return strings::regex_search(cell_string(), pattern, options);
+		}
 	}
 
 	// native bool:str_match_s(ConstStringTag:str, ConstStringTag:pattern, regex_options:options=regex_default);
 	AMX_DEFINE_NATIVE(str_match_s, 2)
 	{
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
 		cell_string *pattern;
-		if(!strings::pool.get_by_id(params[2], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		return strings::regex_search(*str, *pattern, optparam(3, 0));
+		cell options = optparam(3, 0);
+
+		if(str != nullptr && pattern != nullptr)
+		{
+			return strings::regex_search(*str, *pattern, options);
+		}else{
+			cell_string blank;
+			return strings::regex_search(str != nullptr ? *str : blank, pattern != nullptr ? *pattern : blank, options);
+		}
 	}
 
 	// native List:str_extract(ConstStringTag:str, const pattern[], regex_options:options=regex_default);
 	AMX_DEFINE_NATIVE(str_extract, 2)
 	{
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
 		cell *pattern;
 		amx_GetAddr(amx, params[2], &pattern);
 
-		return strings::regex_extract(*str, pattern, optparam(3, 0));
+		cell options = optparam(3, 0);
+
+		if(str != nullptr)
+		{
+			return strings::regex_extract(*str, pattern, options);
+		}else{
+			return strings::regex_extract(cell_string(), pattern, options);
+		}
 	}
 
 	// native List:str_extract_s(ConstStringTag:str, ConstStringTag:pattern, regex_options:options=regex_default);
 	AMX_DEFINE_NATIVE(str_extract_s, 2)
 	{
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
 		cell_string *pattern;
-		if(!strings::pool.get_by_id(params[2], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+		
+		cell options = optparam(3, 0);
 
-		return strings::regex_extract(*str, *pattern, optparam(3, 0));
+		if(str != nullptr && pattern != nullptr)
+		{
+			return strings::regex_extract(*str, *pattern, options);
+		}else{
+			cell_string empty;
+			return strings::regex_extract(str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, options);
+		}
 	}
 
 	// native String:str_replace(ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
 	AMX_DEFINE_NATIVE(str_replace, 3)
 	{
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
 		cell *pattern;
 		amx_GetAddr(amx, params[2], &pattern);
@@ -708,8 +755,15 @@ namespace Natives
 		cell *replacement;
 		amx_GetAddr(amx, params[3], &replacement);
 
+		cell options = optparam(4, 0);
+
 		auto &target = strings::pool.add();
-		strings::regex_replace(*target, *str, pattern, replacement, optparam(4, 0));
+		if(str != nullptr)
+		{
+			strings::regex_replace(*target, *str, pattern, replacement, options);
+		}else{
+			strings::regex_replace(*target, cell_string(), pattern, replacement, options);
+		}
 		return strings::pool.get_id(target);
 	}
 
@@ -717,15 +771,23 @@ namespace Natives
 	AMX_DEFINE_NATIVE(str_replace_s, 3)
 	{
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
 		cell_string *pattern;
-		if(!strings::pool.get_by_id(params[2], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
 		cell_string *replacement;
-		if(!strings::pool.get_by_id(params[3], replacement)) amx_LogicError(errors::pointer_invalid, "string", params[3]);
+		if(!strings::pool.get_by_id(params[3], replacement) && replacement != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[3]);
+		
+		cell options = optparam(4, 0);
 
-		return strings::pool.get_id(strings::pool.add(strings::regex_replace(*str, *pattern, *replacement, optparam(4, 0))));
+		if(str != nullptr && pattern != nullptr && replacement != nullptr)
+		{
+			return strings::pool.get_id(strings::pool.add(strings::regex_replace(*str, *pattern, *replacement, options)));
+		}else{
+			cell_string empty;
+			return strings::pool.get_id(strings::pool.add(strings::regex_replace(str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, options)));
+		}
 	}
 
 	// native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
@@ -736,7 +798,7 @@ namespace Natives
 		target->clear();
 		
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[2], str)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
 		cell *pattern;
 		amx_GetAddr(amx, params[3], &pattern);
@@ -744,7 +806,14 @@ namespace Natives
 		cell *replacement;
 		amx_GetAddr(amx, params[4], &replacement);
 
-		strings::regex_replace(*target, *str, pattern, replacement, optparam(5, 0));
+		cell options = optparam(5, 0);
+
+		if(str != nullptr)
+		{
+			strings::regex_replace(*target, *str, pattern, replacement, options);
+		}else{
+			strings::regex_replace(*target, cell_string(), pattern, replacement, options);
+		}
 		return params[1];
 	}
 
@@ -756,15 +825,24 @@ namespace Natives
 		target->clear();
 
 		cell_string *str;
-		if(!strings::pool.get_by_id(params[2], str)) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
 		cell_string *pattern;
-		if(!strings::pool.get_by_id(params[3], pattern)) amx_LogicError(errors::pointer_invalid, "string", params[3]);
+		if(!strings::pool.get_by_id(params[3], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[3]);
 
 		cell_string *replacement;
-		if(!strings::pool.get_by_id(params[4], replacement)) amx_LogicError(errors::pointer_invalid, "string", params[4]);
+		if(!strings::pool.get_by_id(params[4], replacement) && replacement != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[4]);
+		
+		cell options = optparam(5, 0);
 
-		*target = strings::regex_replace(*str, *pattern, *replacement, optparam(5, 0));
+		if(str != nullptr && pattern != nullptr && replacement != nullptr)
+		{
+			*target = strings::regex_replace(*str, *pattern, *replacement, options);
+		}else{
+			cell_string empty;
+			*target = strings::regex_replace(str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, options);
+		}
+
 		return params[1];
 	}
 }

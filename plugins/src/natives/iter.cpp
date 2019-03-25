@@ -748,8 +748,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_linked, 1)
 	{
 		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-		
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(iter == nullptr)
+		{
+			return false;
+		}
 		return !iter->expired();
 	}
 
@@ -757,8 +760,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_inside, 1)
 	{
 		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(iter == nullptr)
+		{
+			return false;
+		}
 		return iter->valid();
 	}
 
@@ -766,8 +772,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_type, 1)
 	{
 		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(iter == nullptr)
+		{
+			return 0;
+		}
 		return reinterpret_cast<cell>(&typeid(*iter));
 	}
 
@@ -775,8 +784,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_type_str_s, 1)
 	{
 		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(iter == nullptr)
+		{
+			return strings::pool.get_id(strings::pool.add());
+		}
 		return strings::create(typeid(*iter).name());
 	}
 
@@ -806,9 +818,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_reset, 1)
 	{
 		dyn_iterator *iter;
-		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-
-		if(!iter->reset()) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(iter)
+		{
+			if(!iter->reset()) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
+		}
 		return params[1];
 	}
 
@@ -825,9 +839,16 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_eq, 2)
 	{
 		dyn_iterator *iter1;
-		if(!iter_pool.get_by_id(params[1], iter1)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(!iter_pool.get_by_id(params[1], iter1) && iter1 != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
 		dyn_iterator *iter2;
-		if(!iter_pool.get_by_id(params[2], iter2)) amx_LogicError(errors::pointer_invalid, "iterator", params[2]);
+		if(!iter_pool.get_by_id(params[2], iter2) && iter2 != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[2]);
+		if(iter1 == nullptr)
+		{
+			return iter2 == nullptr;
+		}else if(iter2 == nullptr)
+		{
+			return false;
+		}
 		return *iter1 == *iter2;
 	}
 

@@ -1035,6 +1035,8 @@ native Iter:linked_list_iter(LinkedList:linked_list, index=0);
 /*    Iterators    */
 /*                 */
 
+const Iter:ITER_NULL = Iter:0;
+
 native bool:iter_valid(IterTag:iter);
 native Iter:iter_acquire(IterTag:iter);
 native Iter:iter_release(IterTag:iter);
