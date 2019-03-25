@@ -760,26 +760,46 @@ static const char *get_error(std::regex_constants::error_type code)
 
 static std::unordered_map<std::pair<cell_string, cell>, std::basic_regex<cell, regex_traits>> regex_cache;
 
-static const std::basic_regex<cell, regex_traits> &get_cached(const cell *pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
-{
-	options &= 255;
-	return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(pattern, options), std::forward_as_tuple(pattern, syntax_options)).first->second;
-}
-
 static const std::basic_regex<cell, regex_traits> &get_cached(const cell_string &pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
 {
 	options &= 255;
 	return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(pattern, options), std::forward_as_tuple(pattern, syntax_options)).first->second;
 }
 
+template <class Iter>
+static const std::basic_regex<cell, regex_traits> &get_cached(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
+{
+	if(pattern != nullptr)
+	{
+		return get_cached(*pattern, options, syntax_options);
+	}
+	options &= 255;
+	return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(cell_string(pattern_begin, pattern_end), options), std::forward_as_tuple(pattern_begin, pattern_end, syntax_options)).first->second;
+}
+
+template <class Iter>
+struct regex_search_base
+{
+	bool operator()(Iter pattern_begin, Iter pattern_end, const cell_string &str, const cell_string *pattern, cell options) const
+	{
+		std::regex_constants::syntax_option_type syntax_options;
+		std::regex_constants::match_flag_type match_options;
+		regex_options(options, syntax_options, match_options);
+
+		if(options & cache_flag)
+		{
+			return std::regex_search(str, get_cached(pattern_begin, pattern_end, pattern, options, syntax_options), match_options);
+		}else{
+			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+			return std::regex_search(str, regex, match_options);
+		}
+	}
+};
+
 bool strings::regex_search(const cell_string &str, const cell *pattern, cell options)
 {
-	std::regex_constants::syntax_option_type syntax_options;
-	std::regex_constants::match_flag_type match_options;
-	regex_options(options, syntax_options, match_options);
-		
 	try{
-		return std::regex_search(str, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), match_options);
+		return select_iterator<regex_search_base>(pattern, str, nullptr, options);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -789,12 +809,8 @@ bool strings::regex_search(const cell_string &str, const cell *pattern, cell opt
 
 bool strings::regex_search(const cell_string &str, const cell_string &pattern, cell options)
 {
-	std::regex_constants::syntax_option_type syntax_options;
-	std::regex_constants::match_flag_type match_options;
-	regex_options(options, syntax_options, match_options);
-
 	try{
-		return std::regex_search(str, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), match_options);
+		return regex_search_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), str, &pattern, options);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -802,25 +818,43 @@ bool strings::regex_search(const cell_string &str, const cell_string &pattern, c
 	}
 }
 
+template <class Iter>
+struct regex_extract_base
+{
+	cell operator()(Iter pattern_begin, Iter pattern_end, const cell_string &str, const cell_string *pattern, cell options) const
+	{
+		std::regex_constants::syntax_option_type syntax_options;
+		std::regex_constants::match_flag_type match_options;
+		regex_options(options, syntax_options, match_options);
+
+		std::match_results<cell_string::const_iterator> match;
+		if(options & cache_flag)
+		{
+			if(!std::regex_search(str, match, get_cached(pattern_begin, pattern_end, pattern, options, syntax_options), match_options))
+			{
+				return 0;
+			}
+		}else{
+			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+			if(!std::regex_search(str, match, regex, match_options))
+			{
+				return 0;
+			}
+		}
+		tag_ptr chartag = tags::find_tag(tags::tag_char);
+		auto list = list_pool.add();
+		for(auto &group : match)
+		{
+			list->push_back(dyn_object(&*group.first, group.length(), chartag));
+		}
+		return list_pool.get_id(list);
+	}
+};
+
 cell strings::regex_extract(const cell_string &str, const cell *pattern, cell options)
 {
-	std::regex_constants::syntax_option_type syntax_options;
-	std::regex_constants::match_flag_type match_options;
-	regex_options(options, syntax_options, match_options);
-
 	try{
-		std::match_results<cell_string::const_iterator> match;
-		if(std::regex_search(str, match, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), match_options))
-		{
-			tag_ptr chartag = tags::find_tag(tags::tag_char);
-			auto list = list_pool.add();
-			for(auto &group : match)
-			{
-				list->push_back(dyn_object(&*group.first, group.length(), chartag));
-			}
-			return list_pool.get_id(list);
-		}
-		return 0;
+		return select_iterator<regex_extract_base>(pattern, str, nullptr, options);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -830,52 +864,57 @@ cell strings::regex_extract(const cell_string &str, const cell *pattern, cell op
 
 cell strings::regex_extract(const cell_string &str, const cell_string &pattern, cell options)
 {
-	std::regex_constants::syntax_option_type syntax_options;
-	std::regex_constants::match_flag_type match_options;
-	regex_options(options, syntax_options, match_options);
-		
 	try{
-		std::match_results<cell_string::const_iterator> match;
-		if(std::regex_search(str, match, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), match_options))
-		{
-			tag_ptr chartag = tags::find_tag(tags::tag_char);
-			auto list = list_pool.add();
-			for(auto &group : match)
-			{
-				list->push_back(dyn_object(&*group.first, group.length(), chartag));
-			}
-			return list_pool.get_id(list);
-		}
-		return 0;
+		return regex_extract_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), str, &pattern, options);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 		return 0;
 	}
 }
+
+template <class PatternIter>
+struct regex_replace_base
+{
+	template <class ReplacementIter>
+	struct inner
+	{
+		void operator()(ReplacementIter replacement_begin, ReplacementIter replacement_end, PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, cell options) const
+		{
+			std::regex_constants::syntax_option_type syntax_options;
+			std::regex_constants::match_flag_type match_options;
+			regex_options(options, syntax_options, match_options);
+
+			if(options & cache_flag)
+			{
+				std::regex_replace(std::back_inserter(target), str.cbegin(), str.cend(), get_cached(pattern_begin, pattern_end, pattern, options, syntax_options), cell_string(replacement_begin, replacement_end), match_options);
+			}else{
+				std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+				std::regex_replace(std::back_inserter(target), str.cbegin(), str.cend(), regex, cell_string(replacement_begin, replacement_end), match_options);
+			}
+		}
+	};
+
+	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell *replacement, cell options) const
+	{
+		select_iterator<inner>(replacement, pattern_begin, pattern_end, target, str, nullptr, options);
+	}
+};
 
 void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const cell *replacement, cell options)
 {
-	std::regex_constants::syntax_option_type syntax_options;
-	std::regex_constants::match_flag_type match_options;
-	regex_options(options, syntax_options, match_options);
-
 	try{
-		std::regex_replace(std::back_inserter(target), str.cbegin(), str.cend(), options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), {replacement}, match_options);
+		select_iterator<regex_replace_base>(pattern, target, str, replacement, options);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 	}
 }
 
-cell_string strings::regex_replace(const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell options)
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell options)
 {
-	std::regex_constants::syntax_option_type syntax_options;
-	std::regex_constants::match_flag_type match_options;
-	regex_options(options, syntax_options, match_options);
-
 	try{
-		return std::regex_replace(str, options & cache_flag ? get_cached(pattern, options, syntax_options) : std::basic_regex<cell, regex_traits>(pattern, syntax_options), replacement, match_options);
+		regex_replace_base<cell_string::const_iterator>::inner<cell_string::const_iterator>()(replacement.begin(), replacement.end(), pattern.begin(), pattern.end(), target, str, &pattern, options);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));

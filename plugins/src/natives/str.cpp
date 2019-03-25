@@ -177,7 +177,7 @@ namespace Natives
 	template <class Iter>
 	struct str_split_base
 	{
-		cell operator()(Iter delims_begin, Iter delims_end, AMX *amx, cell_string *str)
+		cell operator()(Iter delims_begin, Iter delims_end, AMX *amx, cell_string *str) const
 		{
 			auto list = list_pool.add();
 
@@ -246,7 +246,7 @@ namespace Natives
 	template <class Iter>
 	struct str_join_base
 	{
-		cell operator()(Iter delim_begin, Iter delim_end, AMX *amx, list_t *list)
+		cell operator()(Iter delim_begin, Iter delim_end, AMX *amx, list_t *list) const
 		{
 			auto &str = strings::pool.add();
 			bool first = true;
@@ -785,13 +785,15 @@ namespace Natives
 		
 		cell options = optparam(4, 0);
 
+		auto &target = strings::pool.add();
 		if(str != nullptr && pattern != nullptr && replacement != nullptr)
 		{
-			return strings::pool.get_id(strings::pool.add(strings::regex_replace(*str, *pattern, *replacement, options)));
+			strings::regex_replace(*target, *str, *pattern, *replacement, options);
 		}else{
 			cell_string empty;
-			return strings::pool.get_id(strings::pool.add(strings::regex_replace(str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, options)));
+			strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, options);
 		}
+		return strings::pool.get_id(target);
 	}
 
 	// native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
@@ -841,10 +843,10 @@ namespace Natives
 
 		if(str != nullptr && pattern != nullptr && replacement != nullptr)
 		{
-			*target = strings::regex_replace(*str, *pattern, *replacement, options);
+			strings::regex_replace(*target, *str, *pattern, *replacement, options);
 		}else{
 			cell_string empty;
-			*target = strings::regex_replace(str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, options);
+			strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, options);
 		}
 
 		return params[1];

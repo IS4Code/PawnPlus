@@ -166,7 +166,7 @@ namespace strings
 	cell regex_extract(const cell_string &str, const cell *pattern, cell options);
 	cell regex_extract(const cell_string &str, const cell_string &pattern, cell options);
 	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const cell *replacement, cell options);
-	cell_string regex_replace(const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell options);
+	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell options);
 }
 
 namespace std
