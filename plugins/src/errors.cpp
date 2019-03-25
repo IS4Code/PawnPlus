@@ -7,11 +7,11 @@ namespace errors
 	error cannot_acquire = "%s reference cannot be acquired (null or invalid)";
 	error cannot_release = "%s reference cannot be released (null, invalid, or local)";
 	error operation_not_supported = "this operation is not supported for the current state of the %s instance";
-	error out_of_range = "%s is out of range";
+	error out_of_range = "argument '%s' is out of range";
 	error key_not_present = "the key is not present in the map";
 	error func_not_found = "%s function '%s' was not found";
 	error var_not_found = "%s variable '%s' was not found";
-	error arg_empty = "argument is empty";
+	error arg_empty = "argument '%s' is empty";
 	error inner_error = "%s function '%s' has raised an AMX error %d: %s";
 	error no_debug_error = "debug info is not available";
 	error unhandled_exception = "unhandled C++ exception: %s";

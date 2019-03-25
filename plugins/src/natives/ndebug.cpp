@@ -373,6 +373,11 @@ namespace Natives
 
 		const char *name;
 		amx_StrParam(amx, params[1], name);
+
+		if(name == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "name");
+		}
 		
 		ucell cip = optparam(2, std::numeric_limits<cell>::min());
 		if(cip == std::numeric_limits<cell>::min())

@@ -75,7 +75,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 
 	if(fname == nullptr)
 	{
-		amx_FormalError(errors::arg_empty);
+		amx_FormalError(errors::arg_empty, "function");
 	}
 	if(format == nullptr) format = "";
 	int numargs = std::strlen(format);
@@ -293,8 +293,13 @@ namespace Natives
 	// native bool:pawn_native_exists(const function[]);
 	AMX_DEFINE_NATIVE(pawn_native_exists, 1)
 	{
-		char *name;
+		const char *name;
 		amx_StrParam(amx, params[1], name);
+
+		if(name == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "function");
+		}
 
 		return name && amx::find_native(amx, name);
 	}
@@ -304,6 +309,12 @@ namespace Natives
 	{
 		char *name;
 		amx_StrParam(amx, params[1], name);
+
+		if(name == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "function");
+		}
+
 		int index;
 		return name && amx_FindNative(amx, name, &index) == AMX_ERR_NONE;
 	}
@@ -313,6 +324,12 @@ namespace Natives
 	{
 		char *name;
 		amx_StrParam(amx, params[1], name);
+
+		if(name == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "function");
+		}
+
 		int index;
 		return name && amx_FindPublic(amx, name, &index) == AMX_ERR_NONE;
 	}
@@ -355,9 +372,13 @@ namespace Natives
 		const char *format;
 		amx_OptStrParam(amx, 4, format, "");
 
-		if(callback == nullptr || fname == nullptr)
+		if(callback == nullptr)
 		{
-			amx_FormalError(errors::arg_empty);
+			amx_FormalError(errors::arg_empty, "callback");
+		}
+		if(fname == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "function");
 		}
 
 		cell ret = events::register_callback(callback, flags, amx, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
@@ -385,9 +406,13 @@ namespace Natives
 		const char *format;
 		amx_OptStrParam(amx, 4, format, "");
 
-		if(native == nullptr || fname == nullptr)
+		if(native == nullptr)
 		{
-			amx_FormalError(errors::arg_empty);
+			amx_FormalError(errors::arg_empty, "function");
+		}
+		if(fname == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "handler");
 		}
 
 		cell ret = amxhook::register_hook(amx, native, native_format, fname, format, params + 5, (params[0] / static_cast<int>(sizeof(cell))) - 4);
@@ -411,9 +436,13 @@ namespace Natives
 		char *format;
 		amx_OptStrParam(amx, 5, format, "");
 
-		if(native == nullptr || fname == nullptr)
+		if(native == nullptr)
 		{
-			amx_FormalError(errors::arg_empty);
+			amx_FormalError(errors::arg_empty, "function");
+		}
+		if(fname == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "handler");
 		}
 
 		cell ret = amxhook::register_filter(amx, output, native, native_format, fname, format, params + 6, (params[0] / static_cast<int>(sizeof(cell))) - 5);

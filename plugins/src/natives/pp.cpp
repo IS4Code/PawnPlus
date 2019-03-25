@@ -226,7 +226,12 @@ namespace Natives
 	{
 		const char *message;
 		amx_StrParam(amx, params[1], message);
-		throw errors::native_error(std::string(message), optparam(2, 2));
+		if(message != nullptr)
+		{
+			throw errors::native_error(std::string(message), optparam(2, 2));
+		}else{
+			throw errors::native_error(std::string(), optparam(2, 2));
+		}
 	}
 
 	template <class Func>

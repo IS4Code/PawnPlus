@@ -526,6 +526,11 @@ namespace Natives
 		char *fname;
 		amx_StrParam(amx, params[2], fname);
 
+		if(fname == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "handler");
+		}
+
 		const char *format;
 		amx_OptStrParam(amx, 3, format, "");
 
@@ -594,6 +599,11 @@ namespace Natives
 		
 		char *fname;
 		amx_StrParam(amx, params[3], fname);
+
+		if(fname == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "handler");
+		}
 
 		const char *format;
 		amx_OptStrParam(amx, 4, format, "");

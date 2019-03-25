@@ -126,7 +126,7 @@ namespace Natives
 
 		if(name == nullptr)
 		{
-			amx_FormalError(errors::arg_empty);
+			amx_FormalError(errors::arg_empty, "name");
 		}
 
 		cell amx_addr;
