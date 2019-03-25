@@ -127,13 +127,27 @@ cell strings::create(const cell *addr, size_t length, bool packed, bool truncate
 	}
 }
 
+cell_string strings::convert(const cell *str)
+{
+	int len;
+	amx_StrLen(str, &len);
+	if(static_cast<ucell>(*str) <= UNPACKEDMAX)
+	{
+		return cell_string(str, str + len);
+	}else{
+		const_char_iterator it(str);
+		return cell_string(it, it + len);
+	}
+}
+
+
 cell_string strings::convert(const std::string &str)
 {
 	size_t len = str.size();
 	cell_string cstr(len, '\0');
 	for(size_t i = 0; i < len; i++)
 	{
-		cstr[i] = static_cast<cell>(str[i]);
+		cstr[i] = static_cast<unsigned char>(str[i]);
 	}
 	return cstr;
 }

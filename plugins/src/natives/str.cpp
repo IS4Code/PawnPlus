@@ -174,46 +174,50 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
 
-	static cell AMX_NATIVE_CALL str_split_base(AMX *amx, cell_string *str, const cell_string &delims)
+	template <class Iter>
+	struct str_split_base
 	{
-		auto list = list_pool.add();
-
-		cell_string::size_type last_pos = 0;
-		while(last_pos != cell_string::npos)
+		cell operator()(Iter delims_begin, Iter delims_end, AMX *amx, cell_string *str)
 		{
-			auto it = std::find_first_of(str->begin() + last_pos, str->end(), delims.begin(), delims.end());
+			auto list = list_pool.add();
 
-			size_t pos;
-			if(it == str->end())
+			cell_string::size_type last_pos = 0;
+			while(last_pos != cell_string::npos)
 			{
-				pos = cell_string::npos;
-			}else{
-				pos = std::distance(str->begin(), it);
+				auto it = std::find_first_of(str->begin() + last_pos, str->end(), delims_begin, delims_end);
+
+				size_t pos;
+				if(it == str->end())
+				{
+					pos = cell_string::npos;
+				}else{
+					pos = std::distance(str->begin(), it);
+				}
+
+				auto sub = &(*str)[last_pos];
+				cell_string::size_type size;
+				if(pos != cell_string::npos)
+				{
+					size = pos - last_pos;
+				}else{
+					size = str->size() - last_pos;
+				}
+				cell old = sub[size];
+				sub[size] = 0;
+				list->push_back(dyn_object(sub, size + 1, tags::find_tag(tags::tag_char)));
+				sub[size] = old;
+
+				if(pos != cell_string::npos)
+				{
+					last_pos = pos + 1;
+				}else{
+					last_pos = cell_string::npos;
+				}
 			}
 
-			auto sub = &(*str)[last_pos];
-			cell_string::size_type size;
-			if(pos != cell_string::npos)
-			{
-				size = pos - last_pos;
-			}else{
-				size = str->size() - last_pos;
-			}
-			cell old = sub[size];
-			sub[size] = 0;
-			list->push_back(dyn_object(sub, size + 1, tags::find_tag(tags::tag_char)));
-			sub[size] = old;
-
-			if(pos != cell_string::npos)
-			{
-				last_pos = pos + 1;
-			}else{
-				last_pos = cell_string::npos;
-			}
+			return list_pool.get_id(list);
 		}
-
-		return list_pool.get_id(list);
-	}
+	};
 
 	// native List:str_split(StringTag:str, const delims[]);
 	AMX_DEFINE_NATIVE(str_split, 2)
@@ -224,10 +228,9 @@ namespace Natives
 		{
 			return list_pool.get_id(list_pool.add());
 		}
-		cell *addr;
-		amx_GetAddr(amx, params[2], &addr);
-		cell_string delims(addr);
-		return str_split_base(amx, str, delims);
+		cell *delims;
+		amx_GetAddr(amx, params[2], &delims);
+		return strings::select_iterator<str_split_base>(delims, amx, str);
 	}
 
 	// native List:str_split_s(StringTag:str, StringTag:delims);
@@ -237,45 +240,39 @@ namespace Natives
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 		cell_string *delims;
 		if(!strings::pool.get_by_id(params[2], delims) && delims != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
-		if(str == nullptr)
-		{
-			return list_pool.get_id(list_pool.add());
-		}
-		if(delims == nullptr)
-		{
-			return str_split_base(amx, str, cell_string());
-		}else{
-			return str_split_base(amx, str, *delims);
-		}
+		return strings::select_iterator<str_split_base>(delims, amx, str);
 	}
 
-	static cell AMX_NATIVE_CALL str_join_base(AMX *amx, list_t *list, const cell_string &delim)
+	template <class Iter>
+	struct str_join_base
 	{
-		auto &str = strings::pool.add();
-		bool first = true;
-		for(auto &obj : *list)
+		cell operator()(Iter delim_begin, Iter delim_end, AMX *amx, list_t *list)
 		{
-			if(first)
+			auto &str = strings::pool.add();
+			bool first = true;
+			for(auto &obj : *list)
 			{
-				first = false;
-			} else {
-				str->append(delim);
+				if(first)
+				{
+					first = false;
+				}else{
+					str->append(delim_begin, delim_end);
+				}
+				str->append(obj.to_string());
 			}
-			str->append(obj.to_string());
-		}
 
-		return strings::pool.get_id(str);
-	}
+			return strings::pool.get_id(str);
+		}
+	};
 
 	// native String:str_join(List:list, const delim[]);
 	AMX_DEFINE_NATIVE(str_join, 2)
 	{
 		list_t *list;
 		if(!list_pool.get_by_id(params[1], list)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
-		cell *addr;
-		amx_GetAddr(amx, params[2], &addr);
-		cell_string delim(addr);
-		return str_join_base(amx, list, delim);
+		cell *delim;
+		amx_GetAddr(amx, params[2], &delim);
+		return strings::select_iterator<str_join_base>(delim, amx, list);
 	}
 
 	// native String:str_join_s(List:list, StringTag:delim);
@@ -285,12 +282,7 @@ namespace Natives
 		if(!list_pool.get_by_id(params[1], list)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
 		cell_string *delim;
 		if(!strings::pool.get_by_id(params[1], delim) && delim != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
-		if(delim == nullptr)
-		{
-			return str_join_base(amx, list, cell_string());
-		}else{
-			return str_join_base(amx, list, *delim);
-		}
+		return strings::select_iterator<str_join_base>(delim, amx, list);
 	}
 
 	// native str_len(StringTag:str);
@@ -559,11 +551,17 @@ namespace Natives
 	{
 		cell *format;
 		amx_GetAddr(amx, params[1], &format);
-		int flen;
-		amx_StrLen(format, &flen);
 
 		auto &str = strings::pool.add();
-		strings::format(amx, *str, format, flen, params[0] / sizeof(cell) - 1, params + 2);
+		if(static_cast<ucell>(*format) <= UNPACKEDMAX)
+		{
+			int flen;
+			amx_StrLen(format, &flen);
+			strings::format(amx, *str, format, flen, params[0] / sizeof(cell) - 1, params + 2);
+		}else{
+			cell_string strformat(strings::convert(format));
+			strings::format(amx, *str, &strformat[0], strformat.size(), params[0] / sizeof(cell) - 1, params + 2);
+		}
 		return strings::pool.get_id(str);
 	}
 
@@ -589,11 +587,17 @@ namespace Natives
 
 		cell *format;
 		amx_GetAddr(amx, params[2], &format);
-		int flen;
-		amx_StrLen(format, &flen);
 
+		if(static_cast<ucell>(*format) <= UNPACKEDMAX)
+		{
+			int flen;
+			amx_StrLen(format, &flen);
 
-		strings::format(amx, *str, format, flen, params[0] / sizeof(cell) - 2, params + 3);
+			strings::format(amx, *str, format, flen, params[0] / sizeof(cell) - 2, params + 3);
+		}else{
+			cell_string strformat(strings::convert(format));
+			strings::format(amx, *str, &strformat[0], strformat.size(), params[0] / sizeof(cell) - 2, params + 3);
+		}
 		return params[1];
 	}
 
