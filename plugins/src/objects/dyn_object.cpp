@@ -16,6 +16,10 @@ bool memequal(void const* ptr1, void const* ptr2, size_t size)
 
 dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : rank(1), tag(tags::find_tag(amx, tag_id))
 {
+	if(size < 0)
+	{
+		amx_LogicError(errors::out_of_range, "size");
+	}
 	if(arr != nullptr)
 	{
 		array_data = new cell[size + 1];
@@ -62,6 +66,14 @@ void find_array_end(AMX *amx, const cell *&ptr)
 
 dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id) : rank(2), tag(tags::find_tag(amx, tag_id))
 {
+	if(size < 0)
+	{
+		amx_LogicError(errors::out_of_range, "size");
+	}
+	if(size2 < 0)
+	{
+		amx_LogicError(errors::out_of_range, "size2");
+	}
 	if(arr != nullptr)
 	{
 		const cell *last = arr;
@@ -97,6 +109,18 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell ta
 
 dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id) : rank(3), tag(tags::find_tag(amx, tag_id))
 {
+	if(size < 0)
+	{
+		amx_LogicError(errors::out_of_range, "size");
+	}
+	if(size2 < 0)
+	{
+		amx_LogicError(errors::out_of_range, "size2");
+	}
+	if(size3 < 0)
+	{
+		amx_LogicError(errors::out_of_range, "size3");
+	}
 	if(arr != nullptr)
 	{
 		const cell *last = arr;

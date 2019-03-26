@@ -118,7 +118,7 @@ public:
 
 	bool empty() const
 	{
-		return is_array() ? array_data == nullptr : false;
+		return is_array() ? array_data == nullptr || *array_data <= 1 : false;
 	}
 
 	bool is_array() const
