@@ -15,6 +15,9 @@ extern void *pAMXFunctions;
 
 extern int ExecLevel;
 
+template <int Index>
+class amx_hook;
+
 template <class FType>
 class amx_hook_func;
 
@@ -26,66 +29,55 @@ public:
 
 	typedef Ret AMXAPI handler_ftype(Args...);
 
-	template <subhook_t &Hook, hook_ftype *Handler>
+	template <int Index, hook_ftype *Handler>
 	static Ret AMXAPI handler(Args... args)
 	{
-		return Handler(reinterpret_cast<Ret(*)(Args...)>(subhook_get_trampoline(Hook)), args...);
+		return Handler(reinterpret_cast<Ret(*)(Args...)>(subhook_get_trampoline(amx_hook<Index>::hook())), args...);
 	}
 };
 
 template <int Index>
-class amx_hook;
-
-template <int Index>
-class amx_hook_var
-{
-	friend class amx_hook<Index>;
-
-	//GCC causes issues when this member is inside amx_hook
-	static subhook_t hook;
-};
-
-template <int Index>
-subhook_t amx_hook_var<Index>::hook;
-
-template <int Index>
 class amx_hook
 {
-	typedef amx_hook_var<Index> var;
-
 public:
+	static subhook_t &hook()
+	{
+		static subhook_t val;
+		return val;
+	}
+
 	template <class FType, typename amx_hook_func<FType>::hook_ftype *Func>
 	struct ctl
 	{
 		static void load()
 		{
-			typename amx_hook_func<FType>::handler_ftype *hookfn = &amx_hook_func<FType>::template handler<var::hook, Func>;
+			typename amx_hook_func<FType>::handler_ftype *hookfn = &amx_hook_func<FType>::template handler<Index, Func>;
 
-			var::hook = subhook_new(reinterpret_cast<void*>(((FType*)pAMXFunctions)[Index]), reinterpret_cast<void*>(hookfn), {});
-			subhook_install(var::hook);
+			hook() = subhook_new(reinterpret_cast<void*>(((FType*)pAMXFunctions)[Index]), reinterpret_cast<void*>(hookfn), {});
+			subhook_install(hook());
 		}
 
 		static void unload()
 		{
-			subhook_remove(var::hook);
-			subhook_free(var::hook);
+			subhook_remove(hook());
+			subhook_free(hook());
 		}
 
 		static void install()
 		{
-			subhook_install(var::hook);
+			subhook_install(hook());
 		}
 
 		static void uninstall()
 		{
-			subhook_remove(var::hook);
+			subhook_remove(hook());
 		}
 
 		static FType orig()
 		{
-			if(subhook_is_installed(var::hook))
+			if(subhook_is_installed(hook()))
 			{
-				return reinterpret_cast<FType>(subhook_get_trampoline(var::hook));
+				return reinterpret_cast<FType>(subhook_get_trampoline(hook()));
 			}else{
 				return ((FType*)pAMXFunctions)[Index];
 			}
