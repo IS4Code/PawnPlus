@@ -19,9 +19,6 @@
 
 using namespace strings;
 
-typedef void(*logprintf_t)(char* format, ...);
-extern logprintf_t logprintf;
-
 object_pool<cell_string> strings::pool;
 
 cell strings::null_value1[1] = {0};

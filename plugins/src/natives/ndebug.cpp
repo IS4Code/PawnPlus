@@ -51,7 +51,7 @@ cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG *&dbg, AMX_DBG_
 {
 	dbg = get_debug(amx);
 
-	if(index < 0 || index > dbg->hdr->symbols)
+	if(index < 0 || index >= dbg->hdr->symbols)
 	{
 		amx_LogicError(errors::out_of_range, "symbol");
 		return 0;
@@ -516,7 +516,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -531,7 +531,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -546,7 +546,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -582,7 +582,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -617,7 +617,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -634,7 +634,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -649,7 +649,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -664,7 +664,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -691,7 +691,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -712,7 +712,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -736,7 +736,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -757,7 +757,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -850,7 +850,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -897,7 +897,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
@@ -951,7 +951,7 @@ namespace Natives
 		auto dbg = get_debug(amx);
 
 		cell index = params[1];
-		if(index < 0 || index > dbg->hdr->symbols)
+		if(index < 0 || index >= dbg->hdr->symbols)
 		{
 			amx_LogicError(errors::out_of_range, "symbol");
 			return 0;
