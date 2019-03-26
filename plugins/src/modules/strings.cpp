@@ -157,22 +157,6 @@ cell strings::create(const std::string &str)
 	return pool.get_id(pool.emplace(convert(str)));
 }
 
-void add_query(strings::cell_string &buf, const cell *str, int len)
-{
-	const cell *start = str;
-	while(len--)
-	{
-		if(*str == '\'')
-		{
-			buf.append(start, str - start + 1);
-			buf.append(1, '\'');
-			start = str + 1;
-		}
-		str++;
-	}
-	buf.append(start, str - start);
-}
-
 namespace aux
 {
 	void push_args(std::ostream &ostream)
@@ -196,147 +180,484 @@ namespace aux
 		return ostream.str();
 	}
 
-	template <class NumType>
-	NumType parse_num(const cell *str, size_t &pos)
+	template <class NumType, class Iter>
+	NumType parse_num(Iter &begin, Iter end)
 	{
-		bool neg = str[pos] == '-';
-		if(neg) pos++;
+		bool neg;
+		if(std::numeric_limits<NumType>::is_signed)
+		{
+			neg = *begin == '-';
+			if(neg) ++begin;
+		}else{
+			neg = false;
+		}
 		NumType val = 0;
 		cell c;
-		while(std::isdigit(c = str[pos++]))
+		while(std::isdigit(c = *begin))
 		{
 			val = (val * 10) + (c - '0');
+			++begin;
 		}
 		return neg ? -val : val;
 	}
 }
 
-void add_format(strings::cell_string &buf, const cell *begin, const cell *end, cell *arg)
+template <class Iter>
+struct format_base
 {
-	ptrdiff_t flen = end - begin;
-	switch(*end)
+	template <class QueryIter>
+	struct add_query_base
 	{
-		case 's':
+		bool operator()(QueryIter begin, QueryIter end, Iter escape_begin, Iter escape_end, cell_string &buf) const
 		{
-			int len;
-			amx_StrLen(arg, &len);
-			buf.append(arg, len);
-		}
-		break;
-		case 'S':
-		{
-			cell_string *str;
-			if(pool.get_by_id(*arg, str))
+			bool custom = escape_begin != escape_end;
+			cell escape_char;
+			if(custom)
 			{
-				buf.append(&(*str)[0], str->size());
-			}
-		}
-		break;
-		case 'q':
-		{
-			int len;
-			amx_StrLen(arg, &len);
-			add_query(buf, arg, len);
-		}
-		break;
-		case 'Q':
-		{
-			cell_string *str;
-			if(pool.get_by_id(*arg, str))
-			{
-				add_query(buf, &(*str)[0], str->size());
-			}
-		}
-		break;
-		case 'd':
-		case 'i':
-		{
-			buf.append(convert(std::to_string(*arg)));
-		}
-		break;
-		case 'f':
-		{
-			if(*begin == '.')
-			{
-				size_t pos = 0;
-				auto precision = aux::parse_num<std::streamsize>(begin + 1, pos);
-				buf.append(convert(aux::to_string(amx_ctof(*arg), std::setprecision(precision), std::fixed)));
+				escape_char = *escape_begin;
+				++escape_begin;
+				custom = escape_begin != escape_end;
 			}else{
-				buf.append(convert(std::to_string(amx_ctof(*arg))));
+				escape_char = '\\';
+			}
+			auto last = begin;
+			while(begin != end)
+			{
+				if((!custom && (*begin == '\'' || *begin == '\\')) || std::find(escape_begin, escape_end, *begin) != escape_end)
+				{
+					buf.append(last, begin);
+					buf.append(1, escape_char);
+					buf.append(1, *begin);
+					++begin;
+					last = begin;
+				}else{
+					++begin;
+				}
+			}
+			buf.append(last, end);
+			return true;
+		}
+	};
+
+	template <class StringIter>
+	struct append_base
+	{
+		bool operator()(StringIter begin, StringIter end, Iter param_begin, Iter param_end, cell_string &buf) const
+		{
+			if(param_begin == param_end)
+			{
+				buf.append(begin, end);
+				return true;
+			}else{
+				if(*param_begin == '.')
+				{
+					++param_begin;
+					auto max = aux::parse_num<typename std::iterator_traits<Iter>::difference_type>(param_begin, param_end);
+					if(param_begin != param_end || max < 0)
+					{
+						return false;
+					}
+					auto new_end = begin + max;
+					if(new_end > end)
+					{
+						new_end = end;
+					}
+					buf.append(begin, new_end);
+					return true;
+				}else{
+					cell padding = *param_begin;
+					++param_begin;
+					auto width = aux::parse_num<typename std::iterator_traits<Iter>::difference_type>(param_begin, param_end);
+					if(width < 0)
+					{
+						return false;
+					}
+					if(param_begin == param_end)
+					{
+						auto size = end - begin;
+						if(width > size)
+						{
+							buf.append(width - size, padding);
+						}
+						buf.append(begin, end);
+						return true;
+					}else if(*param_begin == '.')
+					{
+						++param_begin;
+						auto max = aux::parse_num<typename std::iterator_traits<Iter>::difference_type>(param_begin, param_end);
+						if(param_begin != param_end || max < 0)
+						{
+							return false;
+						}
+						auto new_end = begin + max;
+						if(new_end <= end)
+						{
+							buf.append(begin, new_end);
+						}else{
+							auto size = end - begin;
+							if(size < width)
+							{
+								if(width > max)
+								{
+									width = max;
+								}
+								buf.append(width - size, padding);
+							}
+							buf.append(begin, end);
+						}
+						return true;
+					}
+					return false;
+				}
 			}
 		}
-		break;
-		case 'c':
+	};
+
+	void add_format(cell_string &buf, Iter begin, Iter end, const cell *arg) const
+	{
+		ptrdiff_t flen = end - begin;
+		switch(*end)
 		{
-			buf.append(1, *arg);
+			case 's':
+			{
+				if(select_iterator<append_base>(arg, begin, end, buf))
+				{
+					return;
+				}
+			}
+			break;
+			case 'S':
+			{
+				cell_string *str;
+				if(pool.get_by_id(*arg, str) || str == nullptr)
+				{
+					if(select_iterator<append_base>(str, begin, end, buf))
+					{
+						return;
+					}
+				}else{
+					amx_LogicError(errors::pointer_invalid, "string", *arg);
+					return;
+				}
+			}
+			break;
+			case 'q':
+			case 'e':
+			{
+				if(select_iterator<add_query_base>(arg, begin, end, buf))
+				{
+					return;
+				}
+			}
+			break;
+			case 'Q':
+			case 'E':
+			{
+				cell_string *str;
+				if(pool.get_by_id(*arg, str) || str == nullptr)
+				{
+					if(select_iterator<add_query_base>(str, begin, end, buf))
+					{
+						return;
+					}
+				}else{
+					amx_LogicError(errors::pointer_invalid, "string", *arg);
+					return;
+				}
+			}
+			break;
+			case 'd':
+			case 'i':
+			{
+				if(begin != end)
+				{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					auto width = aux::parse_num<std::streamsize>(begin, end);
+					if(begin == end && width >= 0)
+					{
+						buf.append(convert(aux::to_string(*arg, std::setw(width), std::setfill(padding))));
+						return;
+					}
+				}else{
+					buf.append(convert(std::to_string(*arg)));
+					return;
+				}
+			}
+			break;
+			case 'u':
+			{
+				ucell val = static_cast<ucell>(*arg);
+				if(begin != end)
+				{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					auto width = aux::parse_num<std::streamsize>(begin, end);
+					if(begin == end && width >= 0)
+					{
+						buf.append(convert(aux::to_string(val, std::setw(width), std::setfill(padding))));
+						return;
+					}
+				}else{
+					buf.append(convert(std::to_string(val)));
+					return;
+				}
+			}
+			break;
+			case 'h':
+			case 'x':
+			{
+				if(begin != end)
+				{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					auto width = aux::parse_num<std::streamsize>(begin, end);
+					if(begin == end && width >= 0)
+					{
+						buf.append(convert(aux::to_string(*arg, std::hex, std::uppercase, std::setw(width), std::setfill(padding))));
+						return;
+					}
+				}else{
+					buf.append(convert(aux::to_string(*arg, std::hex, std::uppercase)));
+					return;
+				}
+			}
+			break;
+			case 'o':
+			{
+				if(begin != end)
+				{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					auto width = aux::parse_num<std::streamsize>(begin, end);
+					if(begin == end && width >= 0)
+					{
+						buf.append(convert(aux::to_string(*arg, std::oct, std::setw(width), std::setfill(padding))));
+						return;
+					}
+				}else{
+					buf.append(convert(aux::to_string(*arg, std::oct)));
+					return;
+				}
+			}
+			break;
+			case 'f':
+			{
+				float val = amx_ctof(*arg);
+				if(*begin == '.')
+				{
+					++begin;
+					auto precision = aux::parse_num<std::streamsize>(begin, end);
+					if(begin == end && precision >= 0)
+					{
+						buf.append(convert(aux::to_string(val, std::setprecision(precision), std::fixed)));
+						return;
+					}
+				}else if(begin == end)
+				{
+					buf.append(convert(std::to_string(val)));
+					return;
+				}
+			}
+			break;
+			case 'c':
+			{
+				buf.append(1, *arg);
+			}
+			break;
+			case 'b':
+			{
+				std::bitset<8> bits(*arg);
+				buf.append(bits.to_string<cell>());
+			}
+			break;
+			default:
+			{
+				amx_FormalError(errors::invalid_format, "invalid specifier");
+			}
+			break;
 		}
-		break;
-		case 'h':
-		case 'x':
+		if(begin != end)
 		{
-			buf.append(convert(aux::to_string(*arg, std::hex, std::uppercase)));
+			amx_FormalError(errors::invalid_format, "invalid specifier parameter");
 		}
-		break;
-		case 'o':
-		{
-			buf.append(convert(aux::to_string(*arg, std::oct)));
-		}
-		break;
-		case 'b':
-		{
-			std::bitset<8> bits(*arg);
-			buf.append(bits.to_string<cell>());
-		}
-		break;
-		case 'u':
-		{
-			buf.append(convert(std::to_string(static_cast<ucell>(*arg))));
-		}
-		break;
-		default:
-		{
-			amx_FormalError("invalid format specifier '%c'", *end);
-		}
-		break;
 	}
+
+	template <class ArgFunc>
+	void operator()(Iter format_begin, Iter format_end, strings::cell_string &buf, cell argc, ArgFunc argf) const
+	{
+		auto flen = format_end - format_begin;
+		buf.reserve(flen + 8 * argc);
+
+		cell argn = -1;
+		cell maxargn = -1;
+
+		auto last = format_begin;
+		while(format_begin != format_end)
+		{
+			if(*format_begin == '%')
+			{
+				buf.append(last, format_begin);
+
+				++format_begin;
+				if(format_begin == format_end)
+				{
+					amx_FormalError(errors::invalid_format, "unexpected end");
+					return;
+				}
+
+				if(*format_begin == '%' || *format_begin == '{' || *format_begin == '}')
+				{
+					buf.append(1, *format_begin);
+				}else{
+					last = format_begin;
+					bool pos_found = false;
+					Iter pos_end = format_begin;
+					while(format_begin != format_end && !std::isalpha(*format_begin))
+					{
+						if(*format_begin == '$')
+						{
+							pos_found = true;
+							pos_end = format_begin;
+						}
+						++format_begin;
+					}
+					if(format_begin == format_end)
+					{
+						amx_FormalError(errors::invalid_format, "unexpected end");
+						return;
+					}
+					if(pos_found && std::isdigit(*last))
+					{
+						cell argi = aux::parse_num<cell>(last, pos_end);
+						if(last != pos_end)
+						{
+							amx_FormalError(errors::invalid_format, "expected '$'");
+							return;
+						}
+						
+						if(argi < 0)
+						{
+							amx_FormalError(errors::invalid_format, "negative argument index");
+							return;
+						}else if(argi < argc)
+						{
+							++pos_end;
+
+							add_format(buf, pos_end, format_begin, argf(argi));
+						}else if(argi > maxargn)
+						{
+							maxargn = argi;
+						}
+					}else{
+						argn++;
+						if(argn < argc)
+						{
+							add_format(buf, last, format_begin, argf(argn));
+						}else if(argn > maxargn)
+						{
+							maxargn = argn;
+						}
+					}
+				}
+				++format_begin;
+				last = format_begin;
+			}else if(*format_begin == '{')
+			{
+				buf.append(last, format_begin);
+
+				++format_begin;
+				if(format_begin == format_end)
+				{
+					amx_FormalError(errors::invalid_format, "unexpected end");
+					return;
+				}
+
+				cell argi = aux::parse_num<cell>(format_begin, format_end);
+
+				if(format_begin == format_end || *format_begin != ':')
+				{
+					amx_FormalError(errors::invalid_format, "expected ':'");
+					return;
+				}
+
+				++format_begin;
+				last = format_begin;
+
+				auto lastspec = format_begin;
+				while(format_begin != format_end && *format_begin != '}')
+				{
+					lastspec = format_begin;
+					++format_begin;
+				}
+				if(format_begin == format_end)
+				{
+					amx_FormalError(errors::invalid_format, "unexpected end");
+					return;
+				}
+				if(last == lastspec)
+				{
+					amx_FormalError(errors::invalid_format, "missing specifier");
+					return;
+				}
+
+				if(argi < 0)
+				{
+					amx_FormalError(errors::invalid_format, "negative argument index");
+					return;
+				}else if(argi < argc)
+				{
+					add_format(buf, last, lastspec, argf(argi));
+				}else if(argi > maxargn)
+				{
+					maxargn = argi;
+				}
+
+				++format_begin;
+				last = format_begin;
+			}else if(*format_begin == '}')
+			{
+				amx_FormalError(errors::invalid_format, "unexpected '}'");
+				return;
+			}else{
+				++format_begin;
+			}
+		}
+		buf.append(last, format_end);
+
+		if(maxargn >= argc)
+		{
+			throw errors::end_of_arguments_error(argf(-1), maxargn + 1);
+		}
+	}
+};
+
+void strings::format(AMX *amx, strings::cell_string &buf, const cell *format, cell argc, cell *args)
+{
+	select_iterator<format_base>(format, buf, argc, [&](cell argi)
+	{
+		if(argi == -1)
+		{
+			return args;
+		}
+		cell *addr;
+		amx_GetAddr(amx, args[argi], &addr);
+		return addr;
+	});
 }
 
-void strings::format(AMX *amx, strings::cell_string &buf, const cell *format, int flen, int argc, cell *args)
+void strings::format(AMX *amx, strings::cell_string &buf, const cell_string &format, cell argc, cell *args)
 {
-	buf.reserve(flen+8*argc);
-
-	int argn = 0;
-
-	const cell *c = format;
-	while(flen--)
+	format_base<cell_string::const_iterator>()(format.begin(), format.end(), buf, argc, [&](cell argi)
 	{
-		if(*c == '%' && flen > 0)
+		if(argi == -1)
 		{
-			buf.append(format, c - format);
-
-			const cell *start = ++c;
-			if(*c == '%')
-			{
-				buf.append(1, '%');
-				format = c + 1;
-				flen--;
-			}else{
-				while(flen-- && !std::isalpha(*c)) c++;
-				if(flen < 0) break;
-				if(argn >= argc)
-				{
-					throw errors::end_of_arguments_error(args, argn + 1);
-				}else{
-					cell *argv;
-					amx_GetAddr(amx, args[argn++], &argv);
-					add_format(buf, start, c, argv);
-				}
-				format = c + 1;
-			}
+			return args;
 		}
-		c++;
-	}
-	buf.append(format, c - format);
+		cell *addr;
+		amx_GetAddr(amx, args[argi], &addr);
+		return addr;
+	});
 }
 
 bool strings::clamp_range(const cell_string &str, cell &start, cell &end)

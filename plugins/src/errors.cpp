@@ -15,6 +15,7 @@ namespace errors
 	error inner_error = "%s function '%s' has raised an AMX error %d: %s";
 	error no_debug_error = "debug info is not available";
 	error unhandled_exception = "unhandled C++ exception: %s";
+	error invalid_format = "invalid format string: %s";
 }
 
 errors::native_error::native_error(const char *format, va_list args, int level) : message(vsnprintf(NULL, 0, format, args), '\0'), level(level)

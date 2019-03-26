@@ -552,17 +552,9 @@ namespace Natives
 		cell *format;
 		amx_GetAddr(amx, params[1], &format);
 
-		auto &str = strings::pool.add();
-		if(static_cast<ucell>(*format) <= UNPACKEDMAX)
-		{
-			int flen;
-			amx_StrLen(format, &flen);
-			strings::format(amx, *str, format, flen, params[0] / sizeof(cell) - 1, params + 2);
-		}else{
-			cell_string strformat(strings::convert(format));
-			strings::format(amx, *str, &strformat[0], strformat.size(), params[0] / sizeof(cell) - 1, params + 2);
-		}
-		return strings::pool.get_id(str);
+		cell_string target;
+		strings::format(amx, target, format, params[0] / sizeof(cell) - 1, params + 2);
+		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
 
 	// native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
@@ -570,12 +562,12 @@ namespace Natives
 	{
 		cell_string *strformat;
 		if(!strings::pool.get_by_id(params[1], strformat) && strformat != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		auto &str = strings::pool.add();
+		cell_string target;
 		if(strformat != nullptr)
 		{
-			strings::format(amx, *str, &(*strformat)[0], strformat->size(), params[0] / sizeof(cell) - 1, params + 2);
+			strings::format(amx, target, *strformat, params[0] / sizeof(cell) - 1, params + 2);
 		}
-		return strings::pool.get_id(str);
+		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
 
 	// native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
@@ -588,16 +580,7 @@ namespace Natives
 		cell *format;
 		amx_GetAddr(amx, params[2], &format);
 
-		if(static_cast<ucell>(*format) <= UNPACKEDMAX)
-		{
-			int flen;
-			amx_StrLen(format, &flen);
-
-			strings::format(amx, *str, format, flen, params[0] / sizeof(cell) - 2, params + 3);
-		}else{
-			cell_string strformat(strings::convert(format));
-			strings::format(amx, *str, &strformat[0], strformat.size(), params[0] / sizeof(cell) - 2, params + 3);
-		}
+		strings::format(amx, *str, format, params[0] / sizeof(cell) - 2, params + 3);
 		return params[1];
 	}
 
@@ -612,7 +595,7 @@ namespace Natives
 		if(!strings::pool.get_by_id(params[2], strformat) && strformat != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 		if(strformat != nullptr)
 		{
-			strings::format(amx, *str, &(*strformat)[0], strformat->size(), params[0] / sizeof(cell) - 2, params + 3);
+			strings::format(amx, *str, *strformat, params[0] / sizeof(cell) - 2, params + 3);
 		}
 		return params[1];
 	}
@@ -761,14 +744,14 @@ namespace Natives
 
 		cell options = optparam(4, 0);
 
-		auto &target = strings::pool.add();
+		cell_string target;
 		if(str != nullptr)
 		{
-			strings::regex_replace(*target, *str, pattern, replacement, options);
+			strings::regex_replace(target, *str, pattern, replacement, options);
 		}else{
-			strings::regex_replace(*target, cell_string(), pattern, replacement, options);
+			strings::regex_replace(target, cell_string(), pattern, replacement, options);
 		}
-		return strings::pool.get_id(target);
+		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
 
 	// native String:str_replace_s(ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, regex_options:options=regex_default);
@@ -785,15 +768,15 @@ namespace Natives
 		
 		cell options = optparam(4, 0);
 
-		auto &target = strings::pool.add();
+		cell_string target;
 		if(str != nullptr && pattern != nullptr && replacement != nullptr)
 		{
-			strings::regex_replace(*target, *str, *pattern, *replacement, options);
+			strings::regex_replace(target, *str, *pattern, *replacement, options);
 		}else{
 			cell_string empty;
-			strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, options);
+			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, options);
 		}
-		return strings::pool.get_id(target);
+		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
 
 	// native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);

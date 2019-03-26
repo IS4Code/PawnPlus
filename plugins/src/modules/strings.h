@@ -104,6 +104,26 @@ namespace strings
 			{
 				return pos != it.pos;
 			}
+
+			bool operator<(const basic_char_iterator<Elem> &it) const
+			{
+				return pos < it.pos;
+			}
+
+			bool operator<=(const basic_char_iterator<Elem> &it) const
+			{
+				return pos <= it.pos;
+			}
+
+			bool operator>(const basic_char_iterator<Elem> &it) const
+			{
+				return pos > it.pos;
+			}
+
+			bool operator>=(const basic_char_iterator<Elem> &it) const
+			{
+				return pos >= it.pos;
+			}
 		};
 	}
 
@@ -142,7 +162,8 @@ namespace strings
 	cell create(const cell *addr, size_t length, bool packed, bool truncate, bool fixnulls);
 	cell create(const std::string &str);
 
-	void format(AMX *amx, strings::cell_string &str, const cell *format, int flen, int argc, cell *args);
+	void format(AMX *amx, strings::cell_string &str, const cell_string &format, cell argc, cell *args);
+	void format(AMX *amx, strings::cell_string &str, const cell *format, cell argc, cell *args);
 
 	cell_string convert(const cell *str);
 	cell_string convert(const std::string &str);
@@ -175,6 +196,7 @@ namespace std
 	struct iterator_traits<strings::impl::basic_char_iterator<Elem>>
 	{
 		typedef typename strings::impl::basic_char_iterator<Elem>::char_type &reference;
+		typedef typename strings::impl::basic_char_iterator<Elem>::char_type *pointer;
 		typedef Elem value_type;
 		typedef std::ptrdiff_t difference_type;
 		typedef std::random_access_iterator_tag iterator_category;
