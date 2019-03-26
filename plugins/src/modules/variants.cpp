@@ -4,35 +4,6 @@
 
 object_pool<dyn_object> variants::pool;
 
-dyn_object dyn_func(AMX *amx, cell value, cell tag_id)
-{
-	return dyn_object(amx, value, tag_id);
-}
-
-dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell tag_id)
-{
-	cell *addr = amx_GetAddrSafe(amx, amx_addr);
-	return dyn_object(amx, addr, size, tag_id);
-}
-
-dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell tag_id)
-{
-	cell *addr = amx_GetAddrSafe(amx, amx_addr);
-	return dyn_object(amx, addr, size, size2, tag_id);
-}
-
-dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell size3, cell tag_id)
-{
-	cell *addr = amx_GetAddrSafe(amx, amx_addr);
-	return dyn_object(amx, addr, size, size2, size3, tag_id);
-}
-
-dyn_object dyn_func_str(AMX *amx, cell amx_addr)
-{
-	cell *addr = amx_GetAddrSafe(amx, amx_addr);
-	return dyn_object(addr);
-}
-
 dyn_object dyn_func_str_s(AMX *amx, cell str)
 {
 	strings::cell_string *ptr;
@@ -46,11 +17,6 @@ dyn_object dyn_func_str_s(AMX *amx, cell str)
 	}
 	str = 0;
 	return dyn_object(&str, 1, tags::find_tag(tags::tag_char));
-}
-
-dyn_object dyn_func_var(AMX *amx, cell ptr)
-{
-	return variants::get(ptr);
 }
 
 
@@ -190,9 +156,4 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_
 	}else{
 		return 0;
 	}
-}
-
-cell dyn_func_var(AMX *amx, const dyn_object &obj)
-{
-	return variants::create(obj);
 }

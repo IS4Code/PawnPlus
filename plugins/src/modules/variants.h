@@ -43,13 +43,41 @@ namespace variants
 	}
 }
 
-dyn_object dyn_func(AMX *amx, cell value, cell tag_id);
-dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell tag_id);
-dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell tag_id);
-dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell size3, cell tag_id);
-dyn_object dyn_func_str(AMX *amx, cell amx_addr);
+inline dyn_object dyn_func(AMX *amx, cell value, cell tag_id)
+{
+	return dyn_object(amx, value, tag_id);
+}
+
+inline dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell tag_id)
+{
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
+	return dyn_object(amx, addr, size, tag_id);
+}
+
+inline dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell tag_id)
+{
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
+	return dyn_object(amx, addr, size, size2, tag_id);
+}
+
+inline dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell size3, cell tag_id)
+{
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
+	return dyn_object(amx, addr, size, size2, size3, tag_id);
+}
+
+inline dyn_object dyn_func_str(AMX *amx, cell amx_addr)
+{
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
+	return dyn_object(addr);
+}
+
 dyn_object dyn_func_str_s(AMX *amx, cell str);
-dyn_object dyn_func_var(AMX *amx, cell ptr);
+
+inline dyn_object dyn_func_var(AMX *amx, cell ptr)
+{
+	return variants::get(ptr);
+}
 
 cell *get_offsets(AMX *amx, cell offsets, cell &offsets_size);
 
@@ -67,7 +95,11 @@ cell dyn_func_str_s(AMX *amx, const dyn_object &obj);
 cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_size);
 cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell unused);
 cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_size, cell unused);
-cell dyn_func_var(AMX *amx, const dyn_object &obj);
+
+inline cell dyn_func_var(AMX *amx, const dyn_object &obj)
+{
+	return variants::create(obj);
+}
 
 template <size_t... Indices>
 class dyn_factory
