@@ -112,8 +112,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 			cell param = params[args_start + i];
 			if(amx != target_amx)
 			{
-				cell *addr;
-				amx_GetAddr(amx, param, &addr);
+				cell *addr = amx_GetAddrSafe(amx, param);
 				int length;
 				amx_StrLen(addr, &length);
 				if(addr[0] & 0xFF000000)
@@ -142,7 +141,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 			{
 				if(amx != target_amx)
 				{
-					amx_GetAddr(amx, param, &addr);
+					addr = amx_GetAddrSafe(amx, param);
 					int length;
 					if(format[i] == '*')
 					{
@@ -164,7 +163,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 			}
 			case 'S':
 			{
-				amx_GetAddr(amx, param, &addr);
+				addr = amx_GetAddrSafe(amx, param);
 				strings::cell_string *ptr;
 				if(strings::pool.get_by_id(*addr, ptr))
 				{
@@ -172,16 +171,19 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 					amx_Allot(target_amx, size + 1, &param, &addr);
 					std::memcpy(addr, ptr->c_str(), size * sizeof(cell));
 					addr[size] = 0;
-				}else{
+				}else if(ptr == nullptr)
+				{
 					amx_Allot(target_amx, 1, &param, &addr);
 					addr[0] = 0;
+				}else{
+					amx_LogicError(errors::pointer_invalid, "string", *addr);
 				}
 				stack.push(param);
 				break;
 			}
 			case 'L':
 			{
-				amx_GetAddr(amx, param, &addr);
+				addr = amx_GetAddrSafe(amx, param);
 				list_t *ptr;
 				if(list_pool.get_by_id(*addr, ptr))
 				{
@@ -200,16 +202,13 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 					*addr = 0;
 					stack.push(fmt_value);
 				}else{
-					cell fmt_value;
-					amx_Allot(target_amx, 1, &fmt_value, &addr);
-					addr[0] = 0;
-					stack.push(fmt_value);
+					amx_LogicError(errors::pointer_invalid, "list", *addr);
 				}
 				break;
 			}
 			case 'l':
 			{
-				amx_GetAddr(amx, param, &addr);
+				addr = amx_GetAddrSafe(amx, param);
 				list_t *ptr;
 				if(list_pool.get_by_id(*addr, ptr))
 				{
@@ -219,19 +218,24 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 						storage[&*it] = addr;
 						stack.push(addr);
 					}
+				}else{
+					amx_LogicError(errors::pointer_invalid, "list", *addr);
 				}
 				break;
 			}
 			case 'v':
 			{
-				amx_GetAddr(amx, param, &addr);
+				addr = amx_GetAddrSafe(amx, param);
 				dyn_object *ptr;
 				if(variants::pool.get_by_id(*addr, ptr))
 				{
 					param = ptr->store(target_amx);
 					storage[ptr] = param;
-				}else{
+				}else if(ptr == nullptr)
+				{
 					param = 0;
+				}else{
+					amx_LogicError(errors::pointer_invalid, "variant", *addr);
 				}
 				stack.push(param);
 				break;
@@ -243,7 +247,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 			}
 			default:
 			{
-				amx_GetAddr(amx, param, &addr);
+				addr = amx_GetAddrSafe(amx, param);
 				param = *addr;
 				stack.push(param);
 				break;
@@ -256,7 +260,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 	cell result = 0, *resultptr;
 	if(try_)
 	{
-		amx_GetAddr(amx, params[1], &resultptr);
+		resultptr = amx_GetAddrSafe(amx, params[1]);
 	}else{
 		resultptr = &result;
 	}
@@ -469,8 +473,7 @@ namespace Natives
 	// native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(pawn_guard_arr, 3)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		auto obj = dyn_object(amx, addr, params[2], params[3]);
 		if(obj.get_tag()->inherits_from(tags::tag_cell))
 		{
@@ -633,13 +636,7 @@ namespace Natives
 	// native ArgTag:[2]pawn_arg_pack(AnyTag:value, tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(pawn_arg_pack, 2)
 	{
-		cell *addr;
-		int err = amx_GetAddr(amx, params[3], &addr);
-		if(err != AMX_ERR_NONE)
-		{
-			amx_RaiseError(amx, err);
-			return 0;
-		}
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
 		addr[0] = params[1];
 		addr[1] = params[2];
 		return 0;

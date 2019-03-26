@@ -40,8 +40,7 @@ namespace Natives
 	// native String:str_new(const str[], str_create_mode:mode=str_preserve);
 	AMX_DEFINE_NATIVE(str_new, 1)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		int flags = optparam(2, 0);
 		return strings::create(addr, flags & 1, flags & 2);
 	}
@@ -49,8 +48,7 @@ namespace Natives
 	// native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=str_preserve);
 	AMX_DEFINE_NATIVE(str_new_arr, 2)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		int flags = optparam(3, 0);
 		return strings::create(addr, static_cast<size_t>(params[2]), false, flags & 1, flags & 2);
 	}
@@ -58,8 +56,7 @@ namespace Natives
 	// native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
 	AMX_DEFINE_NATIVE(str_new_static, 3)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		int flags = params[2];
 		cell size = (addr[0] & 0xFF000000) ? params[3] : params[3] - 1;
 		if(size < 0) size = 0;
@@ -168,8 +165,7 @@ namespace Natives
 	// native String:str_val_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(str_val_arr, 3)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		dyn_object obj{amx, addr, params[2], params[3]};
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
@@ -228,8 +224,7 @@ namespace Natives
 		{
 			return list_pool.get_id(list_pool.add());
 		}
-		cell *delims;
-		amx_GetAddr(amx, params[2], &delims);
+		cell *delims = amx_GetAddrSafe(amx, params[2]);
 		return strings::select_iterator<str_split_base>(delims, amx, str);
 	}
 
@@ -270,8 +265,7 @@ namespace Natives
 	{
 		list_t *list;
 		if(!list_pool.get_by_id(params[1], list)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
-		cell *delim;
-		amx_GetAddr(amx, params[2], &delim);
+		cell *delim = amx_GetAddrSafe(amx, params[2]);
 		return strings::select_iterator<str_join_base>(delim, amx, list);
 	}
 
@@ -299,8 +293,7 @@ namespace Natives
 	{
 		if(params[3] == 0) return 0;
 
-		cell *addr;
-		amx_GetAddr(amx, params[2], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
 
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -549,8 +542,7 @@ namespace Natives
 	// native String:str_format(const format[], {StringTags,Float,_}:...);
 	AMX_DEFINE_NATIVE(str_format, 1)
 	{
-		cell *format;
-		amx_GetAddr(amx, params[1], &format);
+		cell *format = amx_GetAddrSafe(amx, params[1]);
 
 		cell_string target;
 		strings::format(amx, target, format, params[0] / sizeof(cell) - 1, params + 2);
@@ -577,8 +569,7 @@ namespace Natives
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 		str->clear();
 
-		cell *format;
-		amx_GetAddr(amx, params[2], &format);
+		cell *format = amx_GetAddrSafe(amx, params[2]);
 
 		strings::format(amx, *str, format, params[0] / sizeof(cell) - 2, params + 3);
 		return params[1];
@@ -658,8 +649,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell *pattern;
-		amx_GetAddr(amx, params[2], &pattern);
+		cell *pattern = amx_GetAddrSafe(amx, params[2]);
 
 		cell options = optparam(3, 0);
 
@@ -697,8 +687,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell *pattern;
-		amx_GetAddr(amx, params[2], &pattern);
+		cell *pattern = amx_GetAddrSafe(amx, params[2]);
 
 		cell options = optparam(3, 0);
 
@@ -736,11 +725,9 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell *pattern;
-		amx_GetAddr(amx, params[2], &pattern);
+		cell *pattern = amx_GetAddrSafe(amx, params[2]);
 
-		cell *replacement;
-		amx_GetAddr(amx, params[3], &replacement);
+		cell *replacement = amx_GetAddrSafe(amx, params[3]);
 
 		cell options = optparam(4, 0);
 
@@ -789,11 +776,9 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		cell *pattern;
-		amx_GetAddr(amx, params[3], &pattern);
+		cell *pattern = amx_GetAddrSafe(amx, params[3]);
 
-		cell *replacement;
-		amx_GetAddr(amx, params[4], &replacement);
+		cell *replacement = amx_GetAddrSafe(amx, params[4]);
 
 		cell options = optparam(5, 0);
 

@@ -8,19 +8,19 @@ stored_param stored_param::create(AMX *amx, char format, const cell *args, size_
 	{
 		case 'a':
 			if(++argi >= numargs) throw errors::end_of_arguments_error(args, numargs + 2);
-			amx_GetAddr(amx, args[argi], &addr);
+			addr = amx_GetAddrSafe(amx, args[argi]);
 			if(++argi >= numargs) throw errors::end_of_arguments_error(args, numargs + 1);
-			amx_GetAddr(amx, args[argi], &addr2);
+			addr2 = amx_GetAddrSafe(amx, args[argi]);
 			return stored_param(std::basic_string<cell>(addr, *addr2));
 		case 's':
 			if(++argi >= numargs) throw errors::end_of_arguments_error(args, numargs + 1);
-			amx_GetAddr(amx, args[argi], &addr);
+			addr = amx_GetAddrSafe(amx, args[argi]);
 			return stored_param(std::basic_string<cell>(addr));
 		case 'e':
 			return stored_param();
 		default:
 			if(++argi >= numargs) throw errors::end_of_arguments_error(args, numargs + 1);
-			amx_GetAddr(amx, args[argi], &addr);
+			addr = amx_GetAddrSafe(amx, args[argi]);
 			return stored_param(*addr);
 	}
 }

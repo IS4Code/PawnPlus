@@ -11,29 +11,25 @@ dyn_object dyn_func(AMX *amx, cell value, cell tag_id)
 
 dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell tag_id)
 {
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	return dyn_object(amx, addr, size, tag_id);
 }
 
 dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell tag_id)
 {
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	return dyn_object(amx, addr, size, size2, tag_id);
 }
 
 dyn_object dyn_func_arr(AMX *amx, cell amx_addr, cell size, cell size2, cell size3, cell tag_id)
 {
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	return dyn_object(amx, addr, size, size2, size3, tag_id);
 }
 
 dyn_object dyn_func_str(AMX *amx, cell amx_addr)
 {
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	return dyn_object(addr);
 }
 
@@ -60,8 +56,7 @@ dyn_object dyn_func_var(AMX *amx, cell ptr)
 
 cell *get_offsets(AMX *amx, cell offsets, cell &offsets_size)
 {
-	cell *offsets_addr;
-	amx_GetAddr(amx, offsets, &offsets_addr);
+	cell *offsets_addr = amx_GetAddrSafe(amx, offsets);
 	for(cell i = 0; i < offsets_size; i++)
 	{
 		if(offsets_addr[i] == 0x80000000)
@@ -92,8 +87,7 @@ cell dyn_func(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_size)
 cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offset, cell tag_id)
 {
 	if(!obj.tag_assignable(amx, tag_id)) return 0;
-	cell *addr;
-	amx_GetAddr(amx, result, &addr);
+	cell *addr = amx_GetAddrSafe(amx, result);
 	if(obj.get_cell(offset, *addr)) return 1;
 	return 0;
 }
@@ -101,8 +95,7 @@ cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offset, cell ta
 cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offsets, cell offsets_size, cell tag_id)
 {
 	if(!obj.tag_assignable(amx, tag_id)) return 0;
-	cell *addr;
-	amx_GetAddr(amx, result, &addr);
+	cell *addr = amx_GetAddrSafe(amx, result);
 	cell *offsets_addr = get_offsets(amx, offsets, offsets_size);
 	if(obj.get_cell(offsets_addr, offsets_size, *addr)) return 1;
 	return 0;
@@ -110,15 +103,13 @@ cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offsets, cell o
 
 cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size)
 {
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	return obj.get_array(addr, size);
 }
 
 cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell offsets, cell size, cell offsets_size)
 {
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	cell *offsets_addr = get_offsets(amx, offsets, offsets_size);
 	return obj.get_array(offsets_addr, offsets_size, addr, size);
 }
@@ -126,16 +117,14 @@ cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell offsets, 
 cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size, cell tag_id)
 {
 	if(!obj.tag_assignable(amx, tag_id)) return 0;
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	return obj.get_array(addr, size);
 }
 
 cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell offsets, cell size, cell offsets_size, cell tag_id)
 {
 	if(!obj.tag_assignable(amx, tag_id)) return 0;
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	cell *offsets_addr = get_offsets(amx, offsets, offsets_size);
 	return obj.get_array(offsets_addr, offsets_size, addr, size);
 }
@@ -143,16 +132,14 @@ cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell offsets, 
 cell dyn_func_str(AMX *amx, const dyn_object &obj, cell amx_addr, cell size)
 {
 	if(!obj.tag_assignable(tags::find_tag(tags::tag_char))) return 0;
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	return obj.get_array(addr, size);
 }
 
 cell dyn_func_str(AMX *amx, const dyn_object &obj, cell amx_addr, cell offsets, cell size, cell offsets_size)
 {
 	if(!obj.tag_assignable(tags::find_tag(tags::tag_char))) return 0;
-	cell *addr;
-	amx_GetAddr(amx, amx_addr, &addr);
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
 	cell *offsets_addr = get_offsets(amx, offsets, offsets_size);
 	return obj.get_array(offsets_addr, offsets_size, addr, size);
 }

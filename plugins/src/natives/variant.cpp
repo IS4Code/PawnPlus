@@ -457,11 +457,8 @@ namespace Natives
 		cell *args = new cell[numargs];
 		for(size_t i = 0; i < numargs; i++)
 		{
-			cell *addr;
-			if(amx_GetAddr(amx, params[3 + i], &addr) == AMX_ERR_NONE)
-			{
-				args[i] = *addr;
-			}
+			cell *addr = amx_GetAddrSafe(amx, params[3 + i]);
+			args[i] = *addr;
 		}
 		auto result = var->call_op(static_cast<op_type>(params[2]), args, numargs, true);
 		delete[] args;
@@ -482,11 +479,8 @@ namespace Natives
 		cell *args = new cell[numargs];
 		for(size_t i = 0; i < numargs; i++)
 		{
-			cell *addr;
-			if(amx_GetAddr(amx, params[3 + i], &addr) == AMX_ERR_NONE)
-			{
-				args[i] = *addr;
-			}
+			cell *addr = amx_GetAddrSafe(amx, params[3 + i]);
+			args[i] = *addr;
 		}
 		auto result = var->call_op(static_cast<op_type>(params[2]), args, numargs, false);
 		delete[] args;

@@ -39,8 +39,7 @@ namespace Natives
 	{
 		std::ostringstream buf;
 		buf << std::this_thread::get_id();
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		std::string str = buf.str();
 		amx_SetString(addr, str.c_str(), false, false, params[2]);
 		return str.size();

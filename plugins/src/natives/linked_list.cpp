@@ -85,8 +85,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(linked_list_new_arr, 3)
 	{
 		auto ptr = linked_list_pool.add();
-		cell *arr;
-		amx_GetAddr(amx, params[1], &arr);
+		cell *arr = amx_GetAddrSafe(amx, params[1]);
 
 		for(cell i = 0; i < params[2]; i++)
 		{
@@ -107,7 +106,7 @@ namespace Natives
 			{
 				addr = &param;
 			}else{
-				amx_GetAddr(amx, param, &addr);
+				addr = amx_GetAddrSafe(amx, param);
 			}
 			ptr->push_back(dyn_object(amx, *addr, params[1]));
 		}
@@ -121,8 +120,8 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell);
 		for(cell arg = 0; arg < numargs; arg++)
 		{
-			cell *addr, param = params[1 + arg];
-			amx_GetAddr(amx, param, &addr);
+			cell param = params[1 + arg];
+			cell *addr = amx_GetAddrSafe(amx, param);
 			ptr->push_back(dyn_object(addr));
 		}
 		return linked_list_pool.get_id(ptr);
@@ -140,7 +139,7 @@ namespace Natives
 			{
 				addr = &param;
 			}else{
-				amx_GetAddr(amx, param, &addr);
+				addr = amx_GetAddrSafe(amx, param);
 			}
 			ptr->push_back(variants::get(*addr));
 		}
@@ -154,8 +153,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell);
 		for(cell arg = 0; arg < numargs; arg++)
 		{
-			cell *addr;
-			amx_GetAddr(amx, params[1 + arg], &addr);
+			cell *addr = amx_GetAddrSafe(amx, params[1 + arg]);
 			ptr->push_back(dyn_object(amx, addr[0], addr[1]));
 		}
 		return linked_list_pool.get_id(ptr);
@@ -283,7 +281,7 @@ namespace Natives
 			{
 				addr = &param;
 			}else{
-				amx_GetAddr(amx, param, &addr);
+				addr = amx_GetAddrSafe(amx, param);
 			}
 			ptr->push_back(dyn_object(amx, *addr, params[1]));
 		}
@@ -298,8 +296,8 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell) - 1;
 		for(cell arg = 0; arg < numargs; arg++)
 		{
-			cell *addr, param = params[2 + arg];
-			amx_GetAddr(amx, param, &addr);
+			cell param = params[2 + arg];
+			cell *addr = amx_GetAddrSafe(amx, param);
 			ptr->push_back(dyn_object(addr));
 		}
 		return numargs;
@@ -318,7 +316,7 @@ namespace Natives
 			{
 				addr = &param;
 			}else{
-				amx_GetAddr(amx, param, &addr);
+				addr = amx_GetAddrSafe(amx, param);
 			}
 			ptr->push_back(variants::get(*addr));
 		}
@@ -333,8 +331,7 @@ namespace Natives
 		cell numargs = params[0] / sizeof(cell) - 1;
 		for(cell arg = 0; arg < numargs; arg++)
 		{
-			cell *addr;
-			amx_GetAddr(amx, params[2 + arg], &addr);
+			cell *addr = amx_GetAddrSafe(amx, params[2 + arg]);
 			ptr->push_back(dyn_object(amx, addr[0], addr[1]));
 		}
 		return numargs;

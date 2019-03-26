@@ -1,5 +1,6 @@
 #define _SCL_SECURE_NO_WARNINGS
 #include "dyn_object.h"
+#include "errors.h"
 #include "modules/containers.h"
 #include "../fixes/linux.h"
 #include <cmath>
@@ -434,8 +435,7 @@ void dyn_object::load(AMX *amx, cell amx_addr)
 	if(is_array())
 	{
 		cell size = data_size() - 1;
-		cell *addr;
-		amx_GetAddr(amx, amx_addr, &addr);
+		cell *addr = amx_GetAddrSafe(amx, amx_addr);
 		std::memcpy(array_data + 1, addr, size * sizeof(cell));
 
 		assign_op();

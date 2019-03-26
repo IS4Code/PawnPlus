@@ -41,8 +41,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(amx_name, 2)
 	{
 		const auto &name = amx::load_lock(amx)->name;
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		amx_SetString(addr, name.c_str(), false, false, params[2]);
 		return name.size();
 	}
@@ -214,8 +213,7 @@ namespace Natives
 		if(!amx_var_pool.get_by_id(params[1], info)) amx_LogicError(errors::pointer_invalid, "AMX variable", params[1]);
 		if(!info->from_amx(amx)) amx_LogicError(errors::operation_not_supported, "AMX variable", params[1]);
 		
-		cell *addr;
-		amx_GetAddr(amx, params[2], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
 		*addr = info->address() - params[2];
 		return 1;
 	}

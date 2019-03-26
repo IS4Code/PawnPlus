@@ -32,16 +32,6 @@ errors::native_error::native_error(const char *format, int level, ...) : level(l
 	va_end(args);
 }
 
-errors::native_error::native_error(std::string &&message, int level) : level(level), message(std::move(message))
-{
-
-}
-
-errors::end_of_arguments_error::end_of_arguments_error(const cell *argbase, size_t required) : argbase(argbase), required(required)
-{
-
-}
-
 [[noreturn]] void amx_FormalError(const char *format, ...)
 {
 	va_list args;
@@ -58,6 +48,22 @@ errors::end_of_arguments_error::end_of_arguments_error(const cell *argbase, size
 	errors::native_error err(format, args, 2);
 	va_end(args);
 	throw err;
+}
+
+cell *amx_GetAddrSafe(AMX *amx, cell amx_addr)
+{
+	cell *addr;
+	int err = amx_GetAddr(amx, amx_addr, &addr);
+	if(err != AMX_ERR_NONE)
+	{
+		throw errors::amx_error(err);
+	}
+	if(amx_addr % sizeof(cell) != 0 && amx_addr >= 0 && amx_addr < amx->stp && (amx_addr < amx->hea || amx_addr >= amx->stk))
+	{
+		// if amx_GetAddr verifies the address but it is not inside the valid range, a hook is in place
+		throw errors::amx_error(AMX_ERR_MEMACCESS);
+	}
+	return addr;
 }
 
 const char *amx::StrError(int errnum)

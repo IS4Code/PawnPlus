@@ -218,8 +218,8 @@ namespace Natives
 				key_addr = &key;
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, value, &value_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2]));
 		}
@@ -242,9 +242,9 @@ namespace Natives
 			{
 				key_addr = &key;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
 			}
-			amx_GetAddr(amx, value, &value_addr);
+			value_addr = amx_GetAddrSafe(amx, value);
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(value_addr));
 		}
 		return map_pool.get_id(ptr);
@@ -267,8 +267,8 @@ namespace Natives
 				key_addr = &key;
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, value, &value_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr));
 		}
@@ -287,8 +287,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[1 + arg], &key);
-			amx_GetAddr(amx, params[2 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[1 + arg]);
+			value = amx_GetAddrSafe(amx, params[2 + arg]);
 			ptr->insert(dyn_object(amx, key[0], key[1]), dyn_object(amx, value[0], value[1]));
 		}
 		return map_pool.get_id(ptr);
@@ -306,8 +306,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[1 + arg], &key);
-			amx_GetAddr(amx, params[2 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[1 + arg]);
+			value = amx_GetAddrSafe(amx, params[2 + arg]);
 			ptr->insert(dyn_object(amx, key[0], key[1]), variants::get(*value));
 		}
 		return map_pool.get_id(ptr);
@@ -325,8 +325,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[1 + arg], &key);
-			amx_GetAddr(amx, params[2 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[1 + arg]);
+			value = amx_GetAddrSafe(amx, params[2 + arg]);
 			ptr->insert(dyn_object(amx, key[0], key[1]), dyn_object(value));
 		}
 		return map_pool.get_id(ptr);
@@ -344,12 +344,12 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
-			amx_GetAddr(amx, key, &key_addr);
+			key_addr = amx_GetAddrSafe(amx, key);
 			if(arg == 0)
 			{
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, value, &value_addr);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(dyn_object(key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
@@ -368,8 +368,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell key = params[1 + arg], value = params[1 + arg + 1], *key_addr, *value_addr;
-			amx_GetAddr(amx, key, &key_addr);
-			amx_GetAddr(amx, value, &value_addr);
+			key_addr = amx_GetAddrSafe(amx, key);
+			value_addr = amx_GetAddrSafe(amx, value);
 			ptr->insert(dyn_object(key_addr), dyn_object(value_addr));
 		}
 		return map_pool.get_id(ptr);
@@ -387,12 +387,12 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell key = params[1 + arg], value = params[1 + arg + 1], *key_addr, *value_addr;
-			amx_GetAddr(amx, key, &key_addr);
+			key_addr = amx_GetAddrSafe(amx, key);
 			if(arg == 0)
 			{
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, value, &value_addr);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(dyn_object(key_addr), variants::get(*value_addr));
 		}
@@ -411,8 +411,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[1 + arg], &key);
-			amx_GetAddr(amx, params[2 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[1 + arg]);
+			value = amx_GetAddrSafe(amx, params[2 + arg]);
 			ptr->insert(dyn_object(key), dyn_object(amx, value[0], value[1]));
 		}
 		return map_pool.get_id(ptr);
@@ -435,8 +435,8 @@ namespace Natives
 				key_addr = &key;
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, value, &value_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
@@ -459,9 +459,9 @@ namespace Natives
 			{
 				key_addr = &key;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
 			}
-			amx_GetAddr(amx, value, &value_addr);
+			value_addr = amx_GetAddrSafe(amx, value);
 			ptr->insert(variants::get(*key_addr), dyn_object(value_addr));
 		}
 		return map_pool.get_id(ptr);
@@ -484,8 +484,8 @@ namespace Natives
 				key_addr = &key;
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, value, &value_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(variants::get(*key_addr), variants::get(*value_addr));
 		}
@@ -504,8 +504,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[1 + arg], &key);
-			amx_GetAddr(amx, params[2 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[1 + arg]);
+			value = amx_GetAddrSafe(amx, params[2 + arg]);
 			ptr->insert(variants::get(*key), dyn_object(amx, value[0], value[1]));
 		}
 		return map_pool.get_id(ptr);
@@ -724,8 +724,8 @@ namespace Natives
 				key_addr = &key;
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, value, &value_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(amx, *value_addr, params[2]));
 		}
@@ -749,9 +749,9 @@ namespace Natives
 			{
 				key_addr = &key;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
 			}
-			amx_GetAddr(amx, value, &value_addr);
+			value_addr = amx_GetAddrSafe(amx, value);
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), dyn_object(value_addr));
 		}
 		return numargs / 2;
@@ -775,8 +775,8 @@ namespace Natives
 				key_addr = &key;
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, value, &value_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(dyn_object(amx, *key_addr, params[1]), variants::get(*value_addr));
 		}
@@ -796,8 +796,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[2 + arg], &key);
-			amx_GetAddr(amx, params[3 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[2 + arg]);
+			value = amx_GetAddrSafe(amx, params[3 + arg]);
 			ptr->insert(dyn_object(amx, key[0], key[1]), dyn_object(amx, value[0], value[1]));
 		}
 		return numargs / 2;
@@ -816,8 +816,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[2 + arg], &key);
-			amx_GetAddr(amx, params[3 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[2 + arg]);
+			value = amx_GetAddrSafe(amx, params[3 + arg]);
 			ptr->insert(dyn_object(amx, key[0], key[1]), variants::get(*value));
 		}
 		return numargs / 2;
@@ -836,8 +836,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[2 + arg], &key);
-			amx_GetAddr(amx, params[3 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[2 + arg]);
+			value = amx_GetAddrSafe(amx, params[3 + arg]);
 			ptr->insert(dyn_object(amx, key[0], key[1]), dyn_object(value));
 		}
 		return numargs / 2;
@@ -856,12 +856,12 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell key = params[3 + arg], value = params[3 + arg + 1], *key_addr, *value_addr;
-			amx_GetAddr(amx, key, &key_addr);
+			key_addr = amx_GetAddrSafe(amx, key);
 			if(arg == 0)
 			{
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, value, &value_addr);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(dyn_object(key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
@@ -881,8 +881,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
-			amx_GetAddr(amx, key, &key_addr);
-			amx_GetAddr(amx, value, &value_addr);
+			key_addr = amx_GetAddrSafe(amx, key);
+			value_addr = amx_GetAddrSafe(amx, value);
 			ptr->insert(dyn_object(key_addr), dyn_object(value_addr));
 		}
 		return numargs / 2;
@@ -901,12 +901,12 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell key = params[2 + arg], value = params[2 + arg + 1], *key_addr, *value_addr;
-			amx_GetAddr(amx, key, &key_addr);
+			key_addr = amx_GetAddrSafe(amx, key);
 			if(arg == 0)
 			{
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, value, &value_addr);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(dyn_object(key_addr), variants::get(*value_addr));
 		}
@@ -926,8 +926,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[2 + arg], &key);
-			amx_GetAddr(amx, params[3 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[2 + arg]);
+			value = amx_GetAddrSafe(amx, params[3 + arg]);
 			ptr->insert(dyn_object(key), dyn_object(amx, value[0], value[1]));
 		}
 		return numargs / 2;
@@ -951,8 +951,8 @@ namespace Natives
 				key_addr = &key;
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, value, &value_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(variants::get(*key_addr), dyn_object(amx, *value_addr, params[1]));
 		}
@@ -976,9 +976,9 @@ namespace Natives
 			{
 				key_addr = &key;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
 			}
-			amx_GetAddr(amx, value, &value_addr);
+			value_addr = amx_GetAddrSafe(amx, value);
 			ptr->insert(variants::get(*key_addr), dyn_object(value_addr));
 		}
 		return numargs / 2;
@@ -1002,8 +1002,8 @@ namespace Natives
 				key_addr = &key;
 				value_addr = &value;
 			}else{
-				amx_GetAddr(amx, key, &key_addr);
-				amx_GetAddr(amx, value, &value_addr);
+				key_addr = amx_GetAddrSafe(amx, key);
+				value_addr = amx_GetAddrSafe(amx, value);
 			}
 			ptr->insert(variants::get(*key_addr), variants::get(*value_addr));
 		}
@@ -1023,8 +1023,8 @@ namespace Natives
 		for(cell arg = 0; arg < numargs; arg += 2)
 		{
 			cell *key, *value;
-			amx_GetAddr(amx, params[2 + arg], &key);
-			amx_GetAddr(amx, params[3 + arg], &value);
+			key = amx_GetAddrSafe(amx, params[2 + arg]);
+			value = amx_GetAddrSafe(amx, params[3 + arg]);
 			ptr->insert(variants::get(*key), dyn_object(amx, value[0], value[1]));
 		}
 		return numargs / 2;

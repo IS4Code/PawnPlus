@@ -640,8 +640,7 @@ void strings::format(AMX *amx, strings::cell_string &buf, const cell *format, ce
 		{
 			return args;
 		}
-		cell *addr;
-		amx_GetAddr(amx, args[argi], &addr);
+		cell *addr = amx_GetAddrSafe(amx, args[argi]);
 		return addr;
 	});
 }
@@ -654,8 +653,7 @@ void strings::format(AMX *amx, strings::cell_string &buf, const cell_string &for
 		{
 			return args;
 		}
-		cell *addr;
-		amx_GetAddr(amx, args[argi], &addr);
+		cell *addr = amx_GetAddrSafe(amx, args[argi]);
 		return addr;
 	});
 }

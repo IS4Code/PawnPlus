@@ -11,13 +11,27 @@
     do {                                                                    \
       if (params[0] / sizeof(cell) < idx) { result = default; break; }      \
       cell *amx_cstr_; int amx_length_;                                     \
-      amx_GetAddr((amx), (params[idx]), &amx_cstr_);                        \
+      amx_cstr_ = amx_GetAddrSafe((amx), (params[idx]));                    \
       amx_StrLen(amx_cstr_, &amx_length_);                                  \
       if (amx_length_ > 0 &&                                                \
           ((result) = (char*)alloca((amx_length_ + 1) * sizeof(*(result)))) != NULL) \
         amx_GetString((char*)(result), amx_cstr_, sizeof(*(result))>1, amx_length_ + 1); \
       else (result) = NULL;                                                 \
     } while (0)
+
+#ifdef amx_StrParam
+#undef amx_StrParam
+#define amx_StrParam(amx,param,result)                                      \
+    do {                                                                    \
+      cell *amx_cstr_; int amx_length_;                                     \
+      amx_cstr_ = amx_GetAddrSafe((amx), (param));                          \
+      amx_StrLen(amx_cstr_, &amx_length_);                                  \
+      if (amx_length_ > 0 &&                                                \
+          ((result) = (char*)alloca((amx_length_ + 1) * sizeof(*(result)))) != NULL) \
+        amx_GetString((char*)(result), amx_cstr_, sizeof(*(result))>1, amx_length_ + 1); \
+      else (result) = NULL;                                                 \
+    } while (0)
+#endif
 
 namespace impl
 {
@@ -41,6 +55,10 @@ namespace impl
 		}catch(const errors::native_error &err)
 		{
 			return handle_error(amx, params, native_info<Native>::name(), err);
+		}catch(const errors::amx_error &err)
+		{
+			amx_RaiseError(amx, err.code);
+			return 0;
 		}
 #ifndef _DEBUG
 		catch(const std::exception &err)

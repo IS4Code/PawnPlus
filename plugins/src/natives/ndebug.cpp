@@ -333,8 +333,7 @@ namespace Natives
 	// native debug_file(file[], code=cellmin, size=sizeof(file));
 	AMX_DEFINE_NATIVE(debug_file, 3)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		return debug_file_string<2>(amx, params, [&](const char *str) -> cell
 		{
 			if(str)
@@ -624,8 +623,7 @@ namespace Natives
 			return 0;
 		}
 		auto sym = dbg->symboltbl[index];
-		cell *addr;
-		amx_GetAddr(amx, params[2], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
 		amx_SetString(addr, sym->name, false, false, params[3]);
 		return std::strlen(sym->name);
 	}
@@ -674,8 +672,8 @@ namespace Natives
 		auto sym = dbg->symboltbl[index];
 
 		cell *start, *end;
-		amx_GetAddr(amx, params[2], &start);
-		amx_GetAddr(amx, params[3], &end);
+		start = amx_GetAddrSafe(amx, params[2]);
+		end = amx_GetAddrSafe(amx, params[3]);
 		if(start)
 		{
 			*start = sym->codestart;
@@ -721,8 +719,7 @@ namespace Natives
 		}
 		auto sym = dbg->symboltbl[index];
 
-		cell *addr;
-		amx_GetAddr(amx, params[2], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
 
 		const char *filename;
 		if(dbg_LookupFile(dbg, sym->codestart, &filename) == AMX_ERR_NONE)
@@ -840,8 +837,7 @@ namespace Natives
 		tag = params[4];
 		if((tag == 0 && !srctag->strong()) || (srctag->inherits_from(tags::find_tag(amx, tag))))
 		{
-			cell *addr;
-			amx_GetAddr(amx, params[2], &addr);
+			cell *addr = amx_GetAddrSafe(amx, params[2]);
 			*addr = *ptr;
 			return 1;
 		}

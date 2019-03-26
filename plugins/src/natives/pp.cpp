@@ -29,8 +29,7 @@ namespace Natives
 	// native pp_version_string(version[], size=sizeof(version));
 	AMX_DEFINE_NATIVE(pp_version_string, 2)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		amx_SetString(addr, PP_VERSION_STRING, false, false, params[2]);
 		return sizeof(PP_VERSION_STRING) - 1;
 	}
@@ -134,8 +133,7 @@ namespace Natives
 	// native pp_entry(name[], size=sizeof(name));
 	AMX_DEFINE_NATIVE(pp_entry, 2)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[1], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		return pp_entry_string(amx, params, [&](const char *str) -> cell
 		{
 			if(str)
@@ -293,8 +291,7 @@ namespace Natives
 	// native pp_module_name(const function[], name[], size=sizeof(name));
 	AMX_DEFINE_NATIVE(pp_module_name, 3)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[2], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
 		return pp_module_name_string(amx, params, [&](const std::string &str)
 		{
 			amx_SetString(addr, str.c_str(), false, false, params[3]);

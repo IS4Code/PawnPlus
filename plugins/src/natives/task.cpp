@@ -267,8 +267,7 @@ namespace Natives
 		auto list = std::make_shared<std::vector<std::pair<tasks::task::handler_iterator, std::weak_ptr<tasks::task>>>>();
 		for(cell i = 1; i <= num; i++)
 		{
-			cell *addr;
-			amx_GetAddr(amx, params[i], &addr);
+			cell *addr = amx_GetAddrSafe(amx, params[i]);
 			std::shared_ptr<task> task;
 			if(!tasks::get_by_id(*addr, task)) amx_LogicError(errors::pointer_invalid, "task", *addr);
 			
@@ -300,8 +299,7 @@ namespace Natives
 		auto list = std::make_shared<std::vector<std::weak_ptr<tasks::task>>>();
 		for(cell i = 1; i <= num; i++)
 		{
-			cell *addr;
-			amx_GetAddr(amx, params[i], &addr);
+			cell *addr = amx_GetAddrSafe(amx, params[i]);
 			std::shared_ptr<task> task;
 			if(!tasks::get_by_id(*addr, task)) amx_LogicError(errors::pointer_invalid, "task", *addr);
 			
@@ -422,7 +420,7 @@ namespace Natives
 				}
 				default:
 				{
-					amx_GetAddr(amx, param, &addr);
+					addr = amx_GetAddrSafe(amx, param);
 					param = *addr;
 					amx_Push(amx, param);
 					break;

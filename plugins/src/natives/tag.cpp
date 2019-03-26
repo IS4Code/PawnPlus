@@ -19,8 +19,7 @@ namespace Natives
 	// native tag_name(tag_uid:tag_uid, name[], size=sizeof(name));
 	AMX_DEFINE_NATIVE(tag_name, 3)
 	{
-		cell *addr;
-		amx_GetAddr(amx, params[2], &addr);
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
 		tag_ptr tag = tags::find_tag(params[1]);
 		amx_SetString(addr, tag->name.c_str(), 0, 0, params[3]);
 		return tag->name.size();
@@ -98,11 +97,8 @@ namespace Natives
 		cell *args = new cell[numargs];
 		for(size_t i = 0; i < numargs; i++)
 		{
-			cell *addr;
-			if(amx_GetAddr(amx, params[3 + i], &addr) == AMX_ERR_NONE)
-			{
-				args[i] = *addr;
-			}
+			cell *addr = amx_GetAddrSafe(amx, params[3 + i]);
+			args[i] = *addr;
 		}
 		cell result = tag->call_op(tag, static_cast<op_type>(params[2]), args, numargs);
 		delete[] args;
