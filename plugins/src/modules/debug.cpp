@@ -135,7 +135,7 @@ void debug::init()
 	{
 		func = dst; // crashdetect may remove its hook, so hook crashdetect instead
 	}
-	CreateFileA_Hook = subhook_new(dst, reinterpret_cast<void*>(HookCreateFileA), {});
+	CreateFileA_Hook = subhook_new(func, reinterpret_cast<void*>(HookCreateFileA), {});
 	CreateFileA_Trampoline = reinterpret_cast<decltype(&CreateFileA)>(subhook_get_trampoline(CreateFileA_Hook));
 	subhook_install(CreateFileA_Hook);
 }
