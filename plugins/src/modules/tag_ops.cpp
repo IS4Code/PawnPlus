@@ -682,7 +682,6 @@ struct variant_operations : public null_operations
 		dyn_object *var2;
 		if(!variants::pool.get_by_id(b, var2)) return 0;
 		auto var = (var1->*op_type)(*var2);
-		if(var.empty()) return 0;
 		return variants::create(std::move(var));
 	}
 
@@ -717,7 +716,6 @@ struct variant_operations : public null_operations
 		dyn_object *var;
 		if(!variants::pool.get_by_id(a, var)) return 0;
 		auto result = (var->*op_type)();
-		if(result.empty()) return 0;
 		return variants::create(std::move(result));
 	}
 

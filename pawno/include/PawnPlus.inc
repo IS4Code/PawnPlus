@@ -543,6 +543,7 @@ native var_tagof(ConstVariantTag:var);
 native tag_uid:var_tag_uid(ConstVariantTag:var);
 native var_sizeof(ConstVariantTag:var);
 native var_sizeof_md(ConstVariantTag:var, const offsets[], offsets_size=sizeof(offsets));
+native var_rank(ConstVariantTag:var);
 native Variant:var_add(ConstVariantTag:var1, ConstVariantTag:var2);
 native Variant:var_sub(ConstVariantTag:var1, ConstVariantTag:var2);
 native Variant:var_mul(ConstVariantTag:var1, ConstVariantTag:var2);
@@ -1101,8 +1102,10 @@ native bool:iter_insert_str(IterTag:iter, const value[]);
 native bool:iter_insert_var(IterTag:iter, ConstVariantTag:value);
 
 native iter_tagof(IterTag:iter);
+native tag_uid:iter_tag_uid(IterTag:iter);
 native iter_sizeof(IterTag:iter);
 native iter_sizeof_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+native iter_rank(IterTag:iter);
 
 native iter_get_key(IterTag:iter, offset=0);
 native iter_get_key_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
@@ -1127,8 +1130,10 @@ native bool:iter_set_key_cell_md(IterTag:iter, const offsets[], AnyTag:value, of
 native bool:iter_set_key_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
 
 native iter_tagof_key(IterTag:iter);
+native tag_uid:iter_key_tag_uid(IterTag:iter);
 native iter_sizeof_key(IterTag:iter);
 native iter_sizeof_key_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
+native iter_key_rank(IterTag:iter);
 
 native iter_get_value(IterTag:iter, offset=0) = iter_get;
 native iter_get_value_arr(IterTag:iter, AnyTag:value[], size=sizeof(value)) = iter_get_arr;
@@ -1160,8 +1165,10 @@ native bool:iter_set_value_cell_md(IterTag:iter, const offsets[], AnyTag:value, 
 native bool:iter_set_value_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value)) = iter_set_cell_md_safe;
 
 native iter_tagof_value(IterTag:iter) = iter_tagof;
+native tag_uid:iter_value_tag_uid(IterTag:iter) = iter_tag_uid;
 native iter_sizeof_value(IterTag:iter) = iter_sizeof;
 native iter_sizeof_value_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets)) = iter_sizeof_md;
+native iter_value_rank(IterTag:iter) = iter_rank;
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -1193,6 +1200,7 @@ native iter_sizeof_value_md(IterTag:iter, const offsets[], offsets_size=sizeof(o
 
 #define iter_sizeof<%0>(%1) iter_sizeof(Iter:_PP@CAST[Iter<%0>](%1))
 #define iter_sizeof_md<%0>(%1) iter_sizeof_md(Iter:_PP@CAST[Iter<%0>](%1))
+#define iter_rank<%0>(%1) iter_rank(Iter:_PP@CAST[Iter<%0>](%1))
 
 #define iter_get_key<%0,%1>(%2) (%0:iter_get_key(Iter:_PP@CAST[PairIter<%0,%1>](%2)))
 #define iter_get_key_arr<%0,%1>(%2,%3) iter_get_key_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
@@ -1207,8 +1215,10 @@ native iter_sizeof_value_md(IterTag:iter, const offsets[], offsets_size=sizeof(o
 
 #define iter_sizeof_key<%0,%1>(%2) iter_sizeof_key(Iter:_PP@CAST[PairIter<%0,%1>](%2))
 #define iter_sizeof_key_md<%0,%1>(%2) iter_sizeof_key_md(Iter:_PP@CAST[PairIter<%0,%1>](%2))
+#define iter_key_rank<%0,%1>(%2) iter_key_rank(Iter:_PP@CAST[PairIter<%0,%1>](%2))
 #define iter_sizeof_value<%0,%1>(%2) iter_sizeof_value(Iter:_PP@CAST[PairIter<%0,%1>](%2))
 #define iter_sizeof_value_md<%0,%1>(%2) iter_sizeof_value_md(Iter:_PP@CAST[PairIter<%0,%1>](%2))
+#define iter_value_rank<%0,%1>(%2) iter_value_rank(Iter:_PP@CAST[PairIter<%0,%1>](%2))
 
 #if defined PP_SYNTAX_FOR_LIST
 #define for_list_of<%2>(%0:%1) for(new Iter<%2>:%0=list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))

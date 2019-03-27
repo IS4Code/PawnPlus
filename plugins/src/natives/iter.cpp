@@ -1275,6 +1275,15 @@ namespace Natives
 		});
 	}
 
+	// native tag_uid:iter_tag_uid(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_tag_uid, 1)
+	{
+		return value_read(params[1], [&](const dyn_object &obj)
+		{
+			return obj.get_tag()->uid;
+		});
+	}
+
 	// native iter_sizeof(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_sizeof, 1)
 	{
@@ -1295,12 +1304,30 @@ namespace Natives
 		});
 	}
 
+	// native iter_rank(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_rank, 1)
+	{
+		return value_read(params[1], [&](const dyn_object &obj)
+		{
+			return obj.get_rank();
+		});
+	}
+
 	// native iter_tagof_key(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_tagof_key, 1)
 	{
 		return key_read(params[1], [&](const dyn_object &obj)
 		{
 			return obj.get_tag(amx);
+		});
+	}
+
+	// native tag_uid:iter_key_tag_uid(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_key_tag_uid, 1)
+	{
+		return key_read(params[1], [&](const dyn_object &obj)
+		{
+			return obj.get_tag()->uid;
 		});
 	}
 
@@ -1321,6 +1348,15 @@ namespace Natives
 			cell offsets_size = params[3];
 			cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
 			return obj.get_size(offsets_addr, offsets_size);
+		});
+	}
+
+	// native iter_key_rank(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_key_rank, 1)
+	{
+		return key_read(params[1], [&](const dyn_object &obj)
+		{
+			return obj.get_rank();
 		});
 	}
 }
@@ -1416,12 +1452,15 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_get_key_md_str_safe),
 	AMX_DECLARE_NATIVE(iter_get_key_md_str_safe_s),
 
+	AMX_DECLARE_NATIVE(iter_tagof),
+	AMX_DECLARE_NATIVE(iter_tag_uid),
 	AMX_DECLARE_NATIVE(iter_sizeof),
 	AMX_DECLARE_NATIVE(iter_sizeof_md),
-	AMX_DECLARE_NATIVE(iter_tagof),
+	AMX_DECLARE_NATIVE(iter_rank),
+	AMX_DECLARE_NATIVE(iter_tagof_key),
 	AMX_DECLARE_NATIVE(iter_sizeof_key),
 	AMX_DECLARE_NATIVE(iter_sizeof_key_md),
-	AMX_DECLARE_NATIVE(iter_tagof_key),
+	AMX_DECLARE_NATIVE(iter_key_rank),
 };
 
 int RegisterIterNatives(AMX *amx)

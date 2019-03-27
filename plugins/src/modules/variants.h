@@ -12,13 +12,13 @@ namespace variants
 
 	inline cell create(dyn_object &&obj)
 	{
-		if(obj.empty()) return 0;
+		if(obj.is_null()) return 0;
 		return pool.get_id(pool.add(std::move(obj)));
 	}
 
 	inline cell create(const dyn_object &obj)
 	{
-		if(obj.empty()) return 0;
+		if(obj.is_null()) return 0;
 		return pool.get_id(pool.emplace(obj));
 	}
 

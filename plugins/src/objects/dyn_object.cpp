@@ -200,7 +200,7 @@ dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(t
 
 dyn_object::dyn_object(const dyn_object &obj, bool assign) : rank(obj.rank), tag(obj.tag)
 {
-	if(is_array())
+	if(rank > 0)
 	{
 		if(obj.array_data != nullptr)
 		{
@@ -241,8 +241,10 @@ cell dyn_object::data_size() const
 
 cell dyn_object::array_start() const
 {
-	if(is_array())
+	if(is_cell() || is_null())
 	{
+		return 0;
+	}else{
 		cell *b = array_data + 1;
 		auto dim = rank;
 		while(dim > 1)
@@ -251,8 +253,6 @@ cell dyn_object::array_start() const
 			dim--;
 		}
 		return b - array_data;
-	}else{
-		return 0;
 	}
 }
 
@@ -303,7 +303,7 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 	const cell *block;
 	cell begin, end;
 
-	if(!is_array())
+	if(is_cell())
 	{
 		if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0; }))
 		{
@@ -357,7 +357,7 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 
 cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices)
 {
-	if(!is_array())
+	if(is_cell())
 	{
 		if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0; }))
 		{
@@ -397,7 +397,7 @@ cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices)
 
 const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) const
 {
-	if(!is_array())
+	if(is_cell())
 	{
 		if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0; }))
 		{
@@ -437,8 +437,12 @@ const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) con
 
 cell dyn_object::store(AMX *amx) const
 {
-	if(is_array())
+	if(is_cell())
 	{
+		cell value = cell_value;
+		assign_op(&value, 1);
+		return value;
+	}else{
 		cell size = data_size() - 1;
 		cell amx_addr, *addr;
 		amx_Allot(amx, size, &amx_addr, &addr);
@@ -447,10 +451,6 @@ cell dyn_object::store(AMX *amx) const
 		/*cell begin = array_start() - 1;
 		assign_op(addr + begin, data_size() - begin);*/
 		return amx_addr;
-	}else{
-		cell value = cell_value;
-		assign_op(&value, 1);
-		return value;
 	}
 }
 
@@ -468,57 +468,60 @@ void dyn_object::load(AMX *amx, cell amx_addr)
 
 cell *dyn_object::begin()
 {
-	if(is_array())
+	if(is_cell())
 	{
-		return &array_data[array_start()];
-	}else{
 		return &cell_value;
+	}else{
+		return &array_data[array_start()];
 	}
 }
 
 cell *dyn_object::end()
 {
-	if(is_array())
+	if(is_cell())
 	{
-		return array_data + data_size();
-	}else{
 		return &cell_value + 1;
+	}else{
+		return array_data + data_size();
 	}
 }
 
 const cell *dyn_object::begin() const
 {
-	if(is_array())
+	if(is_cell())
 	{
-		return &array_data[array_start()];
-	}else{
 		return &cell_value;
+	}else{
+		return &array_data[array_start()];
 	}
 }
 
 const cell *dyn_object::end() const
 {
-	if(is_array())
+	if(is_cell())
 	{
-		return array_data + data_size();
-	}else{
 		return &cell_value + 1;
+	}else{
+		return array_data + data_size();
 	}
 }
 
 cell dyn_object::array_size() const
 {
-	if(is_array())
+	if(is_cell())
 	{
-		return end() - begin();
-	}else{
 		return 1;
+	}else{
+		return end() - begin();
 	}
 }
 
 cell dyn_object::get_size(const cell *indices, cell num_indices) const
 {
-	if(!is_array()) return std::all_of(indices, indices + num_indices, [](const cell &i){return i == 0;}) ? 1 : 0;
+	if(is_cell())
+	{
+		return std::all_of(indices, indices + num_indices, [](const cell &i){return i == 0;}) ? 1 : 0;
+	}
 	if(empty()) return 0;
 
 	const cell *block = array_data + 1;
@@ -960,25 +963,25 @@ dyn_object dyn_object::dec() const
 std::basic_string<cell> dyn_object::to_string() const
 {
 	const auto &ops = tag->get_ops();
-	if(is_array())
+	if(is_cell())
 	{
+		return ops.to_string(tag, cell_value);
+	}else{
 		const cell *begin = this->begin();
 		return ops.to_string(tag, begin, end() - begin);
-	}else{
-		return ops.to_string(tag, cell_value);
 	}
 }
 
 dyn_object &dyn_object::operator=(const dyn_object &obj)
 {
 	if(this == &obj) return *this;
-	if(is_array() && array_data != nullptr)
+	if(is_array())
 	{
 		delete[] array_data;
 	}
 	rank = obj.rank;
 	tag = obj.tag;
-	if(is_array())
+	if(rank > 0)
 	{
 		if(obj.array_data != nullptr)
 		{
@@ -998,13 +1001,13 @@ dyn_object &dyn_object::operator=(const dyn_object &obj)
 dyn_object &dyn_object::operator=(dyn_object &&obj) noexcept
 {
 	if(this == &obj) return *this;
-	if(is_array() && array_data != nullptr)
+	if(is_array())
 	{
 		delete[] array_data;
 	}
 	rank = obj.rank;
 	tag = obj.tag;
-	if(is_array())
+	if(rank > 0)
 	{
 		array_data = obj.array_data;
 	}else{
@@ -1017,7 +1020,7 @@ dyn_object &dyn_object::operator=(dyn_object &&obj) noexcept
 
 dyn_object::~dyn_object()
 {
-	if(!empty())
+	if(!is_null())
 	{
 		const tag_operations &ops = tag->get_ops();
 		if(is_array())
@@ -1035,8 +1038,5 @@ dyn_object::~dyn_object()
 			array_data = nullptr;
 			ops.collect(tag, &value, 1);
 		}
-	}else{
-		rank = 1;
-		array_data = nullptr;
 	}
 }

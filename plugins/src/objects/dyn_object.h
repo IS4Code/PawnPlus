@@ -46,7 +46,7 @@ public:
 
 	dyn_object(dyn_object &&obj) noexcept : rank(obj.rank), tag(obj.tag)
 	{
-		if(is_array())
+		if(rank > 0)
 		{
 			array_data = obj.array_data;
 		}else{
@@ -118,12 +118,27 @@ public:
 
 	bool empty() const
 	{
-		return is_array() ? array_data == nullptr || *array_data <= 1 : false;
+		return rank > 0 ? array_data == nullptr || *array_data <= 1 : false;
+	}
+
+	bool is_null() const
+	{
+		return rank > 0 && array_data == nullptr;
 	}
 
 	bool is_array() const
 	{
-		return rank > 0;
+		return rank > 0 && array_data != nullptr;
+	}
+
+	bool is_cell() const
+	{
+		return rank == 0;
+	}
+
+	cell get_rank() const
+	{
+		return is_null() ? -1 : static_cast<cell>(rank);
 	}
 
 	char get_specifier() const

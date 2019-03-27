@@ -285,6 +285,14 @@ namespace Natives
 		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
 		return var->get_size(offsets_addr, offsets_size);
 	}
+
+	// native var_rank(ConstVariantTag:var)
+	AMX_DEFINE_NATIVE(var_rank, 1)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var) && var != nullptr) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		return var == nullptr ? -1 : var->get_rank();
+	}
 	
 	// native Variant:var_bin_op(ConstVariantTag:var1, ConstVariantTag:var2);
 	template <dyn_object (dyn_object::*op)(const dyn_object&) const>
@@ -299,7 +307,6 @@ namespace Natives
 			return 0;
 		}
 		auto var = (var1->*op)(*var2);
-		if(var.empty()) return 0;
 		return variants::create(std::move(var));
 	}
 
@@ -344,7 +351,6 @@ namespace Natives
 			return 0;
 		}
 		auto result = (var->*op)();
-		if(result.empty()) return 0;
 		return variants::create(std::move(result));
 	}
 
@@ -462,7 +468,6 @@ namespace Natives
 		}
 		auto result = var->call_op(static_cast<op_type>(params[2]), args, numargs, true);
 		delete[] args;
-		if(result.empty()) return 0;
 		return variants::create(std::move(result));
 	}
 
@@ -484,7 +489,6 @@ namespace Natives
 		}
 		auto result = var->call_op(static_cast<op_type>(params[2]), args, numargs, false);
 		delete[] args;
-		if(result.empty()) return 0;
 		return variants::create(std::move(result));
 	}
 }
@@ -531,6 +535,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_tag_uid),
 	AMX_DECLARE_NATIVE(var_sizeof),
 	AMX_DECLARE_NATIVE(var_sizeof_md),
+	AMX_DECLARE_NATIVE(var_rank),
 	AMX_DECLARE_NATIVE(var_add),
 	AMX_DECLARE_NATIVE(var_sub),
 	AMX_DECLARE_NATIVE(var_mul),
