@@ -311,9 +311,17 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 			begin = 0;
 			end = 1;
 		}
-		return 0;
+		amx_LogicError(errors::out_of_range, "offset");
 	}else{
-		if(empty()) return 0;
+		if(empty())
+		{
+			if(num_indices == 0)
+			{
+				return 0;
+			}else{
+				amx_LogicError(errors::out_of_range, "offset");
+			}
+		}
 
 		block = array_data + 1;
 		cell data_begin = this->begin() - block, data_end = this->end() - block;
@@ -325,11 +333,14 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 			if(begin >= data_begin)
 			{
 				cell size = end - begin;
-				if(index >= size) return false;
+				if(index >= size)
+				{
+					amx_LogicError(errors::out_of_range, "offset");
+				}
 				begin += index;
 			}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
 			{
-				return false;
+				amx_LogicError(errors::out_of_range, "offset");
 			}
 		}
 		if(end > begin)
@@ -357,42 +368,7 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 
 cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices)
 {
-	if(is_cell())
-	{
-		if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0; }))
-		{
-			return &cell_value;
-		}
-		return nullptr;
-	}
-	if(empty()) return nullptr;
-
-	cell *block = array_data + 1;
-	cell data_begin = begin() - block, data_end = end() - block;
-	cell begin = 0, end = rank >= 2 ? block[0] / sizeof(cell) : data_end;
-	for(cell i = 0; i < num_indices; i++)
-	{
-		cell index = indices[i];
-		if(begin >= data_begin)
-		{
-			cell size = end - begin;
-			if(index >= size) return nullptr;
-			begin += index;
-			end = begin + 1;
-		}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
-		{
-			return nullptr;
-		}
-	}
-	while(begin < data_begin)
-	{
-		if(!array_bounds(block, begin, end, data_begin, data_end, 0))
-		{
-			return nullptr;
-		}
-	}
-	if(end <= begin) return nullptr;
-	return &block[begin];
+	return const_cast<cell*>(static_cast<const dyn_object*>(this)->get_cell_addr(indices, num_indices));
 }
 
 const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) const
@@ -403,9 +379,11 @@ const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) con
 		{
 			return &cell_value;
 		}
-		return nullptr;
+		amx_LogicError(errors::out_of_range, "offset");
+	}else if(empty())
+	{
+		amx_LogicError(errors::out_of_range, "offset");
 	}
-	if(empty()) return nullptr;
 
 	const cell *block = array_data + 1;
 	cell data_begin = begin() - block, data_end = end() - block;
@@ -421,17 +399,20 @@ const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) con
 			end = begin + 1;
 		}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
 		{
-			return nullptr;
+			amx_LogicError(errors::out_of_range, "offset");
 		}
 	}
 	while(begin < data_begin)
 	{
 		if(!array_bounds(block, begin, end, data_begin, data_end, 0))
 		{
-			return nullptr;
+			amx_LogicError(errors::out_of_range, "offset");
 		}
 	}
-	if(end <= begin) return nullptr;
+	if(end <= begin)
+	{
+		amx_LogicError(errors::out_of_range, "offset");
+	}
 	return &block[begin];
 }
 
@@ -520,9 +501,21 @@ cell dyn_object::get_size(const cell *indices, cell num_indices) const
 {
 	if(is_cell())
 	{
-		return std::all_of(indices, indices + num_indices, [](const cell &i){return i == 0;}) ? 1 : 0;
+		if(std::all_of(indices, indices + num_indices, [](const cell &i){return i == 0;}))
+		{
+			return 1;
+		}
+		amx_LogicError(errors::out_of_range, "offset");
 	}
-	if(empty()) return 0;
+	if(empty())
+	{
+		if(num_indices == 0)
+		{
+			return 0;
+		}else{
+			amx_LogicError(errors::out_of_range, "offset");
+		}
+	}
 
 	const cell *block = array_data + 1;
 	cell data_begin = begin() - block, data_end = end() - block;
@@ -542,7 +535,7 @@ cell dyn_object::get_size(const cell *indices, cell num_indices) const
 			continue;
 		}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
 		{
-			return 0;
+			amx_LogicError(errors::out_of_range, "offset");
 		}
 	}
 	if(cells) return 1;
