@@ -460,31 +460,67 @@ struct format_base
 			break;
 			case 'c':
 			{
-				buf.append(1, *arg);
+				if(begin == end)
+				{
+					buf.append(1, *arg);
+					return;
+				}else{
+					auto count = aux::parse_num<cell>(begin, end);
+					if(begin == end && count >= 1)
+					{
+						buf.append(count, *arg);
+						return;
+					}
+				}
 			}
 			break;
 			case 'b':
 			{
 				std::bitset<8> bits(*arg);
-				buf.append(bits.to_string<cell>());
+				if(begin != end)
+				{
+					cell zero = *begin;
+					++begin;
+					if(begin != end)
+					{
+						cell one = *begin;
+						++begin;
+						if(begin == end)
+						{
+							buf.append(bits.to_string<cell>(zero, one));
+							return;
+						}
+					}
+				}else{
+					buf.append(bits.to_string<cell>());
+					return;
+				}
 			}
 			break;
 			case 'V':
 			{
-				dyn_object *var;
-				if(variants::pool.get_by_id(*arg, var))
+				if(begin == end)
 				{
-					buf.append(var->to_string());
-				}else if(var != nullptr)
-				{
-					amx_LogicError(errors::pointer_invalid, "variant", *arg);
-					return;
+					dyn_object *var;
+					if(variants::pool.get_by_id(*arg, var))
+					{
+						buf.append(var->to_string());
+						return;
+					}else if(var != nullptr)
+					{
+						amx_LogicError(errors::pointer_invalid, "variant", *arg);
+						return;
+					}
 				}
 			}
 			break;
 			case 'P':
 			{
-				buf.append(dyn_object(amx, arg[0], arg[1]).to_string());
+				if(begin == end)
+				{
+					buf.append(dyn_object(amx, arg[0], arg[1]).to_string());
+					return;
+				}
 			}
 			break;
 			default:
@@ -493,10 +529,7 @@ struct format_base
 			}
 			break;
 		}
-		if(begin != end)
-		{
-			amx_FormalError(errors::invalid_format, "invalid specifier parameter");
-		}
+		amx_FormalError(errors::invalid_format, "invalid specifier parameter");
 	}
 
 	template <class ArgFunc>
