@@ -188,6 +188,7 @@ native bool:pawn_guard_free(Guard:guard);
 native List:pawn_get_args(const format[], bool:byref=false, level=0);
 #define pawn_nameof(%0) ((tagof(%0)),_:_PP@REMOVE_COLON:(#%0))
 native ArgTag:[2]pawn_arg_pack(AnyTag:value, tag_id=tagof(value));
+#define pawn_cast<%0>(%1) (%0:_PP@TMP2=(%1))
 
 #if defined PP_SYNTAX_GENERIC
 
