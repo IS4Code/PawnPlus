@@ -476,7 +476,7 @@ struct format_base
 			break;
 			case 'b':
 			{
-				std::bitset<8> bits(*arg);
+				std::bitset<sizeof(cell) * 8> bits(*arg);
 				if(begin != end)
 				{
 					cell zero = *begin;
@@ -489,6 +489,21 @@ struct format_base
 						{
 							buf.append(bits.to_string<cell>(zero, one));
 							return;
+						}else if(*begin == '.')
+						{
+							++begin;
+							auto limit = aux::parse_num<cell>(begin, end);
+							if(begin == end && limit > 0)
+							{
+								cell_string val(bits.to_string<cell>(zero, one));
+								if(val.size() > static_cast<size_t>(limit))
+								{
+									buf.append(val.begin() + val.size() - limit, val.end());
+								}else{
+									buf.append(val);
+								}
+								return;
+							}
 						}
 					}
 				}else{
