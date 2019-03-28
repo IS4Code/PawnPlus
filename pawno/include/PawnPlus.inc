@@ -1210,7 +1210,7 @@ native iter_value_rank(IterTag:iter) = iter_rank;
 #define iter_get_value_md<%0,%1>(%2) (%0:iter_get_value_md(Iter:_PP@CAST[PairIter<%0,%1>](%2)))
 #define iter_get_value_md_arr<%0,%1>(%2,%3,%4) iter_get_value_md_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST_ARR[%0](%4))
 #define iter_set_value<%0,%1>(%2,%3) iter_set_value(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST[%1](%3))
-#define iter_set_value_arr(%2,%3) iter_set_value_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%1](%3))
+#define iter_set_value_arr<%0,%1>(%2,%3) iter_set_value_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%1](%3))
 #define iter_set_value_cell<%0,%1>(%2,%3,%4) iter_set_value_cell(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST[%1](%4))
 #define iter_set_value_cell_md<%0,%1>(%2,%3,%4) iter_set_value_cell(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST[%1](%4))
 
