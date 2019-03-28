@@ -539,7 +539,7 @@ namespace Natives
 		return params[1];
 	}
 
-	// native String:str_format(const format[], {StringTags,Float,_}:...);
+	// native String:str_format(const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(str_format, 1)
 	{
 		cell *format = amx_GetAddrSafe(amx, params[1]);
@@ -549,7 +549,7 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
 
-	// native String:str_format_s(StringTag:format, {StringTags,Float,_}:...);
+	// native String:str_format_s(StringTag:format, AnyTag:...);
 	AMX_DEFINE_NATIVE(str_format_s, 1)
 	{
 		cell_string *strformat;
@@ -562,7 +562,7 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
 
-	// native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
+	// native String:str_set_format(StringTag:target, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(str_set_format, 2)
 	{
 		cell_string *str;
@@ -575,7 +575,7 @@ namespace Natives
 		return params[1];
 	}
 
-	// native String:str_set_format_s(StringTag:target, StringTag:format, {StringTags,Float,_}:...);
+	// native String:str_set_format_s(StringTag:target, StringTag:format, AnyTag:...);
 	AMX_DEFINE_NATIVE(str_set_format_s, 2)
 	{
 		cell_string *str;

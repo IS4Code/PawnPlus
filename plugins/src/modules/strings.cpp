@@ -1,6 +1,7 @@
 #include "strings.h"
 #include "errors.h"
 #include "modules/containers.h"
+#include "modules/variants.h"
 
 #include <stddef.h>
 #include <vector>
@@ -310,7 +311,7 @@ struct format_base
 		}
 	};
 
-	void add_format(cell_string &buf, Iter begin, Iter end, const cell *arg) const
+	void add_format(AMX *amx, cell_string &buf, Iter begin, Iter end, const cell *arg) const
 	{
 		ptrdiff_t flen = end - begin;
 		switch(*end)
@@ -468,6 +469,24 @@ struct format_base
 				buf.append(bits.to_string<cell>());
 			}
 			break;
+			case 'V':
+			{
+				dyn_object *var;
+				if(variants::pool.get_by_id(*arg, var))
+				{
+					buf.append(var->to_string());
+				}else if(var != nullptr)
+				{
+					amx_LogicError(errors::pointer_invalid, "variant", *arg);
+					return;
+				}
+			}
+			break;
+			case 'P':
+			{
+				buf.append(dyn_object(amx, arg[0], arg[1]).to_string());
+			}
+			break;
 			default:
 			{
 				amx_FormalError(errors::invalid_format, "invalid specifier");
@@ -481,7 +500,7 @@ struct format_base
 	}
 
 	template <class ArgFunc>
-	void operator()(Iter format_begin, Iter format_end, strings::cell_string &buf, cell argc, ArgFunc argf) const
+	void operator()(Iter format_begin, Iter format_end, AMX *amx, strings::cell_string &buf, cell argc, ArgFunc argf) const
 	{
 		auto flen = format_end - format_begin;
 		buf.reserve(flen + 8 * argc);
@@ -541,7 +560,7 @@ struct format_base
 						{
 							++pos_end;
 
-							add_format(buf, pos_end, format_begin, argf(argi));
+							add_format(amx, buf, pos_end, format_begin, argf(argi));
 						}else if(argi > maxargn)
 						{
 							maxargn = argi;
@@ -550,7 +569,7 @@ struct format_base
 						argn++;
 						if(argn < argc)
 						{
-							add_format(buf, last, format_begin, argf(argn));
+							add_format(amx, buf, last, format_begin, argf(argn));
 						}else if(argn > maxargn)
 						{
 							maxargn = argn;
@@ -604,7 +623,7 @@ struct format_base
 					return;
 				}else if(argi < argc)
 				{
-					add_format(buf, last, lastspec, argf(argi));
+					add_format(amx, buf, last, lastspec, argf(argi));
 				}else if(argi > maxargn)
 				{
 					maxargn = argi;
@@ -631,7 +650,7 @@ struct format_base
 
 void strings::format(AMX *amx, strings::cell_string &buf, const cell *format, cell argc, cell *args)
 {
-	select_iterator<format_base>(format, buf, argc, [&](cell argi)
+	select_iterator<format_base>(format, amx, buf, argc, [&](cell argi)
 	{
 		if(argi == -1)
 		{
@@ -644,7 +663,7 @@ void strings::format(AMX *amx, strings::cell_string &buf, const cell *format, ce
 
 void strings::format(AMX *amx, strings::cell_string &buf, const cell_string &format, cell argc, cell *args)
 {
-	format_base<cell_string::const_iterator>()(format.begin(), format.end(), buf, argc, [&](cell argi)
+	format_base<cell_string::const_iterator>()(format.begin(), format.end(), amx, buf, argc, [&](cell argi)
 	{
 		if(argi == -1)
 		{

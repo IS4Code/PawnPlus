@@ -444,10 +444,10 @@ native String:str_resize(StringTag:str, size, padding=0);
 native String:str_set_to_lower(StringTag:str);
 native String:str_set_to_upper(StringTag:str);
 
-native String:str_format(const format[], {StringTags,Float,_}:...);
-native String:str_format_s(ConstStringTag:format, {StringTags,Float,_}:...);
-native String:str_set_format(StringTag:target, const format[], {StringTags,Float,_}:...);
-native String:str_set_format_s(StringTag:target, ConstStringTag:format, {StringTags,Float,_}:...);
+native String:str_format(const format[], AnyTag:...);
+native String:str_format_s(ConstStringTag:format, AnyTag:...);
+native String:str_set_format(StringTag:target, const format[], AnyTag:...);
+native String:str_set_format_s(StringTag:target, ConstStringTag:format, AnyTag:...);
 
 enum regex_options (<<= 1)
 {
