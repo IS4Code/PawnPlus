@@ -229,6 +229,8 @@ const tag_uid:tag_uid_callback_handler = tag_uid:15;
 const tag_uid:tag_uid_native_hook = tag_uid:16;
 const tag_uid:tag_uid_handle = tag_uid:17;
 const tag_uid:tag_uid_symbol = tag_uid:18;
+const tag_uid:tag_uid_signed = tag_uid:19;
+const tag_uid:tag_uid_unsigned = tag_uid:20;
 
 const TAG_EXPORTED = 0x80000000;
 const TAG_STRONG = 0x40000000;

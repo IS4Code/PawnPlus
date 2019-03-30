@@ -365,10 +365,54 @@ struct format_base
 		}
 	};
 
-	void add_format(cell_string &buf, Iter begin, Iter end, const cell *arg)
+	bool add_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj)
+	{
+		auto tag = obj.get_tag();
+		if(obj.empty() || (obj.is_array() && !tag->inherits_from(tags::tag_char)))
+		{
+			if(begin == end)
+			{
+				buf.append(obj.to_string());
+				return true;
+			}
+			return false;
+		}
+
+		const cell *data = obj.get_cell_addr(nullptr, 0);
+		if(tag->inherits_from(tags::tag_signed) || tag->uid == tags::tag_cell)
+		{
+			add_format(buf, begin, end, 'i', data);
+			return true;
+		}else if(tag->inherits_from(tags::tag_unsigned))
+		{
+			add_format(buf, begin, end, 'u', data);
+			return true;
+		}else if(tag->inherits_from(tags::tag_char))
+		{
+			if(obj.is_array())
+			{
+				add_format(buf, begin, end, 's', data);
+			}else{
+				add_format(buf, begin, end, 'c', data);
+			}
+			return true;
+		}else if(tag->inherits_from(tags::tag_float))
+		{
+			add_format(buf, begin, end, 'f', data);
+			return true;
+		}
+		if(begin == end)
+		{
+			buf.append(obj.to_string());
+			return true;
+		}
+		return false;
+	}
+
+	void add_format(cell_string &buf, Iter begin, Iter end, cell type, const cell *arg)
 	{
 		ptrdiff_t flen = end - begin;
-		switch(*end)
+		switch(type)
 		{
 			case 's':
 			{
@@ -568,26 +612,27 @@ struct format_base
 			break;
 			case 'V':
 			{
-				if(begin == end)
+				dyn_object *var;
+				if(variants::pool.get_by_id(*arg, var))
 				{
-					dyn_object *var;
-					if(variants::pool.get_by_id(*arg, var))
+					if(add_format(buf, begin, end, *var))
 					{
-						buf.append(var->to_string());
-						return;
-					}else if(var != nullptr)
-					{
-						amx_LogicError(errors::pointer_invalid, "variant", *arg);
 						return;
 					}
+				}else if(var != nullptr)
+				{
+					amx_LogicError(errors::pointer_invalid, "variant", *arg);
+					return;
+				}else if(begin == end)
+				{
+					return;
 				}
 			}
 			break;
 			case 'P':
 			{
-				if(begin == end)
+				if(add_format(buf, begin, end, dyn_object(amx, arg[0], arg[1])))
 				{
-					buf.append(dyn_object(amx, arg[0], arg[1]).to_string());
 					return;
 				}
 			}
@@ -662,7 +707,7 @@ struct format_base
 						{
 							++pos_end;
 
-							add_format(buf, pos_end, format_begin, get_arg(argi));
+							add_format(buf, pos_end, format_begin, *format_begin, get_arg(argi));
 						}else if(argi > maxargn)
 						{
 							maxargn = argi;
@@ -671,7 +716,7 @@ struct format_base
 						argn++;
 						if(argn < argc)
 						{
-							add_format(buf, last, format_begin, get_arg(argn));
+							add_format(buf, last, format_begin, *format_begin, get_arg(argn));
 						}else if(argn > maxargn)
 						{
 							maxargn = argn;
@@ -726,7 +771,7 @@ struct format_base
 					return;
 				}else if(argi < argc)
 				{
-					add_format(buf, last, lastspec, get_arg(argi));
+					add_format(buf, last, lastspec, *lastspec, get_arg(argi));
 				}else if(argi > maxargn)
 				{
 					maxargn = argi;
