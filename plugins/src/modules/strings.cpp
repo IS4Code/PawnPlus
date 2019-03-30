@@ -956,9 +956,46 @@ const std::ctype<cell> cell_ctype;
 std::locale custom_locale;
 std::string custom_locale_name;
 
-void strings::set_locale(const std::locale &loc)
+std::locale::category get_category(cell category)
 {
-	std::locale::global(custom_locale = std::locale(loc, &cell_ctype));
+	if(category == -1) return std::locale::all;
+	std::locale::category cat = std::locale::none;
+	if(category & 1)
+	{
+		cat |= std::locale::collate;
+	}
+	if(category & 2)
+	{
+		cat |= std::locale::ctype;
+	}
+	if(category & 4)
+	{
+		cat |= std::locale::monetary;
+	}
+	if(category & 8)
+	{
+		cat |= std::locale::numeric;
+	}
+	if(category & 16)
+	{
+		cat |= std::locale::time;
+	}
+	if(category & 32)
+	{
+		cat |= std::locale::messages;
+	}
+	return cat;
+}
+
+void strings::set_locale(const std::locale &loc, cell category)
+{
+	auto cat = get_category(category);
+	if(cat == std::locale::all)
+	{
+		std::locale::global(custom_locale = std::locale(loc, &cell_ctype));
+	}else{
+		std::locale::global(custom_locale = std::locale(std::locale(custom_locale, loc, cat), &cell_ctype));
+	}
 	custom_locale_name = loc.name();
 	base_facet = &std::use_facet<std::ctype<char>>(custom_locale);
 }
@@ -967,7 +1004,6 @@ const std::string &strings::locale_name()
 {
 	return custom_locale_name;
 }
-
 
 cell strings::to_lower(cell c)
 {

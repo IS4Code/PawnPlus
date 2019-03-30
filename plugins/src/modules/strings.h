@@ -171,7 +171,7 @@ namespace strings
 	bool clamp_range(const cell_string &str, cell &start, cell &end);
 	bool clamp_pos(const cell_string &str, cell &pos);
 
-	void set_locale(const std::locale &loc);
+	void set_locale(const std::locale &loc, cell category);
 	const std::string &locale_name();
 
 	cell to_lower(cell c);

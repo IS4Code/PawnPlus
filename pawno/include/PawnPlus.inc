@@ -151,7 +151,19 @@ native error_level:pp_error_level(error_level:level);
 native pp_raise_error(const message[], error_level:level=error_logic);
 forward pp_on_error(const source[], const message[], error_level:level, &retval);
 
-native pp_locale(const locale[]);
+enum locale_category (<<= 1)
+{
+    locale_none = 0,
+    locale_collate = 1,
+    locale_ctype,
+    locale_monetary,
+    locale_numeric,
+    locale_time,
+    locale_messages,
+    locale_all = -1,
+}
+
+native pp_locale(const locale[], locale_category:category = locale_all);
 native pp_locale_name(locale[], size=sizeof(locale));
 native String:pp_locale_name_s();
 

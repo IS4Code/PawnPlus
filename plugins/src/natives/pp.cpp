@@ -308,7 +308,7 @@ namespace Natives
 		});
 	}
 
-	// native pp_locale(const locale[]);
+	// native pp_locale(const locale[], locale_category:category = locale_all);
 	AMX_DEFINE_NATIVE(pp_locale, 1)
 	{
 		char *locale;
@@ -316,9 +316,9 @@ namespace Natives
 		try{
 			if(locale)
 			{
-				strings::set_locale(std::locale(locale));
+				strings::set_locale(std::locale(locale), optparam(2, -1));
 			}else{
-				strings::set_locale(std::locale(""));
+				strings::set_locale(std::locale(""), optparam(2, -1));
 			}
 			return 1;
 		}catch(const std::runtime_error &err)
