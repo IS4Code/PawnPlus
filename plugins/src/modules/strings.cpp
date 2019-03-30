@@ -17,6 +17,7 @@
 #include <iterator>
 #include <limits>
 #include <locale>
+#include <functional>
 
 using namespace strings;
 
@@ -173,6 +174,7 @@ namespace aux
 	std::string to_string(Obj &&obj, Args&&... args)
 	{
 		std::ostringstream ostream;
+		ostream.imbue(std::locale());
 		push_args(ostream, std::forward<Args>(args)...);
 		ostream << std::forward<Obj>(obj);
 		return ostream.str();
@@ -430,7 +432,7 @@ struct format_base
 						return;
 					}
 				}else{
-					buf.append(convert(std::to_string(*arg)));
+					buf.append(convert(aux::to_string(*arg)));
 					return;
 				}
 			}
@@ -449,7 +451,7 @@ struct format_base
 						return;
 					}
 				}else{
-					buf.append(convert(std::to_string(val)));
+					buf.append(convert(aux::to_string(val)));
 					return;
 				}
 			}
@@ -505,7 +507,7 @@ struct format_base
 					}
 				}else if(begin == end)
 				{
-					buf.append(convert(std::to_string(val)));
+					buf.append(convert(aux::to_string(val)));
 					return;
 				}
 			}
@@ -787,7 +789,7 @@ inline void hash_combine(size_t& seed, const T& v)
 	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-const std::ctype<char> *const base_facet(&std::use_facet<std::ctype<char>>(std::locale::classic()));
+const std::ctype<char> *base_facet;
 
 namespace std
 {
@@ -906,7 +908,39 @@ std::locale::id std::ctype<cell>::id;
 
 const std::ctype<cell> cell_ctype;
 
-const std::locale custom_locale(std::locale::classic(), &cell_ctype);
+std::locale custom_locale;
+std::string custom_locale_name;
+
+void strings::set_locale(const std::locale &loc)
+{
+	std::locale::global(custom_locale = std::locale(loc, &cell_ctype));
+	custom_locale_name = loc.name();
+	base_facet = &std::use_facet<std::ctype<char>>(custom_locale);
+}
+
+const std::string &strings::locale_name()
+{
+	return custom_locale_name;
+}
+
+
+cell strings::to_lower(cell c)
+{
+	if(c < 0 || c > std::numeric_limits<unsigned char>::max())
+	{
+		return c;
+	}
+	return static_cast<unsigned char>(base_facet->tolower(static_cast<unsigned char>(c)));
+}
+
+cell strings::to_upper(cell c)
+{
+	if(c < 0 || c > std::numeric_limits<unsigned char>::max())
+	{
+		return c;
+	}
+	return static_cast<unsigned char>(base_facet->toupper(static_cast<unsigned char>(c)));
+}
 
 struct regex_traits
 {
@@ -1149,8 +1183,6 @@ static void regex_options(cell options, std::regex_constants::syntax_option_type
 	{
 		match |= std::regex_constants::format_first_only;
 	}
-
-	std::locale::global(custom_locale);
 }
 
 static const char *get_error(std::regex_constants::error_type code)

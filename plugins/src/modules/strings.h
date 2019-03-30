@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <type_traits>
+#include <locale>
 
 namespace strings
 {
@@ -170,17 +171,11 @@ namespace strings
 	bool clamp_range(const cell_string &str, cell &start, cell &end);
 	bool clamp_pos(const cell_string &str, cell &pos);
 
-	inline cell to_lower(cell c)
-	{
-		if(65 <= c && c <= 90) return c + 32;
-		return c;
-	}
+	void set_locale(const std::locale &loc);
+	const std::string &locale_name();
 
-	inline cell to_upper(cell c)
-	{
-		if(97 <= c && c <= 122) return c - 32;
-		return c;
-	}
+	cell to_lower(cell c);
+	cell to_upper(cell c);
 
 	bool regex_search(const cell_string &str, const cell *pattern, cell options);
 	bool regex_search(const cell_string &str, const cell_string &pattern, cell options);

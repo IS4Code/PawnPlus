@@ -33,6 +33,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData) noexcept
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
 	is_main_thread = true;
 
+	strings::set_locale(std::locale::classic());
 	Hooks::Register();
 	debug::init();
 
