@@ -585,6 +585,8 @@ native bool:var_not(ConstVariantTag:var);
 native Variant:var_call_op(VariantTag:var, tag_op:tag_op, AnyTag:...);
 native Variant:var_call_op_raw(VariantTag:var, tag_op:tag_op, AnyTag:...);
 
+native Iter:var_iter(VariantTag:value);
+
 
 /*                 */
 /*      Lists      */
@@ -1153,9 +1155,6 @@ native iter_get_key_md_arr_safe(IterTag:iter, const offsets[], AnyTag:value[], s
 native iter_get_key_md_str_safe(IterTag:iter, const offsets[], value[], size=sizeof(value), offsets_size=sizeof(offsets));
 native String:iter_get_key_md_str_safe_s(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
 
-native bool:iter_set_key_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets)) = iter_set_cell_md;
-native bool:iter_set_key_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
-
 native iter_tagof_key(IterTag:iter);
 native tag_uid:iter_key_tag_uid(IterTag:iter);
 native iter_sizeof_key(IterTag:iter);
@@ -1178,6 +1177,8 @@ native bool:iter_set_value_str(IterTag:iter, const value[]) = iter_set_str;
 native bool:iter_set_value_var(IterTag:iter, ConstVariantTag:value) = iter_set_var;
 native bool:iter_set_value_cell(IterTag:iter, offset, AnyTag:value) = iter_set_cell;
 native bool:iter_set_value_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:value_tag_id=tagof(value)) = iter_set_cell_safe;
+native iter_set_value_cells(IterTag:iter, offset, AnyTag:values[], size=sizeof(values)) = iter_set_cells;
+native iter_set_value_cells_safe(IterTag:iter, offset, AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values)) = iter_set_cells_safe;
 
 native iter_get_value_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets)) = iter_get_md;
 native iter_get_value_md_arr(IterTag:iter, const offsets[], AnyTag:value[], size=sizeof(value), offsets_size=sizeof(offsets)) = iter_get_md_arr;
@@ -1190,6 +1191,8 @@ native String:iter_get_value_md_str_safe_s(IterTag:iter, const offsets[], offset
 
 native bool:iter_set_value_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets)) = iter_set_cell_md;
 native bool:iter_set_value_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value)) = iter_set_cell_md_safe;
+native iter_set_value_cells_md(IterTag:iter, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values)) = iter_set_cells_md;
+native iter_set_value_cells_md_safe(IterTag:iter, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values), TagTag:tag_id=tagof(values)) = iter_set_cells_md_safe;
 
 native iter_tagof_value(IterTag:iter) = iter_tagof;
 native tag_uid:iter_value_tag_uid(IterTag:iter) = iter_tag_uid;
@@ -1220,10 +1223,13 @@ native iter_value_rank(IterTag:iter) = iter_rank;
 #define iter_set<%0>(%1,%2) iter_set(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST[%0](%2))
 #define iter_set_arr<%0>(%1,%2) iter_set_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2))
 #define iter_set_cell<%0>(%1,%2,%3) iter_set_cell(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST[%0](%3))
+#define iter_set_cells<%0>(%1,%2,%3) iter_set_cell(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 #define iter_insert<%0>(%1,%2) iter_insert(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST[%0](%2))
 #define iter_insert_arr<%0>(%1,%2) iter_insert_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2))
 #define iter_get_md<%0>(%1) (%0:iter_get_md(Iter:_PP@CAST[Iter<%0>](%1)))
 #define iter_get_md_arr<%0>(%1,%2,%3) iter_get_md_arr(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
+#define iter_set_cell_md<%0>(%1,%2,%3) iter_set_cell_md(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST[%0](%3))
+#define iter_set_cells_md<%0>(%1,%2,%3) iter_set_cells_md(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 
 #define iter_sizeof<%0>(%1) iter_sizeof(Iter:_PP@CAST[Iter<%0>](%1))
 #define iter_sizeof_md<%0>(%1) iter_sizeof_md(Iter:_PP@CAST[Iter<%0>](%1))
@@ -1238,7 +1244,9 @@ native iter_value_rank(IterTag:iter) = iter_rank;
 #define iter_set_value<%0,%1>(%2,%3) iter_set_value(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST[%1](%3))
 #define iter_set_value_arr<%0,%1>(%2,%3) iter_set_value_arr(Iter:_PP@CAST[PairIter<%0,%1>](%2),_PP@CAST_ARR[%1](%3))
 #define iter_set_value_cell<%0,%1>(%2,%3,%4) iter_set_value_cell(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST[%1](%4))
-#define iter_set_value_cell_md<%0,%1>(%2,%3,%4) iter_set_value_cell(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST[%1](%4))
+#define iter_set_value_cells<%0,%1>(%2,%3,%4) iter_set_value_cells(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST_ARR[%1](%4))
+#define iter_set_value_cell_md<%0,%1>(%2,%3,%4) iter_set_value_cell_md(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST[%1](%4))
+#define iter_set_value_cells_md<%0,%1>(%2,%3,%4) iter_set_value_cells_md(Iter:_PP@CAST[PairIter<%0,%1>](%2),%3,_PP@CAST_ARR[%1](%4))
 
 #define iter_sizeof_key<%0,%1>(%2) iter_sizeof_key(Iter:_PP@CAST[PairIter<%0,%1>](%2))
 #define iter_sizeof_key_md<%0,%1>(%2) iter_sizeof_key_md(Iter:_PP@CAST[PairIter<%0,%1>](%2))

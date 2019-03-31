@@ -339,6 +339,169 @@ public:
 	}
 };
 
+template <class T>
+class dyn_modifiable_const_ptr
+{
+	T *ptr;
+
+public:
+	dyn_modifiable_const_ptr() : ptr(nullptr)
+	{
+
+	}
+
+	dyn_modifiable_const_ptr(T *ptr) : ptr(ptr)
+	{
+
+	}
+
+	T &operator*() const
+	{
+		return *ptr;
+	}
+
+	T *operator->() const
+	{
+		return ptr;
+	}
+};
+
+class variant_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
+{
+	std::weak_ptr<dyn_object> var;
+	bool inside = true;
+
+public:
+	variant_iterator(const std::shared_ptr<dyn_object> &var) : var(var)
+	{
+
+	}
+
+	virtual bool expired() const override
+	{
+		return var.expired();
+	}
+
+	virtual bool valid() const override
+	{
+		return !expired() && inside;
+	}
+
+	virtual bool move_next() override
+	{
+		if(inside)
+		{
+			inside = false;
+			return true;
+		}
+		return false;
+	}
+
+	virtual bool move_previous() override
+	{
+		if(inside)
+		{
+			inside = false;
+			return true;
+		}
+		return false;
+	}
+
+	virtual bool set_to_first() override
+	{
+		inside = true;
+		return true;
+	}
+
+	virtual bool set_to_last() override
+	{
+		inside = true;
+		return true;
+	}
+
+	virtual bool reset() override
+	{
+		inside = false;
+		return true;
+	}
+
+	virtual bool erase() override
+	{
+		return false;
+	}
+
+	virtual std::unique_ptr<dyn_iterator> clone() const override
+	{
+		return std::make_unique<variant_iterator>(*this);
+	}
+
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
+	{
+		return std::make_shared<variant_iterator>(*this);
+	}
+
+	virtual size_t get_hash() const override
+	{
+		return std::hash<dyn_object*>()(&*var.lock());
+	}
+
+	virtual bool operator==(const dyn_iterator &obj) const override
+	{
+		auto other = dynamic_cast<const variant_iterator*>(&obj);
+		if(other != nullptr)
+		{
+			return !var.owner_before(other->var) && !other->var.owner_before(var) && inside == other->inside;
+		}
+		return false;
+	}
+
+protected:
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override
+	{
+		if(inside)
+		{
+			if(auto obj = var.lock())
+			{
+				if(type == typeid(const dyn_object*))
+				{
+					*reinterpret_cast<const dyn_object**>(value) = obj.get();
+					return true;
+				}else if(type == typeid(std::shared_ptr<const dyn_object>))
+				{
+					*reinterpret_cast<std::shared_ptr<const dyn_object>*>(value) = obj;
+					return true;
+				}else if(type == typeid(dyn_modifiable_const_ptr<dyn_object>))
+				{
+					*reinterpret_cast<dyn_modifiable_const_ptr<dyn_object>*>(value) = obj.get();
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	virtual bool insert_dyn(const std::type_info &type, void *value) override
+	{
+		return false;
+	}
+
+	virtual bool insert_dyn(const std::type_info &type, const void *value) override
+	{
+		return false;
+	}
+
+public:
+	virtual dyn_iterator *get() override
+	{
+		return this;
+	}
+
+	virtual const dyn_iterator *get() const override
+	{
+		return this;
+	}
+};
+
 template <class Func>
 auto value_write(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)>::type
 {
@@ -373,27 +536,70 @@ auto value_write(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)>
 }
 
 template <class Func>
+auto value_modify(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)>::type
+{
+	dyn_iterator *iter;
+	if(iter_pool.get_by_id(arg, iter))
+	{
+		dyn_object *obj;
+		if(iter->extract(obj))
+		{
+			return f(*obj);
+		}
+		std::shared_ptr<dyn_object> sobj;
+		if(iter->extract(sobj))
+		{
+			return f(*sobj);
+		}
+		std::pair<const dyn_object, dyn_object> *pair;
+		if(iter->extract(pair))
+		{
+			return f(pair->second);
+		}
+		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
+		if(iter->extract(spair))
+		{
+			return f(spair->second);
+		}
+		dyn_modifiable_const_ptr<dyn_object> mobj;
+		if(iter->extract(mobj))
+		{
+			return f(*mobj);
+		}
+		dyn_modifiable_const_ptr<std::pair<const dyn_object, dyn_object>> mpair;
+		if(iter->extract(mpair))
+		{
+			return f(mpair->second);
+		}
+		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+	}
+	amx_LogicError(errors::pointer_invalid, "iterator", arg);
+	dyn_object tmp;
+	return f(tmp);
+}
+
+template <class Func>
 auto value_read(cell arg, dyn_iterator *iter, Func f) -> typename std::result_of<Func(const dyn_object&)>::type
 {
-	const dyn_object *obj;
-	if(iter->extract(obj))
+	const dyn_object *cobj;
+	if(iter->extract(cobj))
 	{
-		return f(*obj);
+		return f(*cobj);
 	}
-	std::shared_ptr<const dyn_object> sobj;
-	if(iter->extract(sobj))
+	std::shared_ptr<const dyn_object> scobj;
+	if(iter->extract(scobj))
 	{
-		return f(*sobj);
+		return f(*scobj);
 	}
-	const std::pair<const dyn_object, dyn_object> *pair;
-	if(iter->extract(pair))
+	const std::pair<const dyn_object, dyn_object> *cpair;
+	if(iter->extract(cpair))
 	{
-		return f(pair->second);
+		return f(cpair->second);
 	}
-	std::shared_ptr<const std::pair<const dyn_object, dyn_object>> spair;
-	if(iter->extract(spair))
+	std::shared_ptr<const std::pair<const dyn_object, dyn_object>> scpair;
+	if(iter->extract(scpair))
 	{
-		return f(spair->second);
+		return f(scpair->second);
 	}
 	amx_LogicError(errors::operation_not_supported, "iterator", arg);
 	dyn_object tmp;
@@ -563,7 +769,7 @@ static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
 {
 	if(params[2] < 0) amx_LogicError(errors::out_of_range, "array offset");
 
-	return value_write(params[1], [&](dyn_object &obj)
+	return value_modify(params[1], [&](dyn_object &obj)
 	{
 		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return false;
 		return obj.set_cell(params[2], params[3]);
@@ -576,7 +782,7 @@ static cell AMX_NATIVE_CALL iter_set_cells(AMX *amx, cell *params)
 {
 	if(params[2] < 0) amx_LogicError(errors::out_of_range, "array offset");
 
-	return value_write(params[1], [&](dyn_object &obj)
+	return value_modify(params[1], [&](dyn_object &obj)
 	{
 		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 		cell *addr = amx_GetAddrSafe(amx, params[3]);
@@ -588,7 +794,7 @@ static cell AMX_NATIVE_CALL iter_set_cells(AMX *amx, cell *params)
 template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL iter_set_cell_md(AMX *amx, cell *params)
 {
-	return value_write(params[1], [&](dyn_object &obj)
+	return value_modify(params[1], [&](dyn_object &obj)
 	{
 		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return false;
 		cell offsets_size = params[4];
@@ -601,7 +807,7 @@ static cell AMX_NATIVE_CALL iter_set_cell_md(AMX *amx, cell *params)
 template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL iter_set_cells_md(AMX *amx, cell *params)
 {
-	return value_write(params[1], [&](dyn_object &obj)
+	return value_modify(params[1], [&](dyn_object &obj)
 	{
 		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 		cell offsets_size = params[4];
@@ -738,6 +944,15 @@ namespace Natives
 			}
 		}
 		return iter_pool.get_id(iter);
+	}
+
+	// native Iter:var_iter(VariantTag:var);
+	AMX_DEFINE_NATIVE(var_iter, 1)
+	{
+		std::shared_ptr<dyn_object> ptr;
+		if(!variants::pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+
+		return iter_pool.get_id(iter_pool.emplace_derived<variant_iterator>(ptr));
 	}
 
 	// native bool:iter_valid(IterTag:iter);
@@ -1423,6 +1638,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_iter_at_str),
 	AMX_DECLARE_NATIVE(map_iter_at_var),
 	AMX_DECLARE_NATIVE(linked_list_iter),
+	AMX_DECLARE_NATIVE(var_iter),
 
 	AMX_DECLARE_NATIVE(iter_valid),
 	AMX_DECLARE_NATIVE(iter_acquire),
