@@ -328,7 +328,7 @@ const cell *dyn_object::get_array(const cell *indices, cell num_indices, cell &s
 	}else{
 		if(empty())
 		{
-			if(num_indices == 0)
+			if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0; }))
 			{
 				size = 0;
 				return nullptr;
