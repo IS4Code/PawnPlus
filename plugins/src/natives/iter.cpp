@@ -570,6 +570,20 @@ static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
 	});
 }
 
+// native iter_set_cells(IterTag:iter, offset, AnyTag:values[], size=sizeof(values), ...);
+template <size_t TagIndex = 0>
+static cell AMX_NATIVE_CALL iter_set_cells(AMX *amx, cell *params)
+{
+	if(params[2] < 0) amx_LogicError(errors::out_of_range, "array offset");
+
+	return value_write(params[1], [&](dyn_object &obj)
+	{
+		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		return obj.set_cells(params[2], addr, params[4]);
+	});
+}
+
 // native bool:iter_set_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), ...);
 template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL iter_set_cell_md(AMX *amx, cell *params)
@@ -580,6 +594,20 @@ static cell AMX_NATIVE_CALL iter_set_cell_md(AMX *amx, cell *params)
 		cell offsets_size = params[4];
 		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
 		return obj.set_cell(offsets_addr, offsets_size, params[3]);
+	});
+}
+
+// native iter_set_cells_md(IterTag:iter, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values), ...);
+template <size_t TagIndex = 0>
+static cell AMX_NATIVE_CALL iter_set_cells_md(AMX *amx, cell *params)
+{
+	return value_write(params[1], [&](dyn_object &obj)
+	{
+		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
+		cell offsets_size = params[4];
+		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		return obj.set_cells(offsets_addr, offsets_size, addr, params[5]);
 	});
 }
 
@@ -1086,6 +1114,18 @@ namespace Natives
 		return ::iter_set_cell<4>(amx, params);
 	}
 
+	// native iter_set_cells(IterTag:iter, offset, AnyTag:values[], size=sizeof(values));
+	AMX_DEFINE_NATIVE(iter_set_cells, 4)
+	{
+		return ::iter_set_cells(amx, params);
+	}
+
+	// native iter_set_cells_safe(IterTag:iter, offset, AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
+	AMX_DEFINE_NATIVE(iter_set_cells_safe, 5)
+	{
+		return ::iter_set_cells<5>(amx, params);
+	}
+
 	// native iter_get_md(IterTag:iter, const offsets[], offsets_size=sizeof(offsets));
 	AMX_DEFINE_NATIVE(iter_get_md, 3)
 	{
@@ -1138,6 +1178,18 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_set_cell_md_safe, 5)
 	{
 		return ::iter_set_cell_md<5>(amx, params);
+	}
+
+	// native iter_set_cells_md(IterTag:iter, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values));
+	AMX_DEFINE_NATIVE(iter_set_cells_md, 5)
+	{
+		return ::iter_set_cells_md(amx, params);
+	}
+
+	// native iter_set_cells_md_safe(IterTag:iter, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values), TagTag:tag_id=tagof(values));
+	AMX_DEFINE_NATIVE(iter_set_cells_md_safe, 6)
+	{
+		return ::iter_set_cells_md<6>(amx, params);
 	}
 
 	// native bool:iter_insert(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
@@ -1416,6 +1468,8 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(iter_set_cell),
 	AMX_DECLARE_NATIVE(iter_set_cell_safe),
+	AMX_DECLARE_NATIVE(iter_set_cells),
+	AMX_DECLARE_NATIVE(iter_set_cells_safe),
 
 	AMX_DECLARE_NATIVE(iter_get_md),
 	AMX_DECLARE_NATIVE(iter_get_md_arr),
@@ -1427,6 +1481,8 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(iter_set_cell_md),
 	AMX_DECLARE_NATIVE(iter_set_cell_md_safe),
+	AMX_DECLARE_NATIVE(iter_set_cells_md),
+	AMX_DECLARE_NATIVE(iter_set_cells_md_safe),
 
 	AMX_DECLARE_NATIVE(iter_insert),
 	AMX_DECLARE_NATIVE(iter_insert_arr),

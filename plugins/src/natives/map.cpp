@@ -99,7 +99,7 @@ public:
 		return 0;
 	}
 	
-	// native bool:map_set_cell(Map:map, key, offset, AnyTag:value, ...);
+	// native map_set_cell(Map:map, key, offset, AnyTag:value, ...);
 	template <key_ftype KeyFactory, size_t TagIndex = 0>
 	static cell AMX_NATIVE_CALL map_set_cell(AMX *amx, cell *params)
 	{
@@ -1318,7 +1318,7 @@ namespace Natives
 		return key_at<2, 4>::value_at<3>::map_set<dyn_func, dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_set_cell(Map:map, AnyTag:key, offset, AnyTag:value, TagTag:key_tag_id=tagof(key));
+	// native map_set_cell(Map:map, AnyTag:key, offset, AnyTag:value, TagTag:key_tag_id=tagof(key));
 	AMX_DEFINE_NATIVE(map_set_cell, 5)
 	{
 		return key_at<2, 5>::map_set_cell<dyn_func>(amx, params);
@@ -1354,7 +1354,7 @@ namespace Natives
 		return key_at<2, 4, 5>::value_at<3>::map_set<dyn_func_arr, dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_arr_set_cell(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+	// native map_arr_set_cell(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 	AMX_DEFINE_NATIVE(map_arr_set_cell, 6)
 	{
 		return key_at<2, 5, 6>::map_set_cell<dyn_func_arr>(amx, params);
@@ -1390,7 +1390,7 @@ namespace Natives
 		return key_at<2>::value_at<3>::map_set<dyn_func_str, dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_str_set_cell(Map:map, const key[], offset, AnyTag:value);
+	// native map_str_set_cell(Map:map, const key[], offset, AnyTag:value);
 	AMX_DEFINE_NATIVE(map_str_set_cell, 4)
 	{
 		return key_at<2>::map_set_cell<dyn_func_str>(amx, params);
@@ -1426,7 +1426,7 @@ namespace Natives
 		return key_at<2>::value_at<3>::map_set<dyn_func_var, dyn_func_var>(amx, params);
 	}
 
-	// native bool:map_var_set_cell(Map:map, VariantTag:key, offset, AnyTag:value);
+	// native map_var_set_cell(Map:map, VariantTag:key, offset, AnyTag:value);
 	AMX_DEFINE_NATIVE(map_var_set_cell, 4)
 	{
 		return key_at<2>::map_set_cell<dyn_func_var>(amx, params);

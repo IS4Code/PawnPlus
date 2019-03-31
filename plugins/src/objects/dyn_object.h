@@ -60,7 +60,10 @@ public:
 	bool struct_compatible(const dyn_object &obj) const;
 	bool get_cell(const cell *indices, cell num_indices, cell &value) const;
 	bool set_cell(const cell *indices, cell num_indices, cell value);
+	cell set_cells(const cell *indices, cell num_indices, const cell *values, cell size);
 	cell get_array(const cell *indices, cell num_indices, cell *arr, cell maxsize) const;
+	cell *get_array(const cell *indices, cell num_indices, cell &size);
+	const cell *get_array(const cell *indices, cell num_indices, cell &size) const;
 	cell *get_cell_addr(const cell *indices, cell num_indices);
 	const cell *get_cell_addr(const cell *indices, cell num_indices) const;
 	cell store(AMX *amx) const;
@@ -94,6 +97,11 @@ public:
 	bool set_cell(cell index, cell value)
 	{
 		return set_cell(&index, 1, value);
+	}
+
+	cell set_cells(cell index, const cell *values, cell size)
+	{
+		return set_cells(&index, 1, values, size);
 	}
 
 	cell get_array(cell *arr, cell maxsize) const

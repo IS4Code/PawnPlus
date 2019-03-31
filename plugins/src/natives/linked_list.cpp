@@ -59,7 +59,7 @@ public:
 	}
 };
 
-// native bool:linked_list_set_cell(LinkedList:linked_list, index, offset, AnyTag:value, ...);
+// native linked_list_set_cell(LinkedList:linked_list, index, offset, AnyTag:value, ...);
 template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL linked_list_set_cell(AMX *amx, cell *params)
 {

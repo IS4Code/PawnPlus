@@ -160,7 +160,7 @@ namespace Natives
 		return value_at<0>::var_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:var_set_cell(VariantTag:var, offset, AnyTag:value);
+	// native var_set_cell(VariantTag:var, offset, AnyTag:value);
 	AMX_DEFINE_NATIVE(var_set_cell, 3)
 	{
 		dyn_object *var;
@@ -175,6 +175,25 @@ namespace Natives
 		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		if(!var->tag_assignable(amx, params[4])) return 0;
 		return var->set_cell(params[2], params[3]);
+	}
+
+	// native var_set_cells(VariantTag:var, offset, AnyTag:values[], size=sizeof(values));
+	AMX_DEFINE_NATIVE(var_set_cells, 4)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		return var->set_cells(params[2], addr, params[4]);
+	}
+
+	// native var_set_cells_safe(VariantTag:var, offset, AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
+	AMX_DEFINE_NATIVE(var_set_cells_safe, 5)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if(!var->tag_assignable(amx, params[5])) return 0;
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		return var->set_cells(params[2], addr, params[4]);
 	}
 
 	// native var_get_md(ConstVariantTag:var, const offsets[], offsets_size=sizeof(offsets));
@@ -219,7 +238,7 @@ namespace Natives
 		return value_at<2, 3, 0>::var_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:var_set_cell_md(VariantTag:var, const offsets[], AnyTag:value, offsets_size=sizeof(offsets));
+	// native var_set_cell_md(VariantTag:var, const offsets[], AnyTag:value, offsets_size=sizeof(offsets));
 	AMX_DEFINE_NATIVE(var_set_cell_md, 4)
 	{
 		dyn_object *var;
@@ -238,6 +257,29 @@ namespace Natives
 		cell offsets_size = params[4];
 		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
 		return var->set_cell(offsets_addr, offsets_size, params[3]);
+	}
+
+	// native var_set_cells_md(VariantTag:var, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values));
+	AMX_DEFINE_NATIVE(var_set_cells_md, 5)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		cell offsets_size = params[4];
+		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		return var->set_cells(offsets_addr, offsets_size, addr, params[5]);
+	}
+
+	// native var_set_cells_md_safe(VariantTag:var, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values), TagTag:tag_id=tagof(values));
+	AMX_DEFINE_NATIVE(var_set_cells_md_safe, 6)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if(!var->tag_assignable(amx, params[6])) return 0;
+		cell offsets_size = params[4];
+		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		return var->set_cells(offsets_addr, offsets_size, addr, params[5]);
 	}
 
 	// native var_tagof(ConstVariantTag:var);
@@ -519,6 +561,8 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(var_set_cell),
 	AMX_DECLARE_NATIVE(var_set_cell_safe),
+	AMX_DECLARE_NATIVE(var_set_cells),
+	AMX_DECLARE_NATIVE(var_set_cells_safe),
 
 	AMX_DECLARE_NATIVE(var_get_md),
 	AMX_DECLARE_NATIVE(var_get_md_arr),
@@ -530,6 +574,8 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(var_set_cell_md),
 	AMX_DECLARE_NATIVE(var_set_cell_md_safe),
+	AMX_DECLARE_NATIVE(var_set_cells_md),
+	AMX_DECLARE_NATIVE(var_set_cells_md_safe),
 
 	AMX_DECLARE_NATIVE(var_tagof),
 	AMX_DECLARE_NATIVE(var_tag_uid),

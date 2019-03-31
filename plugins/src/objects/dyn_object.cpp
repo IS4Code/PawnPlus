@@ -289,6 +289,10 @@ bool dyn_object::set_cell(const cell *indices, cell num_indices, cell value)
 	auto addr = get_cell_addr(indices, num_indices);
 	if(addr)
 	{
+		if(!is_array())
+		{
+			amx_LogicError(errors::operation_not_supported, "variant");
+		}
 		const auto &ops = tag->get_ops();
 		ops.collect(tag, addr, 1);
 		*addr = value;
@@ -298,7 +302,12 @@ bool dyn_object::set_cell(const cell *indices, cell num_indices, cell value)
 	return false;
 }
 
-cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cell maxsize) const
+cell *dyn_object::get_array(const cell *indices, cell num_indices, cell &size)
+{
+	return const_cast<cell*>(static_cast<const dyn_object*>(this)->get_array(indices, num_indices, size));
+}
+
+const cell *dyn_object::get_array(const cell *indices, cell num_indices, cell &size) const
 {
 	const cell *block;
 	cell begin, end;
@@ -307,17 +316,22 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 	{
 		if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0; }))
 		{
-			block = &cell_value;
-			begin = 0;
-			end = 1;
+			size = 1;
+			return &cell_value;
+		}else if(std::all_of(indices, indices + num_indices, [](const cell &i) {return i == 0 || i == 1; }))
+		{
+			size = 0;
+			return &cell_value + 1;
+		}else{
+			amx_LogicError(errors::out_of_range, "offset");
 		}
-		amx_LogicError(errors::out_of_range, "offset");
 	}else{
 		if(empty())
 		{
 			if(num_indices == 0)
 			{
-				return 0;
+				size = 0;
+				return nullptr;
 			}else{
 				amx_LogicError(errors::out_of_range, "offset");
 			}
@@ -330,10 +344,14 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 		for(cell i = 0; i < num_indices; i++)
 		{
 			cell index = indices[i];
+			if(index < 0)
+			{
+				amx_LogicError(errors::out_of_range, "offset");
+			}
 			if(begin >= data_begin)
 			{
 				cell size = end - begin;
-				if(index >= size)
+				if(index > size)
 				{
 					amx_LogicError(errors::out_of_range, "offset");
 				}
@@ -359,11 +377,18 @@ cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cel
 			}
 		}
 	}
-	cell size = end - begin;
+	size = end - begin;
+	return block + begin;
+}
+
+cell dyn_object::get_array(const cell *indices, cell num_indices, cell *arr, cell maxsize) const
+{
+	cell size;
+	const cell *addr = get_array(indices, num_indices, size);
 	if(maxsize > size) maxsize = size;
-	std::memcpy(arr, block + begin, maxsize * sizeof(cell));
+	std::memcpy(arr, addr, maxsize * sizeof(cell));
 	assign_op(arr, maxsize);
-	return size;
+	return maxsize;
 }
 
 cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices)
@@ -391,10 +416,17 @@ const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) con
 	for(cell i = 0; i < num_indices; i++)
 	{
 		cell index = indices[i];
+		if(index < 0)
+		{
+			amx_LogicError(errors::out_of_range, "offset");
+		}
 		if(begin >= data_begin)
 		{
 			cell size = end - begin;
-			if(index >= size) return nullptr;
+			if(index >= size)
+			{
+				amx_LogicError(errors::out_of_range, "offset");
+			}
 			begin += index;
 			end = begin + 1;
 		}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
@@ -414,6 +446,29 @@ const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) con
 		amx_LogicError(errors::out_of_range, "offset");
 	}
 	return &block[begin];
+}
+
+cell dyn_object::set_cells(const cell *indices, cell num_indices, const cell *values, cell maxsize)
+{
+	cell size;
+	cell *addr = get_array(indices, num_indices, size);
+	if(addr)
+	{
+		if(!is_array())
+		{
+			amx_LogicError(errors::operation_not_supported, "variant");
+		}
+		const auto &ops = tag->get_ops();
+		if(maxsize > size)
+		{
+			maxsize = size;
+		}
+		ops.collect(tag, addr, size);
+		std::memcpy(addr, values, maxsize * sizeof(cell));
+		ops.assign(tag, addr, size);
+		return maxsize;
+	}
+	return 0;
 }
 
 cell dyn_object::store(AMX *amx) const
