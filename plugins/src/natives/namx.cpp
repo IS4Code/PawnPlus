@@ -156,16 +156,14 @@ namespace Natives
 		return strings::create(name);
 	}
 
-	// native [1]amx_encode_public(index);
+	// native [2]amx_encode_public(index);
 	AMX_DEFINE_NATIVE(amx_encode_public, 1)
 	{
-		cell index = params[1];
-		if(index < 0 || index >= 65025)
-		{
-			amx_LogicError(errors::out_of_range, "index");
-		}
+		ucell index = params[1];
+		if(index == -1) amx_LogicError(errors::out_of_range, "index");
 		cell *addr = amx_GetAddrSafe(amx, params[2]);
-		*addr = 0x1B000000 | ((index % 255 + 1) << 16) | ((index / 255 + 1) << 8);
+		addr[0] = 0x1B000000 | ((index % 255 + 1) << 16) | ((index / 255 % 255 + 1) << 8) | (index / 65025 % 255 + 1);
+		addr[1] = ((index / 16581375 % 255 + 1) << 24) | ((index / 4228250625 + 1 + 2 * (index % 127)) << 16);
 		return 1;
 	}
 
@@ -180,8 +178,8 @@ namespace Natives
 
 		auto ptr = reinterpret_cast<uintptr_t>(func);
 		cell *addr = amx_GetAddrSafe(amx, params[2]);
-		addr[0] = 0x1B000000 | ((ptr % 255 + 1) << 16) | ((ptr / 255 % 255 + 1) << 8) | (ptr / 65025 % 255 + 1);
-		addr[1] = ((ptr / 16581375 % 255 + 1) << 24) | ((ptr / 4228250625 + 1) << 16);
+		addr[0] = 0x1C000000 | ((ptr % 255 + 1) << 16) | ((ptr / 255 % 255 + 1) << 8) | (ptr / 65025 % 255 + 1);
+		addr[1] = ((ptr / 16581375 % 255 + 1) << 24) | ((ptr / 4228250625 + 1 + 2 * (ptr % 127)) << 16);
 		return 1;
 	}
 

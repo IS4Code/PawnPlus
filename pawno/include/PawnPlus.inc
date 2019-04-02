@@ -320,7 +320,7 @@ native amx_num_publics();
 native amx_public_index(const function[]);
 native amx_public_name(index, name[], size=sizeof(name));
 native String:amx_public_name_s(index);
-native [1]amx_encode_public(index);
+native [2]amx_encode_public(index);
 native [2]amx_encode_native(const function[]);
 native Var:amx_var(&AnyTag:var);
 native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));

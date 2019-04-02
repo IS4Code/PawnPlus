@@ -92,7 +92,7 @@ void amx::register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int numb
 
 AMX_NATIVE amx::try_decode_native(const char *str)
 {
-	if(str[0] == 0x1B && str[1] && str[2] && str[3] && str[4] && str[5] && !str[6])
+	if(str[0] == 0x1C && str[1] && str[2] && str[3] && str[4] && str[5] && !str[6])
 	{
 		auto ustr = reinterpret_cast<const unsigned char *>(str);
 		uintptr_t ptr =
@@ -100,8 +100,11 @@ AMX_NATIVE amx::try_decode_native(const char *str)
 			static_cast<uintptr_t>(ustr[2] - 1) * 255 +
 			static_cast<uintptr_t>(ustr[3] - 1) * 65025 +
 			static_cast<uintptr_t>(ustr[4] - 1) * 16581375 +
-			static_cast<uintptr_t>(ustr[5] - 1) * 4228250625;
-		return reinterpret_cast<AMX_NATIVE>(ptr);
+			static_cast<uintptr_t>((ustr[5] - 1) % 2) * 4228250625;
+		if(ptr % 127 == (ustr[5] - 1) / 2)
+		{
+			return reinterpret_cast<AMX_NATIVE>(ptr);
+		}
 	}
 	return nullptr;
 }
