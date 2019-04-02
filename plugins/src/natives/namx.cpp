@@ -6,6 +6,7 @@
 #include "modules/strings.h"
 #include "modules/containers.h"
 #include "utils/shared_id_set_pool.h"
+#include <limits>
 
 cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, AMX *target_amx);
 AMX *source_amx;
@@ -103,6 +104,85 @@ namespace Natives
 	AMX_DEFINE_NATIVE(amx_try_call_public, 4)
 	{
 		return amx_call(amx, params, false, true);
+	}
+
+	// native amx_num_publics();
+	AMX_DEFINE_NATIVE(amx_num_publics, 0)
+	{
+		int num;
+		amx_NumPublics(amx, &num);
+		return num;
+	}
+
+	// native amx_public_index(const function[]);
+	AMX_DEFINE_NATIVE(amx_public_index, 1)
+	{
+		const char *name;
+		amx_StrParam(amx, params[1], name);
+		if(name == nullptr) amx_FormalError(errors::arg_empty, "function");
+		int index;
+		if(amx_FindPublic(amx, name, &index) != AMX_ERR_NONE)
+		{
+			return -1;
+		}
+		return index;
+	}
+
+	// native amx_public_name(index, name[], size=sizeof(name));
+	AMX_DEFINE_NATIVE(amx_public_name, 3)
+	{
+		int len;
+		amx_NameLength(amx, &len);
+		char *name = static_cast<char*>(alloca(len + 1));
+		if(amx_GetPublic(amx, params[1], name) != AMX_ERR_NONE)
+		{
+			amx_LogicError(errors::out_of_range, "index");
+		}
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
+		amx_SetString(addr, name, false, false, params[3]);
+		return strlen(name);
+	}
+
+	// native String:amx_public_name_s(index);
+	AMX_DEFINE_NATIVE(amx_public_name_s, 1)
+	{
+		int len;
+		amx_NameLength(amx, &len);
+		char *name = static_cast<char*>(alloca(len + 1));
+		if(amx_GetPublic(amx, params[1], name) != AMX_ERR_NONE)
+		{
+			amx_LogicError(errors::out_of_range, "index");
+		}
+		return strings::create(name);
+	}
+
+	// native [1]amx_encode_public(index);
+	AMX_DEFINE_NATIVE(amx_encode_public, 1)
+	{
+		cell index = params[1];
+		if(index < 0 || index >= 65025)
+		{
+			amx_LogicError(errors::out_of_range, "index");
+		}
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
+		*addr = 0x1B000000 | ((index % 255 + 1) << 16) | ((index / 255 + 1) << 8);
+		return 1;
+	}
+
+	// native [2]amx_encode_native(const function[]);
+	AMX_DEFINE_NATIVE(amx_encode_native, 1)
+	{
+		const char *name;
+		amx_StrParam(amx, params[1], name);
+		if(name == nullptr) amx_FormalError(errors::arg_empty, "function");
+		auto func = amx::find_native(amx, name);
+		if(func == nullptr) amx_FormalError(errors::func_not_found, "native", name);
+
+		auto ptr = reinterpret_cast<uintptr_t>(func);
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
+		addr[0] = 0x1B000000 | ((ptr % 255 + 1) << 16) | ((ptr / 255 % 255 + 1) << 8) | (ptr / 65025 % 255 + 1);
+		addr[1] = ((ptr / 16581375 % 255 + 1) << 24) | ((ptr / 4228250625 + 1) << 16);
+		return 1;
 	}
 
 	// native Var:amx_var(&AnyTag:var);
@@ -314,6 +394,12 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_call_public),
 	AMX_DECLARE_NATIVE(amx_try_call_native),
 	AMX_DECLARE_NATIVE(amx_try_call_public),
+	AMX_DECLARE_NATIVE(amx_num_publics),
+	AMX_DECLARE_NATIVE(amx_public_index),
+	AMX_DECLARE_NATIVE(amx_public_name),
+	AMX_DECLARE_NATIVE(amx_public_name_s),
+	AMX_DECLARE_NATIVE(amx_encode_public),
+	AMX_DECLARE_NATIVE(amx_encode_native),
 	AMX_DECLARE_NATIVE(amx_var),
 	AMX_DECLARE_NATIVE(amx_var_arr),
 	AMX_DECLARE_NATIVE(amx_public_var),

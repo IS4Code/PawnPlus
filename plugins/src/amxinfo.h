@@ -183,6 +183,7 @@ namespace amx
 	bool unload(AMX *amx);
 	bool invalidate(AMX *amx);
 	void register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int number);
+	AMX_NATIVE try_decode_native(const char *str);
 	AMX_NATIVE find_native(AMX *amx, const char *name);
 	AMX_NATIVE find_native(AMX *amx, const std::string &name);
 	size_t num_natives(AMX *amx);

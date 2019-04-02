@@ -204,6 +204,25 @@ namespace Hooks
 		}
 		return base_func(amx, flags);
 	}
+
+	int AMX_HOOK_FUNC(amx_FindPublic, AMX *amx, const char *funcname, int *index)
+	{
+		if(funcname[0] == 0x1B && funcname[1] && funcname[2] && !funcname[3])
+		{
+			int num;
+			if(amx_NumPublics(amx, &num) == AMX_ERR_NONE)
+			{
+				auto name = reinterpret_cast<const unsigned char *>(funcname);
+				int idx = static_cast<unsigned int>(name[1] - 1) + static_cast<unsigned int>(name[2] - 1) * 255;
+				if(idx < num)
+				{
+					*index = idx;
+					return AMX_ERR_NONE;
+				}
+			}
+		}
+		return base_func(amx, funcname, index);
+	}
 }
 
 int AMXAPI amx_InitOrig(AMX *amx, void *program)
@@ -224,6 +243,7 @@ void Hooks::Register()
 	amx_Hook(StrLen)::load();
 	amx_Hook(Register)::load();
 	amx_Hook(Flags)::load();
+	amx_Hook(FindPublic)::load();
 }
 
 void Hooks::Unregister()
@@ -234,6 +254,7 @@ void Hooks::Unregister()
 	amx_Hook(StrLen)::unload();
 	amx_Hook(Register)::unload();
 	amx_Hook(Flags)::unload();
+	amx_Hook(FindPublic)::unload();
 }
 
 void Hooks::ToggleStrLen(bool toggle)

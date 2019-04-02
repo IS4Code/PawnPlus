@@ -90,13 +90,39 @@ void amx::register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int numb
 	}
 }
 
+AMX_NATIVE amx::try_decode_native(const char *str)
+{
+	if(str[0] == 0x1B && str[1] && str[2] && str[3] && str[4] && str[5] && !str[6])
+	{
+		auto ustr = reinterpret_cast<const unsigned char *>(str);
+		uintptr_t ptr =
+			static_cast<uintptr_t>(ustr[1] - 1) +
+			static_cast<uintptr_t>(ustr[2] - 1) * 255 +
+			static_cast<uintptr_t>(ustr[3] - 1) * 65025 +
+			static_cast<uintptr_t>(ustr[4] - 1) * 16581375 +
+			static_cast<uintptr_t>(ustr[5] - 1) * 4228250625;
+		return reinterpret_cast<AMX_NATIVE>(ptr);
+	}
+	return nullptr;
+}
+
 AMX_NATIVE amx::find_native(AMX *amx, const char *name)
 {
+	auto decoded = try_decode_native(name);
+	if(decoded != nullptr)
+	{
+		return decoded;
+	}
 	return amx::find_native(amx, std::string(name));
 }
 
 AMX_NATIVE amx::find_native(AMX *amx, const std::string &name)
 {
+	auto decoded = try_decode_native(name.c_str());
+	if(decoded != nullptr)
+	{
+		return decoded;
+	}
 	const auto &obj = load_lock(amx);
 	auto &natives = obj->get_extra<natives_extra>().natives;
 
