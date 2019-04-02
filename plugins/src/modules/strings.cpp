@@ -133,8 +133,12 @@ cell_string strings::convert(const cell *str)
 	if(static_cast<ucell>(*str) <= UNPACKEDMAX)
 	{
 		return cell_string(str, str + len);
+	}else if(reinterpret_cast<std::intptr_t>(str) % sizeof(cell) == 0)
+	{
+		aligned_const_char_iterator it(str);
+		return cell_string(it, it + len);
 	}else{
-		const_char_iterator it(str);
+		unaligned_const_char_iterator it(str);
 		return cell_string(it, it + len);
 	}
 }
