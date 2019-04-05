@@ -295,19 +295,23 @@ public:
 
 	cell get_address(AMX *amx, const_object_ptr obj) const
 	{
-		unsigned char *data = (amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat);
+		unsigned char *data = amx_GetData(amx);
 		return reinterpret_cast<cell>(&obj) - reinterpret_cast<cell>(data);
 	}
 
 	cell get_inner_address(AMX *amx, const_object_ptr obj) const
 	{
-		unsigned char *data = (amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat);
+		unsigned char *data = amx_GetData(amx);
 		return reinterpret_cast<cell>(&obj->operator[](0)) - reinterpret_cast<cell>(data);
 	}
 
 	bool is_null_address(AMX *amx, cell addr) const
 	{
-		unsigned char *data = (amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat);
+		if(addr >= 0 && addr < amx->stp)
+		{
+			return false;
+		}
+		unsigned char *data = amx_GetData(amx);
 		return reinterpret_cast<cell>(data) == -addr;
 	}
 
@@ -478,7 +482,7 @@ public:
 
 	object_ptr get(AMX *amx, cell addr)
 	{
-		auto obj = reinterpret_cast<ref_container*>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + addr);
+		auto obj = reinterpret_cast<ref_container*>(amx_GetData(amx) + addr);
 
 		auto it = local_object_list.find(obj);
 		if(it != local_object_list.end())

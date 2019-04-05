@@ -311,7 +311,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						if(flags & SleepReturnForkFlagsCopyData)
 						{
 							orig_data = new unsigned char[amxhdr->hea - amxhdr->dat];
-							std::memcpy(orig_data, amx->base + amxhdr->dat, amxhdr->hea - amxhdr->dat); // backup the data
+							std::memcpy(orig_data, amx_GetData(amx), amxhdr->hea - amxhdr->dat); // backup the data
 						}
 
 						amx->pri = 1;
@@ -336,7 +336,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 							reset.restore();
 							if(flags & SleepReturnForkFlagsCopyData)
 							{
-								std::memcpy(amx->base + amxhdr->dat, orig_data, amxhdr->hea - amxhdr->dat);
+								std::memcpy(amx_GetData(amx), orig_data, amxhdr->hea - amxhdr->dat);
 							}
 							cell *result_var, *error_var;
 							amx_GetAddr(amx, result_addr, &result_var);
@@ -369,7 +369,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						}
 						if(flags & SleepReturnForkFlagsCopyData)
 						{
-							std::memcpy(amx_fork->base + amxhdr->dat, amx->base + amxhdr->dat, amxhdr->hea - amxhdr->dat); // copy the data
+							std::memcpy(amx_fork->base + amxhdr->dat, amx_GetData(amx), amxhdr->hea - amxhdr->dat); // copy the data
 						}
 
 						amx::reset reset(amx, false);
@@ -404,7 +404,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 							}
 							if(flags & SleepReturnForkFlagsCopyData)
 							{
-								std::memcpy(amx->base + amxhdr->dat, amx_fork->base + amxhdr->dat, amxhdr->hea - amxhdr->dat);
+								std::memcpy(amx_GetData(amx), amx_fork->base + amxhdr->dat, amxhdr->hea - amxhdr->dat);
 							}
 						}
 					}
@@ -511,8 +511,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					auto dbg = amx::load_lock(amx)->dbg.get();
 					if(dbg)
 					{
-						auto hdr = (AMX_HEADER *)amx->base;
-						auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+						auto data = amx_GetData(amx);
 						auto stk = reinterpret_cast<cell*>(data + amx->stk);
 						cell num = *stk - sizeof(cell);
 						amx->stk -= num + 2 * sizeof(cell);
@@ -553,8 +552,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					auto dbg = amx::load_lock(amx)->dbg.get();
 					if(dbg)
 					{
-						auto hdr = (AMX_HEADER *)amx->base;
-						auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+						auto data = amx_GetData(amx);
 						auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
 						list_t *list;
@@ -582,8 +580,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				{
 					amx->error = ret = AMX_ERR_NONE;
 					amx->pri = 1;
-					auto hdr = (AMX_HEADER *)amx->base;
-					auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+					auto data = amx_GetData(amx);
 					auto frame = reinterpret_cast<cell*>(data + amx->frm);
 					cell frm = frame[0];
 					cell cip = frame[1];
@@ -609,8 +606,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				{
 					amx->error = ret = AMX_ERR_NONE;
 					amx->pri = 1;
-					auto hdr = (AMX_HEADER *)amx->base;
-					auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+					auto data = amx_GetData(amx);
 					auto frame = reinterpret_cast<cell*>(data + amx->frm);
 					if(frame[1])
 					{

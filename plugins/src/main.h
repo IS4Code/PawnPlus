@@ -36,4 +36,6 @@ void gc_collect();
 void *gc_register(void(*func)());
 void gc_unregister(void *id);
 
+unsigned char *amx_GetData(AMX *amx);
+
 #endif

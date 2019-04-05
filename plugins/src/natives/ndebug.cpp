@@ -17,8 +17,7 @@ cell get_level(AMX *amx, cell level)
 		return amx->cip - 2 * sizeof(cell);
 	}
 
-	auto hdr = (AMX_HEADER *)amx->base;
-	auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+	auto data = amx_GetData(amx);
 	cell frm = amx->frm;
 	for(cell i = 1; i < level; i++)
 	{
@@ -71,8 +70,7 @@ cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG *&dbg, AMX_DBG_
 		return 0;
 	}
 
-	auto hdr = (AMX_HEADER *)amx->base;
-	auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+	auto data = amx_GetData(amx);
 	cell *ptr;
 	if(sym->vclass == 0 || sym->vclass == 2)
 	{
@@ -472,8 +470,7 @@ namespace Natives
 				}
 			}
 		}else{ // stack variable
-			auto hdr = (AMX_HEADER *)amx->base;
-			auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+			auto data = amx_GetData(amx);
 			ucell frm = amx->frm, cip = amx->cip - 2 * sizeof(cell);
 			while(frm != 0)
 			{
@@ -963,8 +960,7 @@ namespace Natives
 			return 0;
 		}
 
-		auto hdr = (AMX_HEADER *)amx->base;
-		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		auto data = amx_GetData(amx);
 		auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
 		cell num = *stk - sizeof(cell);
@@ -1039,8 +1035,7 @@ namespace Natives
 			return 0;
 		}
 
-		auto hdr = (AMX_HEADER *)amx->base;
-		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		auto data = amx_GetData(amx);
 		auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
 		cell argslen = list->size() * sizeof(cell);
@@ -1101,8 +1096,7 @@ namespace Natives
 			return 0;
 		}
 
-		auto hdr = (AMX_HEADER *)amx->base;
-		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		auto data = amx_GetData(amx);
 		auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
 		cell num = *stk - sizeof(cell);
@@ -1177,8 +1171,7 @@ namespace Natives
 			return 0;
 		}
 
-		auto hdr = (AMX_HEADER *)amx->base;
-		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		auto data = amx_GetData(amx);
 		auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
 		cell argslen = list->size() * sizeof(cell);

@@ -164,7 +164,7 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 	std::vector<cell> oldargs;
 	if(!(flags & 2))
 	{
-		cell *stk = reinterpret_cast<cell*>((amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat) + amx->stk);
+		cell *stk = reinterpret_cast<cell*>(amx_GetData(amx) + amx->stk);
 		oldargs = {stk, stk + amx->paramcount};
 	}
 

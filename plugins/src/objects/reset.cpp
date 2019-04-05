@@ -1,4 +1,5 @@
 #include "reset.h"
+#include "main.h"
 #include "fixes/linux.h"
 #include <cstring>
 
@@ -14,8 +15,7 @@ namespace amx
 
 		unsigned char *dat;
 
-		auto amxhdr = (AMX_HEADER*)amx->base;
-		dat = amx->data != nullptr ? amx->data : amx->base + amxhdr->dat;
+		dat = amx_GetData(amx);
 
 		unsigned char *h;
 		size_t heap_size;
@@ -89,8 +89,7 @@ namespace amx
 
 		unsigned char *dat;
 
-		auto amxhdr = (AMX_HEADER*)amx->base;
-		dat = amx->data != nullptr ? amx->data : amx->base + amxhdr->dat;
+		dat = amx_GetData(amx);
 
 		amx->cip = cip;
 		amx->frm = frm;

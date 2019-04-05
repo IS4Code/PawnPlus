@@ -114,3 +114,18 @@ void gc_unregister(void *id)
 	gc_list.erase(*it);
 	delete it;
 }
+
+unsigned char *amx_GetData(AMX *amx)
+{
+	cell *addr;
+	if(amx->hea > 0)
+	{
+		amx_GetAddr(amx, 0, &addr);
+	}else{
+		cell oldhea = amx->hea;
+		amx->hea = sizeof(cell);
+		amx_GetAddr(amx, 0, &addr);
+		amx->hea = oldhea;
+	}
+	return reinterpret_cast<unsigned char*>(addr);
+}

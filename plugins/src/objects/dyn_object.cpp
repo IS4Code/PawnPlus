@@ -1,6 +1,7 @@
 #define _SCL_SECURE_NO_WARNINGS
 #include "dyn_object.h"
 #include "errors.h"
+#include "main.h"
 #include "modules/containers.h"
 #include "../fixes/linux.h"
 #include <cmath>
@@ -37,7 +38,7 @@ void find_array_end(AMX *amx, const cell *&ptr)
 	{
 		ptr++;
 	}else{
-		auto data = amx->base + ((AMX_HEADER*)amx->base)->dat;
+		auto data = amx_GetData(amx);
 		auto dat = (cell*)(data);
 		auto hlw = (cell*)(data + amx->hlw);
 		auto hea = (cell*)(data + amx->hea);

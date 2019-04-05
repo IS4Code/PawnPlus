@@ -23,7 +23,7 @@ struct amx_stack
 
 	amx_stack(AMX *amx, bool native) : amx(amx), native(native)
 	{
-		data = amx->data != nullptr ? amx->data : amx->base + ((AMX_HEADER*)amx->base)->dat;
+		data = amx_GetData(amx);
 		if(native)
 		{
 			cell *tmp2;
@@ -511,8 +511,7 @@ namespace Natives
 
 		bool byref = optparam(2, 0);
 
-		auto hdr = (AMX_HEADER *)amx->base;
-		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		auto data = amx_GetData(amx);
 
 		cell level = optparam(3, 0);
 		cell frm = amx->frm;
