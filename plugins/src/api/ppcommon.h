@@ -182,6 +182,11 @@ namespace pp
 		{
 			return get<void(void *obj)>(15)(obj);
 		}
+
+		cell dyn_object_get_rank(const void *obj) const
+		{
+			return get<cell(const void *obj)>(16)(obj);
+		}
 	};
 
 	class list_table : public api_table

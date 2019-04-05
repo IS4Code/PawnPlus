@@ -155,6 +155,10 @@ static func_ptr dyn_object_functions[] = {
 	{
 		static_cast<const dyn_object*>(obj)->release();
 	},
+	+[]/*dyn_object_get_rank*/(const void *obj) -> cell
+	{
+		return static_cast<const dyn_object*>(obj)->get_rank();
+	},
 	nullptr
 };
 
