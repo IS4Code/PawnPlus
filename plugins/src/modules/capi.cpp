@@ -6,6 +6,8 @@
 #include "strings.h"
 
 #include <type_traits>
+#include <unordered_map>
+#include <string>
 
 struct func_ptr
 {
@@ -23,6 +25,8 @@ struct func_ptr
 	}
 };
 
+static std::unordered_map<std::string, void*> addons;
+
 static func_ptr main_functions[] = {
 	+[]/*version*/() -> cell
 	{
@@ -39,6 +43,23 @@ static func_ptr main_functions[] = {
 	+[]/*unregister_on_collect*/(void *id) -> void
 	{
 		gc_unregister(id);
+	},
+	+[]/*add_addon*/(const char *name, void *ptr) -> cell
+	{
+		return addons.emplace(name, ptr).second;
+	},
+	+[]/*remove_addon*/(const char *name) -> cell
+	{
+		return addons.erase(name);
+	},
+	+[]/*get_addon*/(const char *name) -> void*
+	{
+		auto it = addons.find(name);
+		if(it == addons.end())
+		{
+			return nullptr;
+		}
+		return it->second;
 	},
 	nullptr
 };

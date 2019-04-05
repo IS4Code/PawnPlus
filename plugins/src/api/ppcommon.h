@@ -59,6 +59,21 @@ namespace pp
 		{
 			return get<void(void *id)>(3)(id);
 		}
+
+		cell add_addon(const char *name, void *ptr)
+		{
+			return get<cell(const char *name, void *ptr)>(4)(name, ptr);
+		}
+
+		cell remove_addon(const char *name)
+		{
+			return get<cell(const char *name)>(5)(name);
+		}
+
+		void *get_addon(const char *name)
+		{
+			return get<void*(const char *name)>(6)(name);
+		}
 	};
 
 	class tag_table : public api_table
