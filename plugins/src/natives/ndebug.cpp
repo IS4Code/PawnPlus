@@ -945,6 +945,282 @@ namespace Natives
 		return SleepReturnDebugCallList | index;
 	}
 
+	// native debug_symbol_indirect_call(Symbol:symbol, AnyTag:...);
+	AMX_DEFINE_NATIVE(debug_symbol_indirect_call, 1)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		if(sym->ident != iFUNCTN)
+		{
+			amx_LogicError(errors::operation_not_supported, "symbol");
+			return 0;
+		}
+
+		auto hdr = (AMX_HEADER *)amx->base;
+		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		auto stk = reinterpret_cast<cell*>(data + amx->stk);
+
+		cell num = *stk - sizeof(cell);
+		amx->stk -= num + 2 * sizeof(cell);
+		for(cell i = 0; i < num; i += sizeof(cell))
+		{
+			cell val = *reinterpret_cast<cell*>(reinterpret_cast<unsigned char*>(stk) + num + sizeof(cell));
+			*--stk = val;
+		}
+		*--stk = num;
+
+		cell argslen = params[0] - sizeof(cell);
+		cell argsneeded = 0;
+		bool error = false;
+		for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
+		{
+			auto vsym = dbg->symboltbl[i];
+			if(vsym->ident != iFUNCTN && vsym->vclass == 1 && vsym->codestart >= sym->codestart && vsym->codeend <= sym->codeend)
+			{
+				cell addr = vsym->address - 2 * sizeof(cell);
+				if(addr > argslen)
+				{
+					error = true;
+					if(addr > argsneeded)
+					{
+						argsneeded = addr;
+					}
+				}
+				if(vsym->ident == iVARIABLE && addr > 0)
+				{
+					auto arg = reinterpret_cast<cell*>(reinterpret_cast<unsigned char*>(stk) + addr);
+					cell val = *arg;
+					*arg = *reinterpret_cast<cell*>(data + val);
+				}
+			}
+		}
+		if(error)
+		{
+			amx_FormalError(errors::not_enough_args, argsneeded / sizeof(cell), argslen / sizeof(cell));
+			return 0;
+		}
+
+		*--stk = 0;
+		amx->cip = sym->address;
+		cell ret;
+		amx->error = amx_Exec(amx, &ret, AMX_EXEC_CONT);
+		return ret;
+	}
+
+	// native debug_symbol_indirect_call_list(Symbol:symbol, List:args);
+	AMX_DEFINE_NATIVE(debug_symbol_indirect_call_list, 2)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		if(sym->ident != iFUNCTN)
+		{
+			amx_LogicError(errors::operation_not_supported, "symbol");
+			return 0;
+		}
+
+		list_t *list;
+		if(!list_pool.get_by_id(params[2], list))
+		{
+			amx_LogicError(errors::pointer_invalid, "list", params[2]);
+			return 0;
+		}
+
+		auto hdr = (AMX_HEADER *)amx->base;
+		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		auto stk = reinterpret_cast<cell*>(data + amx->stk);
+
+		cell argslen = list->size() * sizeof(cell);
+		cell argsneeded = 0;
+		bool error = false;
+		for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
+		{
+			auto vsym = dbg->symboltbl[i];
+			if(vsym->ident != iFUNCTN && vsym->vclass == 1 && vsym->codestart >= sym->codestart && vsym->codeend <= sym->codeend)
+			{
+				cell addr = vsym->address - 2 * sizeof(cell);
+				if(addr > argslen)
+				{
+					error = true;
+					if(addr > argsneeded)
+					{
+						argsneeded = addr;
+					}
+				}
+			}
+		}
+		if(error)
+		{
+			amx_LogicError(errors::not_enough_args, argsneeded / sizeof(cell), argslen / sizeof(cell));
+			return 0;
+		}
+
+		cell num = list->size() * sizeof(cell);
+		amx->stk -= num + 2 * sizeof(cell);
+		for(cell i = list->size() - 1; i >= 0; i--)
+		{
+			cell val = (*list)[i].store(amx);
+			*--stk = val;
+		}
+		*--stk = num;
+		*--stk = 0;
+		amx->cip = sym->address;
+		cell ret;
+		amx->error = amx_Exec(amx, &ret, AMX_EXEC_CONT);
+		return ret;
+	}
+
+	// native amx_err:debug_symbol_try_call(Symbol:symbol, &result, AnyTag:...);
+	AMX_DEFINE_NATIVE(debug_symbol_try_call, 2)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		if(sym->ident != iFUNCTN)
+		{
+			amx_LogicError(errors::operation_not_supported, "symbol");
+			return 0;
+		}
+
+		auto hdr = (AMX_HEADER *)amx->base;
+		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		auto stk = reinterpret_cast<cell*>(data + amx->stk);
+
+		cell num = *stk - sizeof(cell);
+		amx->stk -= num + 2 * sizeof(cell);
+		for(cell i = 0; i < num; i += sizeof(cell))
+		{
+			cell val = *reinterpret_cast<cell*>(reinterpret_cast<unsigned char*>(stk) + num + 2 * sizeof(cell));
+			*--stk = val;
+		}
+		*--stk = num;
+
+		cell argslen = params[0] - 2 * sizeof(cell);
+		cell argsneeded = 0;
+		bool error = false;
+		for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
+		{
+			auto vsym = dbg->symboltbl[i];
+			if(vsym->ident != iFUNCTN && vsym->vclass == 1 && vsym->codestart >= sym->codestart && vsym->codeend <= sym->codeend)
+			{
+				cell addr = vsym->address - 2 * sizeof(cell);
+				if(addr > argslen)
+				{
+					error = true;
+					if(addr > argsneeded)
+					{
+						argsneeded = addr;
+					}
+				}
+				if(vsym->ident == iVARIABLE && addr > 0)
+				{
+					auto arg = reinterpret_cast<cell*>(reinterpret_cast<unsigned char*>(stk) + addr);
+					cell val = *arg;
+					*arg = *reinterpret_cast<cell*>(data + val);
+				}
+			}
+		}
+		if(error)
+		{
+			amx_FormalError(errors::not_enough_args, argsneeded / sizeof(cell), argslen / sizeof(cell));
+			return 0;
+		}
+
+		*--stk = 0;
+		amx->cip = sym->address;
+		int err = amx_Exec(amx, amx_GetAddrSafe(amx, params[2]), AMX_EXEC_CONT);
+		amx->error = AMX_ERR_NONE;
+		return err;
+	}
+
+	// native amx_err:debug_symbol_try_call_list(Symbol:symbol, &result, List:args);
+	AMX_DEFINE_NATIVE(debug_symbol_try_call_list, 3)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		if(sym->ident != iFUNCTN)
+		{
+			amx_LogicError(errors::operation_not_supported, "symbol");
+			return 0;
+		}
+
+		list_t *list;
+		if(!list_pool.get_by_id(params[3], list))
+		{
+			amx_LogicError(errors::pointer_invalid, "list", params[3]);
+			return 0;
+		}
+
+		auto hdr = (AMX_HEADER *)amx->base;
+		auto data = amx->data ? amx->data : amx->base + (int)hdr->dat;
+		auto stk = reinterpret_cast<cell*>(data + amx->stk);
+
+		cell argslen = list->size() * sizeof(cell);
+		cell argsneeded = 0;
+		bool error = false;
+		for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
+		{
+			auto vsym = dbg->symboltbl[i];
+			if(vsym->ident != iFUNCTN && vsym->vclass == 1 && vsym->codestart >= sym->codestart && vsym->codeend <= sym->codeend)
+			{
+				cell addr = vsym->address - 2 * sizeof(cell);
+				if(addr > argslen)
+				{
+					error = true;
+					if(addr > argsneeded)
+					{
+						argsneeded = addr;
+					}
+				}
+			}
+		}
+		if(error)
+		{
+			amx_LogicError(errors::not_enough_args, argsneeded / sizeof(cell), argslen / sizeof(cell));
+			return 0;
+		}
+
+		cell num = list->size() * sizeof(cell);
+		amx->stk -= num + 2 * sizeof(cell);
+		for(cell i = list->size() - 1; i >= 0; i--)
+		{
+			cell val = (*list)[i].store(amx);
+			*--stk = val;
+		}
+		*--stk = num;
+		*--stk = 0;
+		amx->cip = sym->address;
+		int err = amx_Exec(amx, amx_GetAddrSafe(amx, params[2]), AMX_EXEC_CONT);
+		amx->error = AMX_ERR_NONE;
+		return err;
+	}
+
 	// native Iter:debug_symbol_variables(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_variables, 1)
 	{
@@ -993,6 +1269,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_symbol_get_safe),
 	AMX_DECLARE_NATIVE(debug_symbol_call),
 	AMX_DECLARE_NATIVE(debug_symbol_call_list),
+	AMX_DECLARE_NATIVE(debug_symbol_indirect_call),
+	AMX_DECLARE_NATIVE(debug_symbol_indirect_call_list),
+	AMX_DECLARE_NATIVE(debug_symbol_try_call),
+	AMX_DECLARE_NATIVE(debug_symbol_try_call_list),
 	AMX_DECLARE_NATIVE(debug_symbol_variables),
 };
 

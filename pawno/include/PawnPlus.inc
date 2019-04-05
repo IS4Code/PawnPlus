@@ -1591,6 +1591,10 @@ native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, tag_id=t
 native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, tag_id=tagof(value));
 native debug_symbol_call(Symbol:symbol, AnyTag:...);
 native debug_symbol_call_list(Symbol:symbol, List:args);
+native debug_symbol_indirect_call(Symbol:symbol, AnyTag:...);
+native debug_symbol_indirect_call_list(Symbol:symbol, List:args);
+native amx_err:debug_symbol_try_call(Symbol:symbol, &result, AnyTag:...);
+native amx_err:debug_symbol_try_call_list(Symbol:symbol, &result, List:args);
 native Iter:debug_symbol_variables(Symbol:symbol);
 
 
