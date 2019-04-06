@@ -6,22 +6,6 @@ aux::shared_id_set_pool<linked_list_t> linked_list_pool;
 object_pool<dyn_iterator> iter_pool;
 object_pool<handle_t> handle_pool;
 
-
-
-auto list_t::rbegin() -> reverse_iterator
-{
-	return data.rbegin();
-}
-auto list_t::rend() -> reverse_iterator
-{
-	return data.rend();
-}
-
-dyn_object &list_t::operator[](size_t index)
-{
-	return data[index];
-}
-
 void list_t::push_back(dyn_object &&value)
 {
 	data.push_back(std::move(value));

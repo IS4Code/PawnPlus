@@ -766,6 +766,54 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
 
+	// native String:str_replace_list(ConstStringTag:str, const pattern[], List:replacement, regex_options:options=regex_default);
+	AMX_DEFINE_NATIVE(str_replace_list, 3)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+
+		cell *pattern = amx_GetAddrSafe(amx, params[2]);
+
+		list_t *replacement;
+		if(!list_pool.get_by_id(params[3], replacement)) amx_LogicError(errors::pointer_invalid, "list", params[3]);
+
+		cell options = optparam(4, 0);
+
+		cell_string target;
+		if(str != nullptr)
+		{
+			strings::regex_replace(target, *str, pattern, *replacement, options);
+		}else{
+			strings::regex_replace(target, cell_string(), pattern, *replacement, options);
+		}
+		return strings::pool.get_id(strings::pool.add(std::move(target)));
+	}
+
+	// native String:str_replace_list_s(ConstStringTag:str, ConstStringTag:pattern, List:replacement, regex_options:options=regex_default);
+	AMX_DEFINE_NATIVE(str_replace_list_s, 3)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+
+		cell_string *pattern;
+		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+
+		list_t *replacement;
+		if(!list_pool.get_by_id(params[3], replacement)) amx_LogicError(errors::pointer_invalid, "list", params[3]);
+
+		cell options = optparam(4, 0);
+
+		cell_string target;
+		if(str != nullptr && pattern != nullptr)
+		{
+			strings::regex_replace(target, *str, *pattern, *replacement, options);
+		}else{
+			cell_string empty;
+			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, *replacement, options);
+		}
+		return strings::pool.get_id(strings::pool.add(std::move(target)));
+	}
+
 	// native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
 	AMX_DEFINE_NATIVE(str_set_replace, 4)
 	{
@@ -815,6 +863,61 @@ namespace Natives
 		}else{
 			cell_string empty;
 			strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, options);
+		}
+
+		return params[1];
+	}
+
+	// native String:str_set_replace_list(StringTag:target, ConstStringTag:str, const pattern[], List:replacement, regex_options:options=regex_default);
+	AMX_DEFINE_NATIVE(str_set_replace_list, 4)
+	{
+		cell_string *target;
+		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		target->clear();
+		
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+
+		cell *pattern = amx_GetAddrSafe(amx, params[3]);
+
+		list_t *replacement;
+		if(!list_pool.get_by_id(params[4], replacement)) amx_LogicError(errors::pointer_invalid, "list", params[4]);
+		
+		cell options = optparam(5, 0);
+
+		if(str != nullptr)
+		{
+			strings::regex_replace(*target, *str, pattern, *replacement, options);
+		}else{
+			strings::regex_replace(*target, cell_string(), pattern, *replacement, options);
+		}
+		return params[1];
+	}
+
+	// native String:str_set_replace_list_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, List:replacement, regex_options:options=regex_default);
+	AMX_DEFINE_NATIVE(str_set_replace_list_s, 4)
+	{
+		cell_string *target;
+		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		target->clear();
+
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+
+		cell_string *pattern;
+		if(!strings::pool.get_by_id(params[3], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[3]);
+
+		list_t *replacement;
+		if(!list_pool.get_by_id(params[4], replacement)) amx_LogicError(errors::pointer_invalid, "list", params[4]);
+
+		cell options = optparam(5, 0);
+
+		if(str != nullptr && pattern != nullptr)
+		{
+			strings::regex_replace(*target, *str, *pattern, *replacement, options);
+		}else{
+			cell_string empty;
+			strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, *replacement, options);
 		}
 
 		return params[1];
@@ -878,8 +981,12 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_extract_s),
 	AMX_DECLARE_NATIVE(str_replace),
 	AMX_DECLARE_NATIVE(str_replace_s),
+	AMX_DECLARE_NATIVE(str_replace_list),
+	AMX_DECLARE_NATIVE(str_replace_list_s),
 	AMX_DECLARE_NATIVE(str_set_replace),
 	AMX_DECLARE_NATIVE(str_set_replace_s),
+	AMX_DECLARE_NATIVE(str_set_replace_list),
+	AMX_DECLARE_NATIVE(str_set_replace_list_s),
 };
 
 int RegisterStringsNatives(AMX *amx)

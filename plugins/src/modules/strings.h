@@ -1,6 +1,7 @@
 #ifndef STRINGS_H_INCLUDED
 #define STRINGS_H_INCLUDED
 
+#include "modules/containers.h"
 #include "objects/object_pool.h"
 #include "sdk/amx/amx.h"
 #include <string>
@@ -306,6 +307,8 @@ namespace strings
 	cell regex_extract(const cell_string &str, const cell_string &pattern, cell options);
 	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const cell *replacement, cell options);
 	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell options);
+	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const list_t &replacement, cell options);
+	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const list_t &replacement, cell options);
 }
 
 namespace std

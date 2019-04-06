@@ -164,6 +164,11 @@ public:
 		return begin()[index];
 	}
 
+	cell *begin();
+	cell *end();
+	const cell *begin() const;
+	const cell *end() const;
+
 	std::basic_string<cell> to_string() const;
 	dyn_object operator+(const dyn_object &obj) const;
 	dyn_object operator-(const dyn_object &obj) const;
@@ -188,10 +193,6 @@ public:
 private:
 	dyn_object(cell value, tag_ptr tag, bool assign) noexcept;
 	dyn_object(const dyn_object &obj, bool assign);
-	cell *begin();
-	cell *end();
-	const cell *begin() const;
-	const cell *end() const;
 	bool init_op();
 	bool assign_op();
 	bool assign_op(cell *start, cell size) const;

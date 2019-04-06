@@ -99,9 +99,22 @@ class list_t : public collection_base<std::vector<dyn_object>>
 {
 public:
 	typedef typename std::vector<dyn_object>::reverse_iterator reverse_iterator;
-	reverse_iterator rbegin();
-	reverse_iterator rend();
-	dyn_object &operator[](size_t index);
+	reverse_iterator rbegin()
+	{
+		return data.rbegin();
+	}
+	reverse_iterator rend()
+	{
+		return data.rend();
+	}
+	dyn_object &operator[](size_t index)
+	{
+		return data[index];
+	}
+	const dyn_object &operator[](size_t index) const
+	{
+		return data[index];
+	}
 	void push_back(dyn_object &&value);
 	void push_back(const dyn_object &value);
 	iterator insert(iterator position, dyn_object &&value);
