@@ -733,6 +733,8 @@ struct format_base
 			{
 				buf.append(last, format_begin);
 
+				auto color_begin = format_begin;
+
 				++format_begin;
 				if(format_begin == format_end)
 				{
@@ -742,8 +744,24 @@ struct format_base
 
 				cell argi = parse_num(format_begin, format_end);
 
-				if(format_begin == format_end || *format_begin != ':')
+				if(format_begin == format_end)
 				{
+					amx_FormalError(errors::invalid_format, "expected ':'");
+					return;
+				}
+				if(*format_begin != ':')
+				{
+					auto color_end = std::find(format_begin, format_end, '}');
+					if(color_end != format_end && color_end - color_begin == 7)
+					{
+						if(std::all_of(std::next(color_begin), color_end, [](cell c) {return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }))
+						{
+							++color_end;
+							buf.append(color_begin, color_end);
+							format_begin = last = color_end;
+							continue;
+						}
+					}
 					amx_FormalError(errors::invalid_format, "expected ':'");
 					return;
 				}
