@@ -309,6 +309,8 @@ namespace strings
 	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell options);
 	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const list_t &replacement, cell options);
 	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const list_t &replacement, cell options);
+	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, int replacement_index, cell options, const char *format, cell *params, size_t numargs);
+	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, int replacement_index, cell options, const char *format, cell *params, size_t numargs);
 }
 
 namespace std

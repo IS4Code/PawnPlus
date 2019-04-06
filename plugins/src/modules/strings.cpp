@@ -2,6 +2,7 @@
 #include "errors.h"
 #include "modules/containers.h"
 #include "modules/variants.h"
+#include "objects/stored_param.h"
 
 #include <stddef.h>
 #include <vector>
@@ -1618,6 +1619,116 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 {
 	try{
 		regex_replace_list_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), target, str, &pattern, replacement, options);
+	}catch(const std::regex_error &err)
+	{
+		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}
+}
+
+template <class StringIter>
+void replace(cell_string &target, StringIter begin, StringIter end, const std::basic_regex<cell, regex_traits> &regex, AMX *amx, int replacement_index, std::regex_constants::match_flag_type match_options, const char *format, cell *params, size_t numargs)
+{
+	std::vector<stored_param> arg_values;
+	if(format != nullptr)
+	{
+		size_t argi = -1;
+		size_t len = std::strlen(format);
+		for(size_t i = 0; i < len; i++)
+		{
+			arg_values.push_back(stored_param::create(amx, format[i], params, argi, numargs));
+		}
+	}
+
+	std::match_results<StringIter> result;
+	while(std::regex_search(begin, end, result, regex, match_options))
+	{
+		const auto &group = result[0];
+		target.append(begin, group.first);
+
+		cell reset_hea, *addr;
+		amx_Allot(amx, 0, &reset_hea, &addr);
+
+		for(int i = result.size() - 1; i >= 0; i--)
+		{
+			amx_Push(amx, result[i].length());
+		}
+
+		for(int i = result.size() - 1; i >= 0; i--)
+		{
+			const auto &capture = result[i];
+			cell val;
+			if(capture.matched)
+			{
+				auto len = capture.length();
+				amx_Allot(amx, len + 1, &val, &addr);
+				std::copy(capture.first, capture.second, addr);
+				addr[len] = 0;
+			}else{
+				amx_Allot(amx, 1, &val, &addr);
+				*addr = 0;
+			}
+			amx_Push(amx, val);
+		}
+
+		for(auto it = arg_values.rbegin(); it != arg_values.rend(); it++)
+		{
+			it->push(amx, 0);
+		}
+
+		cell retval = 0;
+		if(amx_Exec(amx, &retval, replacement_index) != AMX_ERR_NONE)
+		{
+			return;
+		}
+		if(retval != 0)
+		{
+			cell_string *repl;
+			if(!strings::pool.get_by_id(retval, repl))
+			{
+				amx_LogicError(errors::pointer_invalid, "string", retval);
+				return;
+			}
+			target.append(repl->cbegin(), repl->cend());
+		}
+
+		begin = group.second;
+	}
+	target.append(begin, end);
+}
+
+template <class PatternIter>
+struct regex_replace_func_base
+{
+	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, AMX *amx, int replacement_index, cell options, const char *format, cell *params, size_t numargs) const
+	{
+		std::regex_constants::syntax_option_type syntax_options;
+		std::regex_constants::match_flag_type match_options;
+		regex_options(options, syntax_options, match_options);
+
+		if(options & cache_flag)
+		{
+			replace(target, str.cbegin(), str.cend(), get_cached(pattern_begin, pattern_end, pattern, options, syntax_options), amx, replacement_index, match_options, format, params, numargs);
+		}else{
+			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+			replace(target, str.cbegin(), str.cend(), regex, amx, replacement_index, match_options, format, params, numargs);
+		}
+	}
+};
+
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, int replacement_index, cell options, const char *format, cell *params, size_t numargs)
+{
+	try{
+		select_iterator<regex_replace_func_base>(pattern, target, str, nullptr, amx, replacement_index, options, format, params, numargs);
+	}catch(const std::regex_error &err)
+	{
+		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}
+}
+
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, int replacement_index, cell options, const char *format, cell *params, size_t numargs)
+{
+	try{
+		regex_replace_func_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), target, str, &pattern, amx, replacement_index, options, format, params, numargs);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));

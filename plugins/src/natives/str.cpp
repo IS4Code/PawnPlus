@@ -814,6 +814,78 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
 
+	// native String:str_replace_func(ConstStringTag:str, const pattern[], const function[], regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+	AMX_DEFINE_NATIVE(str_replace_func, 3)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+
+		cell *pattern = amx_GetAddrSafe(amx, params[2]);
+
+		const char *fname;
+		amx_StrParam(amx, params[3], fname);
+		if(fname == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "function");
+		}
+		int index;
+		if(amx_FindPublic(amx, fname, &index) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::func_not_found, "public", fname);
+		}
+
+		cell options = optparam(4, 0);
+
+		const char *format;
+		amx_OptStrParam(amx, 5, format, nullptr);
+
+		cell_string target;
+		if(str != nullptr)
+		{
+			strings::regex_replace(target, *str, pattern, amx, index, options, format, params + 6, params[0] / sizeof(cell) - 5);
+		}else{
+			strings::regex_replace(target, cell_string(), pattern, amx, index, options, format, params + 6, params[0] / sizeof(cell) - 5);
+		}
+		return strings::pool.get_id(strings::pool.add(std::move(target)));
+	}
+
+	// native String:str_replace_func_s(ConstStringTag:str, ConstStringTag:pattern, const function[], regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+	AMX_DEFINE_NATIVE(str_replace_func_s, 3)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+
+		cell_string *pattern;
+		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+
+		const char *fname;
+		amx_StrParam(amx, params[3], fname);
+		if(fname == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "function");
+		}
+		int index;
+		if(amx_FindPublic(amx, fname, &index) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::func_not_found, "public", fname);
+		}
+
+		cell options = optparam(4, 0);
+
+		const char *format;
+		amx_OptStrParam(amx, 5, format, nullptr);
+
+		cell_string target;
+		if(str != nullptr && pattern != nullptr)
+		{
+			strings::regex_replace(target, *str, *pattern, amx, index, options, format, params + 6, params[0] / sizeof(cell) - 5);
+		}else{
+			cell_string empty;
+			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, index, options, format, params + 6, params[0] / sizeof(cell) - 5);
+		}
+		return strings::pool.get_id(strings::pool.add(std::move(target)));
+	}
+
 	// native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
 	AMX_DEFINE_NATIVE(str_set_replace, 4)
 	{
@@ -922,6 +994,85 @@ namespace Natives
 
 		return params[1];
 	}
+
+	// native String:str_set_replace_func(StringTag:target, ConstStringTag:str, const pattern[], const function[], regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+	AMX_DEFINE_NATIVE(str_set_replace_func, 4)
+	{
+		cell_string *target;
+		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		target->clear();
+		
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+
+		cell *pattern = amx_GetAddrSafe(amx, params[3]);
+
+		const char *fname;
+		amx_StrParam(amx, params[4], fname);
+		if(fname == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "function");
+		}
+		int index;
+		if(amx_FindPublic(amx, fname, &index) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::func_not_found, "public", fname);
+		}
+
+		cell options = optparam(5, 0);
+
+		const char *format;
+		amx_OptStrParam(amx, 6, format, nullptr);
+
+		if(str != nullptr)
+		{
+			strings::regex_replace(*target, *str, pattern, amx, index, options, format, params + 7, params[0] / sizeof(cell) - 6);
+		}else{
+			strings::regex_replace(*target, cell_string(), pattern, amx, index, options, format, params + 7, params[0] / sizeof(cell) - 6);
+		}
+		return params[1];
+	}
+
+	// native String:str_set_replace_func_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, const function[], regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+	AMX_DEFINE_NATIVE(str_set_replace_func_s, 4)
+	{
+		cell_string *target;
+		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		target->clear();
+
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+
+		cell_string *pattern;
+		if(!strings::pool.get_by_id(params[3], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[3]);
+
+		const char *fname;
+		amx_StrParam(amx, params[4], fname);
+		if(fname == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "function");
+		}
+		int index;
+		if(amx_FindPublic(amx, fname, &index) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::func_not_found, "public", fname);
+		}
+
+		cell options = optparam(5, 0);
+
+		const char *format;
+		amx_OptStrParam(amx, 6, format, nullptr);
+
+		if(str != nullptr && pattern != nullptr)
+		{
+			strings::regex_replace(*target, *str, *pattern, amx, index, options, format, params + 7, params[0] / sizeof(cell) - 6);
+		}else{
+			cell_string empty;
+			strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, index, options, format, params + 7, params[0] / sizeof(cell) - 6);
+		}
+
+		return params[1];
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -983,10 +1134,14 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_replace_s),
 	AMX_DECLARE_NATIVE(str_replace_list),
 	AMX_DECLARE_NATIVE(str_replace_list_s),
+	AMX_DECLARE_NATIVE(str_replace_func),
+	AMX_DECLARE_NATIVE(str_replace_func_s),
 	AMX_DECLARE_NATIVE(str_set_replace),
 	AMX_DECLARE_NATIVE(str_set_replace_s),
 	AMX_DECLARE_NATIVE(str_set_replace_list),
 	AMX_DECLARE_NATIVE(str_set_replace_list_s),
+	AMX_DECLARE_NATIVE(str_set_replace_func),
+	AMX_DECLARE_NATIVE(str_set_replace_func_s),
 };
 
 int RegisterStringsNatives(AMX *amx)
