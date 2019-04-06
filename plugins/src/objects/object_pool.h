@@ -1,6 +1,7 @@
 #ifndef OBJECT_POOL_H_INCLUDED
 #define OBJECT_POOL_H_INCLUDED
 
+#include "main.h"
 #include "utils/shared_id_set_pool.h"
 #include "sdk/amx/amx.h"
 #include <vector>
