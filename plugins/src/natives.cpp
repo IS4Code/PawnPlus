@@ -14,12 +14,12 @@ cell impl::handle_error(AMX *amx, cell *params, const char *native, const errors
 		amx_Push(amx, error.level);
 		amx_PushString(amx, &amx_addr, &addr, error.message.c_str(), false, false);
 		amx_PushString(amx, &amx_addr, &addr, native, false, false);
-		cell ret;
+		cell ret = 0;
 		amx_Exec(amx, &ret, handler);
 		cell retval = *ret_addr;
 		amx_Release(amx, reset_hea);
 
-		if(ret)
+		if(ret || amx->error != AMX_ERR_NONE)
 		{
 			return retval;
 		}

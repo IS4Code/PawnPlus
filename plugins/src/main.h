@@ -4,7 +4,7 @@
 #include "sdk/amx/amx.h"
 #include <utility>
 
-#define PP_VERSION_STRING "v1.0.0-pre2"
+#define PP_VERSION_STRING "v1.0.0-pre3"
 #define PP_VERSION_NUMBER 101
 
 typedef void(*logprintf_t)(const char* format, ...);
