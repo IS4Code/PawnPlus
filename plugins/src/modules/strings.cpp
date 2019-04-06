@@ -207,6 +207,13 @@ struct format_base
 		}
 		switch(*begin)
 		{
+			case '^':
+			{
+				++begin;
+				argn++;
+				return argn;
+			}
+			break;
 			case '*':
 			{
 				++begin;
