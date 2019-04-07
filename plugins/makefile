@@ -1,6 +1,6 @@
 GPP = g++ -m32 -std=c++11 -Ilib -Isrc -fno-stack-protector
 GCC = gcc -m32 -Ilib -Isrc -fno-stack-protector
-LINK = $(GCC)
+LINK = $(GPP) -lstdc++
 PP_OUTFILE = "./PawnPlus.so"
 
 COMPILE_FLAGS = -c -O3 -fPIC -w -DLINUX -pthread -fno-operator-names -ftemplate-depth=2048
