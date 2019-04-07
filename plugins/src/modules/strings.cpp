@@ -1477,7 +1477,7 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell options)
 {
 	try{
-		regex_replace_base<cell_string::const_iterator>::inner<cell_string::const_iterator>()(replacement.begin(), replacement.end(), pattern.begin(), pattern.end(), target, str, &pattern, options);
+		typename regex_replace_base<cell_string::const_iterator>::template inner<cell_string::const_iterator>()(replacement.begin(), replacement.end(), pattern.begin(), pattern.end(), target, str, &pattern, options);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -1566,17 +1566,17 @@ void replace(cell_string &target, StringIter begin, StringIter end, const std::b
 						cell_string *repl_str;
 						if(strings::pool.get_by_id(value, repl_str))
 						{
-							replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, begin, end);
+							typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, begin, end);
 							continue;
 						}
 					}
 				}else if(repl.get_tag()->inherits_from(tags::tag_char) && repl.is_array())
 				{
-					select_iterator<replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::inner>(repl.begin(), target, begin, end);
+					select_iterator<replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner>(repl.begin(), target, begin, end);
 					continue;
 				}
 				cell_string str = repl.to_string();
-				replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::inner< cell_string::const_iterator>()(str.cbegin(), str.cend(), target, begin, end);
+				typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<cell_string::const_iterator>()(str.cbegin(), str.cend(), target, begin, end);
 			}else{
 				++it;
 			}
