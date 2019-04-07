@@ -18,6 +18,8 @@ namespace pp
 	list_table list;
 	linked_list_table linked_list;
 	map_table map;
+	string_table string;
+	variant_table variant;
 }
 
 bool pp::load()
@@ -39,6 +41,8 @@ bool pp::load()
 		list.load(table[3]);
 		linked_list.load(table[4]);
 		map.load(table[5]);
+		string.load(table[6]);
+		variant.load(table[7]);
 		return true;
 	}
 	return false;

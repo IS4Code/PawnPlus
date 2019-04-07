@@ -351,12 +351,113 @@ namespace pp
 		}
 	};
 
+	class string_table : public api_table
+	{
+	public:
+		void *create()
+		{
+			return get<void*()>(0)();
+		}
+		
+		void remove(void *str)
+		{
+			return get<void(void *str)>(1)(str);
+		}
+
+		cell get_id(void *str)
+		{
+			return get<cell(void *str)>(2)(str);
+		}
+
+		void *from_id(cell id)
+		{
+			return get<void*(cell id)>(3)(id);
+		}
+
+		bool acquire(void *str)
+		{
+			return get<cell(void *str)>(4)(str);
+		}
+
+		bool release(void *str)
+		{
+			return get<cell(void *str)>(5)(str);
+		}
+
+		cell get_size(const void *str)
+		{
+			return get<cell(const void *str)>(6)(str);
+		}
+
+		cell *get_data(void *str)
+		{
+			return get<cell*(void *str)>(7)(str);
+		}
+
+		cell create(const char *c, cell len)
+		{
+			return get<cell(const char *c, cell len)>(8)(c, len);
+		}
+
+		void append(void *str, const cell *data, cell len)
+		{
+			return get<void(void *str, const cell *data, cell len)>(9)(str, data, len);
+		}
+	};
+
+
+	class variant_table : public api_table
+	{
+	public:
+		void *create()
+		{
+			return get<void*()>(0)();
+		}
+
+		void remove(void *var)
+		{
+			return get<void(void *var)>(1)(var);
+		}
+
+		cell get_id(void *var)
+		{
+			return get<cell(void *var)>(2)(var);
+		}
+
+		void *from_id(cell id)
+		{
+			return get<void*(cell id)>(3)(id);
+		}
+
+		bool acquire(void *var)
+		{
+			return get<cell(void *var)>(4)(var);
+		}
+
+		bool release(void *var)
+		{
+			return get<cell(void *var)>(5)(var);
+		}
+
+		cell get_size(const void *var)
+		{
+			return get<cell(const void *var)>(6)(var);
+		}
+
+		void *get_object(void *var)
+		{
+			return get<void*(void *var)>(7)(var);
+		}
+	};
+
 	extern main_table main;
 	extern tag_table tag;
 	extern dyn_object_table dyn_object;
 	extern list_table list;
 	extern linked_list_table linked_list;
 	extern map_table map;
+	extern string_table string;
+	extern variant_table variant;
 }
 
 #endif

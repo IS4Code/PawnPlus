@@ -368,6 +368,50 @@ static func_ptr string_functions[] = {
 	nullptr
 };
 
+using variant_ptr = typename std::remove_reference<typename object_pool<dyn_object>::object_ptr>::type*;
+using const_variant_ptr = typename std::remove_reference<typename object_pool<dyn_object>::const_object_ptr>::type*;
+
+static func_ptr variant_functions[] = {
+	+[]/*new_variant*/() -> void*
+	{
+		return &variants::pool.add();
+	},
+	+[]/*delete_variant*/(void *var) -> void
+	{
+		variants::pool.remove(*static_cast<variant_ptr>(var));
+	},
+	+[]/*variant_get_id*/(void *var) -> cell
+	{
+		return variants::pool.get_id(*static_cast<variant_ptr>(var));
+	},
+	+[]/*variant_from_id*/(cell id) -> void*
+	{
+		variant_ptr ptr;
+		if(variants::pool.get_by_id(id, ptr))
+		{
+			return ptr;
+		}
+		return nullptr;
+	},
+	+[]/*variant_acquire*/(void *var) -> cell
+	{
+		return static_cast<variant_ptr>(var)->acquire();
+	},
+	+[]/*variant_release*/(void *var) -> cell
+	{
+		return static_cast<variant_ptr>(var)->release();
+	},
+	+[]/*variant_get_size*/(const void *var) -> cell
+	{
+		return (*static_cast<const_variant_ptr>(var))->get_size();
+	},
+	+[]/*variant_get_object*/(void *var) -> void*
+	{
+		return &*static_cast<variant_ptr>(var);
+	},
+	nullptr
+};
+
 static void *func_table[] = {
 	&main_functions,
 	&tag_functions,
@@ -376,6 +420,7 @@ static void *func_table[] = {
 	&linked_list_functions,
 	&map_functions,
 	&string_functions,
+	&variant_functions,
 	nullptr
 };
 
