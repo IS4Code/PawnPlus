@@ -1650,12 +1650,10 @@ void replace(cell_string &target, StringIter begin, StringIter end, const std::b
 
 		for(int i = result.size() - 1; i >= 0; i--)
 		{
-			amx_Push(amx, result[i].length());
-		}
-
-		for(int i = result.size() - 1; i >= 0; i--)
-		{
 			const auto &capture = result[i];
+
+			amx_Push(amx, capture.length());
+
 			cell val;
 			if(capture.matched)
 			{
