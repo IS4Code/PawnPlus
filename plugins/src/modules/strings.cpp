@@ -702,20 +702,11 @@ struct format_base
 						amx_FormalError(errors::invalid_format, "unexpected end");
 						return;
 					}
-					if(pos_found && std::isdigit(*last))
+					auto last2 = last;
+					cell argi;
+					if(pos_found && (argi = parse_num(last2, pos_end)) >= 0 && last2 == pos_end)
 					{
-						cell argi = parse_num(last, pos_end);
-						if(last != pos_end)
-						{
-							amx_FormalError(errors::invalid_format, "expected '$'");
-							return;
-						}
-						
-						if(argi < 0)
-						{
-							amx_FormalError(errors::invalid_format, "negative argument index");
-							return;
-						}else if(argi < argc)
+						if(argi < argc)
 						{
 							++pos_end;
 
@@ -728,7 +719,7 @@ struct format_base
 						argn++;
 						if(argn < argc)
 						{
-							add_format(buf, last, format_begin, *format_begin, get_arg(argn));
+							add_format(buf, last2, format_begin, *format_begin, get_arg(argn));
 						}else if(argn > maxargn)
 						{
 							maxargn = argn;
