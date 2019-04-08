@@ -6,6 +6,8 @@
 #include "objects/dyn_object.h"
 #include "fixes/linux.h"
 
+#include <cstring>
+
 class range_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
 {
 	cell index;
@@ -1058,6 +1060,21 @@ namespace Natives
 			return 0;
 		}
 		return reinterpret_cast<cell>(&typeid(*iter));
+	}
+
+	// native iter_type_str(IterTag:iter, type[], size=sizeof(type));
+	AMX_DEFINE_NATIVE(iter_type_str, 3)
+	{
+		dyn_iterator *iter;
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
+		if(iter == nullptr)
+		{
+			return 0;
+		}
+		auto str = typeid(*iter).name();
+		amx_SetString(addr, str, false, false, params[3]);
+		return std::strlen(str);
 	}
 
 	// native String:iter_type_str_s(IterTag:iter);

@@ -1095,6 +1095,7 @@ native iter_delete(IterTag:iter);
 native bool:iter_linked(IterTag:iter);
 native bool:iter_inside(IterTag:iter);
 native iter_type(IterTag:iter);
+native iter_type_str(IterTag:iter, type[], size=sizeof(type));
 native String:iter_type_str_s(IterTag:iter);
 native Iter:iter_erase(IterTag:iter);
 native Iter:iter_erase_deep(IterTag:iter);
