@@ -605,19 +605,22 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				case SleepReturnTailCall:
 				{
 					amx->error = ret = AMX_ERR_NONE;
-					amx->pri = 1;
 					auto data = amx_GetData(amx);
 					auto frame = reinterpret_cast<cell*>(data + amx->frm);
 					if(frame[1])
 					{
+						amx->pri = 1;
 						cell top = amx->frm + 3 * sizeof(cell) + frame[2];
 						auto oldframe = reinterpret_cast<cell*>(data + frame[0]);
-						frame[1] = oldframe[1];
 						cell oldtop = frame[0] + 3 * sizeof(cell) + oldframe[2];
 						cell offset = oldtop - top;
+						frame[0] = oldframe[0];
+						frame[1] = oldframe[1];
 						std::memmove(data + amx->stk + offset, data + amx->stk, top - amx->stk);
 						amx->stk += offset;
 						amx->frm += offset;
+					}else{
+						amx->pri = 0;
 					}
 					continue;
 				}

@@ -163,7 +163,7 @@ enum locale_category (<<= 1)
     locale_all = -1,
 }
 
-native pp_locale(const locale[], locale_category:category = locale_all);
+native pp_locale(const locale[], locale_category:category=locale_all);
 native pp_locale_name(locale[], size=sizeof(locale));
 native String:pp_locale_name_s();
 
@@ -360,7 +360,7 @@ native amx_error(amx_err:code, result=0);
 native amx_parallel_begin(count=1);
 native amx_parallel_end();
 
-native amx_tailcall();
+native bool:amx_tailcall();
 
 enum amx_err
 {
