@@ -646,8 +646,8 @@ native List:list_add_args(List:list, AnyTag:...);
 native list_add_args_str(List:list, arg0[], ...);
 native list_add_args_var(List:list, ConstVariantTag:arg0, ConstVariantTag:...);
 
-native bool:list_remove(List:list, index);
-native bool:list_remove_deep(List:list, index);
+native list_remove(List:list, index);
+native list_remove_deep(List:list, index);
 
 native list_get(List:list, index, offset=0);
 native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));

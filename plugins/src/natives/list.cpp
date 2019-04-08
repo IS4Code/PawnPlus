@@ -421,7 +421,7 @@ namespace Natives
 		return numargs;
 	}
 
-	// native bool:list_remove(List:list, index);
+	// native list_remove(List:list, index);
 	AMX_DEFINE_NATIVE(list_remove, 2)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "list index");
@@ -432,7 +432,7 @@ namespace Natives
 		return 1;
 	}
 
-	// native bool:list_remove_deep(List:list, index);
+	// native list_remove_deep(List:list, index);
 	AMX_DEFINE_NATIVE(list_remove_deep, 2)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "list index");
