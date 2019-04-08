@@ -1023,8 +1023,8 @@ native linked_list_add_args(LinkedList:linked_list, AnyTag:...);
 native linked_list_add_args_str(LinkedList:linked_list, arg0[], ...);
 native linked_list_add_args_var(LinkedList:linked_list, ConstVariantTag:arg0, ConstVariantTag:...);
 
-native bool:linked_list_remove(LinkedList:linked_list, index);
-native bool:linked_list_remove_deep(LinkedList:linked_list, index);
+native linked_list_remove(LinkedList:linked_list, index);
+native linked_list_remove_deep(LinkedList:linked_list, index);
 
 native linked_list_get(LinkedList:linked_list, index, offset=0);
 native linked_list_get_arr(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value));
@@ -1091,7 +1091,7 @@ const Iter:ITER_NULL = Iter:0;
 native bool:iter_valid(IterTag:iter);
 native Iter:iter_acquire(IterTag:iter);
 native Iter:iter_release(IterTag:iter);
-native bool:iter_delete(IterTag:iter);
+native iter_delete(IterTag:iter);
 native bool:iter_linked(IterTag:iter);
 native bool:iter_inside(IterTag:iter);
 native iter_type(IterTag:iter);
