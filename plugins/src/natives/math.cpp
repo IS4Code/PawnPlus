@@ -306,6 +306,18 @@ namespace Natives
 		return std::uniform_int_distribution<cell>(min, max)(generator);
 	}
 
+	// native math_random_unsigned(min=0, max=-1);
+	AMX_DEFINE_NATIVE(math_random_unsigned, 0)
+	{
+		ucell min = optparam(1, 0);
+		ucell max = optparam(2, -1);
+		if(max < min)
+		{
+			amx_LogicError(errors::out_of_range, "max");
+		}
+		return std::uniform_int_distribution<ucell>(min, max)(generator);
+	}
+
 	// native Float:math_random_float(Float:min=0.0, Float:max=1.0);
 	AMX_DEFINE_NATIVE(math_random_float, 0)
 	{
@@ -420,6 +432,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(math_ugte),
 
 	AMX_DECLARE_NATIVE(math_random),
+	AMX_DECLARE_NATIVE(math_random_unsigned),
 	AMX_DECLARE_NATIVE(math_random_float),
 	AMX_DECLARE_NATIVE(math_round),
 	AMX_DECLARE_NATIVE(math_floor),

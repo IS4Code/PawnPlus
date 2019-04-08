@@ -1502,6 +1502,7 @@ stock operator~(PP@ts:arr[], count)
 /*                 */
 
 native math_random(min=0, max=cellmax);
+native math_random_unsigned(min=0, max=-1);
 native Float:math_random_float(Float:min=0.0, Float:max=1.0);
 native math_round(Float:val);
 native math_floor(Float:val);
