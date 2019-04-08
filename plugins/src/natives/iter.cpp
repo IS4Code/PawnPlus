@@ -1702,6 +1702,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_linked),
 	AMX_DECLARE_NATIVE(iter_inside),
 	AMX_DECLARE_NATIVE(iter_type),
+	AMX_DECLARE_NATIVE(iter_type_str),
 	AMX_DECLARE_NATIVE(iter_type_str_s),
 	AMX_DECLARE_NATIVE(iter_erase),
 	AMX_DECLARE_NATIVE(iter_erase_deep),
