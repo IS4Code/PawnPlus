@@ -1013,6 +1013,7 @@ native linked_list_add_arr(LinkedList:linked_list, const AnyTag:value[], index=-
 native linked_list_add_str(LinkedList:linked_list, const value[], index=-1);
 native linked_list_add_var(LinkedList:linked_list, ConstVariantTag:value, index=-1);
 native linked_list_add_linked_list(LinkedList:linked_list, LinkedList:range, index=-1);
+native linked_list_add_iter(LinkedList:linked_list, Iter:iter, index=-1);
 native linked_list_add_args_t(TagTag:tag_id=tagof(arg0), LinkedList:linked_list, AnyTag:arg0, AnyTag:...) = linked_list_add_args;
 native linked_list_add_args_packed(LinkedList:linked_list, ArgTag:...);
 /*

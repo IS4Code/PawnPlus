@@ -858,7 +858,8 @@ namespace Natives
 		}else if(static_cast<ucell>(index) > ptr->size())
 		{
 			amx_LogicError(errors::out_of_range, "list index");
-		}else{
+		}else if(index != ptr->size())
+		{
 			pos = ptr->begin() + index;
 		}
 		while(iter->valid())
@@ -944,6 +945,42 @@ namespace Natives
 			}
 		}
 		return iter_pool.get_id(iter);
+	}
+
+	// native linked_list_add_iter(LinkedList:linked_list, Iter:iter, index=-1);
+	AMX_DEFINE_NATIVE(linked_list_add_iter, 2)
+	{
+		cell index = optparam(3, -1);
+		if(index < -1) amx_LogicError(errors::out_of_range, "linked list index");
+		linked_list_t *ptr;
+		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
+		dyn_iterator *iter;
+		if(!iter_pool.get_by_id(params[2], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[2]);
+		auto pos = ptr->end();
+		if(index == -1)
+		{
+			index = ptr->size();
+		}else if(static_cast<ucell>(index) > ptr->size())
+		{
+			amx_LogicError(errors::out_of_range, "linked list index");
+		}else if(index != ptr->size())
+		{
+			pos = ptr->begin();
+			std::advance(pos, index);
+		}
+		while(iter->valid())
+		{
+			value_read(params[2], iter, [&](const dyn_object &obj)
+			{
+				pos = ptr->insert(pos, obj);
+				++pos;
+			});
+			if(!iter->move_next())
+			{
+				break;
+			}
+		}
+		return index;
 	}
 
 	// native Iter:var_iter(VariantTag:var);
@@ -1632,6 +1669,7 @@ static AMX_NATIVE_INFO native_list[] =
 {
 	AMX_DECLARE_NATIVE(list_iter),
 	AMX_DECLARE_NATIVE(list_add_iter),
+	AMX_DECLARE_NATIVE(linked_list_add_iter),
 	AMX_DECLARE_NATIVE(map_iter),
 	AMX_DECLARE_NATIVE(map_iter_at),
 	AMX_DECLARE_NATIVE(map_iter_at_arr),
