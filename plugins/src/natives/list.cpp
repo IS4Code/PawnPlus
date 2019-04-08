@@ -289,6 +289,21 @@ namespace Natives
 		return 1;
 	}
 
+	// native list_clear_deep(List:list);
+	AMX_DEFINE_NATIVE(list_clear_deep, 1)
+	{
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		list_t old;
+		ptr->swap(old);
+		list_pool.remove(ptr);
+		for(auto &obj : old)
+		{
+			obj.release();
+		}
+		return 1;
+	}
+
 	// native list_add(List:list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(list_add, 4)
 	{
@@ -731,6 +746,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_clone),
 	AMX_DECLARE_NATIVE(list_size),
 	AMX_DECLARE_NATIVE(list_clear),
+	AMX_DECLARE_NATIVE(list_clear_deep),
 
 	AMX_DECLARE_NATIVE(list_add),
 	AMX_DECLARE_NATIVE(list_add_arr),

@@ -627,7 +627,8 @@ native bool:list_valid(List:list);
 native list_delete(List:list);
 native list_delete_deep(List:list);
 native list_size(List:list);
-native bool:list_clear(List:list);
+native list_clear(List:list);
+native list_clear_deep(List:list);
 native List:list_clone(List:list);
 
 native list_add(List:list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
@@ -771,6 +772,7 @@ native map_delete_deep(Map:map);
 native Map:map_clone(Map:map);
 native map_size(Map:map);
 native map_clear(Map:map);
+native map_clear_deep(Map:map);
 native map_set_ordered(Map:map, bool:ordered);
 native bool:map_is_ordered(Map:map);
 
@@ -1002,7 +1004,8 @@ native bool:linked_list_valid(LinkedList:linked_list);
 native linked_list_delete(LinkedList:linked_list);
 native linked_list_delete_deep(LinkedList:linked_list);
 native linked_list_size(LinkedList:linked_list);
-native bool:linked_list_clear(LinkedList:linked_list);
+native linked_list_clear(LinkedList:linked_list);
+native linked_list_clear_deep(LinkedList:linked_list);
 native LinkedList:linked_list_clone(LinkedList:linked_list);
 
 native linked_list_add(LinkedList:linked_list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));

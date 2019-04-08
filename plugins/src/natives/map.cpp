@@ -574,6 +574,22 @@ namespace Natives
 		return 1;
 	}
 
+	// native map_clear_deep(Map:map);
+	AMX_DEFINE_NATIVE(map_clear_deep, 1)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		map_t old;
+		ptr->swap(old);
+		map_pool.remove(ptr);
+		for(auto &pair : old)
+		{
+			pair.first.release();
+			pair.second.release();
+		}
+		return 1;
+	}
+
 	// native map_set_ordered(Map:map, bool:ordered);
 	AMX_DEFINE_NATIVE(map_set_ordered, 2)
 	{
@@ -1571,6 +1587,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_clone),
 	AMX_DECLARE_NATIVE(map_size),
 	AMX_DECLARE_NATIVE(map_clear),
+	AMX_DECLARE_NATIVE(map_clear_deep),
 	AMX_DECLARE_NATIVE(map_set_ordered),
 	AMX_DECLARE_NATIVE(map_is_ordered),
 
