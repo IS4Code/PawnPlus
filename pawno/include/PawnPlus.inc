@@ -753,7 +753,7 @@ native Map:map_new_args_var({AnyTag,ConstVariantTags}:...);
 native Map:map_new_str_args_t(TagTag:value_tag_id=tagof(arg1), arg0[], AnyTag:arg1, AnyTag:...) = map_new_str_args;
 native Map:map_new_str_args_packed({_,ArgTag}:...);
 /*
-native Map:map_new_args_var({_,AnyTag}:...);
+native Map:map_new_str_args({_,AnyTag}:...);
 */
 #define map_new_str_args(%0) map_new_str_args_packed(_PP@TAGGED2_PACK(%0))
 native Map:map_new_str_args_str(arg0[], arg1[], ...);
@@ -761,7 +761,7 @@ native Map:map_new_str_args_var(arg0[], ConstVariantTag:arg1, {_,VariantTags}:..
 native Map:map_new_var_args_t(TagTag:value_tag_id=tagof(arg1), ConstVariantTag:arg0, AnyTag:arg1, AnyTag:...) = map_new_var_args;
 native Map:map_new_var_args_packed({ConstVariantTags,ArgTag}:...);
 /*
-native Map:map_new_args_var({ConstVariantTags,AnyTag}:...);
+native Map:map_new_var_args({ConstVariantTags,AnyTag}:...);
 */
 #define map_new_var_args(%0) map_new_var_args_packed(_PP@TAGGED2_PACK(%0))
 native Map:map_new_var_args_str(ConstVariantTag:arg0, arg1[], {_,VariantTags}:...);

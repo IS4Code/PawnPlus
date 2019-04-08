@@ -592,8 +592,10 @@ namespace Natives
 	AMX_DEFINE_NATIVE(task_continue_with_bound, 0)
 	{
 		task *task;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+
 		std::shared_ptr<tasks::task> bound;
-		if(!tasks::get_by_id(params[1], task) && tasks::get_by_id(params[2], bound)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+		if(!tasks::get_by_id(params[2], bound)) amx_LogicError(errors::pointer_invalid, "task", params[2]);
 		
 		char *fname;
 		amx_StrParam(amx, params[3], fname);
