@@ -459,7 +459,7 @@ native str_find(ConstStringTag:str, ConstStringTag:value, offset=0);
 native String:str_cat(ConstStringTag:str1, ConstStringTag:str2);
 native String:str_sub(ConstStringTag:str, start=0, end=cellmax);
 native String:str_val(AnyTag:value, TagTag:tag_id=tagof(value));
-native String:str_val_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native String:str_val_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native List:str_split(ConstStringTag:str, const delims[]);
 native List:str_split_s(ConstStringTag:str, ConstStringTag:delims);
 native String:str_join(List:list, const delim[]);
@@ -1108,10 +1108,14 @@ native Iter:iter_to_last(IterTag:iter, index=0);
 native bool:iter_eq(IterTag:iter1, IterTag:iter2);
 
 native Iter:iter_range(AnyTag:start, count, skip=1, tag_id=tagof(start));
-native Iter:iter_range_arr(AnyTag:start[], count, skip=1, size=sizeof(start), tag_id=tagof(start));
+native Iter:iter_range_arr(const AnyTag:start[], count, skip=1, size=sizeof(start), tag_id=tagof(start));
+native Iter:iter_range_str(const start[], count, skip=1);
+native Iter:iter_range_str_s(ConstStringTag:start, count, skip=1);
 native Iter:iter_range_var(ConstVariantTag:start, count, skip=1);
 native Iter:iter_repeat(AnyTag:value, count, tag_id=tagof(value));
-native Iter:iter_repeat_arr(AnyTag:value[], count, size=sizeof(value), tag_id=tagof(value));
+native Iter:iter_repeat_arr(const AnyTag:value[], count, size=sizeof(value), tag_id=tagof(value));
+native Iter:iter_repeat_str(const value[], count);
+native Iter:iter_repeat_str_s(ConstStringTag:value, count);
 native Iter:iter_repeat_var(ConstVariantTag:value, count);
 
 native iter_get(IterTag:iter, offset=0);

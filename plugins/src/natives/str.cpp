@@ -162,7 +162,7 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
 
-	// native String:str_val_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+	// native String:str_val_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(str_val_arr, 3)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);

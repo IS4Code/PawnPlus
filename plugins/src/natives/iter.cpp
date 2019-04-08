@@ -1155,10 +1155,22 @@ namespace Natives
 		return value_at<1, 4>::iter_range<dyn_func>(amx, params);
 	}
 
-	// native Iter:iter_range_arr(AnyTag:start[], count, skip=1, size=sizeof(start), TagTag:tag_id=tagof(start));
+	// native Iter:iter_range_arr(const AnyTag:start[], count, skip=1, size=sizeof(start), TagTag:tag_id=tagof(start));
 	AMX_DEFINE_NATIVE(iter_range_arr, 5)
 	{
 		return value_at<1, 4, 5>::iter_range<dyn_func_arr>(amx, params);
+	}
+
+	// native Iter:iter_range_str(const start[], count, skip=1);
+	AMX_DEFINE_NATIVE(iter_range_str, 3)
+	{
+		return value_at<1>::iter_range<dyn_func_str>(amx, params);
+	}
+
+	// native Iter:iter_range_str_s(ConstStringTag:start, count, skip=1);
+	AMX_DEFINE_NATIVE(iter_range_str_s, 3)
+	{
+		return value_at<1>::iter_range<dyn_func_str_s>(amx, params);
 	}
 
 	// native Iter:iter_range_var(ConstVariantTag:start, count, skip=1);
@@ -1173,10 +1185,22 @@ namespace Natives
 		return value_at<1, 3>::iter_repeat<dyn_func>(amx, params);
 	}
 
-	// native Iter:iter_repeat_arr(AnyTag:value[], count, size=sizeof(value), TagTag:tag_id=tagof(value));
+	// native Iter:iter_repeat_arr(const AnyTag:value[], count, size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_repeat_arr, 4)
 	{
 		return value_at<1, 3, 4>::iter_repeat<dyn_func_arr>(amx, params);
+	}
+
+	// native Iter:iter_repeat_str(const value[], count);
+	AMX_DEFINE_NATIVE(iter_repeat_str, 2)
+	{
+		return value_at<1>::iter_repeat<dyn_func_str>(amx, params);
+	}
+
+	// native Iter:iter_repeat_str_s(ConstStringTag:value, count);
+	AMX_DEFINE_NATIVE(iter_repeat_str_s, 2)
+	{
+		return value_at<1>::iter_repeat<dyn_func_str_s>(amx, params);
 	}
 
 	// native Iter:iter_repeat_var(ConstVariantTag:value, count);
@@ -1712,9 +1736,13 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(iter_range),
 	AMX_DECLARE_NATIVE(iter_range_arr),
+	AMX_DECLARE_NATIVE(iter_range_str),
+	AMX_DECLARE_NATIVE(iter_range_str_s),
 	AMX_DECLARE_NATIVE(iter_range_var),
 	AMX_DECLARE_NATIVE(iter_repeat),
 	AMX_DECLARE_NATIVE(iter_repeat_arr),
+	AMX_DECLARE_NATIVE(iter_repeat_str),
+	AMX_DECLARE_NATIVE(iter_repeat_str_s),
 	AMX_DECLARE_NATIVE(iter_repeat_var),
 
 	AMX_DECLARE_NATIVE(iter_move_next),
