@@ -1343,6 +1343,9 @@ struct regex_search_base
 		if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 		{
 			amx_LogicError(errors::out_of_range, "pos");
+		}else if(*pos > 0)
+		{
+			match_options |= std::regex_constants::match_prev_avail;
 		}
 		auto begin = str.cbegin() + *pos;
 		std::match_results<cell_string::const_iterator> match;
@@ -1398,6 +1401,9 @@ struct regex_extract_base
 		if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 		{
 			amx_LogicError(errors::out_of_range, "pos");
+		}else if(*pos > 0)
+		{
+			match_options |= std::regex_constants::match_prev_avail;
 		}
 		auto begin = str.cbegin() + *pos;
 		std::match_results<cell_string::const_iterator> match;
@@ -1513,6 +1519,10 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 		const auto &group = result[0];
 		target.append(begin, group.first);
 		typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, std::next(result.cbegin()), result.cend());
+		if(group.second != begin)
+		{
+			match_options |= std::regex_constants::match_prev_avail;
+		}
 		begin = group.second;
 	}
 	target.append(begin, end);
@@ -1533,6 +1543,9 @@ struct regex_replace_base
 			if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 			{
 				amx_LogicError(errors::out_of_range, "pos");
+			}else if(*pos > 0)
+			{
+				match_options |= std::regex_constants::match_prev_avail;
 			}
 			auto begin = str.cbegin() + *pos;
 			target.append(str.cbegin(), begin);
@@ -1618,6 +1631,10 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 				++it;
 			}
 		}
+		if(group.second != begin)
+		{
+			match_options |= std::regex_constants::match_prev_avail;
+		}
 		begin = group.second;
 	}
 	target.append(begin, end);
@@ -1635,6 +1652,9 @@ struct regex_replace_list_base
 		if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 		{
 			amx_LogicError(errors::out_of_range, "pos");
+		}else if(*pos > 0)
+		{
+			match_options |= std::regex_constants::match_prev_avail;
 		}
 		auto begin = str.cbegin() + *pos;
 		target.append(str.cbegin(), begin);
@@ -1733,6 +1753,10 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 			target.append(repl->cbegin(), repl->cend());
 		}
 
+		if(group.second != begin)
+		{
+			match_options |= std::regex_constants::match_prev_avail;
+		}
 		begin = group.second;
 	}
 	target.append(begin, end);
@@ -1750,6 +1774,9 @@ struct regex_replace_func_base
 		if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 		{
 			amx_LogicError(errors::out_of_range, "pos");
+		}else if(*pos > 0)
+		{
+			match_options |= std::regex_constants::match_prev_avail;
 		}
 		auto begin = str.cbegin() + *pos;
 		target.append(str.cbegin(), begin);
