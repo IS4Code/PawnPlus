@@ -323,6 +323,7 @@ native amx_public_name(index, name[], size=sizeof(name));
 native String:amx_public_name_s(index);
 native [2]amx_encode_public(index);
 native [2]amx_encode_public_name(const function[]);
+native amx_public_at(code=cellmin);
 native amx_num_natives();
 native amx_native_index(const function[]);
 native amx_native_name(index, name[], size=sizeof(name));

@@ -201,6 +201,46 @@ namespace Natives
 		return 1;
 	}
 
+	// native amx_public_at(code=cellmin);
+	AMX_DEFINE_NATIVE(amx_public_at, 0)
+	{
+		ucell code = optparam(1, std::numeric_limits<cell>::min());
+		if(code == std::numeric_limits<cell>::min())
+		{
+			code = amx->cip - 2 * sizeof(cell);
+		}
+		auto hdr = reinterpret_cast<AMX_HEADER*>(amx->base);
+		int num;
+		if(amx_NumPublics(amx, &num) == AMX_ERR_NONE)
+		{
+			int idx = -1;
+			ucell dist = std::numeric_limits<int>::max();
+			for(int i = -1; i < num; i++)
+			{
+				ucell addr;
+				if(i == -1)
+				{
+					if(hdr->cip >= 0)
+					{
+						addr = hdr->cip;
+					}else{
+						addr = -1;
+					}
+				}else{
+					auto rec = reinterpret_cast<AMX_FUNCSTUB*>(amx->base + hdr->publics + i * hdr->defsize);
+					addr = rec->address;
+				}
+				if(addr <= code && code - addr <= dist)
+				{
+					idx = i;
+					dist = code - addr;
+				}
+			}
+			return idx;
+		}
+		return -1;
+	}
+
 	// native amx_num_natives();
 	AMX_DEFINE_NATIVE(amx_num_natives, 0)
 	{
@@ -507,6 +547,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_public_name_s),
 	AMX_DECLARE_NATIVE(amx_encode_public),
 	AMX_DECLARE_NATIVE(amx_encode_public_name),
+	AMX_DECLARE_NATIVE(amx_public_at),
 	AMX_DECLARE_NATIVE(amx_num_natives),
 	AMX_DECLARE_NATIVE(amx_native_index),
 	AMX_DECLARE_NATIVE(amx_native_name),
