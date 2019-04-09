@@ -404,8 +404,7 @@ namespace pp
 			return get<void(void *str, const cell *data, cell len)>(9)(str, data, len);
 		}
 	};
-
-
+	
 	class variant_table : public api_table
 	{
 	public:
@@ -450,6 +449,95 @@ namespace pp
 		}
 	};
 
+	class task_table : public api_table
+	{
+	public:
+		void *create()
+		{
+			return get<void*()>(0)();
+		}
+
+		void remove(void *task)
+		{
+			return get<void(void *task)>(1)(task);
+		}
+
+		cell get_id(void *task)
+		{
+			return get<cell(void *task)>(2)(task);
+		}
+
+		void *from_id(cell id)
+		{
+			return get<void*(cell id)>(3)(id);
+		}
+
+		cell state(const void *task)
+		{
+			return get<cell(const void *task)>(4)(task);
+		}
+
+		bool completed(const void *task)
+		{
+			return get<cell(const void *task)>(5)(task);
+		}
+
+		bool faulted(const void *task)
+		{
+			return get<cell(const void *task)>(6)(task);
+		}
+
+		void *result(const void *task)
+		{
+			return get<void*(const void *task)>(7)(task);
+		}
+
+		cell error(const void *task)
+		{
+			return get<cell(const void *task)>(8)(task);
+		}
+
+		void reset(void *task)
+		{
+			return get<void(void *task)>(9)(task);
+		}
+
+		void keep(void *task, bool keep)
+		{
+			return get<void(void *task, cell keep)>(10)(task, keep);
+		}
+
+		cell set_completed(void *task, void *result)
+		{
+			return get<cell(void *task, void *result)>(11)(task, result);
+		}
+
+		cell set_faulted(void *task, cell error)
+		{
+			return get<cell(void *task, cell error)>(12)(task, error);
+		}
+
+		void register_handler(void *task, cell(*handler)(void *task, void *cookie), void *cookie)
+		{
+			return get<void(void *task, cell(*handler)(void *task, void *cookie), void *cookie)>(13)(task, handler, cookie);
+		}
+
+		void *task_register_handler_iter(void *task, cell(*handler)(void *task, void *cookie), void *cookie)
+		{
+			return get<void*(void *task, cell(*handler)(void *task, void *cookie), void *cookie)>(14)(task, handler, cookie);
+		}
+
+		void free_iter(void *iter)
+		{
+			return get<void(void *iter)>(15)(iter);
+		}
+
+		void unregister_handler(void *task, void *iter)
+		{
+			return get<void(void *task, void *iter)>(16)(task, iter);
+		}
+	};
+
 	extern main_table main;
 	extern tag_table tag;
 	extern dyn_object_table dyn_object;
@@ -458,6 +546,7 @@ namespace pp
 	extern map_table map;
 	extern string_table string;
 	extern variant_table variant;
+	extern task_table task;
 }
 
 #endif

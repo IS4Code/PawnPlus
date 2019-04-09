@@ -4,6 +4,7 @@
 #include "variants.h"
 #include "containers.h"
 #include "strings.h"
+#include "tasks.h"
 
 #include <type_traits>
 #include <unordered_map>
@@ -412,6 +413,94 @@ static func_ptr variant_functions[] = {
 	nullptr
 };
 
+static func_ptr task_functions[] = {
+	+[]/*new_task*/() -> void*
+	{
+		return &*tasks::add();
+	},
+	+[]/*delete_task*/(void *task) -> void
+	{
+		tasks::remove(static_cast<tasks::task*>(task));
+	},
+	+[]/*task_get_id*/(void *task) -> cell
+	{
+		return tasks::get_id(static_cast<tasks::task*>(task));
+	},
+	+[]/*task_from_id*/(cell id) -> void*
+	{
+		tasks::task *ptr;
+		if(tasks::get_by_id(id, ptr))
+		{
+			return ptr;
+		}
+		return nullptr;
+	},
+	+[]/*task_state*/(const void *task) -> cell
+	{
+		return static_cast<const tasks::task*>(task)->state();
+	},
+	+[]/*task_completed*/(const void *task) -> cell
+	{
+		return static_cast<const tasks::task*>(task)->completed();
+	},
+	+[]/*task_faulted*/(const void *task) -> cell
+	{
+		return static_cast<const tasks::task*>(task)->faulted();
+	},
+	+[]/*task_result*/(const void *task) -> void*
+	{
+		dyn_object result = static_cast<const tasks::task*>(task)->result();
+		if(result.is_null()) return nullptr;
+		return new dyn_object(std::move(result));
+	},
+	+[]/*task_error*/(const void *task) -> cell
+	{
+		return static_cast<const tasks::task*>(task)->error();
+	},
+	+[]/*task_reset*/(void *task) -> void
+	{
+		static_cast<tasks::task*>(task)->reset();
+	},
+	+[]/*task_keep*/(void *task, cell keep) -> void
+	{
+		static_cast<tasks::task*>(task)->keep(keep);
+	},
+	+[]/*task_set_completed*/(void *task, void *result) -> cell
+	{
+		return static_cast<tasks::task*>(task)->set_completed(std::move(*static_cast<dyn_object*>(result)));
+	},
+	+[]/*task_set_faulted*/(void *task, cell error) -> cell
+	{
+		return static_cast<tasks::task*>(task)->set_faulted(error);
+	},
+	+[]/*task_register_handler*/(void *task, cell (*handler)(void *task, void *cookie), void *cookie) -> void
+	{
+		static_cast<tasks::task*>(task)->register_handler([=](tasks::task &task)
+		{
+			return handler(&task, cookie);
+		});
+	},
+	+[]/*task_register_handler_iter*/(void *task, cell(*handler)(void *task, void *cookie), void *cookie) -> void*
+	{
+		auto it = static_cast<tasks::task*>(task)->register_handler([=](tasks::task &task)
+		{
+			return handler(&task, cookie);
+		});
+		return new typename std::list<std::unique_ptr<tasks::handler>>::iterator(std::move(it));
+	},
+	+[]/*task_free_iter*/(void *iter) -> void
+	{
+		delete static_cast<typename std::list<std::unique_ptr<tasks::handler>>::iterator*>(iter);
+	},
+	+[]/*task_unregister_handler*/(void *task, void *iter) -> void
+	{
+		auto it = static_cast<typename std::list<std::unique_ptr<tasks::handler>>::iterator*>(iter);
+		static_cast<tasks::task*>(task)->unregister_handler(*it);
+		delete it;
+	},
+	nullptr
+};
+
 static void *func_table[] = {
 	&main_functions,
 	&tag_functions,
@@ -421,6 +510,7 @@ static void *func_table[] = {
 	&map_functions,
 	&string_functions,
 	&variant_functions,
+	&task_functions,
 	nullptr
 };
 

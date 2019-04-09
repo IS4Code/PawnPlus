@@ -20,6 +20,7 @@ namespace pp
 	map_table map;
 	string_table string;
 	variant_table variant;
+	task_table task;
 }
 
 bool pp::load()
@@ -43,6 +44,7 @@ bool pp::load()
 		map.load(table[5]);
 		string.load(table[6]);
 		variant.load(table[7]);
+		task.load(table[8]);
 		return true;
 	}
 	return false;
