@@ -201,6 +201,21 @@ namespace Natives
 		return 1;
 	}
 
+	// native amx_public_addr(index);
+	AMX_DEFINE_NATIVE(amx_public_addr, 1)
+	{
+		cell index = params[1];
+		int num;
+		if(index >= 0 && amx_NumPublics(amx, &num) == AMX_ERR_NONE && index < num)
+		{
+			auto hdr = reinterpret_cast<AMX_HEADER*>(amx->base);
+			auto rec = reinterpret_cast<AMX_FUNCSTUB*>(amx->base + hdr->publics + index * hdr->defsize);
+			return rec->address;
+		}
+		amx_LogicError(errors::out_of_range, "index");
+		return 0;
+	}
+
 	// native amx_public_at(code=cellmin);
 	AMX_DEFINE_NATIVE(amx_public_at, 0)
 	{
@@ -547,6 +562,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_public_name_s),
 	AMX_DECLARE_NATIVE(amx_encode_public),
 	AMX_DECLARE_NATIVE(amx_encode_public_name),
+	AMX_DECLARE_NATIVE(amx_public_addr),
 	AMX_DECLARE_NATIVE(amx_public_at),
 	AMX_DECLARE_NATIVE(amx_num_natives),
 	AMX_DECLARE_NATIVE(amx_native_index),
