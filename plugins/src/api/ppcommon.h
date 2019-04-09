@@ -74,6 +74,21 @@ namespace pp
 		{
 			return get<void*(const char *name)>(6)(name);
 		}
+
+		void handle_delete(void *handle)
+		{
+			return get<void(void *handle)>(7)(handle);
+		}
+
+		bool handle_alive(const void *handle)
+		{
+			return get<cell(const void *handle)>(8)(handle);
+		}
+
+		void *handle_get(const void *handle)
+		{
+			return get<void*(const void *handle)>(9)(handle);
+		}
 	};
 
 	class tag_table : public api_table
@@ -236,6 +251,11 @@ namespace pp
 		{
 			return get<void(void *list)>(8)(list);
 		}
+
+		void *get_handle(void *list) const
+		{
+			return get<void*(void *list)>(9)(list);
+		}
 	};
 
 	class linked_list_table : public api_table
@@ -284,6 +304,11 @@ namespace pp
 		void clear(void *linked_list) const
 		{
 			return get<void(void *linked_list)>(8)(linked_list);
+		}
+
+		void *get_handle(void *linked_list) const
+		{
+			return get<void*(void *linked_list)>(9)(linked_list);
 		}
 	};
 
@@ -349,6 +374,11 @@ namespace pp
 		{
 			return get<void(void *map, cell ordered)>(11)(map, ordered);
 		}
+
+		void *get_handle(void *map) const
+		{
+			return get<void*(void *map)>(12)(map);
+		}
 	};
 
 	class string_table : public api_table
@@ -403,6 +433,11 @@ namespace pp
 		{
 			return get<void(void *str, const cell *data, cell len)>(9)(str, data, len);
 		}
+
+		void *get_handle(void *str) const
+		{
+			return get<void*(void *str)>(10)(str);
+		}
 	};
 	
 	class variant_table : public api_table
@@ -446,6 +481,11 @@ namespace pp
 		void *get_object(void *var)
 		{
 			return get<void*(void *var)>(7)(var);
+		}
+
+		void *get_handle(void *var) const
+		{
+			return get<void*(void *var)>(8)(var);
 		}
 	};
 
@@ -535,6 +575,11 @@ namespace pp
 		void unregister_handler(void *task, void *iter)
 		{
 			return get<void(void *task, void *iter)>(16)(task, iter);
+		}
+
+		void *get_handle(void *task) const
+		{
+			return get<void*(void *task)>(17)(task);
 		}
 	};
 

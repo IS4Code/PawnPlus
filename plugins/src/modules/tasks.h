@@ -179,6 +179,7 @@ namespace tasks
 	void add_timer_task_result(const std::shared_ptr<task> &task, cell interval, dyn_object &&result);
 	void add_tick_task_error(const std::shared_ptr<task> &task, cell ticks, cell error);
 	void add_timer_task_error(const std::shared_ptr<task> &task, cell interval, cell error);
+	std::shared_ptr<task> get(task *ptr);
 	cell get_id(const task *ptr);
 	bool get_by_id(cell id, task *&ptr);
 	bool get_by_id(cell id, std::shared_ptr<task> &ptr);

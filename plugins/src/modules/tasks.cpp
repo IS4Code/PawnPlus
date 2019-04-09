@@ -362,6 +362,11 @@ namespace tasks
 		}
 	}
 
+	std::shared_ptr<task> get(task *ptr)
+	{
+		return pool.get(ptr);
+	}
+
 	cell get_id(const task *ptr)
 	{
 		return pool.get_id(ptr);

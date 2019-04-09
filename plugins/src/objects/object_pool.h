@@ -481,6 +481,21 @@ public:
 		return reinterpret_cast<cell>(&obj);
 	}
 
+	std::shared_ptr<ref_container> get(object_ptr obj)
+	{
+		auto it = local_object_list.find(&obj);
+		if(it != local_object_list.end())
+		{
+			return it->second;
+		}
+		it = global_object_list.find(&obj);
+		if(it != global_object_list.end())
+		{
+			return it->second;
+		}
+		return {};
+	}
+
 	object_ptr get(AMX *amx, cell addr)
 	{
 		auto obj = reinterpret_cast<ref_container*>(amx_GetData(amx) + addr);

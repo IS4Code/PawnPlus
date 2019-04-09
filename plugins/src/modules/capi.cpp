@@ -62,6 +62,33 @@ static func_ptr main_functions[] = {
 		}
 		return it->second;
 	},
+	+[]/*handle_delete*/(void *handle) -> void
+	{
+		if(handle)
+		{
+			delete static_cast<std::weak_ptr<void>*>(handle);
+		}
+	},
+	+[]/*handle_alive*/(const void *handle) -> cell
+	{
+		if(handle)
+		{
+			return !static_cast<const std::weak_ptr<void>*>(handle)->expired();
+		}
+		return false;
+	},
+	+[]/*handle_get*/(const void *handle) -> void*
+	{
+		if(handle)
+		{
+			auto ptr = static_cast<const std::weak_ptr<void>*>(handle)->lock();
+			if(ptr)
+			{
+				return ptr.get();
+			}
+		}
+		return nullptr;
+	},
 	nullptr
 };
 
@@ -205,6 +232,15 @@ static func_ptr list_functions[] = {
 	{
 		static_cast<list_t*>(list)->clear();
 	},
+	+[]/*list_get_handle*/(void *list) -> void*
+	{
+		auto ptr = list_pool.get(static_cast<list_t*>(list));
+		if(ptr)
+		{
+			return new std::weak_ptr<void>(ptr);
+		}
+		return nullptr;
+	},
 	nullptr
 };
 
@@ -249,6 +285,15 @@ static func_ptr linked_list_functions[] = {
 	+[]/*linked_list_clear*/(void *linked_list) -> void
 	{
 		static_cast<linked_list_t*>(linked_list)->clear();
+	},
+	+[]/*linked_list_get_handle*/(void *linked_list) -> void*
+	{
+		auto ptr = linked_list_pool.get(static_cast<linked_list_t*>(linked_list));
+		if(ptr)
+		{
+			return new std::weak_ptr<void>(ptr);
+		}
+		return nullptr;
 	},
 	nullptr
 };
@@ -313,6 +358,15 @@ static func_ptr map_functions[] = {
 	{
 		static_cast<map_t*>(map)->set_ordered(ordered);
 	},
+	+[]/*map_get_handle*/(void *map) -> void*
+	{
+		auto ptr = map_pool.get(static_cast<map_t*>(map));
+		if(ptr)
+		{
+			return new std::weak_ptr<void>(ptr);
+		}
+		return nullptr;
+	},
 	nullptr
 };
 
@@ -366,6 +420,15 @@ static func_ptr string_functions[] = {
 	{
 		(*static_cast<string_ptr>(str))->append(data, len);
 	},
+	+[]/*string_get_handle*/(void *str) -> void*
+	{
+		auto ptr = strings::pool.get(*static_cast<string_ptr>(str));
+		if(ptr)
+		{
+			return new std::weak_ptr<void>(ptr);
+		}
+		return nullptr;
+	},
 	nullptr
 };
 
@@ -409,6 +472,15 @@ static func_ptr variant_functions[] = {
 	+[]/*variant_get_object*/(void *var) -> void*
 	{
 		return &*static_cast<variant_ptr>(var);
+	},
+	+[]/*variant_get_handle*/(void *var) -> void*
+	{
+		auto ptr = variants::pool.get(*static_cast<variant_ptr>(var));
+		if(ptr)
+		{
+			return new std::weak_ptr<void>(ptr);
+		}
+		return nullptr;
 	},
 	nullptr
 };
@@ -497,6 +569,15 @@ static func_ptr task_functions[] = {
 		auto it = static_cast<typename std::list<std::unique_ptr<tasks::handler>>::iterator*>(iter);
 		static_cast<tasks::task*>(task)->unregister_handler(*it);
 		delete it;
+	},
+	+[]/*task_get_handle*/(void *task) -> void*
+	{
+		auto ptr = tasks::get(static_cast<tasks::task*>(task));
+		if(ptr)
+		{
+			return new std::weak_ptr<void>(ptr);
+		}
+		return nullptr;
 	},
 	nullptr
 };
