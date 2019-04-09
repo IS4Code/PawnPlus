@@ -1458,13 +1458,14 @@ struct replace_sub_match_base
 			auto last = begin;
 			while(begin != end)
 			{
-				if(*begin == '$')
+				if(*begin == '$' || *begin == '\\')
 				{
+					auto c = *begin;
 					auto spec = begin;
 					++begin;
 					if(begin != end)
 					{
-						if(*begin == '$')
+						if(*begin == c)
 						{
 							target.append(last, begin);
 							last = ++begin;
