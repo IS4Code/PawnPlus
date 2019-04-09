@@ -509,22 +509,22 @@ enum regex_options (<<= 1)
     regex_cached = 4194304
 }
 
-native bool:str_match(ConstStringTag:str, const pattern[], regex_options:options=regex_default);
-native bool:str_match_s(ConstStringTag:str, ConstStringTag:pattern, regex_options:options=regex_default);
-native List:str_extract(ConstStringTag:str, const pattern[], regex_options:options=regex_default);
-native List:str_extract_s(ConstStringTag:str, ConstStringTag:pattern, regex_options:options=regex_default);
-native String:str_replace(ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
-native String:str_replace_s(ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, regex_options:options=regex_default);
-native String:str_replace_list(ConstStringTag:str, const pattern[], List:replacement, regex_options:options=regex_default);
-native String:str_replace_list_s(ConstStringTag:str, ConstStringTag:pattern, List:replacement, regex_options:options=regex_default);
-native String:str_replace_func(ConstStringTag:str, const pattern[], const function[], regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
-native String:str_replace_func_s(ConstStringTag:str, ConstStringTag:pattern, const function[], regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
-native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], regex_options:options=regex_default);
-native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, regex_options:options=regex_default);
-native String:str_set_replace_list(StringTag:target, ConstStringTag:str, const pattern[], List:replacement, regex_options:options=regex_default);
-native String:str_set_replace_list_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, List:replacement, regex_options:options=regex_default);
-native String:str_set_replace_func(StringTag:target, ConstStringTag:str, const pattern[], const function[], regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
-native String:str_set_replace_func_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, const function[], regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+native bool:str_match(ConstStringTag:str, const pattern[], &pos=0, regex_options:options=regex_default);
+native bool:str_match_s(ConstStringTag:str, ConstStringTag:pattern, &pos=0, regex_options:options=regex_default);
+native List:str_extract(ConstStringTag:str, const pattern[], &pos=0, regex_options:options=regex_default);
+native List:str_extract_s(ConstStringTag:str, ConstStringTag:pattern, &pos=0, regex_options:options=regex_default);
+native String:str_replace(ConstStringTag:str, const pattern[], const replacement[], &pos=0, regex_options:options=regex_default);
+native String:str_replace_s(ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, &pos=0, regex_options:options=regex_default);
+native String:str_replace_list(ConstStringTag:str, const pattern[], List:replacement, &pos=0, regex_options:options=regex_default);
+native String:str_replace_list_s(ConstStringTag:str, ConstStringTag:pattern, List:replacement, &pos=0, regex_options:options=regex_default);
+native String:str_replace_func(ConstStringTag:str, const pattern[], const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+native String:str_replace_func_s(ConstStringTag:str, ConstStringTag:pattern, const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], &pos=0, regex_options:options=regex_default);
+native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, &pos=0, regex_options:options=regex_default);
+native String:str_set_replace_list(StringTag:target, ConstStringTag:str, const pattern[], List:replacement, &pos=0, regex_options:options=regex_default);
+native String:str_set_replace_list_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, List:replacement, &pos=0, regex_options:options=regex_default);
+native String:str_set_replace_func(StringTag:target, ConstStringTag:str, const pattern[], const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+native String:str_set_replace_func_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
 
 #if defined PP_SYNTAX_@
 #define @ str_new_static

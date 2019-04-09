@@ -7,6 +7,7 @@
 #include "sdk/amx/amx.h"
 
 #define optparam(idx, optvalue) (params[0] / sizeof(cell) < (idx) ? (optvalue) : params[idx])
+#define optparamref(idx, optvalue) (params[0] / sizeof(cell) < (idx) ? &(*reinterpret_cast<cell*>(alloca(sizeof(cell))) = (optvalue)) : amx_GetAddrSafe(amx, params[idx]))
 #define amx_OptStrParam(amx,idx,result,default)                             \
     do {                                                                    \
       if (params[0] / sizeof(cell) < idx) { result = default; break; }      \
