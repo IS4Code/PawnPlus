@@ -1419,7 +1419,9 @@ struct regex_extract_base
 		auto list = list_pool.add();
 		for(auto &group : match)
 		{
-			list->push_back(dyn_object(&*group.first, group.length(), chartag));
+			dyn_object obj(&*group.first, group.length() + 1, chartag);
+			*(obj.end() - 1) = 0;
+			list->push_back(std::move(obj));
 		}
 		return list_pool.get_id(list);
 	}
