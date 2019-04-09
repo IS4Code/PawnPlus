@@ -1483,6 +1483,8 @@ struct replace_sub_match_base
 								{
 									++siter;
 									num--;
+								}else{
+									break;
 								}
 							}
 							if(siter != send)
@@ -1510,7 +1512,7 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 	{
 		const auto &group = result[0];
 		target.append(begin, group.first);
-		typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, result.cbegin(), result.cend());
+		typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, std::next(result.cbegin()), result.cend());
 		begin = group.second;
 	}
 	target.append(begin, end);
