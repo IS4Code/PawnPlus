@@ -23,10 +23,11 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell tag_id) : rank
 	}
 	if(arr != nullptr)
 	{
-		array_data = new cell[size + 1];
+		array_data = new cell[size + 2];
 		std::memcpy(array_data + 1, arr, size * sizeof(cell));
+		array_data[size + 1] = 0;
 	}else{
-		array_data = new cell[size + 1]();
+		array_data = new cell[size + 2]();
 	}
 	array_data[0] = size + 1;
 	init_op();
@@ -93,12 +94,13 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell ta
 			find_array_end(amx, last);
 		}
 		cell length = last - arr;
-		array_data = new cell[length + 1];
+		array_data = new cell[length + 2];
 		std::memcpy(array_data + 1, arr, length * sizeof(cell));
+		array_data[length + 1] = 0;
 		array_data[0] = length + 1;
 	}else{
 		cell length = size + size * size2;
-		array_data = new cell[length + 1]();
+		array_data = new cell[length + 2]();
 		for(cell i = 0; i < size; i++)
 		{
 			array_data[1 + i] = (size + i * size2 - i) * sizeof(cell);
@@ -136,12 +138,13 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell si
 			find_array_end(amx, last);
 		}
 		cell length = last - arr;
-		array_data = new cell[length + 1];
+		array_data = new cell[length + 2];
 		std::memcpy(array_data + 1, arr, length * sizeof(cell));
+		array_data[length + 1] = 0;
 		array_data[0] = length + 1;
 	}else{
 		cell length = size + size * size2 + size * size2 * size3;
-		array_data = new cell[length + 1]();
+		array_data = new cell[length + 2]();
 		for(cell i = 0; i < size; i++)
 		{
 			array_data[1 + i] = (size + i * size2 - i) * sizeof(cell);
@@ -160,7 +163,7 @@ dyn_object::dyn_object(const cell *str) : rank(1), tag(tags::find_tag(tags::tag_
 {
 	if(str == nullptr || !str[0])
 	{
-		array_data = new cell[2]{2, 0};
+		array_data = new cell[3]{2, 0, 0};
 		return;
 	}
 	int len;
@@ -172,9 +175,10 @@ dyn_object::dyn_object(const cell *str) : rank(1), tag(tags::find_tag(tags::tag_
 	}else{
 		size = len;
 	}
-	array_data = new cell[size + 2];
+	array_data = new cell[size + 3];
 	array_data[0] = size + 2;
 	std::memcpy(array_data + 1, str, size * sizeof(cell));
+	array_data[size + 2] = 0;
 	array_data[size + 1] = 0;
 }
 
@@ -190,10 +194,11 @@ dyn_object::dyn_object(const cell *arr, cell size, tag_ptr tag) : rank(1), tag(t
 {
 	if(arr != nullptr)
 	{
-		array_data = new cell[size + 1];
+		array_data = new cell[size + 2];
 		std::memcpy(array_data + 1, arr, size * sizeof(cell));
+		array_data[size + 1] = 0;
 	}else{
-		array_data = new cell[size + 1]();
+		array_data = new cell[size + 2]();
 	}
 	array_data[0] = size + 1;
 	init_op();
@@ -206,8 +211,9 @@ dyn_object::dyn_object(const dyn_object &obj, bool assign) : rank(obj.rank), tag
 		if(obj.array_data != nullptr)
 		{
 			cell size = obj.data_size();
-			array_data = new cell[size];
+			array_data = new cell[size + 1];
 			std::memcpy(array_data, obj.array_data, size * sizeof(cell));
+			array_data[size] = 0;
 		}else{
 			array_data = nullptr;
 		}
@@ -1035,8 +1041,9 @@ dyn_object &dyn_object::operator=(const dyn_object &obj)
 		if(obj.array_data != nullptr)
 		{
 			cell size = obj.data_size();
-			array_data = new cell[size];
+			array_data = new cell[size + 1];
 			std::memcpy(array_data, obj.array_data, size * sizeof(cell));
+			array_data[size] = 0;
 		}else{
 			array_data = nullptr;
 		}
