@@ -6,6 +6,7 @@
 #include "modules/events.h"
 #include "modules/capi.h"
 #include "modules/debug.h"
+#include "modules/amxutils.h"
 
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
@@ -207,21 +208,16 @@ namespace Hooks
 
 	int AMX_HOOK_FUNC(amx_FindPublic, AMX *amx, const char *funcname, int *index)
 	{
-		if(funcname[0] == 0x1B && funcname[1] && funcname[2] && funcname[3] && funcname[4] && funcname[5] && !funcname[6])
+		if(funcname[0] == 0x1B)
 		{
 			int num;
 			if(amx_NumPublics(amx, &num) == AMX_ERR_NONE)
 			{
-				auto name = reinterpret_cast<const unsigned char *>(funcname);
-				int idx =
-					static_cast<unsigned int>(name[1] - 1) +
-					static_cast<unsigned int>(name[2] - 1) * 255 +
-					static_cast<unsigned int>(name[3] - 1) * 65025 +
-					static_cast<unsigned int>(name[4] - 1) * 16581375 +
-					static_cast<unsigned int>((name[5] - 1) % 2) * 4228250625;
-				if((idx < num || idx < 0) && static_cast<unsigned int>(idx) % 127 == (name[5] - 1) / 2)
+				auto name = reinterpret_cast<const unsigned char *>(funcname + 1);
+				cell value;
+				if(amx_decode_value(name, reinterpret_cast<ucell&>(value)) && value < num && value >= 0)
 				{
-					*index = idx;
+					*index = value;
 					return AMX_ERR_NONE;
 				}
 			}

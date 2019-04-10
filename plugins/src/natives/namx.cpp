@@ -175,11 +175,10 @@ namespace Natives
 	// native [2]amx_encode_public(index);
 	AMX_DEFINE_NATIVE(amx_encode_public, 1)
 	{
-		ucell index = params[1];
+		cell index = params[1];
 		if(index == -1) amx_LogicError(errors::out_of_range, "index");
 		cell *addr = amx_GetAddrSafe(amx, params[2]);
-		addr[0] = 0x1B000000 | ((index % 255 + 1) << 16) | ((index / 255 % 255 + 1) << 8) | (index / 65025 % 255 + 1);
-		addr[1] = ((index / 16581375 % 255 + 1) << 24) | ((index / 4228250625 + 1 + 2 * (index % 127)) << 16);
+		amx_encode_value(addr, 0x1B, index);
 		return 1;
 	}
 
@@ -194,10 +193,34 @@ namespace Natives
 		{
 			amx_FormalError(errors::func_not_found, "public");
 		}
-		ucell index = pubindex;
 		cell *addr = amx_GetAddrSafe(amx, params[2]);
-		addr[0] = 0x1B000000 | ((index % 255 + 1) << 16) | ((index / 255 % 255 + 1) << 8) | (index / 65025 % 255 + 1);
-		addr[1] = ((index / 16581375 % 255 + 1) << 24) | ((index / 4228250625 + 1 + 2 * (index % 127)) << 16);
+		amx_encode_value(addr, 0x1B, pubindex);
+		return 1;
+	}
+
+	// native [3]amx_encode_value_public(index, AnyTag:value);
+	AMX_DEFINE_NATIVE(amx_encode_value_public, 2)
+	{
+		cell index = params[1];
+		if(index == -1) amx_LogicError(errors::out_of_range, "index");
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		amx_encode_value(addr, 0x1B, index, params[2]);
+		return 1;
+	}
+
+	// native [3]amx_encode_value_public_name(const function[], AnyTag:value);
+	AMX_DEFINE_NATIVE(amx_encode_value_public_name, 2)
+	{
+		const char *name;
+		amx_StrParam(amx, params[1], name);
+		if(name == nullptr) amx_FormalError(errors::arg_empty, "function");
+		int pubindex;
+		if(amx_FindPublic(amx, name, &pubindex) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::func_not_found, "public");
+		}
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		amx_encode_value(addr, 0x1B, pubindex, params[2]);
 		return 1;
 	}
 
@@ -323,10 +346,8 @@ namespace Natives
 		auto func = amx::find_native(amx, name);
 		if(func == nullptr) amx_FormalError(errors::func_not_found, "native", name);
 
-		auto ptr = reinterpret_cast<uintptr_t>(func);
 		cell *addr = amx_GetAddrSafe(amx, params[2]);
-		addr[0] = 0x1C000000 | ((ptr % 255 + 1) << 16) | ((ptr / 255 % 255 + 1) << 8) | (ptr / 65025 % 255 + 1);
-		addr[1] = ((ptr / 16581375 % 255 + 1) << 24) | ((ptr / 4228250625 + 1 + 2 * (ptr % 127)) << 16);
+		amx_encode_value(addr, 0x1C, reinterpret_cast<uintptr_t>(func));
 		return 1;
 	}
 
@@ -339,11 +360,55 @@ namespace Natives
 		auto func = amx::find_native(amx, name);
 		if(func == nullptr) amx_FormalError(errors::func_not_found, "native", name);
 
-		auto ptr = reinterpret_cast<uintptr_t>(func);
 		cell *addr = amx_GetAddrSafe(amx, params[2]);
-		addr[0] = 0x1C000000 | ((ptr % 255 + 1) << 16) | ((ptr / 255 % 255 + 1) << 8) | (ptr / 65025 % 255 + 1);
-		addr[1] = ((ptr / 16581375 % 255 + 1) << 24) | ((ptr / 4228250625 + 1 + 2 * (ptr % 127)) << 16);
+		amx_encode_value(addr, 0x1C, reinterpret_cast<uintptr_t>(func));
 		return 1;
+	}
+
+	// native [3]amx_encode_value_native(index, AnyTag:value);
+	AMX_DEFINE_NATIVE(amx_encode_value_native, 2)
+	{
+		int len;
+		amx_NameLength(amx, &len);
+		char *name = static_cast<char*>(alloca(len + 1));
+		if(amx_GetNative(amx, params[1], name) != AMX_ERR_NONE)
+		{
+			amx_LogicError(errors::out_of_range, "index");
+		}
+		auto func = amx::find_native(amx, name);
+		if(func == nullptr) amx_FormalError(errors::func_not_found, "native", name);
+
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		amx_encode_value(addr, 0x1C, reinterpret_cast<uintptr_t>(func), params[2]);
+		return 1;
+	}
+
+	// native [3]amx_encode_value_native_name(const function[], AnyTag:value);
+	AMX_DEFINE_NATIVE(amx_encode_value_native_name, 2)
+	{
+		const char *name;
+		amx_StrParam(amx, params[1], name);
+		if(name == nullptr) amx_FormalError(errors::arg_empty, "function");
+		auto func = amx::find_native(amx, name);
+		if(func == nullptr) amx_FormalError(errors::func_not_found, "native", name);
+
+		cell *addr = amx_GetAddrSafe(amx, params[3]);
+		amx_encode_value(addr, 0x1C, reinterpret_cast<uintptr_t>(func), params[2]);
+		return 1;
+	}
+
+	// native bool:amx_try_decode_value(const encoded[], &value);
+	AMX_DEFINE_NATIVE(amx_try_decode_value, 2)
+	{
+		const char *name;
+		amx_StrParam(amx, params[1], name);
+		auto addr = reinterpret_cast<ucell*>(amx_GetAddrSafe(amx, params[2]));
+		if(*name == 0x1B || *name == 0x1C)
+		{
+			auto str = reinterpret_cast<const unsigned char*>(name + 1);
+			return amx_decode_value(str, *addr) && amx_decode_value(str, *addr);
+		}
+		return 0;
 	}
 
 	// native Var:amx_var(&AnyTag:var);
@@ -562,6 +627,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_public_name_s),
 	AMX_DECLARE_NATIVE(amx_encode_public),
 	AMX_DECLARE_NATIVE(amx_encode_public_name),
+	AMX_DECLARE_NATIVE(amx_encode_value_public),
+	AMX_DECLARE_NATIVE(amx_encode_value_public_name),
 	AMX_DECLARE_NATIVE(amx_public_addr),
 	AMX_DECLARE_NATIVE(amx_public_at),
 	AMX_DECLARE_NATIVE(amx_num_natives),
@@ -570,6 +637,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_native_name_s),
 	AMX_DECLARE_NATIVE(amx_encode_native),
 	AMX_DECLARE_NATIVE(amx_encode_native_name),
+	AMX_DECLARE_NATIVE(amx_encode_value_native),
+	AMX_DECLARE_NATIVE(amx_encode_value_native_name),
+	AMX_DECLARE_NATIVE(amx_try_decode_value),
 	AMX_DECLARE_NATIVE(amx_var),
 	AMX_DECLARE_NATIVE(amx_var_arr),
 	AMX_DECLARE_NATIVE(amx_public_var),
