@@ -1328,7 +1328,7 @@ native Handle:handle_alias_arr(HandleTag:handle, const AnyTag:value[], size=size
 native Handle:handle_alias_var(HandleTag:handle, ConstVariantTag:value);
 native Handle:handle_acquire(HandleTag:handle);
 native Handle:handle_release(HandleTag:handle);
-native bool:handle_delete(HandleTag:handle);
+native handle_delete(HandleTag:handle);
 native bool:handle_valid(HandleTag:handle);
 native bool:handle_linked(HandleTag:handle);
 native bool:handle_alive(HandleTag:handle);
@@ -1381,7 +1381,7 @@ enum task_restore
 native wait_ms(interval);
 native wait_ticks(ticks);
 native Task:task_new();
-native bool:task_delete(Task:task);
+native task_delete(Task:task);
 native bool:task_valid(Task:task);
 native Task:task_keep(Task:task, bool:keep=true);
 native task_set_result(Task:task, AnyTag:result, TagTag:tag_id=tagof(result));
