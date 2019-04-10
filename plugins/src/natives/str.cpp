@@ -49,8 +49,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(str_new_arr, 2)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
+		cell size = params[2];
+		if(size < 0) amx_LogicError(errors::out_of_range, "size");
+		if(size == 0) return strings::pool.get_id(strings::pool.add());
 		int flags = optparam(3, 0);
-		return strings::create(addr, static_cast<size_t>(params[2]), false, flags & 1, flags & 2);
+		return strings::create(addr, size, false, flags & 1, flags & 2);
 	}
 
 	// native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
@@ -58,15 +61,32 @@ namespace Natives
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		int flags = params[2];
-		cell size = (addr[0] & 0xFF000000) ? params[3] : params[3] - 1;
+		cell size = params[3];
+		if(size < 0) amx_LogicError(errors::out_of_range, "size");
+		if(size == 0) return strings::pool.get_id(strings::pool.add());
+		bool packed = static_cast<ucell>(*addr) > UNPACKEDMAX;
+		if(packed)
+		{
+			cell last = addr[size - 1];
+			size_t rem = 0;
+			if(last & 0xFF) rem = 4;
+			else if(last & 0xFF00) rem = 3;
+			else if(last & 0xFF0000) rem = 2;
+			else if(last & 0xFF000000) rem = 1;
+
+			size = (size - 1) * sizeof(cell) + rem;
+		}else{
+			size -= 1;
+		}
 		if(size < 0) size = 0;
-		return strings::create(addr, static_cast<size_t>(size), true, flags & 1, flags & 2);
+		return strings::create(addr, size, packed, flags & 1, flags & 2);
 	}
 
 	// native String:str_new_buf(size);
 	AMX_DEFINE_NATIVE(str_new_buf, 1)
 	{
 		cell size = params[1];
+		if(size <= 0) amx_LogicError(errors::out_of_range, "size");
 		return strings::pool.get_id(strings::pool.emplace(size - 1, 0));
 	}
 

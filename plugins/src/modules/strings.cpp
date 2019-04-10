@@ -29,121 +29,73 @@ cell strings::null_value2[2] = {0, 1};
 
 cell strings::create(const cell *addr, bool truncate, bool fixnulls)
 {
-	if(addr == nullptr || !addr[0])
+	auto &ptr = pool.emplace(convert(addr));
+	if(truncate || fixnulls)
 	{
-		return pool.get_id(pool.add());
-	}else if(addr[0] & 0xFF000000)
-	{
-		const unsigned char *c;
-		size_t pos = -1;
-		do{
-			pos++;
-			size_t ipos = 3 - pos % 4;
-			c = reinterpret_cast<const unsigned char*>(addr) + pos / 4 + ipos;
-		}while(*c);
-
-		auto &str = pool.emplace(pos, 0);
-
-		pos = -1;
-		do{
-			pos++;
-			size_t ipos = 3 - pos % 4;
-			c = reinterpret_cast<const unsigned char*>(addr) + pos / 4 + ipos;
-			(*str)[pos] = *c;
-		}while(*c);
-
-		return pool.get_id(str);
-	}else{
-		size_t pos = -1;
-		const cell *c;
-		do{
-			pos++;
-			c = addr + pos;
-		}while (*c);
-
-		auto &str = pool.emplace(addr, pos);
-		if(truncate)
+		for(auto &c : *ptr)
 		{
-			for(size_t i = 0; i < pos; i++)
+			if(truncate)
 			{
-				cell &c = (*str)[i];
 				c &= 0xFF;
-				if(fixnulls && c == 0) c = 0x00FFFF00;
+			}
+			if(fixnulls && c == 0)
+			{
+				c = 0x00FFFF00;
 			}
 		}
-		return pool.get_id(str);
 	}
+	return pool.get_id(ptr);
 }
 
 cell strings::create(const cell *addr, size_t length, bool packed, bool truncate, bool fixnulls)
 {
-	if(addr == nullptr || length == 0)
+	auto &ptr = pool.emplace(convert(addr, length, packed));
+	if(truncate || fixnulls)
 	{
-		return pool.get_id(pool.add());
-	}
-	if(packed && (addr[0] & 0xFF000000))
-	{
-		cell last = addr[length - 1];
-		size_t rem = 0;
-		if(last & 0xFF) rem = 4;
-		else if(last & 0xFF00) rem = 3;
-		else if(last & 0xFF0000) rem = 2;
-		else if(last & 0xFF000000) rem = 1;
-
-		length = (length - 1) * 4 + rem;
-
-		auto &str = pool.emplace(length, '\0');
-		size_t pos = 0;
-		do{
-			size_t ipos = pos / 4 * 4 + 3 - pos % 4;
-			cell c = reinterpret_cast<const unsigned char*>(addr)[ipos];
-			if(fixnulls)
-			{
-				if(c == 0) c = 0x00FFFF00;
-			}
-			(*str)[pos] = c;
-			pos++;
-		}while(pos < length);
-		return pool.get_id(str);
-	}else{
-		auto &str = pool.emplace(addr, length);
-		if(truncate)
+		for(auto &c : *ptr)
 		{
-			for(size_t i = 0; i < length; i++)
+			if(truncate)
 			{
-				cell &c = (*str)[i];
 				c &= 0xFF;
-				if(fixnulls && c == 0) c = 0x00FFFF00;
 			}
-		}else if(fixnulls)
-		{
-			for(size_t i = 0; i < length; i++)
+			if(fixnulls && c == 0)
 			{
-				cell &c = (*str)[i];
-				if(c == 0) c = 0x00FFFF00;
+				c = 0x00FFFF00;
 			}
 		}
-		return pool.get_id(str);
 	}
+	return pool.get_id(ptr);
 }
 
 cell_string strings::convert(const cell *str)
 {
+	if(!str)
+	{
+		return {};
+	}
 	int len;
 	amx_StrLen(str, &len);
-	if(static_cast<ucell>(*str) <= UNPACKEDMAX)
+	return convert(str, len, static_cast<ucell>(*str) > UNPACKEDMAX);
+}
+
+cell_string strings::convert(const cell *str, size_t length, bool packed)
+{
+	if(!str)
 	{
-		return cell_string(str, str + len);
+		return {};
+	}
+	if(!packed)
+	{
+		return cell_string(str, str + length);
 	}else if(reinterpret_cast<std::intptr_t>(str) % sizeof(cell) == 0)
 	{
 		aligned_const_char_iterator it(str);
-		return cell_string(it, it + len);
+		return cell_string(it, it + length);
 	}else{
 		unaligned_const_char_iterator it(str);
-		return cell_string(it, it + len);
+		return cell_string(it, it + length);
 	}
 }
-
 
 cell_string strings::convert(const std::string &str)
 {

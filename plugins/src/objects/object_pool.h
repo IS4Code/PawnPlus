@@ -30,7 +30,7 @@ public:
 		}
 
 		template <class... Args>
-		ref_container_simple(Args &&... args) : object(std::forward<Args>(args)...)
+		explicit ref_container_simple(Args &&... args) : object(std::forward<Args>(args)...)
 		{
 
 		}

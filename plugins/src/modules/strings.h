@@ -291,6 +291,7 @@ namespace strings
 	void format(AMX *amx, strings::cell_string &str, const cell *format, cell argc, cell *args);
 
 	cell_string convert(const cell *str);
+	cell_string convert(const cell *str, size_t length, bool packed);
 	cell_string convert(const std::string &str);
 	bool clamp_range(const cell_string &str, cell &start, cell &end);
 	bool clamp_pos(const cell_string &str, cell &pos);
