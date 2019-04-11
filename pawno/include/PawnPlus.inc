@@ -336,7 +336,7 @@ native [2]amx_encode_native_name(const function[]);
 native [3]amx_encode_value_native(index, AnyTag:value);
 native [3]amx_encode_value_native_name(const function[], AnyTag:value);
 native amx_encoded_length();
-native bool:amx_try_decode_value(const encoded[], &value);
+native bool:amx_try_decode_value(const encoded[], &AnyTag:value);
 native Var:amx_var(&AnyTag:var);
 native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
 native Var:amx_public_var(const name[]);

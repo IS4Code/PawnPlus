@@ -403,7 +403,7 @@ namespace Natives
 		return 6;
 	}
 
-	// native bool:amx_try_decode_value(const encoded[], &value);
+	// native bool:amx_try_decode_value(const encoded[], &AnyTag:value);
 	AMX_DEFINE_NATIVE(amx_try_decode_value, 2)
 	{
 		const char *name;
