@@ -397,13 +397,19 @@ namespace Natives
 		return 1;
 	}
 
+	// native amx_encoded_length();
+	AMX_DEFINE_NATIVE(amx_encoded_length, 0)
+	{
+		return 6;
+	}
+
 	// native bool:amx_try_decode_value(const encoded[], &value);
 	AMX_DEFINE_NATIVE(amx_try_decode_value, 2)
 	{
 		const char *name;
 		amx_StrParam(amx, params[1], name);
 		auto addr = reinterpret_cast<ucell*>(amx_GetAddrSafe(amx, params[2]));
-		if(*name == 0x1B || *name == 0x1C)
+		if(name && (*name == 0x1B || *name == 0x1C))
 		{
 			auto str = reinterpret_cast<const unsigned char*>(name + 1);
 			return amx_decode_value(str, *addr) && amx_decode_value(str, *addr);
@@ -639,6 +645,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_encode_native_name),
 	AMX_DECLARE_NATIVE(amx_encode_value_native),
 	AMX_DECLARE_NATIVE(amx_encode_value_native_name),
+	AMX_DECLARE_NATIVE(amx_encoded_length),
 	AMX_DECLARE_NATIVE(amx_try_decode_value),
 	AMX_DECLARE_NATIVE(amx_var),
 	AMX_DECLARE_NATIVE(amx_var_arr),
