@@ -530,7 +530,7 @@ auto value_write(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)>
 		{
 			return f(spair->second);
 		}
-		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+		amx_LogicError(errors::operation_not_supported, "iterator");
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
 	dyn_object tmp;
@@ -573,7 +573,7 @@ auto value_modify(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)
 		{
 			return f(mpair->second);
 		}
-		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+		amx_LogicError(errors::operation_not_supported, "iterator");
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
 	dyn_object tmp;
@@ -603,7 +603,7 @@ auto value_read(cell arg, dyn_iterator *iter, Func f) -> typename std::result_of
 	{
 		return f(scpair->second);
 	}
-	amx_LogicError(errors::operation_not_supported, "iterator", arg);
+	amx_LogicError(errors::operation_not_supported, "iterator");
 	dyn_object tmp;
 	return f(tmp);
 }
@@ -637,7 +637,7 @@ auto key_read(cell arg, Func f) -> typename std::result_of<Func(const dyn_object
 		{
 			return f(spair->first);
 		}
-		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+		amx_LogicError(errors::operation_not_supported, "iterator");
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
 	dyn_object tmp;
@@ -671,7 +671,7 @@ auto key_value_access(cell arg, dyn_iterator *&iter, Func f) -> typename std::re
 			f(spair->first);
 			return f(spair->second);
 		}
-		amx_LogicError(errors::operation_not_supported, "iterator", arg);
+		amx_LogicError(errors::operation_not_supported, "iterator");
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
 	dyn_object tmp;
@@ -685,7 +685,7 @@ class value_at
 	using result_ftype = typename dyn_result<Indices...>::type;
 
 public:
-	// native bool:iter_set(IterTag:iter, ...);
+	// native iter_set(IterTag:iter, ...);
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_set(AMX *amx, cell *params)
 	{
@@ -706,14 +706,14 @@ public:
 		});
 	}
 
-	// native bool:iter_insert(IterTag:iter, ...);
+	// native iter_insert(IterTag:iter, ...);
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_insert(AMX *amx, cell *params)
 	{
 		dyn_iterator *iter;
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
 
-		if(!iter->insert(Factory(amx, params[Indices]...))) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
+		if(!iter->insert(Factory(amx, params[Indices]...))) amx_LogicError(errors::operation_not_supported, "iterator");
 
 		return 1;
 	}
@@ -1130,6 +1130,19 @@ namespace Natives
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
 
 		return iter_pool.get_id(iter_pool.add(std::dynamic_pointer_cast<object_pool<dyn_iterator>::ref_container>(iter->clone_shared())));
+	}
+
+	// native iter_swap(IterTag:iter1, IterTag:iter2);
+	AMX_DEFINE_NATIVE(iter_swap, 2)
+	{
+		return value_write(params[1], [&](dyn_object &obj1)
+		{
+			return value_write(params[2], [&](dyn_object &obj2)
+			{
+				std::swap(obj1, obj2);
+				return 1;
+			});
+		});
 	}
 
 	// native bool:iter_eq(IterTag:iter1, IterTag:iter2);
@@ -1732,6 +1745,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_erase_deep),
 	AMX_DECLARE_NATIVE(iter_reset),
 	AMX_DECLARE_NATIVE(iter_clone),
+	AMX_DECLARE_NATIVE(iter_swap),
 	AMX_DECLARE_NATIVE(iter_eq),
 
 	AMX_DECLARE_NATIVE(iter_range),

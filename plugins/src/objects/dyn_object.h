@@ -164,6 +164,8 @@ public:
 		return begin()[index];
 	}
 
+	void swap(dyn_object &other) noexcept;
+
 	cell *begin();
 	cell *end();
 	const cell *begin() const;
@@ -214,6 +216,12 @@ namespace std
 			return obj.get_hash();
 		}
 	};
+
+	template <>
+	inline void swap<dyn_object>(dyn_object &a, dyn_object &b) noexcept
+	{
+		a.swap(b);
+	}
 }
 
 #endif
