@@ -3,7 +3,6 @@
 
 #include <unordered_map>
 #include <forward_list>
-#include <exception>
 #include <deque>
 #include <stdexcept>
 
