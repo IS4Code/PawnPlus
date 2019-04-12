@@ -3,8 +3,8 @@
 
 #include <unordered_map>
 #include <forward_list>
-#include <exception>
 #include <deque>
+#include <stdexcept>
 
 int globalExecLevel = 0;
 bool groundRecursion = false;
