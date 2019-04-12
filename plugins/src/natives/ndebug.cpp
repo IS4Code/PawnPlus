@@ -187,6 +187,21 @@ public:
 		return false;
 	}
 
+	virtual bool can_reset() override
+	{
+		return true;
+	}
+
+	virtual bool can_erase() override
+	{
+		return false;
+	}
+
+	virtual bool can_insert() override
+	{
+		return false;
+	}
+
 	virtual std::unique_ptr<dyn_iterator> clone() const override
 	{
 		return std::make_unique<debug_symbol_var_iterator>(*this);

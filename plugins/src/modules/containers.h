@@ -197,6 +197,9 @@ public:
 	virtual bool set_to_last();
 	virtual bool reset();
 	virtual bool erase();
+	virtual bool can_reset();
+	virtual bool can_insert();
+	virtual bool can_erase();
 	virtual std::unique_ptr<dyn_iterator> clone() const;
 	virtual std::shared_ptr<dyn_iterator> clone_shared() const;
 	virtual size_t get_hash() const;
@@ -337,6 +340,11 @@ public:
 		return false;
 	}
 
+	virtual bool can_reset() override
+	{
+		return !_source.expired();
+	}
+
 	virtual bool reset() override
 	{
 		if(auto source = _source.lock())
@@ -364,6 +372,15 @@ public:
 		return 0;
 	}
 
+	virtual bool can_erase() override
+	{
+		if(auto source = lock_same())
+		{
+			return _position != source->end();
+		}
+		return false;
+	}
+
 	virtual bool erase() override
 	{
 		if(auto source = lock_same())
@@ -384,6 +401,15 @@ public:
 		if(other != nullptr)
 		{
 			return !_source.owner_before(other->_source) && !other->_source.owner_before(_source) && _revision == other->_revision && _position == other->_position && _inside == other->_inside;
+		}
+		return false;
+	}
+
+	virtual bool can_insert() override
+	{
+		if(auto source = lock_same())
+		{
+			return true;
 		}
 		return false;
 	}
@@ -629,6 +655,10 @@ public:
 	virtual std::unique_ptr<dyn_iterator> clone() const override;
 	virtual std::shared_ptr<dyn_iterator> clone_shared() const override;
 	virtual bool operator==(const dyn_iterator &obj) const override;
+
+	virtual bool can_reset() override;
+	virtual bool can_insert() override;
+	virtual bool can_erase() override;
 
 protected:
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override;

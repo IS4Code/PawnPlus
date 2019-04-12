@@ -114,6 +114,21 @@ public:
 		return false;
 	}
 
+	virtual bool can_reset() override
+	{
+		return true;
+	}
+
+	virtual bool can_erase() override
+	{
+		return false;
+	}
+
+	virtual bool can_insert() override
+	{
+		return false;
+	}
+
 	virtual std::unique_ptr<dyn_iterator> clone() const override
 	{
 		return std::make_unique<range_iterator>(*this);
@@ -271,6 +286,21 @@ public:
 		return false;
 	}
 
+	virtual bool can_reset() override
+	{
+		return true;
+	}
+
+	virtual bool can_erase() override
+	{
+		return false;
+	}
+
+	virtual bool can_insert() override
+	{
+		return false;
+	}
+
 	virtual std::unique_ptr<dyn_iterator> clone() const override
 	{
 		return std::make_unique<repeat_iterator>(*this);
@@ -391,17 +421,35 @@ public:
 
 	virtual bool move_next() override
 	{
-		if(inside)
-		{
-			inside = false;
-			return true;
-		}
-		return false;
+		return inside = false;
 	}
 
 	virtual bool move_previous() override
 	{
-		if(inside)
+		return inside = false;
+	}
+
+	virtual bool set_to_first() override
+	{
+		if(!expired())
+		{
+			inside = true;
+		}
+		return false;
+	}
+
+	virtual bool set_to_last() override
+	{
+		if(!expired())
+		{
+			inside = true;
+		}
+		return false;
+	}
+
+	virtual bool reset() override
+	{
+		if(!expired())
 		{
 			inside = false;
 			return true;
@@ -409,25 +457,22 @@ public:
 		return false;
 	}
 
-	virtual bool set_to_first() override
-	{
-		inside = true;
-		return true;
-	}
-
-	virtual bool set_to_last() override
-	{
-		inside = true;
-		return true;
-	}
-
-	virtual bool reset() override
-	{
-		inside = false;
-		return true;
-	}
-
 	virtual bool erase() override
+	{
+		return false;
+	}
+
+	virtual bool can_reset() override
+	{
+		return !expired();
+	}
+
+	virtual bool can_erase() override
+	{
+		return false;
+	}
+
+	virtual bool can_insert() override
 	{
 		return false;
 	}
@@ -706,7 +751,7 @@ public:
 		});
 	}
 
-	// native iter_insert(IterTag:iter, ...);
+	// native Iter:iter_insert(IterTag:iter, ...);
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_insert(AMX *amx, cell *params)
 	{
@@ -715,7 +760,7 @@ public:
 
 		if(!iter->insert(Factory(amx, params[Indices]...))) amx_LogicError(errors::operation_not_supported, "iterator");
 
-		return 1;
+		return params[1];
 	}
 
 	// native iter_get_key(IterTag:iter, ...);
@@ -1089,7 +1134,7 @@ namespace Natives
 		return strings::create(typeid(*iter).name());
 	}
 
-	// native Iterator:iter_erase(IterTag:iter);
+	// native Iter:iter_erase(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_erase, 1)
 	{
 		dyn_iterator *iter;
@@ -1099,7 +1144,7 @@ namespace Natives
 		return params[1];
 	}
 
-	// native Iterator:iter_erase_deep(IterTag:iter);
+	// native Iter:iter_erase_deep(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_erase_deep, 1)
 	{
 		dyn_iterator *iter;
@@ -1111,7 +1156,7 @@ namespace Natives
 		return params[1];
 	}
 
-	// native Iterator:iter_reset(IterTag:iter);
+	// native Iter:iter_reset(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_reset, 1)
 	{
 		dyn_iterator *iter;
@@ -1123,7 +1168,43 @@ namespace Natives
 		return params[1];
 	}
 
-	// native Iterator:iter_clone(IterTag:iter);
+	// native bool:iter_can_reset(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_can_reset, 1)
+	{
+		dyn_iterator *iter;
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(iter)
+		{
+			return iter->can_insert();
+		}
+		return true;
+	}
+
+	// native bool:iter_can_insert(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_can_insert, 1)
+	{
+		dyn_iterator *iter;
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(iter)
+		{
+			return iter->can_insert();
+		}
+		return false;
+	}
+
+	// native bool:iter_can_erase(IterTag:iter);
+	AMX_DEFINE_NATIVE(iter_can_erase, 1)
+	{
+		dyn_iterator *iter;
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(iter)
+		{
+			return iter->can_erase();
+		}
+		return false;
+	}
+
+	// native Iter:iter_clone(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_clone, 1)
 	{
 		dyn_iterator *iter;
@@ -1222,12 +1303,13 @@ namespace Natives
 		return value_at<1>::iter_repeat<dyn_func_var>(amx, params);
 	}
 
-	// native Iterator:iter_move_next(IterTag:iter, steps=1);
+	// native Iter:iter_move_next(IterTag:iter, steps=1);
 	AMX_DEFINE_NATIVE(iter_move_next, 1)
 	{
 		dyn_iterator *iter;
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
 		
+		bool success = true;
 		cell steps = optparam(2, 1);
 		if(steps < 0)
 		{
@@ -1235,6 +1317,7 @@ namespace Natives
 			{
 				if(!iter->move_previous())
 				{
+					success = false;
 					break;
 				}
 			}
@@ -1243,19 +1326,21 @@ namespace Natives
 			{
 				if(!iter->move_next())
 				{
+					success = false;
 					break;
 				}
 			}
 		}
-		return params[1];
+		return success ? params[1] : 0;
 	}
 
-	// native Iterator:iter_move_previous(IterTag:iter, steps=1);
+	// native Iter:iter_move_previous(IterTag:iter, steps=1);
 	AMX_DEFINE_NATIVE(iter_move_previous, 1)
 	{
 		dyn_iterator *iter;
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-		
+
+		bool success = true;
 		cell steps = optparam(2, 1);
 		if(steps < 0)
 		{
@@ -1263,6 +1348,7 @@ namespace Natives
 			{
 				if(!iter->move_next())
 				{
+					success = false;
 					break;
 				}
 			}
@@ -1271,14 +1357,15 @@ namespace Natives
 			{
 				if(!iter->move_previous())
 				{
+					success = false;
 					break;
 				}
 			}
 		}
-		return params[1];
+		return success ? params[1] : 0;
 	}
 
-	// native Iterator:iter_to_first(IterTag:iter, index=0);
+	// native Iter:iter_to_first(IterTag:iter, index=0);
 	AMX_DEFINE_NATIVE(iter_to_first, 1)
 	{
 		dyn_iterator *iter;
@@ -1287,21 +1374,24 @@ namespace Natives
 		cell index = optparam(2, 0);
 		if(index < 0)
 		{
-			iter->reset();
-		}else{
-			iter->set_to_first();
+			amx_LogicError(errors::out_of_range, "index");
+		}
+		bool success = iter->set_to_first();
+		if(success)
+		{
 			for(cell i = 0; i < index; i++)
 			{
 				if(!iter->move_next())
 				{
+					success = false;
 					break;
 				}
 			}
 		}
-		return params[1];
+		return success ? params[1] : 0;
 	}
 
-	// native Iterator:iter_to_last(IterTag:iter, index=0);
+	// native Iter:iter_to_last(IterTag:iter, index=0);
 	AMX_DEFINE_NATIVE(iter_to_last, 1)
 	{
 		dyn_iterator *iter;
@@ -1310,18 +1400,21 @@ namespace Natives
 		cell index = optparam(2, 0);
 		if(index < 0)
 		{
-			iter->reset();
-		}else{
-			iter->set_to_last();
+			amx_LogicError(errors::out_of_range, "index");
+		}
+		bool success = iter->set_to_last();
+		if(success)
+		{
 			for(cell i = 0; i < index; i++)
 			{
 				if(!iter->move_previous())
 				{
+					success = false;
 					break;
 				}
 			}
 		}
-		return params[1];
+		return success ? params[1] : 0;
 	}
 
 	// native iter_get(IterTag:iter, offset=0);
@@ -1408,7 +1501,7 @@ namespace Natives
 		return value_at<2>::iter_set<dyn_func_var>(amx, params);
 	}
 
-	// native bool:iter_set_cell(IterTag:iter, offset, AnyTag:value);
+	// native iter_set_cell(IterTag:iter, offset, AnyTag:value);
 	AMX_DEFINE_NATIVE(iter_set_cell, 3)
 	{
 		return ::iter_set_cell(amx, params);
@@ -1474,7 +1567,7 @@ namespace Natives
 		return value_at<2, 3, 0>::iter_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:iter_set_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets));
+	// native iter_set_cell_md(IterTag:iter, const offsets[], AnyTag:value, offsets_size=sizeof(offsets));
 	AMX_DEFINE_NATIVE(iter_set_cell_md, 4)
 	{
 		return ::iter_set_cell_md(amx, params);
@@ -1498,37 +1591,37 @@ namespace Natives
 		return ::iter_set_cells_md<6>(amx, params);
 	}
 
-	// native bool:iter_insert(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
+	// native iter_insert(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_insert, 3)
 	{
 		return value_at<2, 3>::iter_insert<dyn_func>(amx, params);
 	}
 
-	// native bool:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+	// native Iter:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_insert_arr, 4)
 	{
 		return value_at<2, 3, 4>::iter_insert<dyn_func_arr>(amx, params);
 	}
 
-	// native bool:iter_insert_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
+	// native Iter:iter_insert_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_insert_arr_2d, 5)
 	{
 		return value_at<2, 3, 4, 5>::iter_insert<dyn_func_arr>(amx, params);
 	}
 
-	// native bool:iter_insert_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
+	// native Iter:iter_insert_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(iter_insert_arr_3d, 6)
 	{
 		return value_at<2, 3, 4, 5, 6>::iter_insert<dyn_func_arr>(amx, params);
 	}
 
-	// native bool:iter_insert_str(IterTag:iter, const value[]);
+	// native Iter:iter_insert_str(IterTag:iter, const value[]);
 	AMX_DEFINE_NATIVE(iter_insert_str, 2)
 	{
 		return value_at<2>::iter_insert<dyn_func_str>(amx, params);
 	}
 
-	// native bool:iter_insert_var(IterTag:iter, VariantTag:value);
+	// native Iter:iter_insert_var(IterTag:iter, VariantTag:value);
 	AMX_DEFINE_NATIVE(iter_insert_var, 2)
 	{
 		return value_at<2>::iter_insert<dyn_func_var>(amx, params);
@@ -1744,6 +1837,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_erase),
 	AMX_DECLARE_NATIVE(iter_erase_deep),
 	AMX_DECLARE_NATIVE(iter_reset),
+	AMX_DECLARE_NATIVE(iter_can_reset),
+	AMX_DECLARE_NATIVE(iter_can_insert),
+	AMX_DECLARE_NATIVE(iter_can_erase),
 	AMX_DECLARE_NATIVE(iter_clone),
 	AMX_DECLARE_NATIVE(iter_swap),
 	AMX_DECLARE_NATIVE(iter_eq),

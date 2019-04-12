@@ -238,6 +238,21 @@ bool dyn_iterator::erase()
 	return false;
 }
 
+bool dyn_iterator::can_reset()
+{
+	return false;
+}
+
+bool dyn_iterator::can_insert()
+{
+	return false;
+}
+
+bool dyn_iterator::can_erase()
+{
+	return false;
+}
+
 std::unique_ptr<dyn_iterator> dyn_iterator::clone() const
 {
 	return std::make_unique<dyn_iterator>();
@@ -460,6 +475,29 @@ bool linked_list_iterator_t::erase()
 			}
 			return true;
 		}
+	}
+	return false;
+}
+
+bool linked_list_iterator_t::can_reset()
+{
+	return !_source.expired();
+}
+
+bool linked_list_iterator_t::can_erase()
+{
+	if(auto source = lock_same())
+	{
+		return _position != source->end();
+	}
+	return false;
+}
+
+bool linked_list_iterator_t::can_insert()
+{
+	if(auto source = lock_same())
+	{
+		return true;
 	}
 	return false;
 }

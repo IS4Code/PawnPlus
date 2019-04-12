@@ -1114,6 +1114,9 @@ native Iter:iter_move_next(IterTag:iter, steps=1);
 native Iter:iter_move_previous(IterTag:iter, steps=1);
 native Iter:iter_to_first(IterTag:iter, index=0);
 native Iter:iter_to_last(IterTag:iter, index=0);
+native bool:iter_can_reset(IterTag:iter);
+native bool:iter_can_insert(IterTag:iter);
+native bool:iter_can_erase(IterTag:iter);
 native iter_swap(IterTag:iter1, IterTag:iter2);
 native bool:iter_eq(IterTag:iter1, IterTag:iter2);
 
@@ -1163,12 +1166,12 @@ native bool:iter_set_cell_md_safe(IterTag:iter, const offsets[], AnyTag:value, o
 native iter_set_cells_md(IterTag:iter, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values));
 native iter_set_cells_md_safe(IterTag:iter, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values), TagTag:tag_id=tagof(values));
 
-native iter_insert(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
-native iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-native iter_insert_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
-native iter_insert_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
-native iter_insert_str(IterTag:iter, const value[]);
-native iter_insert_var(IterTag:iter, ConstVariantTag:value);
+native Iter:iter_insert(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
+native Iter:iter_insert_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native Iter:iter_insert_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
+native Iter:iter_insert_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
+native Iter:iter_insert_str(IterTag:iter, const value[]);
+native Iter:iter_insert_var(IterTag:iter, ConstVariantTag:value);
 
 native iter_tagof(IterTag:iter);
 native tag_uid:iter_tag_uid(IterTag:iter);
@@ -1256,6 +1259,10 @@ native iter_value_rank(IterTag:iter) = iter_rank;
 #define iter_move_previous<%0>(%1) (Iter<%0>:iter_move_previous(Iter:_PP@CAST[Iter<%0>](%1)))
 #define iter_to_first<%0>(%1) (Iter<%0>:iter_to_first(Iter:_PP@CAST[Iter<%0>](%1)))
 #define iter_to_last<%0>(%1) (Iter<%0>:iter_to_last(Iter:_PP@CAST[Iter<%0>](%1)))
+#define iter_can_reset<%0>(%1) iter_can_reset(Iter:_PP@CAST[Iter<%0>](%1))
+#define iter_can_insert<%0>(%1) iter_can_insert(Iter:_PP@CAST[Iter<%0>](%1))
+#define iter_can_erase<%0>(%1) iter_can_erase(Iter:_PP@CAST[Iter<%0>](%1))
+#define iter_swap<%0>(%1,%2) iter_swap(Iter:_PP@CAST[Iter<%0>](%1),Iter:_PP@CAST[Iter<%0>](%2))
 #define iter_eq<%0>(%1,%2) iter_eq(Iter:_PP@CAST[Iter<%0>](%1),Iter:_PP@CAST[Iter<%0>](%2))
 
 #define iter_get<%0>(%1) (%0:iter_get(Iter:_PP@CAST[Iter<%0>](%1)))
@@ -1264,8 +1271,8 @@ native iter_value_rank(IterTag:iter) = iter_rank;
 #define iter_set_arr<%0>(%1,%2) iter_set_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2))
 #define iter_set_cell<%0>(%1,%2,%3) iter_set_cell(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST[%0](%3))
 #define iter_set_cells<%0>(%1,%2,%3) iter_set_cell(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
-#define iter_insert<%0>(%1,%2) iter_insert(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST[%0](%2))
-#define iter_insert_arr<%0>(%1,%2) iter_insert_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2))
+#define iter_insert<%0>(%1,%2) (Iter<%0>:iter_insert(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST[%0](%2)))
+#define iter_insert_arr<%0>(%1,%2) (Iter<%0>:iter_insert_arr(Iter:_PP@CAST[Iter<%0>](%1),_PP@CAST_ARR[%0](%2)))
 #define iter_get_md<%0>(%1) (%0:iter_get_md(Iter:_PP@CAST[Iter<%0>](%1)))
 #define iter_get_md_arr<%0>(%1,%2,%3) iter_get_md_arr(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 #define iter_set_cell_md<%0>(%1,%2,%3) iter_set_cell_md(Iter:_PP@CAST[Iter<%0>](%1),%2,_PP@CAST[%0](%3))

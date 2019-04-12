@@ -1076,26 +1076,29 @@ dyn_object &dyn_object::operator=(dyn_object &&obj) noexcept
 
 void dyn_object::swap(dyn_object &other) noexcept
 {
-	if(is_cell())
+	if(this != &other)
 	{
-		if(other.is_cell())
+		if(is_cell())
 		{
-			std::swap(cell_value, other.cell_value);
+			if(other.is_cell())
+			{
+				std::swap(cell_value, other.cell_value);
+			}else{
+				cell c = cell_value;
+				array_data = other.array_data;
+				other.cell_value = c;
+			}
+		}else if(other.is_cell())
+		{
+			cell c = other.cell_value;
+			other.array_data = array_data;
+			cell_value = c;
 		}else{
-			cell c = cell_value;
-			array_data = other.array_data;
-			other.cell_value = c;
+			std::swap(array_data, other.array_data);
 		}
-	}else if(other.is_cell())
-	{
-		cell c = other.cell_value;
-		other.array_data = array_data;
-		cell_value = c;
-	}else{
-		std::swap(array_data, other.array_data);
+		std::swap(rank, other.rank);
+		std::swap(tag, other.tag);
 	}
-	std::swap(rank, other.rank);
-	std::swap(tag, other.tag);
 }
 
 dyn_object::~dyn_object()
