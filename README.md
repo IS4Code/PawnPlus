@@ -21,11 +21,11 @@ Include [PawnPlus.inc](pawno/include/PawnPlus.inc) in your Pawn program and you 
 This plugin can optionally add a number of syntax features to Pawn like additional statements or operators. These are not available by default due to conflicts with other libraries, but you can use them all if you define `PP_SYNTAX`, or selectively via other definitions. If you are writing a library, it is recommended not to use any configuration definitions.
 
 ## Building
-Use Visual Studio to build the project on Windows, or `make` on Linux. Requires GCC >= 4.9.
+Use Visual Studio to build the project on Windows, or `make` or `make static` on Linux. Requires GCC >= 4.9.
 
 ## Credits
 * [Zeex](//github.com/Zeex) for creating [subhook](//github.com/Zeex/subhook) without which this wouldn't be possible.
 * [Y_Less](//github.com/Y-Less/) for help with macros for generic functions.
-* [Southclaws](//github.com/Southclaws/) for being Southclaws.
+* [Southclaws](//github.com/Southclaws/) and [AGraber](//github.com/AGraber) for minor contributions.
 
 Thanks to all _PawnPlus_ users for your support! 
