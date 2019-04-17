@@ -19,7 +19,6 @@ dyn_object dyn_func_str_s(AMX *amx, cell str)
 	return dyn_object(&str, 1, tags::find_tag(tags::tag_char));
 }
 
-
 cell *get_offsets(AMX *amx, cell offsets, cell &offsets_size)
 {
 	cell *offsets_addr = amx_GetAddrSafe(amx, offsets);
@@ -110,50 +109,50 @@ cell dyn_func_str(AMX *amx, const dyn_object &obj, cell amx_addr, cell offsets, 
 	return obj.get_array(offsets_addr, offsets_size, addr, size);
 }
 
-cell dyn_func_str_s(AMX *amx, const dyn_object &obj)
+cell dyn_func_str_s(AMX *amx, const cell *offsets, cell offsets_size, const dyn_object &obj)
 {
-	auto addr = obj.get_cell_addr(nullptr, 0);
+	cell size;
+	auto addr = obj.get_array(offsets, offsets_size, size);
 	if(addr)
 	{
-		return strings::create(addr, false, false);
+		if(size == 0)
+		{
+			return strings::pool.get_id(strings::pool.add());
+		}else if(obj.is_cell() && *addr != 0)
+		{
+			return strings::pool.get_id(strings::pool.add(strings::convert(addr, 1, false)));
+		}
+		auto str = strings::convert(addr);
+		if(str.size() > static_cast<ucell>(size))
+		{
+			str.resize(size);
+		}
+		return strings::pool.get_id(strings::pool.add(std::move(str)));
 	}else{
 		return 0;
 	}
+}
+
+cell dyn_func_str_s(AMX *amx, const dyn_object &obj)
+{
+	return dyn_func_str_s(amx, nullptr, 0, obj);
 }
 
 cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_size)
 {
 	cell *offsets_addr = get_offsets(amx, offsets, offsets_size);
-	auto addr = obj.get_cell_addr(offsets_addr, offsets_size);
-	if(addr)
-	{
-		return strings::create(addr, false, false);
-	}else{
-		return 0;
-	}
+	return dyn_func_str_s(amx, offsets_addr, offsets_size, obj);
 }
 
 cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell unused)
 {
 	if(!obj.tag_assignable(tags::find_tag(tags::tag_char))) return 0;
-	auto addr = obj.get_cell_addr(nullptr, 0);
-	if(addr)
-	{
-		return strings::create(addr, false, false);
-	}else{
-		return 0;
-	}
+	return dyn_func_str_s(amx, nullptr, 0, obj);
 }
 
 cell dyn_func_str_s(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_size, cell unused)
 {
 	if(!obj.tag_assignable(tags::find_tag(tags::tag_char))) return 0;
 	cell *offsets_addr = get_offsets(amx, offsets, offsets_size);
-	auto addr = obj.get_cell_addr(offsets_addr, offsets_size);
-	if(addr)
-	{
-		return strings::create(addr, false, false);
-	}else{
-		return 0;
-	}
+	return dyn_func_str_s(amx, offsets_addr, offsets_size, obj);
 }

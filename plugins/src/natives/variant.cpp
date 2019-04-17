@@ -149,7 +149,7 @@ namespace Natives
 	}
 
 	// native var_get_str_safe(ConstVariantTag:var, value[], size=sizeof(value));
-	AMX_DEFINE_NATIVE(var_get_str_safe, 5)
+	AMX_DEFINE_NATIVE(var_get_str_safe, 3)
 	{
 		return value_at<2, 3>::var_get<dyn_func_str>(amx, params);
 	}
