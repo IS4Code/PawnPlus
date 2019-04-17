@@ -1,4 +1,5 @@
 #include "amxutils.h"
+#include "errors.h"
 #include <cstring>
 
 aux::shared_id_set_pool<amx_var_info> amx_var_pool;
@@ -39,46 +40,52 @@ bool amx_var_info::from_amx(AMX *amx)
 
 bool amx_var_info::set(cell index, cell value)
 {
-	if(index < 0 || index >= _size) return false;
-	if(auto lock = _amx.lock())
+	if(index >= 0 && index < _size)
 	{
-		if(lock->valid())
+		if(auto lock = _amx.lock())
 		{
-			auto amx = lock->get();
-			cell amx_addr = _addr + index;
-			if((amx_addr >= 0 && amx_addr < amx->hea) || (amx_addr >= amx->stk && amx_addr < amx->stp))
+			if(lock->valid())
 			{
-				cell *addr;
-				if(amx_GetAddr(amx, amx_addr, &addr) == AMX_ERR_NONE)
+				auto amx = lock->get();
+				cell amx_addr = _addr + index * sizeof(cell);
+				if((amx_addr >= 0 && amx_addr < amx->hea) || (amx_addr >= amx->stk && amx_addr < amx->stp))
 				{
-					*addr = value;
-					return true;
+					cell *addr;
+					if(amx_GetAddr(amx, amx_addr, &addr) == AMX_ERR_NONE)
+					{
+						*addr = value;
+						return true;
+					}
 				}
 			}
 		}
 	}
+	amx_LogicError(errors::out_of_range, "index");
 	return false;
 }
 
 cell amx_var_info::get(cell index)
 {
-	if(index < 0 || index >= _size) return false;
-	if(auto lock = _amx.lock())
+	if(index >= 0 && index < _size)
 	{
-		if(lock->valid())
+		if(auto lock = _amx.lock())
 		{
-			auto amx = lock->get();
-			cell amx_addr = _addr + index;
-			if((amx_addr >= 0 && amx_addr < amx->hea) || (amx_addr >= amx->stk && amx_addr < amx->stp))
+			if(lock->valid())
 			{
-				cell *addr;
-				if(amx_GetAddr(amx, amx_addr, &addr) == AMX_ERR_NONE)
+				auto amx = lock->get();
+				cell amx_addr = _addr + index * sizeof(cell);
+				if((amx_addr >= 0 && amx_addr < amx->hea) || (amx_addr >= amx->stk && amx_addr < amx->stp))
 				{
-					return *addr;
+					cell *addr;
+					if(amx_GetAddr(amx, amx_addr, &addr) == AMX_ERR_NONE)
+					{
+						return *addr;
+					}
 				}
 			}
 		}
 	}
+	amx_LogicError(errors::out_of_range, "index");
 	return 0;
 }
 
