@@ -1,4 +1,4 @@
-/** PawnPlus v1.0.0-pre3 by IllidanS4 **/
+/** PawnPlus v1.0.0-pre4 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 #if defined _inc_PawnPlus
@@ -1610,6 +1610,7 @@ native debug_code(level=0);
 native debug_line(code=cellmin);
 native debug_file(file[], code=cellmin, size=sizeof(file));
 native String:debug_file_s(code=cellmin);
+
 native debug_num_symbols();
 native Symbol:debug_symbol(const name[], code=cellmin, symbol_kind:kind=symbol_kind:-1, symbol_class:class=symbol_class:-1);
 native Symbol:debug_func(code=cellmin);
@@ -1618,6 +1619,7 @@ native Symbol:debug_var_arr(AnyTag:var[]) = debug_var;
 native symbol_kind:debug_symbol_kind(Symbol:symbol);
 native symbol_class:debug_symbol_class(Symbol:symbol);
 native debug_symbol_tag(Symbol:symbol);
+native tag_uid:debug_symbol_tag_uid(Symbol:symbol);
 native Symbol:debug_symbol_func(Symbol:symbol);
 native debug_symbol_name(Symbol:symbol, name[], size=sizeof(name));
 native String:debug_symbol_name_s(Symbol:symbol);
@@ -1627,16 +1629,30 @@ native debug_symbol_line(Symbol:symbol);
 native debug_symbol_file(Symbol:symbol, file[], size=sizeof(file));
 native String:debug_symbol_file_s(Symbol:symbol);
 native bool:debug_symbol_in_scope(Symbol:symbol, level=0);
-native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0);
-native debug_symbol_get(Symbol:symbol, level=0);
-native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, tag_id=tagof(value));
-native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, tag_id=tagof(value));
+native debug_symbol_rank(Symbol:symbol);
+native debug_symbol_size(Symbol:symbol, dimension=0);
+native debug_symbol_size_tag(Symbol:symbol, dimension=0);
+native tag_uid:debug_symbol_size_tag_uid(Symbol:symbol, dimension=0);
+native Var:debug_symbol_to_amx_var(Symbol:symbol, level=0);
+
+native debug_symbol_get(Symbol:symbol, level=0, offset=0);
+native debug_symbol_get_arr(Symbol:symbol, AnyTag:value[], level=0, offset=0, size=sizeof(value));
+native Variant:debug_symbol_get_var(Symbol:symbol, level=0);
+native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, offset=0, tag_id=tagof(value));
+native debug_symbol_get_arr_safe(Symbol:symbol, AnyTag:value[], level=0, offset=0, size=sizeof(value), tag_id=tagof(value));
+
+native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0, offset=0);
+native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, offset=0, tag_id=tagof(value));
+native debug_symbol_set_arr(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values));
+native debug_symbol_set_arr_safe(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values), tag_id=tagof(values));
+
 native debug_symbol_call(Symbol:symbol, AnyTag:...);
 native debug_symbol_call_list(Symbol:symbol, List:args);
 native debug_symbol_indirect_call(Symbol:symbol, AnyTag:...);
 native debug_symbol_indirect_call_list(Symbol:symbol, List:args);
 native amx_err:debug_symbol_try_call(Symbol:symbol, &result, AnyTag:...);
 native amx_err:debug_symbol_try_call_list(Symbol:symbol, &result, List:args);
+
 native Iter:debug_symbol_variables(Symbol:symbol);
 
 

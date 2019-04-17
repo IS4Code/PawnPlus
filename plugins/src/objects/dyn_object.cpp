@@ -66,7 +66,12 @@ void find_array_end(AMX *amx, const cell *&ptr)
 	}
 }
 
-dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id) : rank(2), tag(tags::find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell tag_id) : dyn_object(amx, arr, size, size2, tags::find_tag(amx, tag_id))
+{
+
+}
+
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, tag_ptr tag) : rank(2), tag(tag)
 {
 	if(size < 0)
 	{
@@ -110,7 +115,12 @@ dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell ta
 	init_op();
 }
 
-dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id) : rank(3), tag(tags::find_tag(amx, tag_id))
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, cell tag_id) : dyn_object(amx, arr, size, size2, size3, tags::find_tag(amx, tag_id))
+{
+
+}
+
+dyn_object::dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, tag_ptr tag) : rank(3), tag(tag)
 {
 	if(size < 0)
 	{

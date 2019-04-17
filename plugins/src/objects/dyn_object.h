@@ -38,6 +38,8 @@ public:
 	}
 
 	dyn_object(const cell *arr, cell size, tag_ptr tag);
+	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, tag_ptr tag);
+	dyn_object(AMX *amx, const cell *arr, cell size, cell size2, cell size3, tag_ptr tag);
 
 	dyn_object(const dyn_object &obj) : dyn_object(obj, true)
 	{

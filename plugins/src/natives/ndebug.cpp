@@ -6,6 +6,8 @@
 #include "modules/strings.h"
 #include "modules/tags.h"
 #include "modules/containers.h"
+#include "modules/variants.h"
+#include "modules/amxutils.h"
 
 #include <limits>
 #include <cstring>
@@ -95,6 +97,42 @@ cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG_SYMBOL *&sym)
 {
 	AMX_DBG *dbg;
 	return find_symbol_addr(amx, index, level, dbg, sym);
+}
+
+cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG *&dbg, AMX_DBG_SYMBOL *&sym, cell offset)
+{
+	cell *ptr = find_symbol_addr(amx, index, level, dbg, sym);
+	if(offset >= 0)
+	{
+		if(sym->dim == 0)
+		{
+			if(offset == 0)
+			{
+				return ptr;
+			}
+		}else if(sym->dim == 1)
+		{
+			const AMX_DBG_SYMDIM *symdim;
+			if(dbg_GetArrayDim(dbg, sym, &symdim) != AMX_ERR_NONE)
+			{
+				amx_LogicError(errors::operation_not_supported, "symbol");
+			}
+			if(static_cast<ucell>(offset) < symdim[0].size)
+			{
+				return ptr + offset;
+			}
+		}else{
+			amx_LogicError(errors::operation_not_supported, "symbol");
+		}
+	}
+	amx_LogicError(errors::out_of_range, "offset");
+	return nullptr;
+}
+
+cell *find_symbol_addr(AMX *amx, cell index, cell level, AMX_DBG_SYMBOL *&sym, cell offset)
+{
+	AMX_DBG *dbg;
+	return find_symbol_addr(amx, index, level, dbg, sym, offset);
 }
 
 class debug_symbol_var_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
@@ -588,6 +626,32 @@ namespace Natives
 		return tag;
 	}
 
+	// native tag_uid:debug_symbol_tag_uid(Symbol:symbol);
+	AMX_DEFINE_NATIVE(debug_symbol_tag_uid, 1)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		cell tag = sym->tag;
+
+		if(tag == 0)
+		{
+			return tags::tag_cell;
+		}
+		const char *tagname;
+		if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+		{
+			return tags::find_existing_tag(tagname)->uid;
+		}
+		return tags::tag_unknown;
+	}
+
 	// native Symbol:debug_symbol_func(Symbol:symbol);
 	AMX_DEFINE_NATIVE(debug_symbol_func, 1)
 	{
@@ -787,29 +851,383 @@ namespace Natives
 		return sym->codestart <= cip && cip < sym->codeend;
 	}
 
-	// native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0);
+	// native debug_symbol_rank(Symbol:symbol);
+	AMX_DEFINE_NATIVE(debug_symbol_rank, 1)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+
+		return sym->dim;
+	}
+
+	// native debug_symbol_size(Symbol:symbol, dimension=0);
+	AMX_DEFINE_NATIVE(debug_symbol_size, 1)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+
+		cell dim = optparam(2, 0);
+		if(dim < 0 || dim >= sym->dim)
+		{
+			amx_LogicError(errors::out_of_range, "dimension");
+			return 0;
+		}
+		const AMX_DBG_SYMDIM *symdim;
+		if(dbg_GetArrayDim(dbg, sym, &symdim) == AMX_ERR_NONE)
+		{
+			return symdim[dim].size;
+		}
+		return 0;
+	}
+
+	// native debug_symbol_size_tag(Symbol:symbol, dimension=0);
+	AMX_DEFINE_NATIVE(debug_symbol_size_tag, 1)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+
+		cell dim = optparam(2, 0);
+		if(dim < 0 || dim >= sym->dim)
+		{
+			amx_LogicError(errors::out_of_range, "dimension");
+			return 0;
+		}
+		const AMX_DBG_SYMDIM *symdim;
+		if(dbg_GetArrayDim(dbg, sym, &symdim) == AMX_ERR_NONE)
+		{
+			cell tag = symdim[dim].tag;
+
+			if(tag == 0)
+			{
+				return 0x80000000;
+			}
+
+			const char *tagname;
+			if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+			{
+				if(*tagname >= 'A' && *tagname <= 'Z')
+				{
+					tag |= 0x40000000;
+				}
+
+				if(tags::find_tag(amx, tag)->uid != tags::tag_unknown)
+				{
+					tag |= 0x80000000;
+				}
+
+				return tag;
+			}
+		}
+		return 0;
+	}
+
+	// native tag_uid:debug_symbol_size_tag_uid(Symbol:symbol, dimension=0);
+	AMX_DEFINE_NATIVE(debug_symbol_size_tag_uid, 1)
+	{
+		auto dbg = get_debug(amx);
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+
+		cell dim = optparam(2, 0);
+		if(dim < 0 || dim >= sym->dim)
+		{
+			amx_LogicError(errors::out_of_range, "dimension");
+			return 0;
+		}
+		const AMX_DBG_SYMDIM *symdim;
+		if(dbg_GetArrayDim(dbg, sym, &symdim) == AMX_ERR_NONE)
+		{
+			cell tag = symdim[dim].tag;
+
+			if(tag == 0)
+			{
+				return tags::tag_cell;
+			}
+
+			const char *tagname;
+			if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+			{
+				return tags::find_tag(tagname)->uid;
+			}
+		}
+		return tags::tag_unknown;
+	}
+
+	// native Var:debug_symbol_to_amx_var(Symbol:symbol, level=0);
+	AMX_DEFINE_NATIVE(debug_symbol_to_amx_var, 1)
+	{
+		AMX_DBG *dbg;
+		AMX_DBG_SYMBOL *sym;
+		cell *ptr = find_symbol_addr(amx, params[1], optparam(2, 0), dbg, sym);
+		cell size;
+		switch(sym->dim)
+		{
+			case 0:
+				size = 1;
+				break;
+			case 1:
+				const AMX_DBG_SYMDIM *symdim;
+				if(dbg_GetArrayDim(dbg, sym, &symdim) != AMX_ERR_NONE)
+				{
+					amx_LogicError(errors::operation_not_supported, "symbol");
+				}
+				size = symdim[0].size;
+				break;
+			default:
+				amx_LogicError(errors::operation_not_supported, "symbol");
+				break;
+		}
+		return amx_var_pool.get_id(amx_var_pool.emplace(amx, reinterpret_cast<unsigned char*>(ptr) - amx_GetData(amx), size));
+	}
+
+	// native debug_symbol_get(Symbol:symbol, level=0, offset=0);
+	AMX_DEFINE_NATIVE(debug_symbol_get, 1)
+	{
+		AMX_DBG_SYMBOL *sym;
+		const cell *ptr = find_symbol_addr(amx, params[1], optparam(2, 0), sym, optparam(3, 0));
+		return *ptr;
+	}
+
+	// native debug_symbol_get_arr(Symbol:symbol, AnyTag:value[], level=0, offset=0, size=sizeof(value));
+	AMX_DEFINE_NATIVE(debug_symbol_get_arr, 5)
+	{
+		AMX_DBG *dbg;
+		AMX_DBG_SYMBOL *sym;
+		const cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), dbg, sym);
+		cell offset = optparam(4, 0);
+		if(offset < 0)
+		{
+			amx_LogicError(errors::out_of_range, "offset");
+		}
+		cell size = params[5];
+		if(size < 0)
+		{
+			amx_LogicError(errors::out_of_range, "size");
+		}
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
+		if(sym->dim == 0)
+		{
+			if(offset > 1)
+			{
+				amx_LogicError(errors::out_of_range, "offset");
+			}else if(offset == 1)
+			{
+				return 0;
+			}
+			if(size >= 1)
+			{
+				*addr = *ptr;
+				return 1;
+			}
+			return 0;
+		}else if(sym->dim == 1)
+		{
+			const AMX_DBG_SYMDIM *symdim;
+			if(dbg_GetArrayDim(dbg, sym, &symdim) == AMX_ERR_NONE)
+			{
+				if(static_cast<ucell>(offset) > symdim[0].size)
+				{
+					amx_LogicError(errors::out_of_range, "offset");
+				}else if(offset == symdim[0].size)
+				{
+					return 0;
+				}
+				if(static_cast<ucell>(offset + size) > symdim[0].size)
+				{
+					size = symdim[0].size - offset;
+				}
+				std::memcpy(addr, ptr + offset, size * sizeof(cell));
+				return size;
+			}
+		}
+		amx_LogicError(errors::operation_not_supported, "symbol");
+		return 0;
+	}
+
+	// native Variant:debug_symbol_get_var(Symbol:symbol, level=0);
+	AMX_DEFINE_NATIVE(debug_symbol_get_var, 1)
+	{
+		AMX_DBG *dbg;
+		AMX_DBG_SYMBOL *sym;
+		const cell *ptr = find_symbol_addr(amx, params[1], optparam(2, 0), dbg, sym);
+
+		tag_ptr tag_ptr;
+		cell tag_id = sym->tag;
+		if(tag_id == 0)
+		{
+			tag_ptr = tags::find_tag(tags::tag_cell);
+		}else{
+			const char *tagname;
+			if(dbg_GetTagName(dbg, tag_id, &tagname) == AMX_ERR_NONE)
+			{
+				tag_ptr = tags::find_tag(tagname);
+			}else{
+				tag_ptr = tags::find_tag(tags::tag_cell);
+			}
+		}
+
+		if(sym->dim == 0)
+		{
+			return variants::emplace(*ptr, tag_ptr);
+		}else{
+			const AMX_DBG_SYMDIM *symdim;
+			if(dbg_GetArrayDim(dbg, sym, &symdim) == AMX_ERR_NONE)
+			{
+				switch(sym->dim)
+				{
+					case 1:
+						return variants::emplace(ptr, symdim[0].size, tag_ptr);
+					case 2:
+						return variants::emplace(amx, ptr, symdim[0].size, symdim[1].size, tag_ptr);
+					case 3:
+						return variants::emplace(amx, ptr, symdim[0].size, symdim[1].size, symdim[2].size, tag_ptr);
+				}
+			}
+		}
+		amx_LogicError(errors::operation_not_supported, "symbol");
+		return 0;
+	}
+
+	// native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, offset=0, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(debug_symbol_get_safe, 4)
+	{
+		AMX_DBG *dbg;
+		AMX_DBG_SYMBOL *sym;
+		const cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), dbg, sym, optparam(4, 0));
+		cell tag = sym->tag;
+		const char *tagname;
+		if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+		{
+			if(*tagname >= 'A' && *tagname <= 'Z')
+			{
+				tag |= 0x40000000;
+			}
+		}
+
+		auto srctag = tags::find_tag(amx, tag);
+		tag = params[4];
+		if((tag == 0 && !srctag->strong()) || (srctag->inherits_from(tags::find_tag(amx, tag))))
+		{
+			cell *addr = amx_GetAddrSafe(amx, params[2]);
+			*addr = *ptr;
+			return 1;
+		}
+		return 0;
+	}
+
+	// native debug_symbol_get_arr_safe(Symbol:symbol, AnyTag:value[], level=0, offset=0, size=sizeof(value), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(debug_symbol_get_arr_safe, 6)
+	{
+		AMX_DBG *dbg;
+		AMX_DBG_SYMBOL *sym;
+		const cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), dbg, sym);
+		cell offset = optparam(4, 0);
+		if(offset < 0)
+		{
+			amx_LogicError(errors::out_of_range, "offset");
+		}
+		cell size = params[5];
+		if(size < 0)
+		{
+			amx_LogicError(errors::out_of_range, "size");
+		}
+		cell tag = sym->tag;
+		const char *tagname;
+		if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+		{
+			if(*tagname >= 'A' && *tagname <= 'Z')
+			{
+				tag |= 0x40000000;
+			}
+		}
+		auto srctag = tags::find_tag(amx, tag);
+		tag = params[6];
+		if(!((tag == 0 && !srctag->strong()) || (srctag->inherits_from(tags::find_tag(amx, tag)))))
+		{
+			return 0;
+		}
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
+		if(sym->dim == 0)
+		{
+			if(offset > 1)
+			{
+				amx_LogicError(errors::out_of_range, "offset");
+			}else if(offset == 1)
+			{
+				return 0;
+			}
+			if(size >= 1)
+			{
+				*addr = *ptr;
+				return 1;
+			}
+			return 0;
+		}else if(sym->dim == 1)
+		{
+			const AMX_DBG_SYMDIM *symdim;
+			if(dbg_GetArrayDim(dbg, sym, &symdim) == AMX_ERR_NONE)
+			{
+				if(static_cast<ucell>(offset) > symdim[0].size)
+				{
+					amx_LogicError(errors::out_of_range, "offset");
+				}else if(offset == symdim[0].size)
+				{
+					return 0;
+				}
+				if(static_cast<ucell>(offset + size) > symdim[0].size)
+				{
+					size = symdim[0].size - offset;
+				}
+				std::memcpy(addr, ptr + offset, size * sizeof(cell));
+				return size;
+			}
+		}
+		amx_LogicError(errors::operation_not_supported, "symbol");
+		return 0;
+	}
+
+	// native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0, offset=0);
 	AMX_DEFINE_NATIVE(debug_symbol_set, 2)
 	{
 		AMX_DBG_SYMBOL *sym;
-		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), sym);
+		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), sym, optparam(4, 0));
 		*ptr = params[2];
 		return 1;
 	}
 
-	// native debug_symbol_get(Symbol:symbol, level=0);
-	AMX_DEFINE_NATIVE(debug_symbol_get, 2)
-	{
-		AMX_DBG_SYMBOL *sym;
-		cell *ptr = find_symbol_addr(amx, params[1], optparam(2, 0), sym);
-		return *ptr;
-	}
-
-	// native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, tag_id=tagof(value));
+	// native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, offset=0, tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(debug_symbol_set_safe, 4)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
-		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), dbg, sym);
+		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), dbg, sym, optparam(4, 0));
 		cell tag = sym->tag;
 		const char *tagname;
 		if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
@@ -829,12 +1247,78 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(debug_symbol_get_safe, 4)
+	// native debug_symbol_set_arr(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values));
+	AMX_DEFINE_NATIVE(debug_symbol_set_arr, 5)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
 		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), dbg, sym);
+		cell offset = optparam(4, 0);
+		if(offset < 0)
+		{
+			amx_LogicError(errors::out_of_range, "offset");
+		}
+		cell size = params[5];
+		if(size < 0)
+		{
+			amx_LogicError(errors::out_of_range, "size");
+		}
+		const cell *addr = amx_GetAddrSafe(amx, params[2]);
+		if(sym->dim == 0)
+		{
+			if(offset > 1)
+			{
+				amx_LogicError(errors::out_of_range, "offset");
+			}else if(offset == 1)
+			{
+				return 0;
+			}
+			if(size >= 1)
+			{
+				*ptr = *addr;
+				return 1;
+			}
+			return 0;
+		}else if(sym->dim == 1)
+		{
+			const AMX_DBG_SYMDIM *symdim;
+			if(dbg_GetArrayDim(dbg, sym, &symdim) == AMX_ERR_NONE)
+			{
+				if(static_cast<ucell>(offset) > symdim[0].size)
+				{
+					amx_LogicError(errors::out_of_range, "offset");
+				}else if(offset == symdim[0].size)
+				{
+					return 0;
+				}
+				if(static_cast<ucell>(offset + size) > symdim[0].size)
+				{
+					size = symdim[0].size - offset;
+				}
+				std::memcpy(ptr + offset, addr, size * sizeof(cell));
+				return size;
+			}
+		}
+		amx_LogicError(errors::operation_not_supported, "symbol");
+		return 0;
+	}
+
+	// native debug_symbol_set_arr_safe(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values), tag_id=tagof(values));
+	AMX_DEFINE_NATIVE(debug_symbol_set_arr_safe, 6)
+	{
+		AMX_DBG *dbg;
+		AMX_DBG_SYMBOL *sym;
+		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), dbg, sym);
+		cell offset = optparam(4, 0);
+		if(offset < 0)
+		{
+			amx_LogicError(errors::out_of_range, "offset");
+		}
+		cell size = params[5];
+		if(size < 0)
+		{
+			amx_LogicError(errors::out_of_range, "size");
+		}
 		cell tag = sym->tag;
 		const char *tagname;
 		if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
@@ -845,14 +1329,48 @@ namespace Natives
 			}
 		}
 
-		auto srctag = tags::find_tag(amx, tag);
-		tag = params[4];
-		if((tag == 0 && !srctag->strong()) || (srctag->inherits_from(tags::find_tag(amx, tag))))
+		auto srctag = tags::find_tag(amx, params[6]);
+		if(!((tag == 0 && !srctag->strong()) || (srctag->inherits_from(tags::find_tag(amx, tag)))))
 		{
-			cell *addr = amx_GetAddrSafe(amx, params[2]);
-			*addr = *ptr;
-			return 1;
+			return 0;
 		}
+		const cell *addr = amx_GetAddrSafe(amx, params[2]);
+		if(sym->dim == 0)
+		{
+			if(offset > 1)
+			{
+				amx_LogicError(errors::out_of_range, "offset");
+			}else if(offset == 1)
+			{
+				return 0;
+			}
+			if(size >= 1)
+			{
+				*ptr = *addr;
+				return 1;
+			}
+			return 0;
+		}else if(sym->dim == 1)
+		{
+			const AMX_DBG_SYMDIM *symdim;
+			if(dbg_GetArrayDim(dbg, sym, &symdim) == AMX_ERR_NONE)
+			{
+				if(static_cast<ucell>(offset) > symdim[0].size)
+				{
+					amx_LogicError(errors::out_of_range, "offset");
+				}else if(offset == symdim[0].size)
+				{
+					return 0;
+				}
+				if(static_cast<ucell>(offset + size) > symdim[0].size)
+				{
+					size = symdim[0].size - offset;
+				}
+				std::memcpy(ptr + offset, addr, size * sizeof(cell));
+				return size;
+			}
+		}
+		amx_LogicError(errors::operation_not_supported, "symbol");
 		return 0;
 	}
 
@@ -1262,6 +1780,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_symbol_kind),
 	AMX_DECLARE_NATIVE(debug_symbol_class),
 	AMX_DECLARE_NATIVE(debug_symbol_tag),
+	AMX_DECLARE_NATIVE(debug_symbol_tag_uid),
 	AMX_DECLARE_NATIVE(debug_symbol_func),
 	AMX_DECLARE_NATIVE(debug_symbol_name),
 	AMX_DECLARE_NATIVE(debug_symbol_name_s),
@@ -1271,10 +1790,20 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(debug_symbol_file),
 	AMX_DECLARE_NATIVE(debug_symbol_file_s),
 	AMX_DECLARE_NATIVE(debug_symbol_in_scope),
-	AMX_DECLARE_NATIVE(debug_symbol_set),
+	AMX_DECLARE_NATIVE(debug_symbol_rank),
+	AMX_DECLARE_NATIVE(debug_symbol_size),
+	AMX_DECLARE_NATIVE(debug_symbol_size_tag),
+	AMX_DECLARE_NATIVE(debug_symbol_size_tag_uid),
+	AMX_DECLARE_NATIVE(debug_symbol_to_amx_var),
 	AMX_DECLARE_NATIVE(debug_symbol_get),
-	AMX_DECLARE_NATIVE(debug_symbol_set_safe),
+	AMX_DECLARE_NATIVE(debug_symbol_get_arr),
+	AMX_DECLARE_NATIVE(debug_symbol_get_var),
 	AMX_DECLARE_NATIVE(debug_symbol_get_safe),
+	AMX_DECLARE_NATIVE(debug_symbol_get_arr_safe),
+	AMX_DECLARE_NATIVE(debug_symbol_set),
+	AMX_DECLARE_NATIVE(debug_symbol_set_safe),
+	AMX_DECLARE_NATIVE(debug_symbol_set_arr),
+	AMX_DECLARE_NATIVE(debug_symbol_set_arr_safe),
 	AMX_DECLARE_NATIVE(debug_symbol_call),
 	AMX_DECLARE_NATIVE(debug_symbol_call_list),
 	AMX_DECLARE_NATIVE(debug_symbol_indirect_call),
