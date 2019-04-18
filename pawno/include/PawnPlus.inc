@@ -448,6 +448,7 @@ native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=st
 native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
 native String:str_new_buf(size);
 native AmxString:str_addr(StringTag:str);
+native ConstAmxString:str_addr_const(ConstStringTag:str) = str_addr;
 native AmxStringBuffer:str_buf_addr(StringTag:str);
 native String:str_acquire(StringTag:str);
 native String:str_release(StringTag:str);
@@ -1670,10 +1671,13 @@ native Iter:debug_symbol_variables(Symbol:symbol);
 PP_PROHIBIT_UNARY_OPERATORS(String);
 PP_PROHIBIT_UNARY_OPERATORS(ConstString);
 PP_PROHIBIT_UNARY_OPERATORS(AmxString);
+PP_PROHIBIT_UNARY_OPERATORS(ConstAmxString);
 PP_PROHIBIT_UNARY_OPERATORS(AmxStringBuffer);
 
 forward String:operator=(AmxString:arg);
 forward ConstString:operator=(AmxString:arg);
+forward String:operator=(ConstAmxString:arg);
+forward ConstString:operator=(ConstAmxString:arg);
 forward String:operator=(AmxStringBuffer:arg);
 forward ConstString:operator=(AmxStringBuffer:arg);
 
@@ -1692,11 +1696,13 @@ forward ConstString:operator=(AmxStringBuffer:arg);
     PP_PROHIBIT_BINARY_OPEARTORS(%0,String); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,ConstString); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxString); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,ConstAmxString); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxStringBuffer)
 
 PP_PROHIBIT_BINARY_OPEARTORS2(String);
 PP_PROHIBIT_BINARY_OPEARTORS2(ConstString);
 PP_PROHIBIT_BINARY_OPEARTORS2(AmxString);
+PP_PROHIBIT_BINARY_OPEARTORS2(ConstAmxString);
 PP_PROHIBIT_BINARY_OPEARTORS2(AmxStringBuffer);
 
 #undef PP_PROHIBIT_BINARY_OPEARTORS
@@ -1704,6 +1710,8 @@ PP_PROHIBIT_BINARY_OPEARTORS2(AmxStringBuffer);
 stock ConstString:operator=(String:arg) return ConstString:arg;
 forward String:operator=(ConstString:arg);
 native AmxString:operator=(String:arg) = str_addr;
+native ConstAmxString:operator=(String:arg) = str_addr;
+native ConstAmxString:operator=(ConstString:arg) = str_addr;
 native AmxStringBuffer:operator=(String:arg) = str_buf_addr;
 
 stock AmxStringBuffer:operator+(AmxStringBuffer:arg1, arg2) return AmxStringBuffer:(_:arg1+arg2);
