@@ -75,6 +75,46 @@ namespace Natives
 		return value_at<1>::var_new<dyn_func_var>(amx, params);
 	}
 
+	// native AmxVariant:var_addr(VariantTag:str);
+	AMX_DEFINE_NATIVE(var_addr, 1)
+	{
+		decltype(variants::pool)::ref_container *var;
+		if(!variants::pool.get_by_id(params[1], var) && var != nullptr) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if(var == nullptr)
+		{
+			return variants::pool.get_null_address(amx);
+		}
+		if((*var)->is_cell())
+		{
+			amx_LogicError(errors::operation_not_supported, "variant");
+		}
+		return variants::pool.get_address(amx, *var);
+	}
+
+	// native ConstAmxVariant:var_addr_const(ConstVariantTag:str);
+	AMX_DEFINE_NATIVE(var_addr_const, 1)
+	{
+		decltype(variants::pool)::ref_container *var;
+		if(!variants::pool.get_by_id(params[1], var) && var != nullptr) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if(var == nullptr)
+		{
+			return variants::pool.get_null_address(amx);
+		}
+		return variants::pool.get_address(amx, *var);
+	}
+
+	// native AmxVariantBuffer:var_buf_addr(VariantTag:str);
+	AMX_DEFINE_NATIVE(var_buf_addr, 1)
+	{
+		decltype(variants::pool)::ref_container *var;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if((*var)->is_cell())
+		{
+			amx_LogicError(errors::operation_not_supported, "variant");
+		}
+		return variants::pool.get_inner_address(amx, *var);
+	}
+
 	// native Variant:var_acquire(VariantTag:var);
 	AMX_DEFINE_NATIVE(var_acquire, 1)
 	{
@@ -545,6 +585,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(var_new_str),
 	AMX_DECLARE_NATIVE(var_new_str_s),
 	AMX_DECLARE_NATIVE(var_new_var),
+	AMX_DECLARE_NATIVE(var_addr),
+	AMX_DECLARE_NATIVE(var_addr_const),
+	AMX_DECLARE_NATIVE(var_buf_addr),
 	AMX_DECLARE_NATIVE(var_acquire),
 	AMX_DECLARE_NATIVE(var_release),
 	AMX_DECLARE_NATIVE(var_delete),

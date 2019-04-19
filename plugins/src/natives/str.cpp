@@ -95,6 +95,22 @@ namespace Natives
 	{
 		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str == nullptr)
+		{
+			return strings::pool.get_null_address(amx);
+		}
+		return strings::pool.get_address(amx, *str);
+	}
+
+	// native ConstAmxString:str_addr_const(ConstStringTag:str);
+	AMX_DEFINE_NATIVE(str_addr_const, 1)
+	{
+		decltype(strings::pool)::ref_container *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str == nullptr)
+		{
+			return strings::pool.get_null_address(amx);
+		}
 		return strings::pool.get_address(amx, *str);
 	}
 
@@ -102,7 +118,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(str_buf_addr, 1)
 	{
 		decltype(strings::pool)::ref_container *str;
-		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 		return strings::pool.get_inner_address(amx, *str);
 	}
 
@@ -1120,6 +1136,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_new_static),
 	AMX_DECLARE_NATIVE(str_new_buf),
 	AMX_DECLARE_NATIVE(str_addr),
+	AMX_DECLARE_NATIVE(str_addr_const),
 	AMX_DECLARE_NATIVE(str_buf_addr),
 	AMX_DECLARE_NATIVE(str_acquire),
 	AMX_DECLARE_NATIVE(str_release),

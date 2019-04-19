@@ -3,6 +3,7 @@
 #include "exec.h"
 #include "amxinfo.h"
 #include "modules/strings.h"
+#include "modules/variants.h"
 #include "modules/events.h"
 #include "modules/capi.h"
 #include "modules/debug.h"
@@ -142,11 +143,17 @@ namespace Hooks
 				*phys_addr = strings::null_value1;
 				return AMX_ERR_NONE;
 			}
-			auto &ptr = strings::pool.get(amx, amx_addr);
-			if(ptr != nullptr)
+			decltype(strings::pool)::ref_container *str;
+			if(strings::pool.get_by_addr(amx, amx_addr, str))
 			{
-				strings::pool.set_cache(ptr);
-				*phys_addr = &(*ptr)[0];
+				strings::pool.set_cache(*str);
+				*phys_addr = &(**str)[0];
+				return AMX_ERR_NONE;
+			}
+			decltype(variants::pool)::ref_container *var;
+			if(variants::pool.get_by_addr(amx, amx_addr, var))
+			{
+				*phys_addr = &(**var)[0];
 				return AMX_ERR_NONE;
 			}
 		}else if(ret == 0 && hook_ref_args)
@@ -162,11 +169,17 @@ namespace Hooks
 				*phys_addr = strings::null_value2;
 				return AMX_ERR_NONE;
 			}
-			auto &ptr = strings::pool.get(amx, **phys_addr);
-			if(ptr != nullptr)
+			decltype(strings::pool)::ref_container *str;
+			if(strings::pool.get_by_addr(amx, amx_addr, str))
 			{
-				strings::pool.set_cache(ptr);
-				*phys_addr = &(*ptr)[0];
+				strings::pool.set_cache(*str);
+				*phys_addr = &(**str)[0];
+				return AMX_ERR_NONE;
+			}
+			decltype(variants::pool)::ref_container *var;
+			if(variants::pool.get_by_addr(amx, amx_addr, var))
+			{
+				*phys_addr = &(**var)[0];
 				return AMX_ERR_NONE;
 			}
 		}
@@ -175,10 +188,10 @@ namespace Hooks
 
 	int AMX_HOOK_FUNC(amx_StrLen, const cell *cstring, int *length)
 	{
-		auto &str = strings::pool.find_cache(cstring);
-		if(str != nullptr)
+		const decltype(strings::pool)::ref_container *str;
+		if(strings::pool.find_cache(cstring, str))
 		{
-			*length = str->size();
+			*length = (*str)->size();
 			return AMX_ERR_NONE;
 		}
 

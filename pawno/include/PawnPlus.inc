@@ -448,7 +448,7 @@ native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=st
 native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
 native String:str_new_buf(size);
 native AmxString:str_addr(StringTag:str);
-native ConstAmxString:str_addr_const(ConstStringTag:str) = str_addr;
+native ConstAmxString:str_addr_const(ConstStringTag:str);
 native AmxStringBuffer:str_buf_addr(StringTag:str);
 native String:str_acquire(StringTag:str);
 native String:str_release(StringTag:str);
@@ -559,6 +559,9 @@ native Variant:var_new_buf(size, TagTag:tag_id=0);
 native Variant:var_new_str(const value[]);
 native Variant:var_new_str_s(ConstStringTag:value);
 native Variant:var_new_var(ConstVariantTag:value);
+native AmxVariant:var_addr(VariantTag:var);
+native ConstAmxVariant:var_addr_const(ConstVariantTag:var);
+native AmxVariantBuffer:var_buf_addr(VariantTag:str);
 native Variant:var_acquire(VariantTag:var);
 native Variant:var_release(VariantTag:var);
 native var_delete(VariantTag:var);
@@ -1673,6 +1676,9 @@ PP_PROHIBIT_UNARY_OPERATORS(ConstString);
 PP_PROHIBIT_UNARY_OPERATORS(AmxString);
 PP_PROHIBIT_UNARY_OPERATORS(ConstAmxString);
 PP_PROHIBIT_UNARY_OPERATORS(AmxStringBuffer);
+PP_PROHIBIT_UNARY_OPERATORS(AmxVariant);
+PP_PROHIBIT_UNARY_OPERATORS(ConstAmxVariant);
+PP_PROHIBIT_UNARY_OPERATORS(AmxVariantBuffer);
 
 forward String:operator=(AmxString:arg);
 forward ConstString:operator=(AmxString:arg);
@@ -1680,6 +1686,12 @@ forward String:operator=(ConstAmxString:arg);
 forward ConstString:operator=(ConstAmxString:arg);
 forward String:operator=(AmxStringBuffer:arg);
 forward ConstString:operator=(AmxStringBuffer:arg);
+forward Variant:operator=(AmxVariant:arg);
+forward ConstVariant:operator=(AmxVariant:arg);
+forward Variant:operator=(ConstAmxVariant:arg);
+forward ConstVariant:operator=(ConstAmxVariant:arg);
+forward Variant:operator=(AmxVariantBuffer:arg);
+forward ConstVariant:operator=(AmxVariantBuffer:arg);
 
 #undef PP_PROHIBIT_UNARY_OPERATORS
     
@@ -1697,27 +1709,42 @@ forward ConstString:operator=(AmxStringBuffer:arg);
     PP_PROHIBIT_BINARY_OPEARTORS(%0,ConstString); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxString); \
     PP_PROHIBIT_BINARY_OPEARTORS(%0,ConstAmxString); \
-    PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxStringBuffer)
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxStringBuffer); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxVariant); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,ConstAmxVariant); \
+    PP_PROHIBIT_BINARY_OPEARTORS(%0,AmxVariantBuffer)
 
 PP_PROHIBIT_BINARY_OPEARTORS2(String);
 PP_PROHIBIT_BINARY_OPEARTORS2(ConstString);
 PP_PROHIBIT_BINARY_OPEARTORS2(AmxString);
 PP_PROHIBIT_BINARY_OPEARTORS2(ConstAmxString);
 PP_PROHIBIT_BINARY_OPEARTORS2(AmxStringBuffer);
+PP_PROHIBIT_BINARY_OPEARTORS2(AmxVariant);
+PP_PROHIBIT_BINARY_OPEARTORS2(ConstAmxVariant);
+PP_PROHIBIT_BINARY_OPEARTORS2(AmxVariantBuffer);
 
 #undef PP_PROHIBIT_BINARY_OPEARTORS
 
 stock ConstString:operator=(String:arg) return ConstString:arg;
 forward String:operator=(ConstString:arg);
+
 native AmxString:operator=(String:arg) = str_addr;
-native ConstAmxString:operator=(String:arg) = str_addr;
-native ConstAmxString:operator=(ConstString:arg) = str_addr;
+native ConstAmxString:operator=(String:arg) = str_addr_const;
+native ConstAmxString:operator=(ConstString:arg) = str_addr_const;
 stock ConstAmxString:operator=(AmxString:arg) return ConstAmxString:arg;
 forward AmxString:operator=(ConstString:arg);
 forward AmxString:operator=(ConstAmxString:arg);
 native AmxStringBuffer:operator=(String:arg) = str_buf_addr;
-
 stock AmxStringBuffer:operator+(AmxStringBuffer:arg1, arg2) return AmxStringBuffer:(_:arg1+arg2);
+
+native AmxVariant:operator=(Variant:arg) = var_addr;
+native ConstAmxVariant:operator=(Variant:arg) = var_addr_const;
+native ConstAmxVariant:operator=(ConstVariant:arg) = var_addr_const;
+stock ConstAmxVariant:operator=(AmxVariant:arg) return ConstAmxVariant:arg;
+forward AmxVariant:operator=(ConstVariant:arg);
+forward AmxVariant:operator=(ConstAmxVariant:arg);
+native AmxVariantBuffer:operator=(Variant:arg) = var_buf_addr;
+stock AmxVariantBuffer:operator+(AmxVariantBuffer:arg1, arg2) return AmxVariantBuffer:(_:arg1+arg2);
 
 native String:operator+(String:arg1, String:arg2) = str_cat;
 native String:operator+(String:arg1, ConstString:arg2) = str_cat;

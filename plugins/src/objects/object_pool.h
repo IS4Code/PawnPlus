@@ -217,27 +217,7 @@ public:
 		}
 	};
 
-	class ref_container_virtual_null : public ref_container_virtual
-	{
-	public:
-		ref_container_virtual_null(std::nullptr_t) : ref_container_virtual(nullptr)
-		{
-
-		}
-
-		virtual ObjType *get() override
-		{
-			return nullptr;
-		}
-
-		virtual const ObjType *get() const override
-		{
-			return nullptr;
-		}
-	};
-
 	typedef typename std::conditional<std::has_virtual_destructor<ObjType>::value, ref_container_virtual, ref_container_simple>::type ref_container;
-	typedef typename std::conditional<std::has_virtual_destructor<ObjType>::value, ref_container_virtual_null, ref_container>::type ref_container_null;
 
 	typedef ref_container &object_ptr;
 	typedef const ref_container &const_object_ptr;
@@ -245,11 +225,6 @@ public:
 	typedef decltype(&static_cast<const ObjType*>(nullptr)->operator[](0)) const_inner_ptr;
 
 	typedef aux::shared_id_set_pool<ref_container> list_type;
-	static ref_container_null &null_ref()
-	{
-		static ref_container_null obj = nullptr;
-		return obj;
-	}
 
 private:
 	list_type global_object_list;
@@ -306,6 +281,12 @@ public:
 		return reinterpret_cast<cell>(&obj->operator[](0)) - reinterpret_cast<cell>(data);
 	}
 
+	cell get_null_address(AMX *amx) const
+	{
+		unsigned char *data = amx_GetData(amx);
+		return -reinterpret_cast<cell>(data);
+	}
+
 	bool is_null_address(AMX *amx, cell addr) const
 	{
 		if(addr >= 0 && addr < amx->stp)
@@ -358,14 +339,15 @@ public:
 		inner_cache[&obj->operator[](0)] = &obj;
 	}
 
-	object_ptr find_cache(const_inner_ptr ptr)
+	bool find_cache(const_inner_ptr ptr, const ref_container *&obj)
 	{
 		auto it = inner_cache.find(ptr);
 		if(it != inner_cache.end())
 		{
-			return const_cast<object_ptr>(*it->second);
+			obj = it->second;
+			return true;
 		}
-		return null_ref();
+		return false;
 	}
 
 	bool remove(object_ptr obj)
@@ -496,21 +478,21 @@ public:
 		return {};
 	}
 
-	object_ptr get(AMX *amx, cell addr)
+	bool get_by_addr(AMX *amx, cell addr, ref_container *&obj)
 	{
-		auto obj = reinterpret_cast<ref_container*>(amx_GetData(amx) + addr);
+		obj = reinterpret_cast<ref_container*>(amx_GetData(amx) + addr);
 
 		auto it = local_object_list.find(obj);
 		if(it != local_object_list.end())
 		{
-			return *it->second;
+			return true;
 		}
 		it = global_object_list.find(obj);
 		if(it != global_object_list.end())
 		{
-			return *it->second;
+			return true;
 		}
-		return null_ref();
+		return false;
 	}
 
 	size_t local_size() const
