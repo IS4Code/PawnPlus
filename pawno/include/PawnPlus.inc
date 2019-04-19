@@ -1712,6 +1712,9 @@ forward String:operator=(ConstString:arg);
 native AmxString:operator=(String:arg) = str_addr;
 native ConstAmxString:operator=(String:arg) = str_addr;
 native ConstAmxString:operator=(ConstString:arg) = str_addr;
+stock ConstAmxString:operator=(AmxString:arg) return ConstAmxString:arg;
+forward AmxString:operator=(ConstString:arg);
+forward AmxString:operator=(ConstAmxString:arg);
 native AmxStringBuffer:operator=(String:arg) = str_buf_addr;
 
 stock AmxStringBuffer:operator+(AmxStringBuffer:arg1, arg2) return AmxStringBuffer:(_:arg1+arg2);
