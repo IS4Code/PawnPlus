@@ -89,6 +89,26 @@ namespace pp
 		{
 			return get<void*(const void *handle)>(9)(handle);
 		}
+
+		const char *get_error(int index)
+		{
+			return get<const char*(cell index)>(10)(index);
+		}
+
+		cell raise_error(AMX *amx, const cell *params, const char *native, int level, const char *message)
+		{
+			return get<cell(AMX *amx, const cell *params, const char *native, cell level, const char *message)>(11)(amx, params, native, level, message);
+		}
+
+		cell raise_error(AMX *amx, const cell *params, const char *native, const cell *argbase, size_t required)
+		{
+			return get<cell(AMX *amx, const cell *params, const char *native, const cell *argbase, cell required)>(12)(amx, params, native, argbase, required);
+		}
+
+		void *get_debug()
+		{
+			return get<void*()>(13)();
+		}
 	};
 
 	class tag_table : public api_table

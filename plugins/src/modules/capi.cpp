@@ -5,6 +5,8 @@
 #include "containers.h"
 #include "strings.h"
 #include "tasks.h"
+#include "errors.h"
+#include "natives.h"
 
 #include <type_traits>
 #include <unordered_map>
@@ -88,6 +90,47 @@ static func_ptr main_functions[] = {
 			}
 		}
 		return nullptr;
+	},
+	+[]/*get_error*/(cell index) -> const char*
+	{
+		static const char *err_table[] = {
+			errors::not_enough_args,
+			errors::pointer_invalid,
+			errors::cannot_acquire,
+			errors::cannot_release,
+			errors::operation_not_supported,
+			errors::out_of_range,
+			errors::key_not_present,
+			errors::func_not_found,
+			errors::var_not_found,
+			errors::arg_empty,
+			errors::inner_error,
+			errors::no_debug_error,
+			errors::unhandled_exception,
+			errors::invalid_format
+		};
+		if(index < 0 || static_cast<size_t>(index) >= sizeof(err_table) / sizeof(*err_table))
+		{
+			return nullptr;
+		}
+		return err_table[index];
+	},
+	+[]/*raise_error*/(AMX *amx, const cell *params, const char *native, cell level, const char *message) -> cell
+	{
+		return impl::handle_error(amx, params, native, errors::native_error(std::string(message), level));
+	},
+	+[]/*raise_end_of_args_error*/(AMX *amx, const cell *params, const char *native, const cell *argbase, cell required) -> cell
+	{
+		return impl::handle_error(amx, params, native, errors::native_error(errors::not_enough_args, 3, argbase - params - 1 + required, params[0] / static_cast<cell>(sizeof(cell))));
+	},
+	+[]/*get_debug*/(AMX *amx) -> void*
+	{
+		const auto &obj = amx::load_lock(amx);
+		if(!obj->dbg)
+		{
+			return nullptr;
+		}
+		return obj->dbg.get();
 	},
 	nullptr
 };

@@ -36,7 +36,7 @@
 
 namespace impl
 {
-	cell handle_error(AMX *amx, cell *params, const char *native, const errors::native_error &error);
+	cell handle_error(AMX *amx, const cell *params, const char *native, const errors::native_error &error);
 
 	template <AMX_NATIVE Native>
 	struct native_info;

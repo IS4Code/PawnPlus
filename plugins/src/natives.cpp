@@ -1,7 +1,7 @@
 #include "natives.h"
 #include "amxinfo.h"
 
-cell impl::handle_error(AMX *amx, cell *params, const char *native, const errors::native_error &error)
+cell impl::handle_error(AMX *amx, const cell *params, const char *native, const errors::native_error &error)
 {
 	int handler;
 	if(amx_FindPublic(amx, "pp_on_error", &handler) == AMX_ERR_NONE)
