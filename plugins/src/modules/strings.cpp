@@ -801,13 +801,32 @@ bool strings::clamp_pos(const cell_string &str, cell &pos)
 
 
 template <class T>
-inline void hash_combine(size_t& seed, const T& v)
+inline void hash_combine(size_t &seed, const T &v)
 {
 	std::hash<T> hasher;
 	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
 const std::ctype<char> *base_facet;
+
+template <class Tuple, size_t Index = std::tuple_size<Tuple>::value - 1>
+struct tuple_hash
+{
+	void operator()(size_t &seed, const Tuple &tuple) const
+	{
+		tuple_hash<Tuple, Index - 1>()(seed, tuple);
+		hash_combine(seed, std::get<Index>(tuple));
+	}
+};
+
+template <class Tuple>
+struct tuple_hash<Tuple, 0>
+{
+	void operator()(size_t &seed, const Tuple &tuple) const
+	{
+		seed = std::hash<typename std::tuple_element<0, Tuple>::type>()(std::get<0>(tuple));
+	}
+};
 
 namespace std
 {
@@ -816,7 +835,20 @@ namespace std
 	{
 		size_t operator()(const std::pair<Type1, Type2> &obj) const
 		{
-			return std::hash<Type1>()(obj.first) ^ std::hash<Type2>()(obj.second);
+			size_t seed = std::hash<Type1>()(obj.first);
+			hash_combine(seed, obj.second);
+			return seed;
+		}
+	};
+
+	template <class... Type>
+	struct hash<std::tuple<Type...>>
+	{
+		size_t operator()(const std::tuple<Type...> &obj) const
+		{
+			size_t seed;
+			tuple_hash<std::tuple<Type...>>()(seed, obj);
+			return seed;
 		}
 	};
 
@@ -1158,6 +1190,7 @@ static std::regex_iterator<BidirIt, CharT, Traits> make_regex_iterator(BidirIt a
 }
 
 constexpr const cell cache_flag = 4194304;
+constexpr const cell cache_addr_flag = 4194304 | 8388608;
 
 static void regex_options(cell options, std::regex_constants::syntax_option_type &syntax, std::regex_constants::match_flag_type &match)
 {
@@ -1284,6 +1317,14 @@ static const std::basic_regex<cell, regex_traits> &get_cached(Iter pattern_begin
 }
 
 template <class Iter>
+static const std::basic_regex<cell, regex_traits> &get_cached_addr(Iter pattern_begin, Iter pattern_end, cell options, std::regex_constants::syntax_option_type syntax_options)
+{
+	static std::unordered_map<std::tuple<const void*, const void*, cell>, std::basic_regex<cell, regex_traits>> regex_cache;
+	options &= 255;
+	return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(&*pattern_begin, &*pattern_end, options), std::forward_as_tuple(pattern_begin, pattern_end, syntax_options)).first->second;
+}
+
+template <class Iter>
 struct regex_search_base
 {
 	bool operator()(Iter pattern_begin, Iter pattern_end, const cell_string &str, const cell_string *pattern, cell *pos, cell options) const
@@ -1303,7 +1344,8 @@ struct regex_search_base
 		std::match_results<cell_string::const_iterator> match;
 		if(options & cache_flag)
 		{
-			if(!std::regex_search(begin, str.cend(), match, get_cached(pattern_begin, pattern_end, pattern, options, syntax_options), match_options))
+			const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+			if(!std::regex_search(begin, str.cend(), match, regex, match_options))
 			{
 				return false;
 			}
@@ -1361,7 +1403,8 @@ struct regex_extract_base
 		std::match_results<cell_string::const_iterator> match;
 		if(options & cache_flag)
 		{
-			if(!std::regex_search(begin, str.cend(), match, get_cached(pattern_begin, pattern_end, pattern, options, syntax_options), match_options))
+			const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+			if(!std::regex_search(begin, str.cend(), match, regex, match_options))
 			{
 				return 0;
 			}
@@ -1503,7 +1546,8 @@ struct regex_replace_base
 			target.append(str.cbegin(), begin);
 			if(options & cache_flag)
 			{
-				replace(target, begin, str.cend(), get_cached(pattern_begin, pattern_end, pattern, options, syntax_options), replacement_begin, replacement_end, match_options);
+				const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+				replace(target, begin, str.cend(), regex, replacement_begin, replacement_end, match_options);
 			}else{
 				std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
 				replace(target, begin, str.cend(), regex, replacement_begin, replacement_end, match_options);
@@ -1612,7 +1656,8 @@ struct regex_replace_list_base
 		target.append(str.cbegin(), begin);
 		if(options & cache_flag)
 		{
-			replace(target, begin, str.cend(), get_cached(pattern_begin, pattern_end, pattern, options, syntax_options), replacement, match_options);
+			const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+			replace(target, begin, str.cend(), regex, replacement, match_options);
 		}else{
 			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
 			replace(target, begin, str.cend(), regex, replacement, match_options);
@@ -1734,7 +1779,8 @@ struct regex_replace_func_base
 		target.append(str.cbegin(), begin);
 		if(options & cache_flag)
 		{
-			replace(target, begin, str.cend(), get_cached(pattern_begin, pattern_end, pattern, options, syntax_options), amx, replacement_index, match_options, format, params, numargs);
+			const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+			replace(target, begin, str.cend(), regex, amx, replacement_index, match_options, format, params, numargs);
 		}else{
 			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
 			replace(target, begin, str.cend(), regex, amx, replacement_index, match_options, format, params, numargs);

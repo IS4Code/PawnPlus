@@ -518,7 +518,8 @@ enum regex_options (<<= 1)
     regex_no_copy = 65536,
     regex_first_only,
     
-    regex_cached = 4194304
+    regex_cached = 4194304,
+    regex_cached_addr = 4194304 | 8388608
 }
 
 native bool:str_match(ConstStringTag:str, const pattern[], &pos=0, regex_options:options=regex_default);
