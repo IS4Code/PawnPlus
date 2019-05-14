@@ -198,8 +198,11 @@ private:
 	dyn_object(cell value, tag_ptr tag, bool assign) noexcept;
 	dyn_object(const dyn_object &obj, bool assign);
 	bool init_op();
+	bool init_op(cell *start, cell size) const;
 	bool assign_op();
 	bool assign_op(cell *start, cell size) const;
+	bool collect_op();
+	bool collect_op(cell *start, cell size) const;
 	template <cell(tag_operations::*OpFunc)(tag_ptr, cell, cell) const>
 	dyn_object operator_func(const dyn_object &obj) const;
 	template <cell(tag_operations::*OpFunc)(tag_ptr, cell) const>

@@ -480,9 +480,9 @@ cell dyn_object::set_cells(const cell *indices, cell num_indices, const cell *va
 		{
 			maxsize = size;
 		}
-		ops.collect(tag, addr, size);
+		ops.collect(tag, addr, maxsize);
 		std::memcpy(addr, values, maxsize * sizeof(cell));
-		ops.assign(tag, addr, size);
+		ops.assign(tag, addr, maxsize);
 		return maxsize;
 	}
 	return 0;
@@ -501,8 +501,8 @@ cell dyn_object::store(AMX *amx) const
 		amx_Allot(amx, size, &amx_addr, &addr);
 		std::memcpy(addr, array_data + 1, size * sizeof(cell));
 
-		/*cell begin = array_start() - 1;
-		assign_op(addr + begin, data_size() - begin);*/
+		cell begin = array_start() - 1;
+		assign_op(addr + begin, size - begin);
 		return amx_addr;
 	}
 }
@@ -660,8 +660,13 @@ std::weak_ptr<void> dyn_object::handle() const
 			if(first)
 			{
 				handle = ops.handle(tag, *it);
+				first = false;
 			}else{
-				return {};
+				auto handle2 = ops.handle(tag, *it);
+				if(handle.owner_before(handle2) || handle2.owner_before(handle))
+				{
+					return {};
+				}
 			}
 		}
 	}
@@ -718,11 +723,16 @@ bool dyn_object::init_op()
 {
 	if(!empty())
 	{
-		const auto &ops = tag->get_ops();
 		cell *begin = this->begin();
-		return ops.init(tag, begin, end() - begin);
+		return init_op(begin, end() - begin);
 	}
 	return false;
+}
+
+bool dyn_object::init_op(cell *start, cell size) const
+{
+	const auto &ops = tag->get_ops();
+	return ops.init(tag, start, size);
 }
 
 bool dyn_object::assign_op()
@@ -739,6 +749,22 @@ bool dyn_object::assign_op(cell *start, cell size) const
 {
 	const auto &ops = tag->get_ops();
 	return ops.assign(tag, start, size);
+}
+
+bool dyn_object::collect_op()
+{
+	if(!empty())
+	{
+		cell *begin = this->begin();
+		return collect_op(begin, end() - begin);
+	}
+	return false;
+}
+
+bool dyn_object::collect_op(cell *start, cell size) const
+{
+	const auto &ops = tag->get_ops();
+	return ops.collect(tag, start, size);
 }
 
 bool dyn_object::struct_compatible(const dyn_object &obj) const
@@ -1040,6 +1066,7 @@ std::basic_string<cell> dyn_object::to_string() const
 dyn_object &dyn_object::operator=(const dyn_object &obj)
 {
 	if(this == &obj) return *this;
+	collect_op();
 	if(is_array())
 	{
 		delete[] array_data;
@@ -1067,6 +1094,7 @@ dyn_object &dyn_object::operator=(const dyn_object &obj)
 dyn_object &dyn_object::operator=(dyn_object &&obj) noexcept
 {
 	if(this == &obj) return *this;
+	collect_op();
 	if(is_array())
 	{
 		delete[] array_data;
@@ -1115,7 +1143,6 @@ dyn_object::~dyn_object()
 {
 	if(!is_null())
 	{
-		const tag_operations &ops = tag->get_ops();
 		if(is_array())
 		{
 			cell *begin = this->begin();
@@ -1123,13 +1150,13 @@ dyn_object::~dyn_object()
 			cell *data = array_data;
 			rank = 1;
 			array_data = nullptr;
-			ops.collect(tag, begin, end - begin);
+			collect_op(begin, end - begin);
 			delete[] data;
 		}else{
 			cell value = cell_value;
 			rank = 1;
 			array_data = nullptr;
-			ops.collect(tag, &value, 1);
+			collect_op(&value, 1);
 		}
 	}
 }
