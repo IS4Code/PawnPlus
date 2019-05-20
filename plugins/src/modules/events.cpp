@@ -114,13 +114,19 @@ namespace events
 		if(index >= 0)
 		{
 			auto &callback_handlers = info.callback_handlers;
-			if(static_cast<size_t>(index) < callback_handlers.size())
+			if(static_cast<size_t>(index) >= callback_handlers.size())
 			{
 				return false;
 			}
 			list = &callback_handlers[index];
 		}else{
-			list = &info.callback_handlers_negative[index];
+			auto &callback_handlers_negative = info.callback_handlers_negative;
+			auto it = callback_handlers_negative.find(index);
+			if(it == callback_handlers_negative.end())
+			{
+				return false;
+			}
+			list = &it->second;
 		}
 		for(auto &handler : *list)
 		{
