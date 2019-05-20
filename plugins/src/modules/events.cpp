@@ -29,7 +29,8 @@ class amx_info : public amx::extra
 {
 public:
 	std::vector<std::vector<std::unique_ptr<event_info>>> callback_handlers;
-	std::unordered_map<cell, size_t> handler_ids;
+	std::unordered_map<int, std::vector<std::unique_ptr<event_info>>> callback_handlers_negative;
+	std::unordered_map<cell, int> handler_ids;
 
 	amx_info(AMX *amx) : amx::extra(amx)
 	{
@@ -54,15 +55,22 @@ namespace events
 			amx_FormalError(errors::func_not_found, "public", callback);
 		}
 		auto &info = get_info(amx, obj);
-		auto &callback_handlers = info.callback_handlers;
-		if((size_t)index >= callback_handlers.size())
+		std::vector<std::unique_ptr<event_info>> *list;
+		if(index >= 0)
 		{
-			callback_handlers.resize(index + 1);
+			auto &callback_handlers = info.callback_handlers;
+			if(static_cast<size_t>(index) >= callback_handlers.size())
+			{
+				callback_handlers.resize(index + 1);
+			}
+			list = &callback_handlers[index];
+		}else{
+			// a negative index may be provided by some plugins
+			list = &info.callback_handlers_negative[index];
 		}
-		auto &list = callback_handlers[index];
 		auto ptr = std::unique_ptr<event_info>(new event_info(flags, amx, function, format, params, numargs));
 		cell id = reinterpret_cast<cell>(ptr.get());
-		list.push_back(std::move(ptr));
+		list->push_back(std::move(ptr));
 		info.handler_ids[id] = index;
 		return id;
 	}
@@ -76,16 +84,24 @@ namespace events
 		auto hit = handler_ids.find(id);
 		if(hit != handler_ids.end())
 		{
-			auto &list = info.callback_handlers[hit->second];
-			for(auto it = list.begin(); it != list.end(); it++)
+			int index = hit->second;
+			std::vector<std::unique_ptr<event_info>> *list;
+			if(index >= 0)
+			{
+				list = &info.callback_handlers[index];
+			}else{
+				list = &info.callback_handlers_negative[index];
+			}
+			for(auto it = list->begin(); it != list->end(); it++)
 			{
 				if(it->get() == ptr)
 				{
-					list.erase(it);
+					list->erase(it);
 					handler_ids.erase(hit);
 					return true;
 				}
 			}
+			handler_ids.erase(hit);
 		}
 		return false;
 	}
@@ -93,9 +109,20 @@ namespace events
 	bool invoke_callbacks(AMX *amx, int index, cell *retval)
 	{
 		amx::object obj;
-		auto &callback_handlers = get_info(amx, obj).callback_handlers;
-		if(index < 0 || (size_t)index >= callback_handlers.size()) return false;
-		for(auto &handler : callback_handlers[index])
+		auto &info = get_info(amx, obj);
+		std::vector<std::unique_ptr<event_info>> *list;
+		if(index >= 0)
+		{
+			auto &callback_handlers = info.callback_handlers;
+			if(static_cast<size_t>(index) < callback_handlers.size())
+			{
+				return false;
+			}
+			list = &callback_handlers[index];
+		}else{
+			list = &info.callback_handlers_negative[index];
+		}
+		for(auto &handler : *list)
 		{
 			if(handler)
 			{
