@@ -80,10 +80,15 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxUnload(AMX *amx) noexcept
 	return AMX_ERR_NONE;
 }
 
-PLUGIN_EXPORT void PLUGIN_CALL ProcessTick() noexcept
+void pp_tick()
 {
 	tasks::tick();
 	Threads::SyncThreads();
+}
+
+PLUGIN_EXPORT void PLUGIN_CALL ProcessTick() noexcept
+{
+	pp_tick();
 }
 
 std::list<void(*)()> gc_list;

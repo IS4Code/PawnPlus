@@ -54,6 +54,13 @@ namespace Natives
 		return 1;
 	}
 
+	// native pp_tick();
+	AMX_DEFINE_NATIVE(pp_tick, 0)
+	{
+		::pp_tick();
+		return 1;
+	}
+
 	// native pp_num_tasks();
 	AMX_DEFINE_NATIVE(pp_num_tasks, 0)
 	{
@@ -463,6 +470,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_version_string_s),
 	AMX_DECLARE_NATIVE(pp_hook_strlen),
 	AMX_DECLARE_NATIVE(pp_hook_check_ref_args),
+	AMX_DECLARE_NATIVE(pp_tick),
 	AMX_DECLARE_NATIVE(pp_num_tasks),
 	AMX_DECLARE_NATIVE(pp_num_local_strings),
 	AMX_DECLARE_NATIVE(pp_num_global_strings),

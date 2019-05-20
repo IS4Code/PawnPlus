@@ -119,6 +119,7 @@ native pp_hook_strlen(bool:hook);
 native pp_hook_check_ref_args(bool:hook);
 native pp_max_recursion(level);
 
+native pp_tick();
 native pp_num_tasks();
 native pp_num_local_strings();
 native pp_num_global_strings();

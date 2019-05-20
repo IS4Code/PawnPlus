@@ -32,6 +32,8 @@ void logwarn(AMX *amx, const char *format, Args&&... args)
 	logprintf(format, std::forward<Args>(args)...);
 }
 
+void pp_tick();
+
 void gc_collect();
 void *gc_register(void(*func)());
 void gc_unregister(void *id);
