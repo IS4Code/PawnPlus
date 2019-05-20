@@ -134,3 +134,16 @@ unsigned char *amx_GetData(AMX *amx)
 	}
 	return reinterpret_cast<unsigned char*>(addr);
 }
+
+int public_min_index = -1;
+
+int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index)
+{
+	int ret = amx_FindPublic(amx, funcname, index);
+	if(public_min_index != -1 && ret == AMX_ERR_NONE && index && *index < public_min_index)
+	{
+		*index = INT_MAX;
+		return AMX_ERR_NOTFOUND;
+	}
+	return ret;
+}

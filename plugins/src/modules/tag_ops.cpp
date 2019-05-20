@@ -1759,12 +1759,12 @@ class dynamic_operations : public null_operations, public tag_control
 				if(amx_GetPublic(amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(_handler.c_str(), funcname))
 				{
 					return true;
-				}else if(amx_FindPublic(amx, _handler.c_str(), &index) == AMX_ERR_NONE)
+				}else if(amx_FindPublicSafe(amx, _handler.c_str(), &index) == AMX_ERR_NONE)
 				{
 					this->_index = index;
 					return true;
 				}
-			}else if(amx_FindPublic(amx, _handler.c_str(), &index) == AMX_ERR_NONE)
+			}else if(amx_FindPublicSafe(amx, _handler.c_str(), &index) == AMX_ERR_NONE)
 			{
 				this->_index = index;
 				return true;

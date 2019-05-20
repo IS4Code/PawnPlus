@@ -92,7 +92,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 	int pubindex = 0;
 	AMX_NATIVE func = nullptr;
 
-	if(native ? (func = amx::find_native(target_amx, fname)) == nullptr : amx_FindPublic(target_amx, fname, &pubindex) != AMX_ERR_NONE)
+	if(native ? (func = amx::find_native(target_amx, fname)) == nullptr : amx_FindPublicSafe(target_amx, fname, &pubindex) != AMX_ERR_NONE)
 	{
 		if(try_)
 		{
@@ -335,7 +335,7 @@ namespace Natives
 		}
 
 		int index;
-		return name && amx_FindPublic(amx, name, &index) == AMX_ERR_NONE;
+		return name && amx_FindPublicSafe(amx, name, &index) == AMX_ERR_NONE;
 	}
 
 	// native pawn_call_native(const function[], const format[], AnyTag:...);

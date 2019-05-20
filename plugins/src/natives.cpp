@@ -4,7 +4,7 @@
 cell impl::handle_error(AMX *amx, const cell *params, const char *native, const errors::native_error &error)
 {
 	int handler;
-	if(amx_FindPublic(amx, "pp_on_error", &handler) == AMX_ERR_NONE)
+	if(amx_FindPublicSafe(amx, "pp_on_error", &handler) == AMX_ERR_NONE)
 	{
 		cell amx_addr, *addr;
 		cell reset_hea, *ret_addr;

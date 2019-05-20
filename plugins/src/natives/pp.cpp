@@ -54,6 +54,19 @@ namespace Natives
 		return 1;
 	}
 
+	// native pp_public_min_index(index);
+	AMX_DEFINE_NATIVE(pp_public_min_index, 1)
+	{
+		cell index = params[1];
+		if(index > 0)
+		{
+			amx_LogicError(errors::out_of_range, "index");
+		}
+		int orig = public_min_index;
+		public_min_index = index;
+		return orig;
+	}
+
 	// native pp_tick();
 	AMX_DEFINE_NATIVE(pp_tick, 0)
 	{
@@ -470,6 +483,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_version_string_s),
 	AMX_DECLARE_NATIVE(pp_hook_strlen),
 	AMX_DECLARE_NATIVE(pp_hook_check_ref_args),
+	AMX_DECLARE_NATIVE(pp_public_min_index),
 	AMX_DECLARE_NATIVE(pp_tick),
 	AMX_DECLARE_NATIVE(pp_num_tasks),
 	AMX_DECLARE_NATIVE(pp_num_local_strings),

@@ -873,7 +873,7 @@ namespace Natives
 			amx_FormalError(errors::arg_empty, "function");
 		}
 		int index;
-		if(amx_FindPublic(amx, fname, &index) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, fname, &index) != AMX_ERR_NONE)
 		{
 			amx_FormalError(errors::func_not_found, "public", fname);
 		}
@@ -910,7 +910,7 @@ namespace Natives
 			amx_FormalError(errors::arg_empty, "function");
 		}
 		int index;
-		if(amx_FindPublic(amx, fname, &index) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, fname, &index) != AMX_ERR_NONE)
 		{
 			amx_FormalError(errors::func_not_found, "public", fname);
 		}
@@ -1064,7 +1064,7 @@ namespace Natives
 			amx_FormalError(errors::arg_empty, "function");
 		}
 		int index;
-		if(amx_FindPublic(amx, fname, &index) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, fname, &index) != AMX_ERR_NONE)
 		{
 			amx_FormalError(errors::func_not_found, "public", fname);
 		}
@@ -1104,7 +1104,7 @@ namespace Natives
 			amx_FormalError(errors::arg_empty, "function");
 		}
 		int index;
-		if(amx_FindPublic(amx, fname, &index) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, fname, &index) != AMX_ERR_NONE)
 		{
 			amx_FormalError(errors::func_not_found, "public", fname);
 		}

@@ -137,7 +137,7 @@ namespace Natives
 		amx_StrParam(amx, params[1], name);
 		if(name == nullptr) amx_FormalError(errors::arg_empty, "function");
 		int index;
-		if(amx_FindPublic(amx, name, &index) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, name, &index) != AMX_ERR_NONE)
 		{
 			return -1;
 		}
@@ -189,7 +189,7 @@ namespace Natives
 		amx_StrParam(amx, params[1], name);
 		if(name == nullptr) amx_FormalError(errors::arg_empty, "function");
 		int pubindex;
-		if(amx_FindPublic(amx, name, &pubindex) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, name, &pubindex) != AMX_ERR_NONE)
 		{
 			amx_FormalError(errors::func_not_found, "public");
 		}
@@ -215,7 +215,7 @@ namespace Natives
 		amx_StrParam(amx, params[1], name);
 		if(name == nullptr) amx_FormalError(errors::arg_empty, "function");
 		int pubindex;
-		if(amx_FindPublic(amx, name, &pubindex) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, name, &pubindex) != AMX_ERR_NONE)
 		{
 			amx_FormalError(errors::func_not_found, "public");
 		}

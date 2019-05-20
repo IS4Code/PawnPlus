@@ -12,6 +12,8 @@ extern logprintf_t logprintf;
 
 extern thread_local bool is_main_thread;
 
+extern int public_min_index;
+
 template <class... Args>
 int logerror(AMX *amx, int error, const char *format, Args&&... args)
 {
@@ -39,5 +41,6 @@ void *gc_register(void(*func)());
 void gc_unregister(void *id);
 
 unsigned char *amx_GetData(AMX *amx);
+int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index);
 
 #endif

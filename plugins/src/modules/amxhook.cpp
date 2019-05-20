@@ -306,12 +306,12 @@ bool hook_handler::handler_index(AMX *&amx, int &index)
 		if(amx_GetPublic(amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(handler.c_str(), funcname))
 		{
 			return true;
-		}else if(amx_FindPublic(amx, handler.c_str(), &index) == AMX_ERR_NONE)
+		}else if(amx_FindPublicSafe(amx, handler.c_str(), &index) == AMX_ERR_NONE)
 		{
 			this->index = index;
 			return true;
 		}
-	}else if(amx_FindPublic(amx, handler.c_str(), &index) == AMX_ERR_NONE)
+	}else if(amx_FindPublicSafe(amx, handler.c_str(), &index) == AMX_ERR_NONE)
 	{
 		this->index = index;
 		return true;

@@ -386,7 +386,7 @@ namespace Natives
 
 		int pubindex = 0;
 
-		if(amx_FindPublic(amx, fname, &pubindex) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, fname, &pubindex) != AMX_ERR_NONE)
 		{
 			amx_FormalError(errors::func_not_found, "public", fname);
 		}
@@ -533,7 +533,7 @@ namespace Natives
 		amx_OptStrParam(amx, 3, format, "");
 
 		int pubindex;
-		if(amx_FindPublic(amx, fname, &pubindex) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, fname, &pubindex) != AMX_ERR_NONE)
 		{
 			amx_FormalError(errors::func_not_found, "public", fname);
 		}
@@ -560,7 +560,7 @@ namespace Natives
 				AMX *amx = *lock;
 
 				int index;
-				if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return 0;
+				if(amx_FindPublicSafe(amx, handler.c_str(), &index) != AMX_ERR_NONE) return 0;
 
 				cell heap, *heap_addr;
 				amx_Allot(amx, 0, &heap, &heap_addr);
@@ -609,7 +609,7 @@ namespace Natives
 		amx_OptStrParam(amx, 4, format, "");
 
 		int pubindex;
-		if(amx_FindPublic(amx, fname, &pubindex) != AMX_ERR_NONE)
+		if(amx_FindPublicSafe(amx, fname, &pubindex) != AMX_ERR_NONE)
 		{
 			amx_FormalError(errors::func_not_found, "public", fname);
 		}
@@ -638,7 +638,7 @@ namespace Natives
 				AMX *amx = *lock;
 
 				int index;
-				if(amx_FindPublic(amx, handler.c_str(), &index) != AMX_ERR_NONE) return 0;
+				if(amx_FindPublicSafe(amx, handler.c_str(), &index) != AMX_ERR_NONE) return 0;
 
 				cell heap, *heap_addr;
 				amx_Allot(amx, 0, &heap, &heap_addr);
