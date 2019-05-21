@@ -56,6 +56,10 @@ namespace tasks
 		{
 			_keep = keep;
 		}
+		bool is_keep() const
+		{
+			return _keep;
+		}
 		bool faulted() const
 		{
 			return _state == 2;
@@ -168,6 +172,8 @@ namespace tasks
 		{
 
 		}
+
+		~extra();
 	};
 
 	std::shared_ptr<task> add();

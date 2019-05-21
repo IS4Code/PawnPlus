@@ -479,4 +479,15 @@ namespace tasks
 		}
 		pool.clear();
 	}
+
+	extra::~extra()
+	{
+		if(auto task = bound_task.lock())
+		{
+			if(task->state() == 0 && !task->is_keep())
+			{
+				pool.remove(task.get());
+			}
+		}
+	}
 }
