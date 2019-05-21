@@ -587,11 +587,44 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					cell reset_stk = amx->reset_stk;
 					frame[0] = frame[1] = 0;
 					amx->reset_stk = amx->frm + 3 * sizeof(cell) + frame[2];
-					amx_Exec(amx, &amx->pri, AMX_EXEC_CONT);
+
+					cell retval = 0;
+					amx_Exec(amx, &retval, AMX_EXEC_CONT);
+					amx->pri = retval;
+
 					amx->stk = amx->reset_stk;
 					amx->reset_stk = reset_stk;
 					amx->frm = frm;
 					amx->cip = cip;
+					continue;
+				}
+				break;
+				case SleepReturnTaskDetachBound:
+				{
+					std::shared_ptr<tasks::task> task;
+					auto data = amx_GetData(amx);
+					if(tasks::get_by_id(reinterpret_cast<cell*>(data + amx->stk)[1], task))
+					{
+						amx->error = ret = AMX_ERR_NONE;
+						amx->pri = 1;
+						auto frame = reinterpret_cast<cell*>(data + amx->frm);
+						cell frm = frame[0];
+						cell cip = frame[1];
+						cell reset_stk = amx->reset_stk;
+						frame[0] = frame[1] = 0;
+						amx->reset_stk = amx->frm + 3 * sizeof(cell) + frame[2];
+
+						amx::reset reset(amx, false);
+						reset.context.get_extra<tasks::extra>().bound_task = task;
+						cell retval = 0;
+						amx_ExecContext(amx, &retval, AMX_EXEC_CONT, true, &reset);
+						amx->pri = retval;
+
+						amx->stk = amx->reset_stk;
+						amx->reset_stk = reset_stk;
+						amx->frm = frm;
+						amx->cip = cip;
+					}
 					continue;
 				}
 				break;

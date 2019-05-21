@@ -352,10 +352,26 @@ namespace Natives
 		info.result = params[1];
 		if(auto task = info.bound_task.lock())
 		{
-			task->set_completed(dyn_object(amx, params[1], optparam(2, 0)));
-			return 1;
+			return task->set_completed(dyn_object(amx, params[1], optparam(2, 0)));
 		}
 		return 0;
+	}
+
+	// native task_set_yielded(AnyTag:value);
+	AMX_DEFINE_NATIVE(task_set_yielded, 1)
+	{
+		amx::object owner;
+		auto &info = tasks::get_extra(amx, owner);
+		info.result = params[1];
+		return 1;
+	}
+
+	// native task_get_yielded();
+	AMX_DEFINE_NATIVE(task_get_yielded, 0)
+	{
+		amx::object owner;
+		auto &info = tasks::get_extra(amx, owner);
+		return info.result;
 	}
 
 	// native bool:task_bind(Task:task, const function[], const format[], AnyTag:...);
@@ -435,6 +451,18 @@ namespace Natives
 		amx_ExecContext(amx, &result, pubindex, true, &reset);
 		amx->error = AMX_ERR_NONE;
 		return result;
+	}
+
+	// native Task:task_bound();
+	AMX_DEFINE_NATIVE(task_bound, 0)
+	{
+		amx::object owner;
+		auto &info = tasks::get_extra(amx, owner);
+		if(auto task = info.bound_task.lock())
+		{
+			return tasks::get_id(task.get());
+		}
+		return 0;
 	}
 
 	// native task_set_result_ms(Task:task, AnyTag:result, interval, TagTag:tag_id=tagof(result));
@@ -681,6 +709,16 @@ namespace Natives
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnTaskDetach;
 	}
+
+	// native task_detach_bound(Task:task);
+	AMX_DEFINE_NATIVE(task_detach_bound, 1)
+	{
+		task *task;
+		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
+
+		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		return SleepReturnTaskDetachBound;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -712,7 +750,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_all),
 	AMX_DECLARE_NATIVE(task_wait),
 	AMX_DECLARE_NATIVE(task_yield),
+	AMX_DECLARE_NATIVE(task_set_yielded),
+	AMX_DECLARE_NATIVE(task_get_yielded),
 	AMX_DECLARE_NATIVE(task_bind),
+	AMX_DECLARE_NATIVE(task_bound),
 	AMX_DECLARE_NATIVE(task_set_result_ms),
 	AMX_DECLARE_NATIVE(task_set_result_ms_arr),
 	AMX_DECLARE_NATIVE(task_set_result_ms_str),
@@ -727,6 +768,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_continue_with),
 	AMX_DECLARE_NATIVE(task_continue_with_bound),
 	AMX_DECLARE_NATIVE(task_detach),
+	AMX_DECLARE_NATIVE(task_detach_bound),
 };
 
 int RegisterTasksNatives(AMX *amx)

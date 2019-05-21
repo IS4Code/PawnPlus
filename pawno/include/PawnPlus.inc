@@ -1443,11 +1443,15 @@ native task_await(Task:task);
 */
 stock task_await(Task:task) return task_wait(task), task_get_result(task);
 native task_yield(AnyTag:value, TagTag:tag_id=tagof(value));
+native task_set_yielded(AnyTag:value);
+native task_get_yielded();
 native bool:task_bind(Task:task, const function[], const format[], AnyTag:...);
+native Task:task_bound();
 native task_config(task_restore:heap=task_restore_full, task_restore:stack=task_restore_full);
 native task_continue_with(Task:task, const handler[], const additional_format[]="", AnyTag:...);
 native Task:task_continue_with_bound(Task:task, Task:bound, const handler[], const additional_format[]="", AnyTag:...);
 native task_detach();
+native task_detach_bound(Task:task);
 
 const task_state:task_state_default = task_state:0;
 const task_state:task_state_completed = task_state:1;
