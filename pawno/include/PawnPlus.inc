@@ -189,6 +189,10 @@ enum handler_flags
     handler_args = 2,
 }
 
+const Guard:INVALID_GUARD = Guard:0;
+const CallbackHandler:INVALID_CALLBACK_HANDLER = CallbackHandler:0;
+const NativeHook:INVALID_NATIVE_HOOK = NativeHook:0;
+
 native bool:pawn_native_exists(const function[]);
 native bool:pawn_native_imported(const function[]);
 native bool:pawn_public_exists(const function[]);
@@ -307,6 +311,9 @@ enum fork_level
     fork_data = 1,
     fork_machine = 2,
 }
+
+const Amx:INVALID_AMX = Amx:0;
+const Var:INVALID_AMX_VAR = Var:0;
 
 const Amx:AMX_ALL = Amx:-1;
 const Amx:AMX_OTHERS = Amx:-2;
@@ -438,6 +445,7 @@ stock operator~(PP@ap:arr[], count)
 /*                 */
 
 const String:STRING_NULL = String:0;
+const String:INVALID_STRING = String:-1;
 const INVALID_CHAR = 0xFFFFFF00;
 
 enum str_create_mode
@@ -555,6 +563,7 @@ native String:str_set_replace_func_s(StringTag:target, ConstStringTag:str, Const
 /*                 */
 
 const Variant:VAR_NULL = Variant:0;
+const Variant:INVALID_VARIANT = Variant:-1;
 
 native Variant:var_new(AnyTag:value, TagTag:tag_id=tagof(value));
 native Variant:var_new_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
@@ -630,6 +639,8 @@ native Iter:var_iter(VariantTag:value);
 /*                 */
 /*      Lists      */
 /*                 */
+
+const List:INVALID_LIST = List:0;
 
 native List:list_new();
 native List:list_new_arr(AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
@@ -748,6 +759,8 @@ native Iter:list_iter(List:list, index=0);
 /*                 */
 /*       Maps      */
 /*                 */
+
+const Map:INVALID_MAP = Map:0;
 
 native Map:map_new();
 native Map:map_new_args_t(TagTag:key_tag_id=tagof(arg0), TagTag:value_tag_id=tagof(arg1), AnyTag:arg0, AnyTag:arg1, AnyTag:...) = map_new_args;
@@ -1008,6 +1021,8 @@ native Iter:map_iter_at_var(Map:map, ConstVariantTag:key);
 /*  Linked lists   */
 /*                 */
 
+const LinkedList:INVALID_LINKED_LIST = LinkedList:0;
+
 native LinkedList:linked_list_new();
 native LinkedList:linked_list_new_arr(AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
 native LinkedList:linked_list_new_args_t(TagTag:tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...) = linked_list_new_args;
@@ -1105,6 +1120,7 @@ native Iter:linked_list_iter(LinkedList:linked_list, index=0);
 /*                 */
 
 const Iter:ITER_NULL = Iter:0;
+const Iter:INVALID_ITERATOR = Iter:-1;
 
 native bool:iter_valid(IterTag:iter);
 native Iter:iter_acquire(IterTag:iter);
@@ -1343,6 +1359,7 @@ native iter_value_rank(IterTag:iter) = iter_rank;
 /*                 */
 
 const Handle:HANDLE_NULL = Handle:0;
+const Handle:INVALID_HANDLE = Handle:-1;
 
 native Handle:handle_new(AnyTag:value, bool:weak=false, TagTag:tag_id=tagof(value));
 native Handle:handle_new_arr(const AnyTag:value[], bool:weak=false, size=sizeof(value), TagTag:tag_id=tagof(value));
@@ -1401,6 +1418,8 @@ enum task_restore
     task_restore_context = 2,
     task_restore_full = 3,
 }
+
+const Task:INVALID_TASK = Task:0;
 
 native wait_ms(interval);
 native wait_ticks(ticks);
