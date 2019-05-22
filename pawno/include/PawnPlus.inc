@@ -29,6 +29,7 @@ const PP_VERSION = 0x101;
 #define PP_SYNTAX_STRING_OP
 #define PP_SYNTAX_GENERIC
 #define PP_SYNTAX_AMX_PARALLEL
+#define PP_SYNTAX_ASYNC
 #endif
 
 #define ConstString String@Const
@@ -1482,6 +1483,11 @@ const task_state:task_state_faulted = task_state:2;
 
 #if defined PP_SYNTAX_YIELD
 #define yield%9\32;%0; task_yield(%0);
+#endif
+
+#if defined PP_SYNTAX_ASYNC
+#define async%0Task%1:%2(%3) %0Task%1:%2(%3) if(!(task_detach_bound(task_new())&&task_set_yielded(task_bound())))return Task%1:INVALID_TASK;else
+#define return%0\32;async%1\32;%2; return%0 Task%1:(task_bound()?(task_set_result%1(Task%1:task_bound(),%2)):0);
 #endif
 
 #if defined PP_SYNTAX_GENERIC
