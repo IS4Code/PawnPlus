@@ -1478,11 +1478,11 @@ const task_state:task_state_completed = task_state:1;
 const task_state:task_state_faulted = task_state:2;
 
 #if defined PP_SYNTAX_AWAIT
-#define await%9\32;%0; task_await(%0);
+#define await%0\32;%1; task_await%0(%1);
 #endif
 
 #if defined PP_SYNTAX_YIELD
-#define yield%9\32;%0; task_yield(%0);
+#define yield%0\32;%1; task_yield%0(%1);
 #endif
 
 #if defined PP_SYNTAX_ASYNC
@@ -1514,7 +1514,9 @@ const task_state:task_state_faulted = task_state:2;
 #define task_reset<%0>(%1) task_reset(Task:_PP@CAST[Task<%0>](%1))
 #define task_wait<%0>(%1) task_wait(Task:_PP@CAST[Task<%0>](%1))
 #define task_await<%0>(%1) (%0:task_await(Task:_PP@CAST[Task<%0>](%1)))
+#define task_yield<%0>(%1) task_yield(_PP@CAST[%0](%1))
 #define task_bind<%0>(%1) task_bind(Task:_PP@CAST[Task<%0>](%1))
+#define task_detach_bound<%0>(%1) task_detach_bound(Task:_PP@CAST[Task<%0>](%1))
 
 #endif
 
