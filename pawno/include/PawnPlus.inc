@@ -1478,7 +1478,44 @@ const task_state:task_state_completed = task_state:1;
 const task_state:task_state_faulted = task_state:2;
 
 #if defined PP_SYNTAX_AWAIT
+#if defined PP_MULTILINE_AWAIT
+
+stock _PP@TASK_OUT;
+stock _PP@TASK_RESULT:_PP@TASK_IN;
+stock _PP@TASK_CAST;
+
+#define _PP@TASK_OUT<%0> %0:_PP@TASK_OUT
+
+stock _PP@TASK_RESULT:operator%(_PP@TASK_RESULT:a, Task:t) return a, _PP@TASK_RESULT:t;
+stock operator%(a, _PP@TASK_RESULT:t) return a, task_await(Task:t);
+
+#define await%0\32; _PP@TASK_OUT%0%=_PP@TASK_IN%=Task%0:_PP@TASK_CAST=
+
+#if defined PP_SYNTAX_GENERIC
+
+#define PP_TASK_TAG(%0) \
+    stock _PP@TASK_RESULT:operator%(_PP@TASK_RESULT:a, Task<%0>:t) return a, _PP@TASK_RESULT:t; \
+    stock %0:operator%(%0:a, _PP@TASK_RESULT:t) return a, %0:task_await(Task:t)
+
+stock _PP@TASK_RESULT:operator%(_PP@TASK_RESULT:a, Task<_>:t) return a, _PP@TASK_RESULT:t;
+PP_TASK_TAG(Float);
+PP_TASK_TAG(bool);
+PP_TASK_TAG(Variant);
+PP_TASK_TAG(ConstVariant);
+PP_TASK_TAG(String);
+PP_TASK_TAG(ConstString);
+PP_TASK_TAG(List);
+PP_TASK_TAG(Map);
+PP_TASK_TAG(Iter);
+PP_TASK_TAG(Handle);
+
+#endif
+
+#else
+
 #define await%0\32;%1; task_await%0(%1);
+
+#endif
 #endif
 
 #if defined PP_SYNTAX_YIELD
