@@ -1462,6 +1462,10 @@ native task_state:task_wait(Task:task);
 native task_await(Task:task);
 */
 stock task_await(Task:task) return task_wait(task), task_get_result(task);
+/*
+native task_await_arr(Task:task, AnyTag:result[], size=sizeof(result));
+*/
+stock task_await_arr(Task:task, AnyTag:result[], size=sizeof(result)) return task_wait(task), task_get_result_arr(task, result, size);
 native task_yield(AnyTag:value, TagTag:tag_id=tagof(value));
 native task_set_yielded(AnyTag:value);
 native task_get_yielded();
@@ -1516,6 +1520,9 @@ PP_TASK_TAG(Handle);
 #define await%0\32;%1; task_await%0(%1);
 
 #endif
+
+#define await_arr%0(%1)%2; task_await_arr%0(%2,%1);
+
 #endif
 
 #if defined PP_SYNTAX_YIELD
@@ -1525,6 +1532,7 @@ PP_TASK_TAG(Handle);
 #if defined PP_SYNTAX_ASYNC
 #define async%0Task%1:%2(%3) %0Task%1:%2(%3) if(!(task_detach_bound(task_new())&&task_set_yielded(task_bound())))return Task%1:INVALID_TASK;else
 #define return%0\32;async%1\32;%2; return%0 Task%1:(task_bound()?(task_set_result%1(Task%1:task_bound(),%2)):0);
+#define Task_arr%0: Task%0:
 #endif
 
 #if defined PP_SYNTAX_GENERIC
@@ -1551,6 +1559,7 @@ PP_TASK_TAG(Handle);
 #define task_reset<%0>(%1) task_reset(Task:_PP@CAST[Task<%0>](%1))
 #define task_wait<%0>(%1) task_wait(Task:_PP@CAST[Task<%0>](%1))
 #define task_await<%0>(%1) (%0:task_await(Task:_PP@CAST[Task<%0>](%1)))
+#define task_await_arr<%0>(%1,%2) task_await_arr(Task:_PP@CAST[Task<%0>](%1),_PP@CAST_ARR[%0](%2))
 #define task_yield<%0>(%1) task_yield(_PP@CAST[%0](%1))
 #define task_bind<%0>(%1) task_bind(Task:_PP@CAST[Task<%0>](%1))
 #define task_detach_bound<%0>(%1) task_detach_bound(Task:_PP@CAST[Task<%0>](%1))
