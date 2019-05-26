@@ -100,7 +100,7 @@ static func_ptr main_functions[] = {
 			errors::cannot_release,
 			errors::operation_not_supported,
 			errors::out_of_range,
-			errors::key_not_present,
+			errors::element_not_present,
 			errors::func_not_found,
 			errors::var_not_found,
 			errors::arg_empty,

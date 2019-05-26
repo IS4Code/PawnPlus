@@ -48,7 +48,7 @@ public:
 			{
 				return ValueFactory(amx, it->second, params[ValueIndices]...);
 			}
-			amx_LogicError(errors::key_not_present);
+			amx_LogicError(errors::element_not_present);
 			return 0;
 		}
 	};
@@ -113,7 +113,7 @@ public:
 			if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 			return obj.set_cell(params[3], params[4]);
 		}
-		amx_LogicError(errors::key_not_present);
+		amx_LogicError(errors::element_not_present);
 		return 0;
 	}
 
@@ -128,7 +128,7 @@ public:
 		{
 			return it->second.get_tag(amx);
 		}
-		amx_LogicError(errors::key_not_present);
+		amx_LogicError(errors::element_not_present);
 		return 0;
 	}
 
@@ -143,7 +143,7 @@ public:
 		{
 			return it->second.get_size();
 		}
-		amx_LogicError(errors::key_not_present);
+		amx_LogicError(errors::element_not_present);
 		return 0;
 	}
 };
@@ -169,7 +169,7 @@ public:
 		{
 			return ValueFactory(amx, it->first, params[ValueIndices]...);
 		}
-		amx_LogicError(errors::key_not_present);
+		amx_LogicError(errors::element_not_present);
 		return 0;
 	}
 
@@ -188,7 +188,7 @@ public:
 		{
 			return ValueFactory(amx, it->second, params[ValueIndices]...);
 		}
-		amx_LogicError(errors::key_not_present);
+		amx_LogicError(errors::element_not_present);
 		return 0;
 	}
 };

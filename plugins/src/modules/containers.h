@@ -5,6 +5,7 @@
 #include "objects/dyn_object.h"
 #include "utils/shared_id_set_pool.h"
 #include "utils/hybrid_map.h"
+#include "utils/linked_pool.h"
 #include "fixes/linux.h"
 
 #include "sdk/amx/amx.h"
@@ -184,6 +185,33 @@ public:
 		data.insert(position, first, last);
 		++revision;
 	}
+};
+
+class pool_t : public collection_base<aux::linked_pool<dyn_object>>
+{
+public:
+	dyn_object &operator[](size_t index)
+	{
+		return data[index];
+	}
+	const dyn_object &operator[](size_t index) const
+	{
+		return data[index];
+	}
+	iterator find(size_t index)
+	{
+		return data.find(index);
+	}
+	iterator erase(iterator position)
+	{
+		return data.erase(position);
+	}
+	void resize(size_t newsize)
+	{
+		data.resize(newsize);
+	}
+	size_t push_back(dyn_object &&value);
+	size_t push_back(const dyn_object &value);
 };
 
 class dyn_iterator
@@ -774,6 +802,7 @@ public:
 extern aux::shared_id_set_pool<list_t> list_pool;
 extern aux::shared_id_set_pool<map_t> map_pool;
 extern aux::shared_id_set_pool<linked_list_t> linked_list_pool;
+extern aux::shared_id_set_pool<pool_t> pool_pool;
 extern object_pool<dyn_iterator> iter_pool;
 extern object_pool<handle_t> handle_pool;
 

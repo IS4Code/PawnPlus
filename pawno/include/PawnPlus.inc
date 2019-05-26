@@ -1117,6 +1117,86 @@ native Iter:linked_list_iter(LinkedList:linked_list, index=0);
 
 
 /*                 */
+/*      Pools      */
+/*                 */
+
+const Pool:INVALID_POOL = Pool:0;
+
+native Pool:pool_new(size=-1);
+native bool:pool_valid(Pool:pool);
+native pool_delete(Pool:pool);
+native pool_delete_deep(Pool:pool);
+native pool_size(Pool:pool);
+native pool_clear(Pool:pool);
+native pool_clear_deep(Pool:pool);
+native Pool:pool_clone(Pool:pool);
+
+native pool_add(Pool:pool, AnyTag:value, TagTag:tag_id=tagof(value));
+native pool_add_arr(Pool:pool, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native pool_add_str(Pool:pool, const value[]);
+native pool_add_var(Pool:pool, ConstVariantTag:value);
+
+native bool:pool_remove(Pool:pool, index);
+native bool:pool_remove_deep(Pool:pool, index);
+
+native pool_get(Pool:pool, index, offset=0);
+native pool_get_arr(Pool:pool, index, AnyTag:value[], size=sizeof(value));
+native pool_get_str(Pool:pool, index, value[], size=sizeof(value)) = pool_get_arr;
+native String:pool_get_str_s(Pool:pool, index);
+native Variant:pool_get_var(Pool:pool, index);
+native bool:pool_get_safe(Pool:pool, index, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
+native pool_get_arr_safe(Pool:pool, index, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native pool_get_str_safe(Pool:pool, index, value[], size=sizeof(value));
+native String:pool_get_str_safe_s(Pool:pool, index);
+
+native pool_set(Pool:pool, index, AnyTag:value, TagTag:tag_id=tagof(value));
+native pool_set_arr(Pool:pool, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native pool_set_str(Pool:pool, index, const value[]);
+native pool_set_var(Pool:pool, index, ConstVariantTag:value);
+native pool_set_cell(Pool:pool, index, offset, AnyTag:value);
+native bool:pool_set_cell_safe(Pool:pool, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
+
+native pool_resize(Pool:pool, newsize);
+
+native pool_tagof(Pool:pool, index);
+native pool_sizeof(Pool:pool, index);
+
+native Iter:pool_iter(Pool:pool, index=0);
+
+#if defined PP_SYNTAX_GENERIC
+
+#define pool_new<%0>(%1) (Pool<%0>:pool_new(%1))
+#define pool_valid<%0>(%1) pool_valid(Pool:_PP@CAST[Pool<%0>](%1))
+#define pool_delete<%0>(%1) pool_delete(Pool:_PP@CAST[Pool<%0>](%1))
+#define pool_delete_deep<%0>(%1) pool_delete_deep(Pool:_PP@CAST[Pool<%0>](%1))
+#define pool_clone<%0>(%1) (Pool<%0>:pool_clone(Pool:_PP@CAST[Pool<%0>](%1)))
+#define pool_size<%0>(%1) pool_size(Pool:_PP@CAST[Pool<%0>](%1))
+#define pool_clear<%0>(%1) pool_clear(Pool:_PP@CAST[Pool<%0>](%1))
+
+#define pool_add<%0>(%1,%2) pool_add(Pool:_PP@CAST[Pool<%0>](%1),_PP@CAST[%0](%2))
+#define pool_add_arr<%0>(%1,%2) pool_add_arr(Pool:_PP@CAST[Pool<%0>](%1),_PP@CAST_ARR[%0](%2))
+#define pool_add_pool<%0>(%1,%2) pool_add_pool(Pool:_PP@CAST[Pool<%0>](%1),Pool:_PP@CAST[Pool<%0>](%2))
+#define pool_add_iter<%0>(%1,%2) pool_add_iter(Pool:_PP@CAST[Pool<%0>](%1),Iter:_PP@CAST[Iter<%0>](%2))
+#define pool_add_args_of<%0>(%1,%2) pool_add_args_t(_,Pool:_PP@CAST[Pool<%0>](%1),_PP@CAST[%0](%2))
+
+#define pool_remove<%0>(%1,%2) pool_remove(Pool:_PP@CAST[Pool<%0>](%1),%2)
+#define pool_remove_deep<%0>(%1,%2) pool_remove_deep(Pool:_PP@CAST[Pool<%0>](%1),%2)
+
+#define pool_get<%0>(%1,%2) (%0:pool_get(Pool:_PP@CAST[Pool<%0>](%1),%2))
+#define pool_get_arr<%0>(%1,%2,%3) pool_get_arr(Pool:_PP@CAST[Pool<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
+
+#define pool_set<%0>(%1,%2,%3) pool_set(Pool:_PP@CAST[Pool<%0>](%1),%2,_PP@CAST[%0](%3))
+#define pool_set_arr<%0>(%1,%2,%3) pool_set_arr(Pool:_PP@CAST[Pool<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
+#define pool_set_cell<%0>(%1,%2,%3,%4) pool_set_cell(Pool:_PP@CAST[Pool<%0>](%1),%2,%3,_PP@CAST[%0](%4))
+
+#define pool_sizeof<%0>(%1) pool_sizeof(Pool:_PP@CAST[Pool<%0>](%1))
+
+#define pool_iter<%0>(%1) (Iter<%0>:pool_iter(Pool:_PP@CAST[Pool<%0>](%1)))
+
+#endif
+
+
+/*                 */
 /*    Iterators    */
 /*                 */
 

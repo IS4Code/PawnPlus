@@ -162,6 +162,7 @@
     <ClCompile Include="src\natives\namx.cpp" />
     <ClCompile Include="src\natives\ndebug.cpp" />
     <ClCompile Include="src\natives\nthread.cpp" />
+    <ClCompile Include="src\natives\pool.cpp" />
     <ClCompile Include="src\natives\pp.cpp" />
     <ClCompile Include="src\natives\pawn.cpp" />
     <ClCompile Include="src\natives\str.cpp" />
@@ -225,8 +226,10 @@
     <ClInclude Include="src\objects\object_pool.h" />
     <ClInclude Include="src\objects\reset.h" />
     <ClInclude Include="src\objects\stored_param.h" />
+    <ClInclude Include="src\utils\block_pool.h" />
     <ClInclude Include="src\utils\func_pool.h" />
     <ClInclude Include="src\utils\hybrid_map.h" />
+    <ClInclude Include="src\utils\linked_pool.h" />
     <ClInclude Include="src\utils\optional.h" />
     <ClInclude Include="src\utils\linear_pool.h" />
     <ClInclude Include="src\utils\id_set_pool.h" />

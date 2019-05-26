@@ -113,6 +113,7 @@ int RegisterLinkedListNatives(AMX *amx);
 int RegisterHandleNatives(AMX *amx);
 int RegisterMathNatives(AMX *amx);
 int RegisterDebugNatives(AMX *amx);
+int RegisterPoolNatives(AMX *amx);
 
 inline int RegisterNatives(AMX *amx)
 {
@@ -131,6 +132,7 @@ inline int RegisterNatives(AMX *amx)
 	RegisterHandleNatives(amx);
 	RegisterMathNatives(amx);
 	RegisterDebugNatives(amx);
+	RegisterPoolNatives(amx);
 	return AMX_ERR_NONE;
 }
 

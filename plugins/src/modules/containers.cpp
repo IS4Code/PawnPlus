@@ -3,6 +3,7 @@
 aux::shared_id_set_pool<list_t> list_pool;
 aux::shared_id_set_pool<map_t> map_pool;
 aux::shared_id_set_pool<linked_list_t> linked_list_pool;
+aux::shared_id_set_pool<pool_t> pool_pool;
 object_pool<dyn_iterator> iter_pool;
 object_pool<handle_t> handle_pool;
 
@@ -194,6 +195,26 @@ bool linked_list_t::insert_dyn(iterator position, const std::type_info &type, co
 		return true;
 	}
 	return false;
+}
+
+
+
+size_t pool_t::push_back(dyn_object &&value)
+{
+	if(data.push_back(std::move(value)))
+	{
+		++revision;
+	}
+	return data.get_last_set();
+}
+
+size_t pool_t::push_back(const dyn_object &value)
+{
+	if(data.push_back(value))
+	{
+		++revision;
+	}
+	return data.get_last_set();
 }
 
 

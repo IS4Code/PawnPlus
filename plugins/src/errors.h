@@ -55,7 +55,7 @@ namespace errors
 	extern error cannot_release;
 	extern error operation_not_supported;
 	extern error out_of_range;
-	extern error key_not_present;
+	extern error element_not_present;
 	extern error func_not_found;
 	extern error var_not_found;
 	extern error arg_empty;

@@ -8,7 +8,7 @@ namespace errors
 	error cannot_release = "%s reference cannot be released (null, invalid, or local)";
 	error operation_not_supported = "this operation is not supported for the current state of the %s instance";
 	error out_of_range = "argument '%s' is out of range";
-	error key_not_present = "the key is not present in the map";
+	error element_not_present = "the element is not present in the collection";
 	error func_not_found = "%s function '%s' was not found";
 	error var_not_found = "%s variable '%s' was not found";
 	error arg_empty = "argument '%s' is empty";

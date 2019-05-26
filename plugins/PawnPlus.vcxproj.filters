@@ -136,6 +136,9 @@
     <ClCompile Include="src\natives\ndebug.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="src\natives\pool.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -307,6 +310,12 @@
     </ClInclude>
     <ClInclude Include="src\modules\debug.h">
       <Filter>src\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\linked_pool.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\block_pool.h">
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
