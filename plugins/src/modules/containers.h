@@ -210,6 +210,33 @@ public:
 	size_t push_back(const dyn_object &value);
 };
 
+namespace std
+{
+	template <>
+	inline void swap<list_t>(list_t &a, list_t &b) noexcept
+	{
+		a.swap(b);
+	}
+
+	template <>
+	inline void swap<map_t>(map_t &a, map_t &b) noexcept
+	{
+		a.swap(b);
+	}
+
+	template <>
+	inline void swap<linked_list_t>(linked_list_t &a, linked_list_t &b) noexcept
+	{
+		a.swap(b);
+	}
+
+	template <>
+	inline void swap<pool_t>(pool_t &a, pool_t &b) noexcept
+	{
+		a.swap(b);
+	}
+}
+
 class dyn_iterator
 {
 public:

@@ -920,7 +920,11 @@ struct variant_operations : public null_operations
 		dyn_object *var;
 		if(variants::pool.get_by_id(arg, var))
 		{
-			return variants::pool.get_id(variants::pool.add(var->clone()));
+			dyn_object tmp;
+			std::swap(*var, tmp);
+			cell clone = variants::pool.get_id(variants::pool.add(tmp.clone()));
+			std::swap(*var, tmp);
+			return clone;
 		}
 		return 0;
 	}
@@ -1158,11 +1162,14 @@ struct list_operations : public generic_operations<list_operations, tags::tag_li
 		list_t *l;
 		if(list_pool.get_by_id(arg, l))
 		{
+			list_t tmp;
+			std::swap(*l, tmp);
 			list_t *l2 = list_pool.add().get();
-			for(auto &obj : *l)
+			for(auto &obj : tmp)
 			{
 				l2->push_back(obj.clone());
 			}
+			std::swap(*l, tmp);
 			return list_pool.get_id(l2);
 		}
 		return 0;
@@ -1251,11 +1258,14 @@ struct linked_list_operations : public generic_operations<linked_list_operations
 		linked_list_t *l;
 		if(linked_list_pool.get_by_id(arg, l))
 		{
+			linked_list_t tmp;
+			std::swap(*l, tmp);
 			linked_list_t *l2 = linked_list_pool.add().get();
-			for(auto &obj : *l)
+			for(auto &obj : tmp)
 			{
 				l2->push_back(obj->clone());
 			}
+			std::swap(*l, tmp);
 			return linked_list_pool.get_id(l2);
 		}
 		return 0;
@@ -1345,11 +1355,14 @@ struct map_operations : public generic_operations<map_operations, tags::tag_map>
 		map_t *m;
 		if(map_pool.get_by_id(arg, m))
 		{
+			map_t tmp;
+			std::swap(*m, tmp);
 			map_t *m2 = map_pool.add().get();
-			for(auto &pair : *m)
+			for(auto &pair : tmp)
 			{
 				m2->insert(pair.first.clone(), pair.second.clone());
 			}
+			std::swap(*m, tmp);
 			return map_pool.get_id(m2);
 		}
 		return 0;
