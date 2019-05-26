@@ -458,13 +458,18 @@ namespace aux
 			return iterator(elem);
 		}
 
-		void resize(size_type newsize)
+		bool resize(size_type newsize)
 		{
 			auto size = data.size();
+			bool invalidate = false;
 			if(newsize > size)
 			{
 				auto rem = newsize - size;
-				data.reserve(newsize);
+				if(data.capacity() < newsize)
+				{
+					data.reserve(newsize);
+					invalidate = true;
+				}
 
 				if(last_unset == -1)
 				{
@@ -510,6 +515,7 @@ namespace aux
 				if(newsize == 0)
 				{
 					data.clear();
+					invalidate = first_set != -1;
 					first_set = last_set = first_unset = last_unset = -1;
 				}else{
 					for(size_type i = newsize; i < size; i++)
@@ -518,6 +524,7 @@ namespace aux
 						if(elem.assigned)
 						{
 							unlink<&linked_pool::first_set, &linked_pool::last_set>(elem);
+							invalidate = true;
 						}else{
 							unlink<&linked_pool::first_unset, &linked_pool::last_unset>(elem);
 						}
@@ -525,6 +532,7 @@ namespace aux
 					data.erase(data.begin() + newsize, data.end());
 				}
 			}
+			return invalidate;
 		}
 
 		size_type size() const

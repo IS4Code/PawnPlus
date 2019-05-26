@@ -517,6 +517,16 @@ namespace aux
 			}
 		}
 
+		size_type capacity() const
+		{
+			if(ordered)
+			{
+				return -1;
+			}else{
+				return static_cast<size_type>(umap.bucket_count() * umap.max_load_factor());
+			}
+		}
+
 		void clear()
 		{
 			if(ordered)

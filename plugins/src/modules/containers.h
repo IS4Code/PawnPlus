@@ -59,8 +59,11 @@ public:
 
 	void clear()
 	{
-		data.clear();
-		++revision;
+		if(data.size() > 0)
+		{
+			data.clear();
+			++revision;
+		}
 	}
 
 	iterator erase(iterator position)
@@ -202,14 +205,7 @@ public:
 	{
 		return data.find(index);
 	}
-	iterator erase(iterator position)
-	{
-		return data.erase(position);
-	}
-	void resize(size_t newsize)
-	{
-		data.resize(newsize);
-	}
+	void resize(size_t newsize);
 	size_t push_back(dyn_object &&value);
 	size_t push_back(const dyn_object &value);
 };

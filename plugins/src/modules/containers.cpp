@@ -9,27 +9,43 @@ object_pool<handle_t> handle_pool;
 
 void list_t::push_back(dyn_object &&value)
 {
+	bool invalidate = data.size() == data.capacity();
 	data.push_back(std::move(value));
-	++revision;
+	if(invalidate)
+	{
+		++revision;
+	}
 }
 
 void list_t::push_back(const dyn_object &value)
 {
+	bool invalidate = data.size() == data.capacity();
 	data.push_back(value);
-	++revision;
+	if(invalidate)
+	{
+		++revision;
+	}
 }
 
 auto list_t::insert(iterator position, dyn_object &&value) -> iterator
 {
+	bool invalidate = position == data.end() ? data.size() == data.capacity() : true;
 	auto it = data.insert(position, std::move(value));
-	++revision;
+	if(invalidate)
+	{
+		++revision;
+	}
 	return it;
 }
 
 auto list_t::insert(iterator position, const dyn_object &value) -> iterator
 {
+	bool invalidate = position == data.end() ? data.size() == data.capacity() : true;
 	auto it = data.insert(position, value);
-	++revision;
+	if(invalidate)
+	{
+		++revision;
+	}
 	return it;
 }
 
@@ -55,30 +71,53 @@ bool list_t::insert_dyn(iterator position, const std::type_info &type, const voi
 
 void list_t::resize(size_t count)
 {
+	bool invalidate = count < data.size() || count > data.capacity();
 	data.resize(count);
+	if(invalidate)
+	{
+		++revision;
+	}
 }
 
 void list_t::resize(size_t count, const dyn_object &value)
 {
+	bool invalidate = count < data.size() || count > data.capacity();
 	data.resize(count, value);
+	if(invalidate)
+	{
+		++revision;
+	}
 }
 
 
 
 dyn_object &map_t::operator[](const dyn_object &key)
 {
-	return data[key];
+	bool invalidate = data.size() == data.capacity();
+	auto pair = data.emplace(std::piecewise_construct, std::forward_as_tuple(key), std::forward_as_tuple());
+	if(pair.second && invalidate)
+	{
+		++revision;
+	}
+	return pair.first->second;
 }
 
 dyn_object &map_t::operator[](dyn_object &&key)
 {
-	return data[std::move(key)];
+	bool invalidate = data.size() == data.capacity();
+	auto pair = data.emplace(std::piecewise_construct, std::forward_as_tuple(std::move(key)), std::forward_as_tuple());
+	if(pair.second && invalidate)
+	{
+		++revision;
+	}
+	return pair.first->second;
 }
 
 auto map_t::insert(const dyn_object &key, dyn_object const &value) -> std::pair<iterator, bool>
 {
+	bool invalidate = data.size() == data.capacity();
 	auto pair = data.emplace(key, value);
-	if(pair.second)
+	if(pair.second && invalidate)
 	{
 		++revision;
 	}
@@ -87,8 +126,9 @@ auto map_t::insert(const dyn_object &key, dyn_object const &value) -> std::pair<
 
 auto map_t::insert(const dyn_object &key, dyn_object &&value) -> std::pair<iterator, bool>
 {
+	bool invalidate = data.size() == data.capacity();
 	auto pair = data.emplace(key, std::move(value));
-	if(pair.second)
+	if(pair.second && invalidate)
 	{
 		++revision;
 	}
@@ -97,8 +137,9 @@ auto map_t::insert(const dyn_object &key, dyn_object &&value) -> std::pair<itera
 
 auto map_t::insert(dyn_object &&key, const dyn_object &value) -> std::pair<iterator, bool>
 {
+	bool invalidate = data.size() == data.capacity();
 	auto pair = data.emplace(std::move(key), value);
-	if(pair.second)
+	if(pair.second && invalidate)
 	{
 		++revision;
 	}
@@ -107,8 +148,9 @@ auto map_t::insert(dyn_object &&key, const dyn_object &value) -> std::pair<itera
 
 auto map_t::insert(dyn_object &&key, dyn_object &&value) -> std::pair<iterator, bool>
 {
+	bool invalidate = data.size() == data.capacity();
 	auto pair = data.emplace(std::move(key), std::move(value));
-	if(pair.second)
+	if(pair.second && invalidate)
 	{
 		++revision;
 	}
@@ -198,6 +240,14 @@ bool linked_list_t::insert_dyn(iterator position, const std::type_info &type, co
 }
 
 
+
+void pool_t::resize(size_t newsize)
+{
+	if(data.resize(newsize))
+	{
+		++revision;
+	}
+}
 
 size_t pool_t::push_back(dyn_object &&value)
 {
