@@ -193,7 +193,7 @@ struct format_base
 				}
 				if(argi >= argc)
 				{
-					throw errors::end_of_arguments_error(args, argn + 1);
+					throw errors::end_of_arguments_error(args, argi + 1);
 				}
 				return *get_arg(argi);
 			}
