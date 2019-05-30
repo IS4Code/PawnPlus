@@ -317,6 +317,12 @@
     <ClInclude Include="src\utils\block_pool.h">
       <Filter>src\utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\utils\hybrid_pool.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\hybrid_cont.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />

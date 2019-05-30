@@ -253,6 +253,7 @@ const tag_uid:tag_uid_handle = tag_uid:17;
 const tag_uid:tag_uid_symbol = tag_uid:18;
 const tag_uid:tag_uid_signed = tag_uid:19;
 const tag_uid:tag_uid_unsigned = tag_uid:20;
+const tag_uid:tag_uid_pool = tag_uid:21;
 
 const TAG_EXPORTED = 0x80000000;
 const TAG_STRONG = 0x40000000;
@@ -1129,6 +1130,8 @@ native pool_delete_deep(Pool:pool);
 native pool_size(Pool:pool);
 native pool_clear(Pool:pool);
 native pool_clear_deep(Pool:pool);
+native pool_set_ordered(Pool:pool, bool:ordered);
+native bool:pool_is_ordered(Pool:pool);
 native Pool:pool_clone(Pool:pool);
 
 native pool_add(Pool:pool, AnyTag:value, TagTag:tag_id=tagof(value));

@@ -152,6 +152,7 @@ namespace tags
 	constexpr const cell tag_symbol = 18;
 	constexpr const cell tag_signed = 19;
 	constexpr const cell tag_unsigned = 20;
+	constexpr const cell tag_pool = 21;
 
 	tag_ptr find_tag(const char *name, size_t sublen=-1);
 	tag_ptr find_tag(AMX *amx, cell tag_id);

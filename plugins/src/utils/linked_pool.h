@@ -38,7 +38,13 @@ namespace aux
 
 			}
 
-			element_type(const element_type &obj) = delete;
+			element_type(const element_type &obj) : assigned(obj.assigned), next(obj.next), previous(obj.previous)
+			{
+				if(assigned)
+				{
+					new (&value) Type(obj.value);
+				}
+			}
 
 			element_type(element_type &&obj) noexcept(noexcept(new(nullptr) Type(std::move(obj.value)))) : assigned(obj.assigned), next(obj.next), previous(obj.previous)
 			{
@@ -48,7 +54,26 @@ namespace aux
 				}
 			}
 
-			element_type &operator=(const element_type &obj) = delete;
+			element_type &operator=(const element_type &obj)
+			{
+				if(this != &obj)
+				{
+					if(assigned && obj.assigned)
+					{
+						value = obj.value;
+					}else if(assigned)
+					{
+						value.~Type();
+					}else if(obj.assigned)
+					{
+						new (&value) Type(obj.value);
+					}
+					assigned = obj.assigned;
+					next = obj.next;
+					previous = obj.previous;
+				}
+				return *this;
+			}
 
 			element_type &operator=(element_type &&obj)
 			{
@@ -60,7 +85,8 @@ namespace aux
 					}else if(assigned)
 					{
 						value.~Type();
-					}else{
+					}else if(obj.assigned)
+					{
 						new (&value) Type(std::move(obj.value));
 					}
 					assigned = obj.assigned;
@@ -276,20 +302,13 @@ namespace aux
 
 		}
 
-		linked_pool(const linked_pool &obj) : data(obj.data)
+		linked_pool(const linked_pool &obj) : data(obj.data), first_set(obj.first_set), last_set(obj.last_set), first_unset(obj.first_unset), last_unset(obj.last_unset)
 		{
-			first_set = obj.first_set;
-			last_set = obj.last_set;
-			first_unset = obj.first_unset;
-			last_unset = obj.last_unset;
+
 		}
 
-		linked_pool(linked_pool &&obj) : data(std::move(obj.data))
+		linked_pool(linked_pool &&obj) : data(std::move(obj.data)), first_set(obj.first_set), last_set(obj.last_set), first_unset(obj.first_unset), last_unset(obj.last_unset)
 		{
-			first_set = obj.first_set;
-			last_set = obj.last_set;
-			first_unset = obj.first_unset;
-			last_unset = obj.last_unset;
 			obj.data.clear();
 			obj.first_set = obj.last_set = obj.first_unset = obj.last_unset = -1;
 		}
@@ -349,11 +368,6 @@ namespace aux
 			bool resized;
 			new (&allocate(resized)) Type(value);
 			return resized;
-		}
-
-		size_t get_first_set() const
-		{
-			return first_set;
 		}
 
 		size_t get_last_set() const
@@ -455,7 +469,7 @@ namespace aux
 				new (&elem.value) Type(std::move(value));
 				link<&linked_pool::first_set, &linked_pool::last_set>(elem, index);
 			}
-			return iterator(elem);
+			return iterator(&elem);
 		}
 
 		bool resize(size_type newsize)
@@ -538,6 +552,11 @@ namespace aux
 		size_type size() const
 		{
 			return data.size();
+		}
+
+		size_type index_of(iterator it) const
+		{
+			return it.elem - &data[0];
 		}
 	};
 }

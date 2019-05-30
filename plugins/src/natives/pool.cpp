@@ -158,6 +158,23 @@ namespace Natives
 		return 1;
 	}
 
+	// native pool_set_ordered(Pool:pool, bool:ordered);
+	AMX_DEFINE_NATIVE(pool_set_ordered, 2)
+	{
+		pool_t *ptr;
+		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
+		ptr->set_ordered(params[2]);
+		return 1;
+	}
+
+	// native bool:pool_is_ordered(Pool:pool);
+	AMX_DEFINE_NATIVE(pool_is_ordered, 1)
+	{
+		pool_t *ptr;
+		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
+		return ptr->ordered();
+	}
+
 	// native pool_add(Pool:pool, AnyTag:value, TagTag:tag_id=tagof(value));
 	AMX_DEFINE_NATIVE(pool_add, 3)
 	{
@@ -342,6 +359,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pool_valid),
 	AMX_DECLARE_NATIVE(pool_delete),
 	AMX_DECLARE_NATIVE(pool_delete_deep),
+	AMX_DECLARE_NATIVE(pool_set_ordered),
+	AMX_DECLARE_NATIVE(pool_is_ordered),
 	AMX_DECLARE_NATIVE(pool_clone),
 	AMX_DECLARE_NATIVE(pool_size),
 	AMX_DECLARE_NATIVE(pool_clear),

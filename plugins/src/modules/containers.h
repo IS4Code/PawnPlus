@@ -5,7 +5,7 @@
 #include "objects/dyn_object.h"
 #include "utils/shared_id_set_pool.h"
 #include "utils/hybrid_map.h"
-#include "utils/linked_pool.h"
+#include "utils/hybrid_pool.h"
 #include "fixes/linux.h"
 
 #include "sdk/amx/amx.h"
@@ -190,7 +190,7 @@ public:
 	}
 };
 
-class pool_t : public collection_base<aux::linked_pool<dyn_object>>
+class pool_t : public collection_base<aux::hybrid_pool<dyn_object, 4>>
 {
 public:
 	dyn_object &operator[](size_t index)
@@ -208,6 +208,17 @@ public:
 	void resize(size_t newsize);
 	size_t push_back(dyn_object &&value);
 	size_t push_back(const dyn_object &value);
+
+	void set_ordered(bool ordered)
+	{
+		data.set_ordered(ordered);
+		++revision;
+	}
+
+	bool ordered() const
+	{
+		return data.is_ordered();
+	}
 };
 
 namespace std

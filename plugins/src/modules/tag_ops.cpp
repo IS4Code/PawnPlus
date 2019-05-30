@@ -1674,6 +1674,102 @@ struct symbol_operations : public null_operations
 	}
 };
 
+struct pool_operations : public generic_operations<pool_operations, tags::tag_pool>
+{
+	pool_operations() : generic_operations()
+	{
+
+	}
+
+	pool_operations(tag_ptr element) : generic_operations(element)
+	{
+
+	}
+
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
+	{
+		return a == b;
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		pool_t *l;
+		return !pool_pool.get_by_id(a, l);
+	}
+
+	virtual char format_spec(tag_ptr tag, bool arr) const override
+	{
+		return arr ? 'a' : 'l';
+	}
+
+	virtual bool del(tag_ptr tag, cell arg) const override
+	{
+		pool_t *l;
+		if(pool_pool.get_by_id(arg, l))
+		{
+			return pool_pool.remove(l);
+		}
+		return false;
+	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<pool_t> l;
+		if(pool_pool.get_by_id(arg, l))
+		{
+			return l;
+		}
+		return {};
+	}
+
+	virtual bool release(tag_ptr tag, cell arg) const override
+	{
+		pool_t *l;
+		if(pool_pool.get_by_id(arg, l))
+		{
+			pool_t old;
+			l->swap(old);
+			pool_pool.remove(l);
+			for(auto &obj : old)
+			{
+				obj.release();
+			}
+			return true;
+		}
+		return false;
+	}
+
+	virtual cell copy(tag_ptr tag, cell arg) const override
+	{
+		pool_t *l;
+		if(pool_pool.get_by_id(arg, l))
+		{
+			pool_t *l2 = pool_pool.add().get();
+			*l2 = *l;
+			return pool_pool.get_id(l2);
+		}
+		return 0;
+	}
+
+	virtual cell clone(tag_ptr tag, cell arg) const override
+	{
+		pool_t *l;
+		if(pool_pool.get_by_id(arg, l))
+		{
+			pool_t tmp;
+			std::swap(*l, tmp);
+			pool_t *l2 = pool_pool.add().get();
+			for(auto &obj : tmp)
+			{
+				l2->push_back(obj.clone());
+			}
+			std::swap(*l, tmp);
+			return pool_pool.get_id(l2);
+		}
+		return 0;
+	}
+};
+
 static const null_operations unknown_ops(tags::tag_unknown);
 
 std::vector<std::unique_ptr<tag_info>> tag_list([]()
@@ -1681,8 +1777,8 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	std::vector<std::unique_ptr<tag_info>> v;
 	auto unknown = std::make_unique<tag_info>(0, "{...}", nullptr, std::make_unique<null_operations>(tags::tag_unknown));
 	auto unknown_tag = unknown.get();
-	auto string_const = std::make_unique<tag_info>(21, "String@Const", unknown_tag, std::make_unique<string_operations>());
-	auto variant_const = std::make_unique<tag_info>(22, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
+	auto string_const = std::make_unique<tag_info>(22, "String@Const", unknown_tag, std::make_unique<string_operations>());
+	auto variant_const = std::make_unique<tag_info>(23, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
 	v.push_back(std::move(unknown));
 	v.push_back(std::make_unique<tag_info>(1, "", unknown_tag, std::make_unique<cell_operations>(tags::tag_cell)));
 	v.push_back(std::make_unique<tag_info>(2, "bool", unknown_tag, std::make_unique<bool_operations>()));
@@ -1704,9 +1800,10 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::make_unique<tag_info>(18, "Symbol", unknown_tag, std::make_unique<symbol_operations>()));
 	v.push_back(std::make_unique<tag_info>(19, "signed", unknown_tag, std::make_unique<cell_operations>(tags::tag_signed)));
 	v.push_back(std::make_unique<tag_info>(20, "unsigned", unknown_tag, std::make_unique<unsigned_operations>()));
+	v.push_back(std::make_unique<tag_info>(21, "Pool", unknown_tag, std::make_unique<pool_operations>()));
 	v.push_back(std::move(string_const));
 	v.push_back(std::move(variant_const));
-	v.push_back(std::make_unique<tag_info>(23, "char@", v[3].get(), std::make_unique<char_operations>()));
+	v.push_back(std::make_unique<tag_info>(24, "char@", v[3].get(), std::make_unique<char_operations>()));
 	return v;
 }());
 
