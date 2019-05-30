@@ -15,9 +15,9 @@ namespace aux
 	{
 	public:
 		typedef typename std::vector<Type>::size_type size_type;
-		typedef typename Type &reference;
-		typedef typename const Type &const_reference;
-		typedef typename Type value_type;
+		typedef Type &reference;
+		typedef const Type &const_reference;
+		typedef Type value_type;
 
 	private:
 		struct element_type;

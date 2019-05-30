@@ -233,9 +233,9 @@ namespace aux
 		{
 			if(ordered)
 			{
-				return bpool.emplace_back<Args...>(std::forward<Args>(args)...);
+				return bpool.emplace_back(std::forward<Args>(args)...);
 			}else{
-				return lpool.emplace_back<Args...>(std::forward<Args>(args)...);
+				return lpool.emplace_back(std::forward<Args>(args)...);
 			}
 		}
 

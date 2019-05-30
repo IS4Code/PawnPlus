@@ -16,6 +16,7 @@
 #include "sdk/plugincommon.h"
 
 #include <list>
+#include <limits>
 
 logprintf_t logprintf;
 extern void *pAMXFunctions;
@@ -142,7 +143,7 @@ int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index)
 	int ret = amx_FindPublic(amx, funcname, index);
 	if(public_min_index != -1 && ret == AMX_ERR_NONE && index && *index < public_min_index)
 	{
-		*index = INT_MAX;
+		*index = std::numeric_limits<int>::max();
 		return AMX_ERR_NOTFOUND;
 	}
 	return ret;
