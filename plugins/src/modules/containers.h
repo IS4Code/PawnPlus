@@ -209,6 +209,16 @@ public:
 	size_t push_back(dyn_object &&value);
 	size_t push_back(const dyn_object &value);
 
+	size_t index_of(iterator it) const
+	{
+		return data.index_of(it);
+	}
+
+	iterator last_iter()
+	{
+		return data.last_iter();
+	}
+
 	void set_ordered(bool ordered)
 	{
 		data.set_ordered(ordered);
@@ -218,6 +228,16 @@ public:
 	bool ordered() const
 	{
 		return data.is_ordered();
+	}
+
+	bool insert_dyn(iterator position, const std::type_info &type, void *value, iterator &result)
+	{
+		return false;
+	}
+
+	bool insert_dyn(iterator position, const std::type_info &type, const void *value, iterator &result)
+	{
+		return false;
 	}
 };
 
@@ -737,6 +757,77 @@ public:
 	{
 		return this;
 	}
+};
+
+class pool_iterator_t : public iterator_impl<pool_t>
+{
+public:
+	pool_iterator_t()
+	{
+
+	}
+
+	pool_iterator_t(const std::shared_ptr<pool_t> source) : iterator_impl(source)
+	{
+
+	}
+
+	pool_iterator_t(const std::shared_ptr<pool_t> source, iterator position) : iterator_impl(source, position)
+	{
+
+	}
+
+	pool_iterator_t(const pool_iterator_t &iter) : iterator_impl(iter)
+	{
+
+	}
+
+	virtual bool move_previous() override
+	{
+		if(auto source = lock_same())
+		{
+			if(_position == source->end())
+			{
+				return false;
+			}else if(_position == source->begin())
+			{
+				_position = source->end();
+				_inside = false;
+				return false;
+			}
+			--_position;
+			return true;
+		}
+		return false;
+	}
+
+	virtual bool set_to_last() override
+	{
+		if(auto source = _source.lock())
+		{
+			_revision = source->get_revision();
+			_position = source->last_iter();
+			if(_position != source->end())
+			{
+				_inside = true;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	virtual std::unique_ptr<dyn_iterator> clone() const override
+	{
+		return std::make_unique<pool_iterator_t>(*this);
+	}
+
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
+	{
+		return std::make_shared<pool_iterator_t>(*this);
+	}
+
+protected:
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
 };
 
 class handle_t

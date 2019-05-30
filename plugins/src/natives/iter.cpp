@@ -1039,6 +1039,29 @@ namespace Natives
 		return iter_pool.get_id(iter_pool.emplace_derived<variant_iterator>(ptr));
 	}
 
+	// native Iter:pool_iter(Pool:pool, index=0);
+	AMX_DEFINE_NATIVE(pool_iter, 1)
+	{
+		std::shared_ptr<pool_t> ptr;
+		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
+
+		auto &iter = iter_pool.emplace_derived<pool_iterator_t>(ptr);
+		cell index = optparam(2, 0);
+		if(index < 0)
+		{
+			iter->reset();
+		}else{
+			for(cell i = 0; i < index; i++)
+			{
+				if(!iter->move_next())
+				{
+					break;
+				}
+			}
+		}
+		return iter_pool.get_id(iter);
+	}
+
 	// native bool:iter_valid(IterTag:iter);
 	AMX_DEFINE_NATIVE(iter_valid, 1)
 	{
@@ -1824,6 +1847,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_iter_at_var),
 	AMX_DECLARE_NATIVE(linked_list_iter),
 	AMX_DECLARE_NATIVE(var_iter),
+	AMX_DECLARE_NATIVE(pool_iter),
 
 	AMX_DECLARE_NATIVE(iter_valid),
 	AMX_DECLARE_NATIVE(iter_acquire),

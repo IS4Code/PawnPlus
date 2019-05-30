@@ -639,3 +639,31 @@ bool linked_list_iterator_t::insert_dyn(const std::type_info &type, const void *
 	}
 	return false;
 }
+
+bool pool_iterator_t::extract_dyn(const std::type_info &type, void *value) const
+{
+	if(valid())
+	{
+		if(type == typeid(value_type*))
+		{
+			*reinterpret_cast<value_type**>(value) = &*_position;
+			return true;
+		}else if(type == typeid(const value_type*))
+		{
+			*reinterpret_cast<const value_type**>(value) = &*_position;
+			return true;
+		}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
+		{
+			if(auto source = lock_same())
+			{
+				if(_position != source->end())
+				{
+					auto fake_pair = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(source->index_of(_position), tags::find_tag(tags::tag_cell)), *_position));
+					*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::move(fake_pair);
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}

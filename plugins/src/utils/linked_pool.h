@@ -356,6 +356,16 @@ namespace aux
 			return iterator();
 		}
 
+		iterator last_iter()
+		{
+			if(last_set != -1)
+			{
+				return iterator(&data[last_set]);
+			}else{
+				return iterator();
+			}
+		}
+
 		bool push_back(Type &&value)
 		{
 			bool resized;

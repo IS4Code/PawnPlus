@@ -30,6 +30,7 @@ const PP_VERSION = 0x101;
 #define PP_SYNTAX_GENERIC
 #define PP_SYNTAX_AMX_PARALLEL
 #define PP_SYNTAX_ASYNC
+#define PP_SYNTAX_FOR_POOL
 #endif
 
 #define ConstString String@Const
@@ -1423,6 +1424,10 @@ native iter_value_rank(IterTag:iter) = iter_rank;
 #define for_linked_list_of<%2>(%0:%1) for(new Iter<%2>:%0=linked_list_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
 #endif
 
+#if defined PP_SYNTAX_FOR_POOL
+#define for_pool_of<%2>(%0:%1) for(new Iter<%2>:%0=pool_iter<%2>(%1);iter_inside(Iter:%0);iter_move_next(Iter:%0))
+#endif
+
 #endif
 
 #if defined PP_SYNTAX_FOR_LIST
@@ -1435,6 +1440,10 @@ native iter_value_rank(IterTag:iter) = iter_rank;
 
 #if defined PP_SYNTAX_FOR_LINKED_LIST
 #define for_linked_list(%0:%1) for(new Iter:%0=linked_list_iter(%1);iter_inside(%0);iter_move_next(%0))
+#endif
+
+#if defined PP_SYNTAX_FOR_POOL
+#define for_pool(%0:%1) for(new Iter:%0=pool_iter(%1);iter_inside(%0);iter_move_next(%0))
 #endif
 
 
