@@ -13,6 +13,7 @@ extern logprintf_t logprintf;
 extern thread_local bool is_main_thread;
 
 extern int public_min_index;
+extern bool use_funcidx;
 
 template <class... Args>
 int logerror(AMX *amx, int error, const char *format, Args&&... args)

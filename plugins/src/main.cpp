@@ -137,14 +137,31 @@ unsigned char *amx_GetData(AMX *amx)
 }
 
 int public_min_index = -1;
+bool use_funcidx = false;
 
 int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index)
 {
-	int ret = amx_FindPublic(amx, funcname, index);
-	if(public_min_index != -1 && ret == AMX_ERR_NONE && index && *index < public_min_index)
+	if(use_funcidx && index)
 	{
-		*index = std::numeric_limits<int>::max();
-		return AMX_ERR_NOTFOUND;
+		auto native = amx::find_native(amx, "funcidx");
+		if(!native)
+		{
+			return AMX_ERR_NOTFOUND;
+		}
+		*index = amx::call_native(amx, native, funcname);
+		if(*index == -1)
+		{
+			*index = std::numeric_limits<int>::max();
+			return AMX_ERR_NOTFOUND;
+		}
+		return AMX_ERR_NONE;
+	}else{
+		int ret = amx_FindPublic(amx, funcname, index);
+		if(public_min_index != -1 && ret == AMX_ERR_NONE && index && *index < public_min_index)
+		{
+			*index = std::numeric_limits<int>::max();
+			return AMX_ERR_NOTFOUND;
+		}
+		return ret;
 	}
-	return ret;
 }
