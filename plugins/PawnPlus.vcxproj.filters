@@ -139,6 +139,9 @@
     <ClCompile Include="src\natives\pool.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\serialize.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -322,6 +325,9 @@
     </ClInclude>
     <ClInclude Include="src\utils\hybrid_cont.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\serialize.h">
+      <Filter>src\modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

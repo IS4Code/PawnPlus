@@ -109,6 +109,16 @@ namespace pp
 		{
 			return get<void*()>(13)();
 		}
+
+		bool serialize_value(cell value, void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie)
+		{
+			return get<cell(cell value, void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie)>(14)(value, tag, binary_writer, binary_writer_cookie, object_writer, object_writer_cookie);
+		}
+
+		bool deserialize_value(cell &value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie)
+		{
+			return get<cell(cell *value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie)>(15)(&value, tag, binary_reader, binary_reader_cookie, object_reader, object_reader_cookie);
+		}
 	};
 
 	class tag_table : public api_table

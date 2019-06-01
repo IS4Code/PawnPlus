@@ -5,6 +5,7 @@
 #include "containers.h"
 #include "strings.h"
 #include "tasks.h"
+#include "serialize.h"
 #include "errors.h"
 #include "natives.h"
 
@@ -131,6 +132,14 @@ static func_ptr main_functions[] = {
 			return nullptr;
 		}
 		return obj->dbg.get();
+	},
+	+[]/*serialize*/(cell value, void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie) -> cell
+	{
+		return serialize_value(value, static_cast<tag_ptr>(tag), binary_writer, binary_writer_cookie, object_writer, object_writer_cookie);
+	},
+	+[]/*deserialize*/(cell *value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie) -> cell
+	{
+		return deserialize_value(*value, static_cast<tag_ptr>(tag), binary_reader, binary_reader_cookie, object_reader, object_reader_cookie);
 	},
 	nullptr
 };
