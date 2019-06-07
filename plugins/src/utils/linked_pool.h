@@ -459,16 +459,23 @@ namespace aux
 
 		iterator find(size_type index)
 		{
-			auto &elem = data[index];
-			if(elem.assigned)
+			if(index < data.size())
 			{
-				return iterator(&elem);
+				auto &elem = data[index];
+				if(elem.assigned)
+				{
+					return iterator(&elem);
+				}
 			}
 			return iterator();
 		}
 
 		iterator insert_or_set(size_type index, Type &&value)
 		{
+			if(index >= data.size())
+			{
+				resize(index + 1);
+			}
 			auto &elem = data[index];
 			if(elem.assigned)
 			{

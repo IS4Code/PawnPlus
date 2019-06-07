@@ -464,6 +464,10 @@ namespace aux
 					if(index < offset + block_size)
 					{
 						auto &sub = block.blocks[i];
+						if(!sub)
+						{
+							sub = std::make_unique<block_info>(block);
+						}
 						return iter_add(*sub, offset, index, level - 1, std::move(value));
 					}
 					offset += block_size;
@@ -471,7 +475,7 @@ namespace aux
 			}else{
 				auto &elem = data[index];
 				elem.assigned = true;
-				elem.value = std::move(value);
+				new (&elem.value) dyn_object(std::move(value));
 				return iterator(&elem, &block, index - offset);
 			}
 			throw nullptr;
@@ -628,22 +632,44 @@ namespace aux
 
 		iterator find(size_type index)
 		{
-			auto &elem = data[index];
-			if(elem.assigned)
+			if(index < data.size())
 			{
-				return iter_for(*block, 0, index, level);
+				auto &elem = data[index];
+				if(elem.assigned)
+				{
+					return iter_for(*block, 0, index, level);
+				}
 			}
 			return iterator();
 		}
 
 		iterator insert_or_set(size_type index, Type &&value)
 		{
+			if(index >= data.size())
+			{
+				resize(index + 1);
+				size_type pad = BlockSize - data.size() % BlockSize;
+				if(pad < BlockSize)
+				{
+					for(size_type i = 0; i < pad; i++)
+					{
+						data.emplace_back();
+					}
+				}
+			}
 			auto &elem = data[index];
 			if(elem.assigned)
 			{
 				elem.value = std::move(value);
 				return iter_for(*block, 0, index, level);
 			}else{
+				auto range = static_cast<size_t>(std::pow(BlockSize, level + 1));
+				while(index >= range)
+				{
+					block = std::make_unique<block_info>(std::move(block));
+					++level;
+					range *= BlockSize;
+				}
 				return iter_add(*block, 0, index, level, std::move(value));
 			}
 		}

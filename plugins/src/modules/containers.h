@@ -205,6 +205,10 @@ public:
 	{
 		return data.find(index);
 	}
+	iterator insert_or_set(size_t index, dyn_object &&value)
+	{
+		return data.insert_or_set(index, std::move(value));
+	}
 	void resize(size_t newsize);
 	size_t push_back(dyn_object &&value);
 	size_t push_back(const dyn_object &value);

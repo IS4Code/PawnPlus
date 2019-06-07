@@ -19,8 +19,7 @@ public:
 	{
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		ptr->push_back(Factory(amx, params[Indices]...));
-		return static_cast<cell>(ptr->size() - 1);
+		return static_cast<cell>(ptr->push_back(Factory(amx, params[Indices]...)));
 	}
 
 	// native pool_set(Pool:pool, index, value);
@@ -31,8 +30,7 @@ public:
 		if(index < 0) amx_LogicError(errors::out_of_range, "pool index");
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		if(static_cast<ucell>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "pool index");
-		(*ptr)[index] = Factory(amx, params[Indices]...);
+		ptr->insert_or_set(index, Factory(amx, params[Indices]...));
 		return 1;
 	}
 
@@ -44,7 +42,6 @@ public:
 		if(index < 0) amx_LogicError(errors::out_of_range, "pool index");
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		if(static_cast<ucell>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "pool index");
 		auto it = ptr->find(index);
 		if(it == ptr->end()) amx_LogicError(errors::element_not_present);
 		return Factory(amx, *it, params[Indices]...);
@@ -59,15 +56,16 @@ static cell AMX_NATIVE_CALL pool_set_cell(AMX *amx, cell *params)
 	if(params[3] < 0) amx_LogicError(errors::out_of_range, "array offset");
 	pool_t *ptr;
 	if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-	if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "pool index");
-	auto &obj = (*ptr)[params[2]];
+	auto it = ptr->find(params[2]);
+	if(it == ptr->end()) amx_LogicError(errors::element_not_present);
+	auto &obj = *it;
 	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 	return obj.set_cell({params[3]}, params[4]);
 }
 
 namespace Natives
 {
-	// native Pool:pool_new(size=-1);
+	// native Pool:pool_new(capacity=-1);
 	AMX_DEFINE_NATIVE(pool_new, 0)
 	{
 		cell size = optparam(1, -1);
@@ -126,8 +124,8 @@ namespace Natives
 		return pool_pool.get_id(l);
 	}
 
-	// native pool_size(Pool:pool);
-	AMX_DEFINE_NATIVE(pool_size, 1)
+	// native pool_capacity(Pool:pool);
+	AMX_DEFINE_NATIVE(pool_capacity, 1)
 	{
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
@@ -206,7 +204,6 @@ namespace Natives
 		if(index < 0) amx_LogicError(errors::out_of_range, "pool index");
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		if(static_cast<ucell>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "pool index");
 		auto it = ptr->find(index);
 		if(it != ptr->end())
 		{
@@ -223,8 +220,7 @@ namespace Natives
 		if(index < 0) amx_LogicError(errors::out_of_range, "pool index");
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		if(static_cast<ucell>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "pool index");
-
+		
 		auto it = ptr->find(index);
 		if(it != ptr->end())
 		{
@@ -233,6 +229,16 @@ namespace Natives
 			return 1;
 		}
 		return 0;
+	}
+
+
+	// native bool:pool_has(Pool:pool, index);
+	AMX_DEFINE_NATIVE(pool_has, 2)
+	{
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "pool index");
+		pool_t *ptr;
+		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
+		return ptr->find(params[2]) != ptr->end();
 	}
 
 	// native pool_get(Pool:pool, index, offset=0);
@@ -319,8 +325,8 @@ namespace Natives
 		return ::pool_set_cell<5>(amx, params);
 	}
 
-	// native pool_resize(Pool:pool, newsize);
-	AMX_DEFINE_NATIVE(pool_resize, 2)
+	// native pool_reserve(Pool:pool, newcapacity);
+	AMX_DEFINE_NATIVE(pool_reserve, 2)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "newsize");
 		pool_t *ptr;
@@ -336,8 +342,9 @@ namespace Natives
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "pool index");
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "pool index");
-		auto &obj = (*ptr)[params[2]];
+		auto it = ptr->find(params[2]);
+		if(it == ptr->end()) amx_LogicError(errors::element_not_present);
+		auto &obj = *it;
 		return obj.get_tag(amx);
 	}
 
@@ -347,8 +354,9 @@ namespace Natives
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "pool index");
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "pool index");
-		auto &obj = (*ptr)[params[2]];
+		auto it = ptr->find(params[2]);
+		if(it == ptr->end()) amx_LogicError(errors::element_not_present);
+		auto &obj = *it;
 		return obj.get_size();
 	}
 }
@@ -362,7 +370,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pool_set_ordered),
 	AMX_DECLARE_NATIVE(pool_is_ordered),
 	AMX_DECLARE_NATIVE(pool_clone),
-	AMX_DECLARE_NATIVE(pool_size),
+	AMX_DECLARE_NATIVE(pool_capacity),
 	AMX_DECLARE_NATIVE(pool_clear),
 	AMX_DECLARE_NATIVE(pool_clear_deep),
 
@@ -373,6 +381,8 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(pool_remove),
 	AMX_DECLARE_NATIVE(pool_remove_deep),
+
+	AMX_DECLARE_NATIVE(pool_has),
 
 	AMX_DECLARE_NATIVE(pool_get),
 	AMX_DECLARE_NATIVE(pool_get_arr),
@@ -390,7 +400,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pool_set_cell),
 	AMX_DECLARE_NATIVE(pool_set_cell_safe),
 
-	AMX_DECLARE_NATIVE(pool_resize),
+	AMX_DECLARE_NATIVE(pool_reserve),
 
 	AMX_DECLARE_NATIVE(pool_tagof),
 	AMX_DECLARE_NATIVE(pool_sizeof),
