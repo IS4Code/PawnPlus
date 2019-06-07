@@ -138,7 +138,11 @@ public:
 
 	void reserve(size_t count)
 	{
-		return data.reserve(count);
+		if(count > data.capacity())
+		{
+			++revision;
+		}
+		data.reserve(count);
 	}
 
 	size_t capacity() const
@@ -182,7 +186,8 @@ public:
 
 	void reserve(size_t count)
 	{
-		return data.reserve(count);
+		data.reserve(count);
+		++revision;
 	}
 
 	size_t capacity() const
@@ -273,7 +278,10 @@ public:
 	{
 		if(count > data.size())
 		{
-			data.resize(count);
+			if(data.resize(count))
+			{
+				++revision;
+			}
 		}
 	}
 };
