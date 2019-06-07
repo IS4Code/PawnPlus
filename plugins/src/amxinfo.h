@@ -188,6 +188,32 @@ namespace amx
 	AMX_NATIVE find_native(AMX *amx, const std::string &name);
 	size_t num_natives(AMX *amx);
 
+	inline cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist)
+	{
+		return native(amx, &arglist[0]);
+	}
+
+	template <class... Args>
+	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, cell arg, Args&&... args);
+
+	template <class... Args>
+	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, float arg, Args&&... args);
+
+	template <class... Args>
+	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, cell &arg, Args&&... args);
+
+	template <class... Args>
+	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, float &arg, Args&&... args);
+	
+	template <class... Args>
+	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, const std::string &arg, Args&&... args);
+
+	template <class... Args>
+	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, const char *arg, Args&&... args);
+
+	template <size_t Size, class... Args>
+	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, const cell(&arg)[Size], Args&&... args);
+
 	template <class... Args>
 	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, cell arg, Args&&... args)
 	{
@@ -263,11 +289,6 @@ namespace amx
 		arglist[0]++;
 		arglist.push_back(amx_addr);
 		return call_args(amx, native, arglist, std::forward<Args>(args)...);
-	}
-
-	inline cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist)
-	{
-		return native(amx, &arglist[0]);
 	}
 
 	template <class... Args>
