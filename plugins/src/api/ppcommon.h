@@ -232,6 +232,21 @@ namespace pp
 		{
 			return get<cell(const void *obj)>(16)(obj);
 		}
+
+		cell *dyn_object_begin(void *obj) const
+		{
+			return get<cell*(void *obj)>(17)(obj);
+		}
+
+		cell *dyn_object_end(void *obj) const
+		{
+			return get<cell*(void *obj)>(18)(obj);
+		}
+
+		cell *dyn_object_data_begin(void *obj) const
+		{
+			return get<cell*(void *obj)>(19)(obj);
+		}
 	};
 
 	class list_table : public api_table

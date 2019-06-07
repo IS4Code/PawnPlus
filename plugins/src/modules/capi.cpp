@@ -239,6 +239,18 @@ static func_ptr dyn_object_functions[] = {
 	{
 		return static_cast<const dyn_object*>(obj)->get_rank();
 	},
+	+[]/*dyn_object_begin*/(void *obj) -> cell*
+	{
+		return static_cast<dyn_object*>(obj)->begin();
+	},
+	+[]/*dyn_object_end*/(void *obj) -> cell*
+	{
+		return static_cast<dyn_object*>(obj)->end();
+	},
+	+[]/*dyn_object_data_begin*/(void *obj) -> cell*
+	{
+		return static_cast<dyn_object*>(obj)->data_begin();
+	},
 	nullptr
 };
 

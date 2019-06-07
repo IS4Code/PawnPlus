@@ -539,6 +539,16 @@ cell *dyn_object::end()
 	}
 }
 
+cell *dyn_object::data_begin()
+{
+	if(is_cell())
+	{
+		return &cell_value;
+	}else{
+		return array_data + 1;
+	}
+}
+
 const cell *dyn_object::begin() const
 {
 	if(is_cell())
@@ -556,6 +566,16 @@ const cell *dyn_object::end() const
 		return &cell_value + 1;
 	}else{
 		return array_data + data_size();
+	}
+}
+
+const cell *dyn_object::data_begin() const
+{
+	if(is_cell())
+	{
+		return &cell_value;
+	}else{
+		return array_data + 1;
 	}
 }
 

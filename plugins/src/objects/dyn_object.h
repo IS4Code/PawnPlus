@@ -170,8 +170,10 @@ public:
 
 	cell *begin();
 	cell *end();
+	cell *data_begin();
 	const cell *begin() const;
 	const cell *end() const;
+	const cell *data_begin() const;
 
 	std::basic_string<cell> to_string() const;
 	dyn_object operator+(const dyn_object &obj) const;
