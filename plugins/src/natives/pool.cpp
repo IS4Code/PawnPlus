@@ -124,12 +124,42 @@ namespace Natives
 		return pool_pool.get_id(l);
 	}
 
+	// native pool_size(Pool:pool);
+	AMX_DEFINE_NATIVE(pool_size, 1)
+	{
+		pool_t *ptr;
+		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
+		return static_cast<cell>(ptr->num_elements());
+	}
+
 	// native pool_capacity(Pool:pool);
 	AMX_DEFINE_NATIVE(pool_capacity, 1)
 	{
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
 		return static_cast<cell>(ptr->size());
+	}
+
+	// native pool_resize(Pool:pool, newsize);
+	AMX_DEFINE_NATIVE(pool_resize, 2)
+	{
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "newsize");
+		pool_t *ptr;
+		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
+		ucell newsize = params[2];
+		ptr->resize(newsize);
+		return 1;
+	}
+
+	// native pool_reserve(Pool:pool, capacity);
+	AMX_DEFINE_NATIVE(pool_reserve, 2)
+	{
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "capacity");
+		pool_t *ptr;
+		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
+		ucell newsize = params[2];
+		ptr->reserve(newsize);
+		return 1;
 	}
 
 	// native pool_clear(Pool:pool);
@@ -325,17 +355,6 @@ namespace Natives
 		return ::pool_set_cell<5>(amx, params);
 	}
 
-	// native pool_reserve(Pool:pool, newcapacity);
-	AMX_DEFINE_NATIVE(pool_reserve, 2)
-	{
-		if(params[2] < 0) amx_LogicError(errors::out_of_range, "newsize");
-		pool_t *ptr;
-		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		ucell newsize = params[2];
-		ptr->resize(newsize);
-		return 1;
-	}
-
 	// native pool_tagof(Pool:pool, index);
 	AMX_DEFINE_NATIVE(pool_tagof, 2)
 	{
@@ -370,7 +389,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pool_set_ordered),
 	AMX_DECLARE_NATIVE(pool_is_ordered),
 	AMX_DECLARE_NATIVE(pool_clone),
+	AMX_DECLARE_NATIVE(pool_size),
+	AMX_DECLARE_NATIVE(pool_resize),
 	AMX_DECLARE_NATIVE(pool_capacity),
+	AMX_DECLARE_NATIVE(pool_reserve),
 	AMX_DECLARE_NATIVE(pool_clear),
 	AMX_DECLARE_NATIVE(pool_clear_deep),
 
@@ -399,8 +421,6 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pool_set_var),
 	AMX_DECLARE_NATIVE(pool_set_cell),
 	AMX_DECLARE_NATIVE(pool_set_cell_safe),
-
-	AMX_DECLARE_NATIVE(pool_reserve),
 
 	AMX_DECLARE_NATIVE(pool_tagof),
 	AMX_DECLARE_NATIVE(pool_sizeof),

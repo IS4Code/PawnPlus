@@ -23,6 +23,7 @@ namespace aux
 		size_type last_set;
 		size_type first_unset;
 		size_type last_unset;
+		size_type count = 0;
 
 		struct element_type
 		{
@@ -293,6 +294,7 @@ namespace aux
 			}
 			elem.next = 0;
 			elem.assigned = true;
+			++count;
 			return elem.value;
 		}
 
@@ -444,6 +446,7 @@ namespace aux
 			elem.assigned = false;
 			elem.value.~Type();
 			link<&linked_pool::first_unset, &linked_pool::last_unset>(elem, index);
+			--count;
 			return next;
 		}
 
@@ -481,6 +484,7 @@ namespace aux
 			{
 				elem.value = std::move(value);
 			}else{
+				++count;
 				size_t index = unlink<&linked_pool::first_unset, &linked_pool::last_unset>(elem);
 				elem.assigned = true;
 				new (&elem.value) Type(std::move(value));
@@ -548,6 +552,7 @@ namespace aux
 					data.clear();
 					invalidate = first_set != -1;
 					first_set = last_set = first_unset = last_unset = -1;
+					count = 0;
 				}else{
 					for(size_type i = newsize; i < size; i++)
 					{
@@ -556,6 +561,7 @@ namespace aux
 						{
 							unlink<&linked_pool::first_set, &linked_pool::last_set>(elem);
 							invalidate = true;
+							--count;
 						}else{
 							unlink<&linked_pool::first_unset, &linked_pool::last_unset>(elem);
 						}
@@ -574,6 +580,11 @@ namespace aux
 		size_type index_of(iterator it) const
 		{
 			return it.elem - &data[0];
+		}
+
+		size_type num_elements() const
+		{
+			return count;
 		}
 	};
 }

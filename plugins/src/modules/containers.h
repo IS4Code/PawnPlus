@@ -135,6 +135,16 @@ public:
 
 	void resize(size_t count);
 	void resize(size_t count, const dyn_object &value);
+
+	void reserve(size_t count)
+	{
+		return data.reserve(count);
+	}
+
+	size_t capacity() const
+	{
+		return data.capacity();
+	}
 };
 
 class map_t : public collection_base<aux::hybrid_map<dyn_object, dyn_object>>
@@ -168,6 +178,16 @@ public:
 	bool ordered() const
 	{
 		return data.is_ordered();
+	}
+
+	void reserve(size_t count)
+	{
+		return data.reserve(count);
+	}
+
+	size_t capacity() const
+	{
+		return data.capacity();
 	}
 };
 
@@ -242,6 +262,19 @@ public:
 	bool insert_dyn(iterator position, const std::type_info &type, const void *value, iterator &result)
 	{
 		return false;
+	}
+
+	size_t num_elements() const
+	{
+		return data.num_elements();
+	}
+
+	void reserve(size_t count)
+	{
+		if(count > data.size())
+		{
+			data.resize(count);
+		}
 	}
 };
 

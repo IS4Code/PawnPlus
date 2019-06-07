@@ -680,6 +680,11 @@ namespace aux
 			bool invalidate = false;
 			if(newsize > size)
 			{
+				size_type pad = BlockSize - newsize % BlockSize;
+				if(pad < BlockSize)
+				{
+					newsize += pad;
+				}
 				auto rem = newsize - size;
 				if(data.capacity() < newsize)
 				{
@@ -701,6 +706,19 @@ namespace aux
 				}else{
 					invalidate = clear_blocks(*block, 0, newsize, level) > 0;
 					data.erase(data.begin() + newsize, data.end());
+
+					size_type pad = BlockSize - data.size() % BlockSize;
+					if(pad < BlockSize)
+					{
+						if(!invalidate)
+						{
+							invalidate = data.size() + pad > data.capacity();
+						}
+						for(size_type i = 0; i < pad; i++)
+						{
+							data.emplace_back();
+						}
+					}
 				}
 			}
 			return invalidate;
@@ -714,6 +732,11 @@ namespace aux
 		size_type index_of(iterator it) const
 		{
 			return it.elem - &data[0];
+		}
+
+		size_type num_elements() const
+		{
+			return block ? block->num_elements : 0;
 		}
 	};
 }

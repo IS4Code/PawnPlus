@@ -660,6 +660,8 @@ native bool:list_valid(List:list);
 native list_delete(List:list);
 native list_delete_deep(List:list);
 native list_size(List:list);
+native list_capacity(List:list);
+native list_reserve(List:list, capacity);
 native list_clear(List:list);
 native list_clear_deep(List:list);
 native List:list_clone(List:list);
@@ -730,6 +732,8 @@ native Iter:list_iter(List:list, index=0);
 #define list_delete_deep<%0>(%1) list_delete_deep(List:_PP@CAST[List<%0>](%1))
 #define list_clone<%0>(%1) (List<%0>:list_clone(List:_PP@CAST[List<%0>](%1)))
 #define list_size<%0>(%1) list_size(List:_PP@CAST[List<%0>](%1))
+#define list_capacity<%0>(%1) list_capacity(List:_PP@CAST[List<%0>](%1))
+#define list_reserve<%0>(%1) list_reserve(List:_PP@CAST[List<%0>](%1))
 #define list_clear<%0>(%1) list_clear(List:_PP@CAST[List<%0>](%1))
 
 #define list_add<%0>(%1,%2) list_add(List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
@@ -747,6 +751,9 @@ native Iter:list_iter(List:list, index=0);
 #define list_set<%0>(%1,%2,%3) list_set(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST[%0](%3))
 #define list_set_arr<%0>(%1,%2,%3) list_set_arr(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 #define list_set_cell<%0>(%1,%2,%3,%4) list_set_cell(List:_PP@CAST[List<%0>](%1),%2,%3,_PP@CAST[%0](%4))
+
+#define list_resize<%0>(%1,%2,%3) list_resize(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST[%0](%3))
+#define list_resize_arr<%0>(%1,%2,%3) list_resize_arr(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST[%0](%3))
 
 #define list_find<%0>(%1,%2) list_find(List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
 #define list_find_arr<%0>(%1,%2) list_find_arr(List:_PP@CAST[List<%0>](%1),_PP@CAST_ARR[%0](%2))
@@ -806,6 +813,8 @@ native map_delete(Map:map);
 native map_delete_deep(Map:map);
 native Map:map_clone(Map:map);
 native map_size(Map:map);
+native map_capacity(Map:map);
+native map_reserve(Map:map, capacity);
 native map_clear(Map:map);
 native map_clear_deep(Map:map);
 native map_set_ordered(Map:map, bool:ordered);
@@ -975,6 +984,8 @@ native Iter:map_iter_at_var(Map:map, ConstVariantTag:key);
 #define map_delete_deep<%0,%1>(%2) map_delete_deep(Map:_PP@CAST[Map<%0,%1>](%2))
 #define map_clone<%0,%1>(%2) (Map<%0,%1>:map_clone(Map:_PP@CAST[Map<%0,%1>](%2)))
 #define map_size<%0,%1>(%2) map_size(Map:_PP@CAST[Map<%0,%1>](%2))
+#define map_capacity<%0,%1>(%2) map_capacity(Map:_PP@CAST[Map<%0,%1>](%2))
+#define map_reserve<%0,%1>(%2) map_reserve(Map:_PP@CAST[Map<%0,%1>](%2))
 #define map_set_ordered<%0,%1>(%2) map_set_ordered(Map:_PP@CAST[Map<%0,%1>](%2))
 #define map_is_ordered<%0,%1>(%2) map_is_ordered(Map:_PP@CAST[Map<%0,%1>](%2))
 
@@ -1129,7 +1140,10 @@ native Pool:pool_new(capacity=-1);
 native bool:pool_valid(Pool:pool);
 native pool_delete(Pool:pool);
 native pool_delete_deep(Pool:pool);
+native pool_size(Pool:pool);
+native pool_resize(Pool:pool, newsize);
 native pool_capacity(Pool:pool);
+native pool_reserve(Pool:pool, capacity);
 native pool_clear(Pool:pool);
 native pool_clear_deep(Pool:pool);
 native pool_set_ordered(Pool:pool, bool:ordered);
@@ -1163,8 +1177,6 @@ native pool_set_var(Pool:pool, index, ConstVariantTag:value);
 native pool_set_cell(Pool:pool, index, offset, AnyTag:value);
 native bool:pool_set_cell_safe(Pool:pool, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
-native pool_reserve(Pool:pool, newcapacity);
-
 native pool_tagof(Pool:pool, index);
 native pool_sizeof(Pool:pool, index);
 
@@ -1177,7 +1189,10 @@ native Iter:pool_iter(Pool:pool, index=0);
 #define pool_delete<%0>(%1) pool_delete(Pool:_PP@CAST[Pool<%0>](%1))
 #define pool_delete_deep<%0>(%1) pool_delete_deep(Pool:_PP@CAST[Pool<%0>](%1))
 #define pool_clone<%0>(%1) (Pool<%0>:pool_clone(Pool:_PP@CAST[Pool<%0>](%1)))
+#define pool_size<%0>(%1) pool_size(Pool:_PP@CAST[Pool<%0>](%1))
+#define pool_resize<%0>(%1) pool_resize(Pool:_PP@CAST[Pool<%0>](%1))
 #define pool_capacity<%0>(%1) pool_capacity(Pool:_PP@CAST[Pool<%0>](%1))
+#define pool_reserve<%0>(%1) pool_reserve(Pool:_PP@CAST[Pool<%0>](%1))
 #define pool_clear<%0>(%1) pool_clear(Pool:_PP@CAST[Pool<%0>](%1))
 
 #define pool_add<%0>(%1,%2) pool_add(Pool:_PP@CAST[Pool<%0>](%1),_PP@CAST[%0](%2))
@@ -1195,8 +1210,6 @@ native Iter:pool_iter(Pool:pool, index=0);
 #define pool_set<%0>(%1,%2,%3) pool_set(Pool:_PP@CAST[Pool<%0>](%1),%2,_PP@CAST[%0](%3))
 #define pool_set_arr<%0>(%1,%2,%3) pool_set_arr(Pool:_PP@CAST[Pool<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 #define pool_set_cell<%0>(%1,%2,%3,%4) pool_set_cell(Pool:_PP@CAST[Pool<%0>](%1),%2,%3,_PP@CAST[%0](%4))
-
-#define pool_reserve<%0>(%1) pool_reserve(Pool:_PP@CAST[Pool<%0>](%1))
 
 #define pool_sizeof<%0>(%1) pool_sizeof(Pool:_PP@CAST[Pool<%0>](%1))
 

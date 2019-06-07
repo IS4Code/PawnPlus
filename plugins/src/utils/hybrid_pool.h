@@ -299,6 +299,16 @@ namespace aux
 			}
 		}
 
+		size_type num_elements() const
+		{
+			if(ordered)
+			{
+				return bpool.num_elements();
+			}else{
+				return lpool.num_elements();
+			}
+		}
+
 		size_type size() const
 		{
 			if(ordered)

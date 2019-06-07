@@ -565,6 +565,25 @@ namespace Natives
 		return static_cast<cell>(ptr->size());
 	}
 
+	// native map_capacity(Map:map);
+	AMX_DEFINE_NATIVE(map_capacity, 1)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		return static_cast<cell>(ptr->capacity());
+	}
+
+	// native map_reserve(Map:map, capacity);
+	AMX_DEFINE_NATIVE(map_reserve, 2)
+	{
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "capacity");
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		ucell size = params[2];
+		ptr->reserve(size);
+		return 1;
+	}
+
 	// native map_clear(Map:map);
 	AMX_DEFINE_NATIVE(map_clear, 1)
 	{
@@ -1586,6 +1605,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_delete_deep),
 	AMX_DECLARE_NATIVE(map_clone),
 	AMX_DECLARE_NATIVE(map_size),
+	AMX_DECLARE_NATIVE(map_capacity),
+	AMX_DECLARE_NATIVE(map_reserve),
 	AMX_DECLARE_NATIVE(map_clear),
 	AMX_DECLARE_NATIVE(map_clear_deep),
 	AMX_DECLARE_NATIVE(map_set_ordered),

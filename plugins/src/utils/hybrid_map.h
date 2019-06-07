@@ -298,6 +298,14 @@ namespace aux
 			}
 		}
 
+		void reserve(size_type count)
+		{
+			if(!ordered)
+			{
+				umap.reserve(count);
+			}
+		}
+
 		void clear()
 		{
 			if(ordered)

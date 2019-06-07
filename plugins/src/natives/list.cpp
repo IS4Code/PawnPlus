@@ -280,6 +280,14 @@ namespace Natives
 		return static_cast<cell>(ptr->size());
 	}
 
+	// native list_capacity(List:list);
+	AMX_DEFINE_NATIVE(list_capacity, 1)
+	{
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		return static_cast<cell>(ptr->capacity());
+	}
+
 	// native list_clear(List:list);
 	AMX_DEFINE_NATIVE(list_clear, 1)
 	{
@@ -554,6 +562,17 @@ namespace Natives
 		return value_at<3>::list_resize<dyn_func_var>(amx, params);
 	}
 
+	// native list_reserve(List:list, capacity);
+	AMX_DEFINE_NATIVE(list_reserve, 4)
+	{
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "capacity");
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		ucell size = params[2];
+		ptr->reserve(size);
+		return 1;
+	}
+
 	// native list_tagof(List:list, index);
 	AMX_DEFINE_NATIVE(list_tagof, 2)
 	{
@@ -745,6 +764,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_delete_deep),
 	AMX_DECLARE_NATIVE(list_clone),
 	AMX_DECLARE_NATIVE(list_size),
+	AMX_DECLARE_NATIVE(list_capacity),
+	AMX_DECLARE_NATIVE(list_reserve),
 	AMX_DECLARE_NATIVE(list_clear),
 	AMX_DECLARE_NATIVE(list_clear_deep),
 
