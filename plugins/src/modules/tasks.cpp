@@ -1,5 +1,6 @@
 #include "tasks.h"
 #include "exec.h"
+#include "main.h"
 
 #include "utils/shared_id_set_pool.h"
 #include "sdk/amx/amx.h"
@@ -303,6 +304,7 @@ namespace tasks
 		if(ticks > 0)
 		{
 			ucell time = tick_count + (ucell)ticks;
+			logprintf("added tick handler for %d (current time %d)", time, tick_count);
 			insert_sorted(tick_handlers, time, std::move(handler));
 		}else if(ticks == 0)
 		{
@@ -315,6 +317,7 @@ namespace tasks
 		if(interval > 0)
 		{
 			auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
+			logprintf("added timer handler for %d (current time %d)", (int)(time.time_since_epoch().count()), (int)(std::chrono::system_clock::now().time_since_epoch().count()));
 			insert_sorted(timer_handlers, time, std::move(handler));
 		}else if(interval == 0)
 		{
@@ -387,6 +390,7 @@ namespace tasks
 		if(ticks > 0)
 		{
 			ucell time = tick_count + (ucell)ticks;
+			logprintf("added tick handler for %d (current time %d)", time, tick_count);
 			insert_sorted(tick_handlers, time, std::unique_ptr<handler>(new reset_handler(std::move(reset))));
 		}else if(ticks == 0)
 		{
@@ -399,6 +403,7 @@ namespace tasks
 		if(interval > 0)
 		{
 			auto time = std::chrono::system_clock::now() + std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::milliseconds(interval));
+			logprintf("added timer handler for %d (current time %d)", (int)(time.time_since_epoch().count()), (int)(std::chrono::system_clock::now().time_since_epoch().count()));
 			insert_sorted(timer_handlers, time, std::unique_ptr<handler>(new reset_handler(std::move(reset))));
 		}else if(interval == 0)
 		{
