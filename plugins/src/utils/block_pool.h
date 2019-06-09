@@ -648,14 +648,6 @@ namespace aux
 			if(index >= data.size())
 			{
 				resize(index + 1);
-				size_type pad = BlockSize - data.size() % BlockSize;
-				if(pad < BlockSize)
-				{
-					for(size_type i = 0; i < pad; i++)
-					{
-						data.emplace_back();
-					}
-				}
 			}
 			auto &elem = data[index];
 			if(elem.assigned)

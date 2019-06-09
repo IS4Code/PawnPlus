@@ -23,7 +23,7 @@ namespace aux
 		size_type last_set;
 		size_type first_unset;
 		size_type last_unset;
-		size_type count = 0;
+		size_type count;
 
 		struct element_type
 		{
@@ -299,20 +299,21 @@ namespace aux
 		}
 
 	public:
-		linked_pool() : first_set(-1), last_set(-1), first_unset(-1), last_unset(-1)
+		linked_pool() : first_set(-1), last_set(-1), first_unset(-1), last_unset(-1), count(0)
 		{
 
 		}
 
-		linked_pool(const linked_pool &obj) : data(obj.data), first_set(obj.first_set), last_set(obj.last_set), first_unset(obj.first_unset), last_unset(obj.last_unset)
+		linked_pool(const linked_pool &obj) : data(obj.data), first_set(obj.first_set), last_set(obj.last_set), first_unset(obj.first_unset), last_unset(obj.last_unset), count(obj.count)
 		{
 
 		}
 
-		linked_pool(linked_pool &&obj) : data(std::move(obj.data)), first_set(obj.first_set), last_set(obj.last_set), first_unset(obj.first_unset), last_unset(obj.last_unset)
+		linked_pool(linked_pool &&obj) : data(std::move(obj.data)), first_set(obj.first_set), last_set(obj.last_set), first_unset(obj.first_unset), last_unset(obj.last_unset), count(obj.count)
 		{
 			obj.data.clear();
 			obj.first_set = obj.last_set = obj.first_unset = obj.last_unset = -1;
+			obj.count = 0;
 		}
 
 		linked_pool &operator=(const linked_pool &obj)
@@ -324,6 +325,7 @@ namespace aux
 				last_set = obj.last_set;
 				first_unset = obj.first_unset;
 				last_unset = obj.last_unset;
+				count = obj.count;
 			}
 			return *this;
 		}
@@ -337,8 +339,10 @@ namespace aux
 				last_set = obj.last_set;
 				first_unset = obj.first_unset;
 				last_unset = obj.last_unset;
+				count = obj.count;
 				obj.data.clear();
 				obj.first_set = obj.last_set = obj.first_unset = obj.last_unset = -1;
+				obj.count = 0;
 			}
 			return *this;
 		}
