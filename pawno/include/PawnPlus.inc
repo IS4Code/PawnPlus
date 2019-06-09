@@ -1181,6 +1181,7 @@ native pool_tagof(Pool:pool, index);
 native pool_sizeof(Pool:pool, index);
 
 native Iter:pool_iter(Pool:pool, index=0);
+native Iter:pool_iter_at(Pool:pool, index);
 
 #if defined PP_SYNTAX_GENERIC
 
@@ -1214,6 +1215,7 @@ native Iter:pool_iter(Pool:pool, index=0);
 #define pool_sizeof<%0>(%1) pool_sizeof(Pool:_PP@CAST[Pool<%0>](%1))
 
 #define pool_iter<%0>(%1) (Iter<%0>:pool_iter(Pool:_PP@CAST[Pool<%0>](%1)))
+#define pool_iter_at<%0>(%1) (Iter<%0>:pool_iter_at(Pool:_PP@CAST[Pool<%0>](%1)))
 
 #endif
 
