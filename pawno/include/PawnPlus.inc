@@ -46,6 +46,7 @@ const PP_VERSION = 0x101;
 #define Handle<%0> Handle@%0
 #define Ref<%0> Ref@%0
 #define Task<%0> Task@%0
+#define Pool<%0> Pool@%0
 
 #endif
 
