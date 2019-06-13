@@ -289,34 +289,33 @@ bool array_bounds(const cell *data, cell &begin, cell &end, cell data_begin, cel
 	return true;
 }
 
-bool dyn_object::get_cell(const cell *indices, cell num_indices, cell &value) const
+cell dyn_object::get_cell(const cell *indices, cell num_indices) const
 {
 	auto addr = get_cell_addr(indices, num_indices);
-	if(addr)
+	if(!addr)
 	{
-		value = *addr;
-		assign_op(&value, 1);
-		return true;
+		amx_LogicError(errors::out_of_range, "offset");
 	}
-	return false;
+	cell value = *addr;
+	assign_op(&value, 1);
+	return value;
 }
 
-bool dyn_object::set_cell(const cell *indices, cell num_indices, cell value)
+void dyn_object::set_cell(const cell *indices, cell num_indices, cell value)
 {
 	auto addr = get_cell_addr(indices, num_indices);
-	if(addr)
+	if(!addr)
 	{
-		if(!is_array())
-		{
-			amx_LogicError(errors::operation_not_supported, "variant");
-		}
-		const auto &ops = tag->get_ops();
-		ops.collect(tag, addr, 1);
-		*addr = value;
-		ops.assign(tag, addr, 1);
-		return true;
+		amx_LogicError(errors::out_of_range, "offset");
 	}
-	return false;
+	if(!is_array())
+	{
+		amx_LogicError(errors::operation_not_supported, "variant");
+	}
+	const auto &ops = tag->get_ops();
+	ops.collect(tag, addr, 1);
+	*addr = value;
+	ops.assign(tag, addr, 1);
 }
 
 cell *dyn_object::get_array(const cell *indices, cell num_indices, cell &size)
@@ -421,10 +420,10 @@ const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) con
 		{
 			return &cell_value;
 		}
-		amx_LogicError(errors::out_of_range, "offset");
+		return nullptr;
 	}else if(empty())
 	{
-		amx_LogicError(errors::out_of_range, "offset");
+		return nullptr;
 	}
 
 	const cell *block = array_data + 1;
@@ -435,32 +434,32 @@ const cell *dyn_object::get_cell_addr(const cell *indices, cell num_indices) con
 		cell index = indices[i];
 		if(index < 0)
 		{
-			amx_LogicError(errors::out_of_range, "offset");
+			return nullptr;
 		}
 		if(begin >= data_begin)
 		{
 			cell size = end - begin;
 			if(index >= size)
 			{
-				amx_LogicError(errors::out_of_range, "offset");
+				return nullptr;
 			}
 			begin += index;
 			end = begin + 1;
 		}else if(!array_bounds(block, begin, end, data_begin, data_end, index))
 		{
-			amx_LogicError(errors::out_of_range, "offset");
+			return nullptr;
 		}
 	}
 	while(begin < data_begin)
 	{
 		if(!array_bounds(block, begin, end, data_begin, data_end, 0))
 		{
-			amx_LogicError(errors::out_of_range, "offset");
+			return nullptr;
 		}
 	}
 	if(end <= begin)
 	{
-		amx_LogicError(errors::out_of_range, "offset");
+		return nullptr;
 	}
 	return &block[begin];
 }

@@ -140,7 +140,8 @@ static cell AMX_NATIVE_CALL list_set_cell(AMX *amx, cell *params)
 	if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "list index");
 	auto &obj = (*ptr)[params[2]];
 	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
-	return obj.set_cell({params[3]}, params[4]);
+	obj.set_cell({params[3]}, params[4]);
+	return 1;
 }
 
 namespace Natives
@@ -660,19 +661,20 @@ namespace Natives
 			if(at > bt) return false;
 			auto tag = a.get_tag();
 			const auto &ops = tag->get_ops();
+			const cell *addr1, *addr2;
 			for(cell i = 0; size == -1 || i < size; i++)
 			{
-				cell ac, bc;
-				if(!b.get_cell(offset + i, bc))
+				cell index = offset + i;
+				if(!(addr2 = b.get_cell_addr(&index, 1)))
 				{
 					return false;
-				}else if(!a.get_cell(offset + i, ac))
+				}else if(!(addr1 = a.get_cell_addr(&index, 1)))
 				{
 					return true;
-				}else if(ops.lt(tag, ac, bc))
+				}else if(ops.lt(tag, *addr1, *addr2))
 				{
 					return true;
-				}else if(i == size - 1 || ops.lt(tag, bc, ac))
+				}else if(i == size - 1 || ops.lt(tag, *addr2, *addr1))
 				{
 					return false;
 				}

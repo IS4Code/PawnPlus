@@ -35,26 +35,22 @@ cell *get_offsets(AMX *amx, cell offsets, cell &offsets_size)
 
 cell dyn_func(AMX *amx, const dyn_object &obj, cell offset)
 {
-	cell result;
-	if(obj.get_cell(offset, result)) return result;
-	return 0;
+	return obj.get_cell(offset);
 }
 
 cell dyn_func(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_size)
 {
 	cell *offsets_addr = get_offsets(amx, offsets, offsets_size);
 
-	cell result;
-	if(obj.get_cell(offsets_addr, offsets_size, result)) return result;
-	return 0;
+	return obj.get_cell(offsets_addr, offsets_size);
 }
 
 cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offset, cell tag_id)
 {
 	if(!obj.tag_assignable(amx, tag_id)) return 0;
 	cell *addr = amx_GetAddrSafe(amx, result);
-	if(obj.get_cell(offset, *addr)) return 1;
-	return 0;
+	*addr = obj.get_cell(offset);
+	return 1;
 }
 
 cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offsets, cell offsets_size, cell tag_id)
@@ -62,8 +58,8 @@ cell dyn_func(AMX *amx, const dyn_object &obj, cell result, cell offsets, cell o
 	if(!obj.tag_assignable(amx, tag_id)) return 0;
 	cell *addr = amx_GetAddrSafe(amx, result);
 	cell *offsets_addr = get_offsets(amx, offsets, offsets_size);
-	if(obj.get_cell(offsets_addr, offsets_size, *addr)) return 1;
-	return 0;
+	*addr = obj.get_cell(offsets_addr, offsets_size);
+	return 1;
 }
 
 cell dyn_func_arr(AMX *amx, const dyn_object &obj, cell amx_addr, cell size)

@@ -818,8 +818,9 @@ static cell AMX_NATIVE_CALL iter_set_cell(AMX *amx, cell *params)
 
 	return value_modify(params[1], [&](dyn_object &obj)
 	{
-		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return false;
-		return obj.set_cell(params[2], params[3]);
+		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
+		obj.set_cell(params[2], params[3]);
+		return 1;
 	});
 }
 
@@ -843,10 +844,11 @@ static cell AMX_NATIVE_CALL iter_set_cell_md(AMX *amx, cell *params)
 {
 	return value_modify(params[1], [&](dyn_object &obj)
 	{
-		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return false;
+		if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 		cell offsets_size = params[4];
 		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
-		return obj.set_cell(offsets_addr, offsets_size, params[3]);
+		obj.set_cell(offsets_addr, offsets_size, params[3]);
+		return 1;
 	});
 }
 

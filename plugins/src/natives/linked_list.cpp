@@ -70,7 +70,8 @@ static cell AMX_NATIVE_CALL linked_list_set_cell(AMX *amx, cell *params)
 	if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "linked list index");
 	auto &obj = (*ptr)[params[2]];
 	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
-	return obj.set_cell({params[3]}, params[4]);
+	obj.set_cell({params[3]}, params[4]);
+	return 1;
 }
 
 namespace Natives

@@ -205,7 +205,8 @@ namespace Natives
 	{
 		dyn_object *var;
 		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
-		return var->set_cell(params[2], params[3]);
+		var->set_cell(params[2], params[3]);
+		return 1;
 	}
 
 	// native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, TagTag:tag_id=tagof(value));
@@ -214,7 +215,8 @@ namespace Natives
 		dyn_object *var;
 		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		if(!var->tag_assignable(amx, params[4])) return 0;
-		return var->set_cell(params[2], params[3]);
+		var->set_cell(params[2], params[3]);
+		return 1;
 	}
 
 	// native var_set_cells(VariantTag:var, offset, AnyTag:values[], size=sizeof(values));
@@ -285,7 +287,8 @@ namespace Natives
 		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 		cell offsets_size = params[4];
 		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
-		return var->set_cell(offsets_addr, offsets_size, params[3]);
+		var->set_cell(offsets_addr, offsets_size, params[3]);
+		return 1;
 	}
 
 	// native bool:var_set_cell_md_safe(VariantTag:var, const offsets[], AnyTag:value, offsets_size=sizeof(offsets), TagTag:tag_id=tagof(value));
@@ -296,7 +299,8 @@ namespace Natives
 		if(!var->tag_assignable(amx, params[5])) return 0;
 		cell offsets_size = params[4];
 		cell *offsets_addr = get_offsets(amx, params[2], offsets_size);
-		return var->set_cell(offsets_addr, offsets_size, params[3]);
+		var->set_cell(offsets_addr, offsets_size, params[3]);
+		return 1;
 	}
 
 	// native var_set_cells_md(VariantTag:var, const offsets[], AnyTag:values[], offsets_size=sizeof(offsets), size=sizeof(values));

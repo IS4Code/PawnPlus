@@ -46,6 +46,11 @@ public:
 
 	}
 
+	dyn_object(const dyn_object &obj, tag_ptr new_tag) : dyn_object(obj, true)
+	{
+		tag = new_tag;
+	}
+
 	dyn_object(dyn_object &&obj) noexcept : rank(obj.rank), tag(obj.tag)
 	{
 		if(rank > 0)
@@ -60,8 +65,8 @@ public:
 
 	bool tag_assignable(tag_ptr test_tag) const;
 	bool struct_compatible(const dyn_object &obj) const;
-	bool get_cell(const cell *indices, cell num_indices, cell &value) const;
-	bool set_cell(const cell *indices, cell num_indices, cell value);
+	cell get_cell(const cell *indices, cell num_indices) const;
+	void set_cell(const cell *indices, cell num_indices, cell value);
 	cell set_cells(const cell *indices, cell num_indices, const cell *values, cell size);
 	cell get_array(const cell *indices, cell num_indices, cell *arr, cell maxsize) const;
 	cell *get_array(const cell *indices, cell num_indices, cell &size);
@@ -91,14 +96,14 @@ public:
 		return (empty() && obj.empty()) || tag->same_base(obj.tag);
 	}
 
-	bool get_cell(cell index, cell &value) const
+	cell get_cell(cell index) const
 	{
-		return get_cell(&index, 1, value);
+		return get_cell(&index, 1);
 	}
 
-	bool set_cell(cell index, cell value)
+	void set_cell(cell index, cell value)
 	{
-		return set_cell(&index, 1, value);
+		set_cell(&index, 1, value);
 	}
 
 	cell set_cells(cell index, const cell *values, cell size)

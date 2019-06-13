@@ -1606,15 +1606,12 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 
 				if(repl.get_tag()->inherits_from(tags::tag_string))
 				{
-					cell value;
-					if(repl.get_cell(0, value))
+					cell value = repl.get_cell(0);
+					cell_string *repl_str;
+					if(strings::pool.get_by_id(value, repl_str))
 					{
-						cell_string *repl_str;
-						if(strings::pool.get_by_id(value, repl_str))
-						{
-							typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, begin, end);
-							continue;
-						}
+						typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, begin, end);
+						continue;
 					}
 				}else if(repl.get_tag()->inherits_from(tags::tag_char) && repl.is_array())
 				{

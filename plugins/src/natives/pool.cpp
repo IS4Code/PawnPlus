@@ -60,7 +60,8 @@ static cell AMX_NATIVE_CALL pool_set_cell(AMX *amx, cell *params)
 	if(it == ptr->end()) amx_LogicError(errors::element_not_present);
 	auto &obj = *it;
 	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
-	return obj.set_cell({params[3]}, params[4]);
+	obj.set_cell({params[3]}, params[4]);
+	return 1;
 }
 
 namespace Natives

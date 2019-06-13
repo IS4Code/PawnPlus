@@ -111,7 +111,8 @@ public:
 		{
 			auto &obj = it->second;
 			if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
-			return obj.set_cell(params[3], params[4]);
+			obj.set_cell(params[3], params[4]);
+			return 1;
 		}
 		amx_LogicError(errors::element_not_present);
 		return 0;

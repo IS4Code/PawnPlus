@@ -216,12 +216,7 @@ static func_ptr dyn_object_functions[] = {
 	},
 	+[]/*dyn_object_get_cell*/(const void *obj, cell index) -> cell
 	{
-		cell val;
-		if(static_cast<const dyn_object*>(obj)->get_cell(index, val))
-		{
-			return val;
-		}
-		return 0;
+		return static_cast<const dyn_object*>(obj)->get_cell(index);
 	},
 	+[]/*dyn_object_get_array*/(const void *obj, cell *arr, cell maxsize) -> cell
 	{
