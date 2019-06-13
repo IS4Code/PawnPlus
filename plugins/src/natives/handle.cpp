@@ -97,7 +97,7 @@ namespace Natives
 	{
 		decltype(handle_pool)::ref_container *handle;
 		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
-		if(!handle_pool.release_ref(*handle)) amx_LogicError(errors::cannot_acquire, "handle", params[1]);
+		if(!handle_pool.release_ref(*handle)) amx_LogicError(errors::cannot_release, "handle", params[1]);
 		return params[1];
 	}
 

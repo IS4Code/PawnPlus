@@ -145,6 +145,7 @@
     <ClCompile Include="src\modules\containers.cpp" />
     <ClCompile Include="src\modules\debug.cpp" />
     <ClCompile Include="src\modules\events.cpp" />
+    <ClCompile Include="src\modules\expressions.cpp" />
     <ClCompile Include="src\modules\guards.cpp" />
     <ClCompile Include="src\modules\serialize.cpp" />
     <ClCompile Include="src\modules\strings.cpp" />
@@ -154,6 +155,7 @@
     <ClCompile Include="src\modules\threads.cpp" />
     <ClCompile Include="src\modules\variants.cpp" />
     <ClCompile Include="src\natives.cpp" />
+    <ClCompile Include="src\natives\expr.cpp" />
     <ClCompile Include="src\natives\handle.cpp" />
     <ClCompile Include="src\natives\iter.cpp" />
     <ClCompile Include="src\natives\linked_list.cpp" />
@@ -216,6 +218,7 @@
     <ClInclude Include="src\modules\containers.h" />
     <ClInclude Include="src\modules\debug.h" />
     <ClInclude Include="src\modules\events.h" />
+    <ClInclude Include="src\modules\expressions.h" />
     <ClInclude Include="src\modules\guards.h" />
     <ClInclude Include="src\modules\serialize.h" />
     <ClInclude Include="src\modules\strings.h" />

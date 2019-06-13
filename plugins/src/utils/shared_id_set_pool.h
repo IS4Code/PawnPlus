@@ -45,9 +45,9 @@ namespace aux
 		}
 
 		template <class NewType, class... Args>
-		std::shared_ptr<Type> emplace_derived(Args &&... args)
+		const std::shared_ptr<Type> &emplace_derived(Args &&... args)
 		{
-			return std::dynamic_pointer_cast<Type>(add(std::make_shared<NewType>(std::forward<Args>(args)...)));
+			return add(std::make_shared<NewType>(std::forward<Args>(args)...));
 		}
 
 		size_t size() const

@@ -7,6 +7,7 @@
 #include "modules/amxutils.h"
 #include "modules/events.h"
 #include "modules/amxhook.h"
+#include "modules/expressions.h"
 #include "objects/stored_param.h"
 #include "fixes/linux.h"
 #include "utils/optional.h"
@@ -1770,6 +1771,70 @@ struct pool_operations : public generic_operations<pool_operations, tags::tag_po
 	}
 };
 
+struct expression_operations : public null_operations
+{
+	expression_operations() : null_operations(tags::tag_expression)
+	{
+
+	}
+	
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
+	{
+		return a == b;
+	}
+	
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		expression *ptr;
+		return !expression_pool.get_by_id(a, ptr);
+	}
+	
+	virtual bool del(tag_ptr tag, cell arg) const override
+	{
+		return expression_pool.remove_by_id(arg);
+	}
+
+	virtual bool release(tag_ptr tag, cell arg) const override
+	{
+		decltype(expression_pool)::ref_container *ptr;
+		if(!expression_pool.get_by_id(arg, ptr)) return false;
+		if(!expression_pool.release_ref(*ptr)) return false;
+		return true;
+	}
+
+	virtual bool acquire(tag_ptr tag, cell arg) const override
+	{
+		decltype(expression_pool)::ref_container *ptr;
+		if(!expression_pool.get_by_id(arg, ptr)) return false;
+		if(!expression_pool.acquire_ref(*ptr)) return false;
+		return true;
+	}
+
+	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	{
+		expression *ptr;
+		if(expression_pool.get_by_id(arg, ptr))
+		{
+			ptr->to_string(str);
+		}
+	}
+
+	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
+	{
+		return std::make_unique<expression_operations>();
+	}
+
+	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	{
+		std::shared_ptr<expression> ptr;
+		if(expression_pool.get_by_id(arg, ptr))
+		{
+			return ptr;
+		}
+		return {};
+	}
+};
+
 static const null_operations unknown_ops(tags::tag_unknown);
 
 std::vector<std::unique_ptr<tag_info>> tag_list([]()
@@ -1777,8 +1842,8 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	std::vector<std::unique_ptr<tag_info>> v;
 	auto unknown = std::make_unique<tag_info>(0, "{...}", nullptr, std::make_unique<null_operations>(tags::tag_unknown));
 	auto unknown_tag = unknown.get();
-	auto string_const = std::make_unique<tag_info>(22, "String@Const", unknown_tag, std::make_unique<string_operations>());
-	auto variant_const = std::make_unique<tag_info>(23, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
+	auto string_const = std::make_unique<tag_info>(23, "String@Const", unknown_tag, std::make_unique<string_operations>());
+	auto variant_const = std::make_unique<tag_info>(24, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
 	v.push_back(std::move(unknown));
 	v.push_back(std::make_unique<tag_info>(1, "", unknown_tag, std::make_unique<cell_operations>(tags::tag_cell)));
 	v.push_back(std::make_unique<tag_info>(2, "bool", unknown_tag, std::make_unique<bool_operations>()));
@@ -1801,9 +1866,10 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::make_unique<tag_info>(19, "signed", unknown_tag, std::make_unique<cell_operations>(tags::tag_signed)));
 	v.push_back(std::make_unique<tag_info>(20, "unsigned", unknown_tag, std::make_unique<unsigned_operations>()));
 	v.push_back(std::make_unique<tag_info>(21, "Pool", unknown_tag, std::make_unique<pool_operations>()));
+	v.push_back(std::make_unique<tag_info>(22, "Expression", unknown_tag, std::make_unique<expression_operations>()));
 	v.push_back(std::move(string_const));
 	v.push_back(std::move(variant_const));
-	v.push_back(std::make_unique<tag_info>(24, "char@", v[3].get(), std::make_unique<char_operations>()));
+	v.push_back(std::make_unique<tag_info>(25, "char@", v[3].get(), std::make_unique<char_operations>()));
 	return v;
 }());
 

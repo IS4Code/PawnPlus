@@ -257,6 +257,7 @@ const tag_uid:tag_uid_symbol = tag_uid:18;
 const tag_uid:tag_uid_signed = tag_uid:19;
 const tag_uid:tag_uid_unsigned = tag_uid:20;
 const tag_uid:tag_uid_pool = tag_uid:21;
+const tag_uid:tag_uid_expression = tag_uid:22;
 
 const TAG_EXPORTED = 0x80000000;
 const TAG_STRONG = 0x40000000;
@@ -1522,6 +1523,64 @@ native handle_sizeof(HandleTag:handle);
 
 
 /*                 */
+/*   Expressions   */
+/*                 */
+
+native Expression:expr_acquire(Expression:expr);
+native Expression:expr_release(Expression:expr);
+native expr_delete(Expression:expr);
+native bool:expr_valid(Expression:expr);
+
+native Expression:expr_weak(Expression:expr);
+
+native Expression:expr_const(AnyTag:value, TagTag:tag_id=tagof(value));
+native Expression:expr_const_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native Expression:expr_const_str(const value[]);
+native Expression:expr_const_var(VariantTag:value);
+
+native Expression:expr_arg(index);
+
+native Expression:expr_comma(Expression:left, Expression:right);
+
+native Expression:expr_add(Expression:left, Expression:right);
+native Expression:expr_sub(Expression:left, Expression:right);
+native Expression:expr_mul(Expression:left, Expression:right);
+native Expression:expr_div(Expression:left, Expression:right);
+native Expression:expr_mod(Expression:left, Expression:right);
+native Expression:expr_neg(Expression:expr);
+native Expression:expr_inc(Expression:expr);
+native Expression:expr_dec(Expression:expr);
+
+native Expression:expr_eq(Expression:left, Expression:right);
+native Expression:expr_neq(Expression:left, Expression:right);
+native Expression:expr_lt(Expression:left, Expression:right);
+native Expression:expr_gt(Expression:left, Expression:right);
+native Expression:expr_lte(Expression:left, Expression:right);
+native Expression:expr_gte(Expression:left, Expression:right);
+native Expression:expr_not(Expression:expr);
+
+native Expression:expr_and(Expression:left, Expression:right);
+native Expression:expr_or(Expression:left, Expression:right);
+
+native Expression:expr_cond(Expression:cond, Expression:on_true, Expression:on_false);
+
+native Expression:expr_cast(Expression:expr, TagTag:tag_id);
+native Expression:expr_tagof(Expression:expr);
+native Expression:expr_sizeof(Expression:expr, Expression:...);
+native Expression:expr_rankof(Expression:expr);
+
+native expr_get(Expression:expr, offset=0);
+native expr_get_arr(Expression:expr, AnyTag:value[], size=sizeof(value));
+native expr_get_str(Expression:expr, value[], size=sizeof(value)) = expr_get_arr;
+native String:expr_get_str_s(Expression:expr);
+native Variant:expr_get_var(Expression:expr);
+native bool:expr_get_safe(Expression:expr, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
+native expr_get_arr_safe(Expression:expr, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native expr_get_str_safe(Expression:expr, value[], size=sizeof(value));
+native String:expr_get_str_safe_s(Expression:expr);
+
+
+/*                 */
 /* Tasks and async */
 /*                 */
 
@@ -2030,6 +2089,18 @@ stock bool:operator!=(Iter:arg1, Iter:arg2) return !(arg1 == arg2);
 native bool:operator==(Handle:arg1, Handle:arg2) = handle_eq;
 stock bool:operator!=(Handle:arg1, Handle:arg2) return !(arg1 == arg2);
 stock bool:operator!(Handle:handle) return !handle_alive(handle);
+
+stock Expression:operator=(arg) return expr_const(arg);
+stock Expression:operator=(Float:arg) return expr_const(arg);
+stock Expression:operator=(bool:arg) return expr_const(arg);
+native Expression:operator+(Expression:arg1, Expression:arg2) = expr_add;
+native Expression:operator-(Expression:arg1, Expression:arg2) = expr_sub;
+native Expression:operator*(Expression:arg1, Expression:arg2) = expr_mul;
+native Expression:operator/(Expression:arg1, Expression:arg2) = expr_div;
+native Expression:operator%(Expression:arg1, Expression:arg2) = expr_mod;
+native Expression:operator-(Expression:arg) = expr_neg;
+native Expression:operator++(Expression:arg) = expr_inc;
+native Expression:operator--(Expression:arg) = expr_dec;
 
 #if defined PP_SYNTAX_GENERIC
 

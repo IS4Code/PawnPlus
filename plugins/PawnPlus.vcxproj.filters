@@ -142,6 +142,12 @@
     <ClCompile Include="src\modules\serialize.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\expressions.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
+    <ClCompile Include="src\natives\expr.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -327,6 +333,9 @@
       <Filter>src\utils</Filter>
     </ClInclude>
     <ClInclude Include="src\modules\serialize.h">
+      <Filter>src\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\expressions.h">
       <Filter>src\modules</Filter>
     </ClInclude>
   </ItemGroup>
