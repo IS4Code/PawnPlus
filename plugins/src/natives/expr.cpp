@@ -264,9 +264,10 @@ namespace Natives
 		std::vector<expression_ptr> indices;
 		for(cell i = 0; i < numargs; i++)
 		{
-			cell c = params[2 + i];
+			cell amx_addr = params[2 + i];
+			cell *addr = amx_GetAddrSafe(amx, amx_addr);
 			std::shared_ptr<expression> ptr;
-			if(!expression_pool.get_by_id(c, ptr)) amx_LogicError(errors::pointer_invalid, "expression", c);
+			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
 			indices.emplace_back(std::move(ptr));
 		}
 		return expr_unary<sizeof_expression>(amx, params, std::move(indices));
