@@ -1541,6 +1541,7 @@ native Expression:expr_const_var(VariantTag:value);
 native Expression:expr_arg(index);
 
 native Expression:expr_comma(Expression:left, Expression:right);
+native Expression:expr_assign(Expression:left, Expression:right);
 
 native Expression:expr_symbol(Symbol:symbol);
 native Expression:expr_call(Expression:func, Expression:...);
@@ -1581,6 +1582,11 @@ native bool:expr_get_safe(Expression:expr, &AnyTag:value, offset=0, TagTag:tag_i
 native expr_get_arr_safe(Expression:expr, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native expr_get_str_safe(Expression:expr, value[], size=sizeof(value));
 native String:expr_get_str_safe_s(Expression:expr);
+
+native expr_set(Expression:expr, AnyTag:value, TagTag:tag_id=tagof(value));
+native expr_set_arr(Expression:expr, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native expr_set_str(Expression:expr, const value[]);
+native expr_set_var(Expression:expr, ConstVariantTag:value);
 
 
 /*                 */

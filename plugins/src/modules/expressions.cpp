@@ -8,6 +8,11 @@ dyn_object expression::call(AMX *amx, const args_type &args, const call_args_typ
 	return {};
 }
 
+dyn_object expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
+{
+	return {};
+}
+
 tag_ptr expression::get_tag(const args_type &args) const
 {
 	return nullptr;
@@ -83,6 +88,15 @@ dyn_object weak_expression::call(AMX *amx, const args_type &args, const call_arg
 	if(auto lock = ptr.lock())
 	{
 		return lock->call(amx, args, call_args);
+	}
+	return {};
+}
+
+dyn_object weak_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
+{
+	if(auto lock = ptr.lock())
+	{
+		return lock->assign(amx, args, std::move(value));
 	}
 	return {};
 }
@@ -174,6 +188,12 @@ dyn_object comma_expression::call(AMX *amx, const args_type &args, const call_ar
 	return right->call(amx, args, call_args);
 }
 
+dyn_object comma_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
+{
+	left->execute(amx, args);
+	return right->assign(amx, args, std::move(value));
+}
+
 tag_ptr comma_expression::get_tag(const args_type &args) const
 {
 	return right->get_tag(args);
@@ -212,6 +232,48 @@ const expression_ptr &comma_expression::get_right() const
 expression_ptr comma_expression::clone() const
 {
 	return std::make_shared<comma_expression>(*this);
+}
+
+dyn_object assign_expression::execute(AMX *amx, const args_type &args) const
+{
+	return left->assign(amx, args, right->execute(amx, args));
+}
+
+tag_ptr assign_expression::get_tag(const args_type &args) const
+{
+	return left->get_tag(args);
+}
+
+cell assign_expression::get_size(const args_type &args) const
+{
+	return left->get_size(args);
+}
+
+cell assign_expression::get_rank(const args_type &args) const
+{
+	return left->get_rank(args);
+}
+
+void assign_expression::to_string(strings::cell_string &str) const
+{
+	left->to_string(str);
+	str.append(strings::convert(" = "));
+	right->to_string(str);
+}
+
+const expression_ptr &assign_expression::get_left() const
+{
+	return left;
+}
+
+const expression_ptr &assign_expression::get_right() const
+{
+	return right;
+}
+
+expression_ptr assign_expression::clone() const
+{
+	return std::make_shared<assign_expression>(*this);
 }
 
 dyn_object call_expression::execute(AMX *amx, const args_type &args) const
@@ -293,6 +355,11 @@ dyn_object bind_expression::call(AMX *amx, const args_type &args, const call_arg
 	return operand->call(amx, combine_args(args), call_args);
 }
 
+dyn_object bind_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
+{
+	return operand->assign(amx, combine_args(args), std::move(value));
+}
+
 void bind_expression::to_string(strings::cell_string &str) const
 {
 	str.push_back('(');
@@ -347,6 +414,11 @@ dyn_object cast_expression::execute(AMX *amx, const args_type &args) const
 dyn_object cast_expression::call(AMX *amx, const args_type &args, const call_args_type &call_args) const
 {
 	return dyn_object(operand->call(amx, args, call_args), new_tag);
+}
+
+dyn_object cast_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
+{
+	return dyn_object(operand->assign(amx, args, dyn_object(std::move(value), operand->get_tag(args))), new_tag);
 }
 
 void cast_expression::to_string(strings::cell_string &str) const
@@ -509,6 +581,74 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, const call_a
 	return {};
 }
 
+dyn_object symbol_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
+{
+	if(symbol->ident == iFUNCTN)
+	{
+		return {};
+	}
+
+	if(auto obj = target_amx.lock())
+	{
+		amx = *obj;
+		auto data = amx_GetData(amx);
+		cell *ptr;
+		if(symbol->vclass == 0 || symbol->vclass == 2)
+		{
+			ptr = reinterpret_cast<cell*>(data + symbol->address);
+		}else{
+			cell frm = amx->frm;
+			ucell cip = amx->cip;
+			while(frm != 0)
+			{
+				if(frm == target_frm && symbol->codestart <= cip && cip < symbol->codeend)
+				{
+					break;
+				}else if(frm > target_frm)
+				{
+					frm = 0;
+					break;
+				}
+				cip = reinterpret_cast<cell*>(data + frm)[1];
+				frm = reinterpret_cast<cell*>(data + frm)[0];
+				if(cip == 0)
+				{
+					frm = 0;
+				}
+			}
+			if(frm == 0)
+			{
+				return {};
+			}
+			ptr = reinterpret_cast<cell*>(data + frm + symbol->address);
+		}
+
+		if(symbol->ident == iREFERENCE || symbol->ident == iREFARRAY)
+		{
+			ptr = reinterpret_cast<cell*>(data + *ptr);
+		}
+		tag_ptr tag_ptr = get_tag(args);
+
+		if(symbol->dim == value.get_rank())
+		{
+			if(symbol->dim == 0)
+			{
+				*ptr = value.get_cell(0);
+				return std::move(value);
+			}else if(symbol->dim == 1)
+			{
+				const AMX_DBG_SYMDIM *dim;
+				if(dbg_GetArrayDim(debug, symbol, &dim) == AMX_ERR_NONE && dim[0].size == value.get_size())
+				{
+					value.get_array(ptr, dim[0].size);
+					return std::move(value);
+				}
+			}
+		}
+	}
+	return {};
+}
+
 tag_ptr symbol_expression::get_tag(const args_type &args) const
 {
 	cell tag = symbol->tag;
@@ -655,6 +795,16 @@ dyn_object conditional_expression::call(AMX *amx, const args_type &args, const c
 		return logic_cond->execute_inner(amx, args) ? on_true->call(amx, args, call_args) : on_false->call(amx, args, call_args);
 	}else{
 		return !cond->execute(amx, args) ? on_false->call(amx, args, call_args) : on_true->call(amx, args, call_args);
+	}
+}
+
+dyn_object conditional_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
+{
+	if(auto logic_cond = dynamic_cast<const bool_expression*>(cond.get()))
+	{
+		return logic_cond->execute_inner(amx, args) ? on_true->assign(amx, args, std::move(value)) : on_false->assign(amx, args, std::move(value));
+	}else{
+		return !cond->execute(amx, args) ? on_false->assign(amx, args, std::move(value)) : on_true->assign(amx, args, std::move(value));
 	}
 }
 

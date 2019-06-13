@@ -22,6 +22,7 @@ public:
 
 	virtual dyn_object execute(AMX *amx, const args_type &args) const = 0;
 	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const;
+	virtual dyn_object assign(AMX *amx, const args_type &args, dyn_object &&value) const;
 	virtual tag_ptr get_tag(const args_type &args) const;
 	virtual cell get_size(const args_type &args) const;
 	virtual cell get_rank(const args_type &args) const;
@@ -81,6 +82,7 @@ public:
 
 	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
+	virtual dyn_object assign(AMX *amx, const args_type &args, dyn_object &&value) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
@@ -137,6 +139,33 @@ public:
 
 	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
+	virtual dyn_object assign(AMX *amx, const args_type &args, dyn_object &&value) const override;
+	virtual tag_ptr get_tag(const args_type &args) const override;
+	virtual cell get_size(const args_type &args) const override;
+	virtual cell get_rank(const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_left() const override;
+	virtual const expression_ptr &get_right() const override;
+	virtual expression_ptr clone() const override;
+};
+
+class assign_expression : public expression_base, public binary_expression
+{
+	expression_ptr left;
+	expression_ptr right;
+
+public:
+	assign_expression(expression_ptr &&left, expression_ptr &&right) : left(std::move(left)), right(std::move(right))
+	{
+
+	}
+
+	assign_expression(const expression_ptr &left, const expression_ptr &right) : left(left), right(right)
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
@@ -192,6 +221,7 @@ public:
 
 	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
+	virtual dyn_object assign(AMX *amx, const args_type &args, dyn_object &&value) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
@@ -218,6 +248,7 @@ public:
 
 	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
+	virtual dyn_object assign(AMX *amx, const args_type &args, dyn_object &&value) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
@@ -241,6 +272,7 @@ public:
 
 	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
+	virtual dyn_object assign(AMX *amx, const args_type &args, dyn_object &&value) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
@@ -687,6 +719,7 @@ public:
 
 	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
+	virtual dyn_object assign(AMX *amx, const args_type &args, dyn_object &&value) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const;
 	virtual const expression_ptr &get_left() const;

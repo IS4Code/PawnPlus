@@ -25,6 +25,16 @@ public:
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		return Factory(amx, ptr->execute(amx, {}), params[Indices]...);
 	}
+
+	// native expr_set(Expression:expr, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL expr_set(AMX *amx, cell *params)
+	{
+		expression *ptr;
+		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
+		ptr->assign(amx, {}, Factory(amx, params[Indices]...));
+		return 1;
+	}
 };
 
 namespace Natives
@@ -128,6 +138,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE(expr_comma, 2)
 	{
 		return expr_binary<comma_expression>(amx, params);
+	}
+
+	// native Expression:expr_assign(Expression:left, Expression:right);
+	AMX_DEFINE_NATIVE(expr_assign, 2)
+	{
+		return expr_binary<assign_expression>(amx, params);
 	}
 
 	// native Expression:expr_symbol(Symbol:symbol);
@@ -364,6 +380,30 @@ namespace Natives
 	{
 		return value_at<0>::expr_get<dyn_func_str_s>(amx, params);
 	}
+
+	// native expr_set(Expression:expr, AnyTag:value, TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(expr_set, 3)
+	{
+		return value_at<2, 3>::expr_set<dyn_func>(amx, params);
+	}
+
+	// native expr_set_arr(Expression:expr, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(expr_set_arr, 4)
+	{
+		return value_at<2, 3, 4>::expr_set<dyn_func_arr>(amx, params);
+	}
+
+	// native expr_set_str(Expression:expr, const value[]);
+	AMX_DEFINE_NATIVE(expr_set_str, 2)
+	{
+		return value_at<2>::expr_set<dyn_func_str>(amx, params);
+	}
+
+	// native expr_set_var(Expression:expr, VariantTag:value);
+	AMX_DEFINE_NATIVE(expr_set_var, 2)
+	{
+		return value_at<2>::expr_set<dyn_func_var>(amx, params);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -383,6 +423,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_arg),
 
 	AMX_DECLARE_NATIVE(expr_comma),
+	AMX_DECLARE_NATIVE(expr_assign),
 
 	AMX_DECLARE_NATIVE(expr_symbol),
 	AMX_DECLARE_NATIVE(expr_call),
@@ -423,6 +464,11 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_get_arr_safe),
 	AMX_DECLARE_NATIVE(expr_get_str_safe),
 	AMX_DECLARE_NATIVE(expr_get_str_safe_s),
+
+	AMX_DECLARE_NATIVE(expr_set),
+	AMX_DECLARE_NATIVE(expr_set_arr),
+	AMX_DECLARE_NATIVE(expr_set_str),
+	AMX_DECLARE_NATIVE(expr_set_var),
 };
 
 int RegisterExprNatives(AMX *amx)
