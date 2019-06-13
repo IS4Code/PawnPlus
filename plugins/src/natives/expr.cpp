@@ -130,6 +130,44 @@ namespace Natives
 		return expr_binary<comma_expression>(amx, params);
 	}
 
+	// native Expression:expr_symbol(Symbol:symbol);
+	AMX_DEFINE_NATIVE(expr_symbol, 1)
+	{
+		const auto &obj = amx::load_lock(amx);
+		if(!obj->dbg)
+		{
+			amx_LogicError(errors::no_debug_error);
+			return 0;
+		}
+		auto dbg = obj->dbg.get();
+
+		cell index = params[1];
+		if(index < 0 || index >= dbg->hdr->symbols)
+		{
+			amx_LogicError(errors::out_of_range, "symbol");
+			return 0;
+		}
+		auto sym = dbg->symboltbl[index];
+		auto &expr = expression_pool.emplace_derived<symbol_expression>(obj, dbg, sym);
+		return expression_pool.get_id(expr);
+	}
+
+	// native Expression:expr_call(Expression:func, Expression:...);
+	AMX_DEFINE_NATIVE(expr_call, 1)
+	{
+		cell numargs = (params[0] / sizeof(cell)) - 1;
+		std::vector<expression_ptr> args;
+		for(cell i = 0; i < numargs; i++)
+		{
+			cell amx_addr = params[2 + i];
+			cell *addr = amx_GetAddrSafe(amx, amx_addr);
+			std::shared_ptr<expression> ptr;
+			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
+			args.emplace_back(std::move(ptr));
+		}
+		return expr_unary<call_expression>(amx, params, std::move(args));
+	}
+
 	// native Expression:expr_add(Expression:left, Expression:right);
 	AMX_DEFINE_NATIVE(expr_add, 2)
 	{
@@ -345,6 +383,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_arg),
 
 	AMX_DECLARE_NATIVE(expr_comma),
+
+	AMX_DECLARE_NATIVE(expr_symbol),
+	AMX_DECLARE_NATIVE(expr_call),
 
 	AMX_DECLARE_NATIVE(expr_add),
 	AMX_DECLARE_NATIVE(expr_sub),

@@ -1542,6 +1542,9 @@ native Expression:expr_arg(index);
 
 native Expression:expr_comma(Expression:left, Expression:right);
 
+native Expression:expr_symbol(Symbol:symbol);
+native Expression:expr_call(Expression:func, Expression:...);
+
 native Expression:expr_add(Expression:left, Expression:right);
 native Expression:expr_sub(Expression:left, Expression:right);
 native Expression:expr_mul(Expression:left, Expression:right);
