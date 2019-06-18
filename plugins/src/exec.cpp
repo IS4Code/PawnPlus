@@ -104,7 +104,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 			return logerror(amx, AMX_ERR_GENERAL, "[PawnPlus] native recursion depth %d too high (limit is %d, use pp_max_recursion to increase it)", amx::context_level, maxRecursionLevel);
 		}
 
-		if(events::invoke_callbacks(amx, index, retval)) return AMX_ERR_NONE;
+		if(events::invoke_callbacks(amx, index, retval)) return amx->error;
 
 		if(!forked)
 		{
