@@ -1,4 +1,4 @@
-/** PawnPlus v1.0.0 by IllidanS4 **/
+/** PawnPlus v1.0.1 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 #if defined _inc_PawnPlus
@@ -14,7 +14,7 @@
 /*      Setup      */
 /*                 */
 
-const PP_VERSION = 0x100;
+const PP_VERSION = 0x101;
 
 #if defined PP_SYNTAX
 #define PP_SYNTAX_AMX_FORKED
