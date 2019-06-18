@@ -193,13 +193,16 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 
 	amx_Release(amx, heap);
 
-	if(flags & 2)
+	if(!handled)
 	{
-		amx->paramcount = params;
-		amx->stk = stk;
-	}else for(auto it = oldargs.rbegin(); it != oldargs.rend(); it++)
-	{
-		amx_Push(amx, *it);
+		if(flags & 2)
+		{
+			amx->paramcount = params;
+			amx->stk = stk;
+		}else for(auto it = oldargs.rbegin(); it != oldargs.rend(); it++)
+		{
+			amx_Push(amx, *it);
+		}
 	}
 
 	if(err) amx_RaiseError(amx, err);
