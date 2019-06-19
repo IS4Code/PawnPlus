@@ -623,6 +623,27 @@ public:
 typedef simple_expression<cell, tags::tag_cell> cell_expression;
 typedef simple_expression<bool, tags::tag_bool> bool_expression;
 
+class quote_expression : public simple_expression<cell, tags::tag_expression>, public unary_expression
+{
+	expression_ptr operand;
+
+public:
+	quote_expression(expression_ptr &&operand) : operand(std::move(operand))
+	{
+
+	}
+
+	quote_expression(const expression_ptr &operand) : operand(operand)
+	{
+
+	}
+
+	virtual cell execute_inner(AMX *amx, const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_operand() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
 namespace expr_impl
 {
 	template <bool(dyn_object::*Func)() const>

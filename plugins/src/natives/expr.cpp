@@ -305,6 +305,12 @@ namespace Natives
 		return expr_unary<index_expression>(amx, params, std::move(args));
 	}
 
+	// native Expression:expr_quote(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_quote, 1)
+	{
+		return expr_unary<quote_expression>(amx, params);
+	}
+
 	// native Expression:expr_add(Expression:left, Expression:right);
 	AMX_DEFINE_NATIVE(expr_add, 2)
 	{
@@ -576,6 +582,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_native),
 	AMX_DECLARE_NATIVE(expr_call),
 	AMX_DECLARE_NATIVE(expr_index),
+
+	AMX_DECLARE_NATIVE(expr_quote),
 
 	AMX_DECLARE_NATIVE(expr_add),
 	AMX_DECLARE_NATIVE(expr_sub),

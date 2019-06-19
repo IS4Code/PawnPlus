@@ -1557,6 +1557,8 @@ native Expression:expr_native(const function[], bool:local=true);
 native Expression:expr_call(Expression:func, Expression:...);
 native Expression:expr_index(Expression:arr, Expression:...);
 
+native Expression:expr_quote(Expression:expr);
+
 native Expression:expr_add(Expression:left, Expression:right);
 native Expression:expr_sub(Expression:left, Expression:right);
 native Expression:expr_mul(Expression:left, Expression:right);

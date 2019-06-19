@@ -21,8 +21,19 @@ void amx_ExpressionError(const char *format, ...)
 
 dyn_object expression::call(AMX *amx, const args_type &args, const call_args_type &call_args) const
 {
-	amx_ExpressionError("attempt to call a non-function expression");
-	return {};
+	auto result = execute(amx, args);
+	expression *ptr;
+	if(!(result.tag_assignable(tags::find_tag(tags::tag_expression))) || result.get_rank() != 0 || !expression_pool.get_by_id(result.get_cell(0), ptr))
+	{
+		amx_ExpressionError("attempt to call a non-function expression");
+	}
+	args_type new_args;
+	new_args.reserve(call_args.size());
+	for(const auto &arg : call_args)
+	{
+		new_args.push_back(std::ref(arg));
+	}
+	return ptr->execute(amx, new_args);
 }
 
 dyn_object expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
@@ -1297,6 +1308,28 @@ dyn_object local_native_expression::call(AMX *amx, const args_type &args, const 
 decltype(expression_pool)::object_ptr local_native_expression::clone() const
 {
 	return expression_pool.emplace_derived<local_native_expression>(*this);
+}
+
+cell quote_expression::execute_inner(AMX *amx, const args_type &args) const
+{
+	return expression_pool.get_id(static_cast<const expression_base*>(operand.get())->clone());
+}
+
+void quote_expression::to_string(strings::cell_string &str) const
+{
+	str.push_back('<');
+	operand->to_string(str);
+	str.push_back('>');
+}
+
+const expression_ptr &quote_expression::get_operand() const
+{
+	return operand;
+}
+
+decltype(expression_pool)::object_ptr quote_expression::clone() const
+{
+	return expression_pool.emplace_derived<quote_expression>(*this);
 }
 
 bool logic_and_expression::execute_inner(AMX *amx, const args_type &args) const
