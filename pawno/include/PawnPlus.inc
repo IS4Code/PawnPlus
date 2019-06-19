@@ -1579,6 +1579,8 @@ native Expression:expr_tagof(Expression:expr);
 native Expression:expr_sizeof(Expression:expr, Expression:...);
 native Expression:expr_rankof(Expression:expr);
 
+native Expression:expr_value(Expression:var);
+
 native expr_get(Expression:expr, offset=0);
 native expr_get_arr(Expression:expr, AnyTag:value[], size=sizeof(value));
 native expr_get_str(Expression:expr, value[], size=sizeof(value)) = expr_get_arr;

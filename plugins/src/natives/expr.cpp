@@ -384,6 +384,12 @@ namespace Natives
 		return expr_unary<rankof_expression>(amx, params);
 	}
 
+	// native Expression:expr_value(Expression:var);
+	AMX_DEFINE_NATIVE(expr_value, 1)
+	{
+		return expr_unary<extract_expression>(amx, params);
+	}
+
 	// native expr_get(Expression:expr, offset=0);
 	AMX_DEFINE_NATIVE(expr_get, 2)
 	{
@@ -512,6 +518,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_tagof),
 	AMX_DECLARE_NATIVE(expr_sizeof),
 	AMX_DECLARE_NATIVE(expr_rankof),
+
+	AMX_DECLARE_NATIVE(expr_value),
 
 	AMX_DECLARE_NATIVE(expr_get),
 	AMX_DECLARE_NATIVE(expr_get_arr),
