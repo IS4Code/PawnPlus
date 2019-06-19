@@ -1538,6 +1538,8 @@ native Expression:expr_const_arr(const AnyTag:value[], size=sizeof(value), TagTa
 native Expression:expr_const_str(const value[]);
 native Expression:expr_const_var(VariantTag:value);
 
+native Expression:expr_arr(Expression:...);
+
 native Expression:expr_arg(index);
 native Expression:expr_bind(Expression:expr, Expression:...);
 

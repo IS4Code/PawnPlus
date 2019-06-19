@@ -1,6 +1,7 @@
 #include "expressions.h"
 #include "tags.h"
 #include "errors.h"
+#include "modules/variants.h"
 
 #include <string>
 #include <stdarg.h>
@@ -365,6 +366,42 @@ expression_ptr try_expression::clone() const
 	return std::make_shared<try_expression>(*this);
 }
 
+dyn_object extract_expression::execute(AMX *amx, const args_type &args) const
+{
+	auto value = var->execute(amx, args);
+	if(!(value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
+	{
+		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), value.get_tag()->format_name());
+	}
+	if(value.get_rank() != 0)
+	{
+		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", value.get_rank());
+	}
+	cell c = value.get_cell(0);
+	dyn_object *var;
+	if(!variants::pool.get_by_id(c, var))
+	{
+		amx_ExpressionError(errors::pointer_invalid, "variant", c);
+	}
+	return *var;
+}
+
+void extract_expression::to_string(strings::cell_string &str) const
+{
+	str.push_back('*');
+	var->to_string(str);
+}
+
+const expression_ptr &extract_expression::get_operand() const
+{
+	return var;
+}
+
+expression_ptr extract_expression::clone() const
+{
+	return std::make_shared<extract_expression>(*this);
+}
+
 dyn_object call_expression::execute(AMX *amx, const args_type &args) const
 {
 	std::vector<dyn_object> func_args;
@@ -586,6 +623,59 @@ const expression_ptr &cast_expression::get_operand() const
 expression_ptr cast_expression::clone() const
 {
 	return std::make_shared<cast_expression>(*this);
+}
+
+dyn_object array_expression::execute(AMX *amx, const args_type &args) const
+{
+	std::vector<cell> data;
+	tag_ptr tag = nullptr;
+	for(const auto &arg : this->args)
+	{
+		dyn_object value = arg->execute(amx, args);
+		if(tag == nullptr)
+		{
+			tag = value.get_tag();
+		}else if(tag != value.get_tag())
+		{
+			amx_ExpressionError("array constructor argument tag mismatch (%s: required, %s: provided)", tag->format_name(), value.get_tag()->format_name());
+		}
+		if(value.get_rank() != 0)
+		{
+			amx_ExpressionError("only single cell arguments are supported in array construction (value of rank %d provided)", value.get_rank());
+		}
+		data.push_back(value.get_cell(0));
+	}
+	return dyn_object(data.size() > 0 ? &data[0] : nullptr, data.size(), tag ? tag : tags::find_tag(tags::tag_cell));
+}
+
+tag_ptr array_expression::get_tag(const args_type &args) const
+{
+	if(args.size() > 0)
+	{
+		return this->args[0]->get_tag(args);
+	}else{
+		return tags::find_tag(tags::tag_cell);
+	}
+}
+
+cell array_expression::get_size(const args_type &args) const
+{
+	return args.size();
+}
+
+cell array_expression::get_rank(const args_type &args) const
+{
+	return 1;
+}
+
+void array_expression::to_string(strings::cell_string &str) const
+{
+
+}
+
+expression_ptr array_expression::clone() const
+{
+	return std::make_shared<array_expression>(*this);
 }
 
 dyn_object symbol_expression::execute(AMX *amx, const args_type &args) const

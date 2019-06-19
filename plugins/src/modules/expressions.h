@@ -205,6 +205,27 @@ public:
 	virtual expression_ptr clone() const override;
 };
 
+class extract_expression : public expression_base, public unary_expression
+{
+	expression_ptr var;
+
+public:
+	extract_expression(expression_ptr &&var) : var(std::move(var))
+	{
+
+	}
+
+	extract_expression(const expression_ptr &var) : var(var)
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_operand() const override;
+	virtual expression_ptr clone() const override;
+};
+
 class call_expression : public expression_base, public unary_expression
 {
 	expression_ptr func;
@@ -285,6 +306,29 @@ public:
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
+	virtual expression_ptr clone() const override;
+};
+
+class array_expression : public expression_base
+{
+	std::vector<expression_ptr> args;
+
+public:
+	array_expression(std::vector<expression_ptr> &&args) : args(std::move(args))
+	{
+
+	}
+
+	array_expression(const std::vector<expression_ptr> &args) : args(args)
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
+	virtual tag_ptr get_tag(const args_type &args) const override;
+	virtual cell get_size(const args_type &args) const override;
+	virtual cell get_rank(const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
 	virtual expression_ptr clone() const override;
 };
 
