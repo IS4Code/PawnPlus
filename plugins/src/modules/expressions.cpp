@@ -771,6 +771,78 @@ expression_ptr symbol_expression::clone() const
 	return std::make_shared<symbol_expression>(*this);
 }
 
+dyn_object native_expression::execute(AMX *amx, const args_type &args) const
+{
+	amx_ExpressionError("attempt to obtain the value of a function");
+	return {};
+}
+
+dyn_object native_expression::call(AMX *amx, const args_type &args, const call_args_type &call_args) const
+{
+	auto data = amx_GetData(amx);
+	auto stk = reinterpret_cast<cell*>(data + amx->stk);
+
+	cell num = call_args.size() * sizeof(cell);
+	amx->stk -= num + 1 * sizeof(cell);
+	for(cell i = call_args.size() - 1; i >= 0; i--)
+	{
+		cell val = call_args[i].store(amx);
+		*--stk = val;
+	}
+	*--stk = num;
+	int old_error = amx->error;
+	cell ret = native(amx, stk);
+	amx->stk += num + 1 * sizeof(cell);
+	int err = amx->error;
+	amx->error = old_error;
+	if(err == AMX_ERR_NONE)
+	{
+		return dyn_object(ret, get_tag(args));
+	}
+	amx_ExpressionError("inner function raised an AMX error %d", err);
+	return {};
+}
+
+tag_ptr native_expression::get_tag(const args_type &args) const
+{
+	return tags::find_tag(tags::tag_cell);
+}
+
+cell native_expression::get_size(const args_type &args) const
+{
+	return 1;
+}
+
+cell native_expression::get_rank(const args_type &args) const
+{
+	return 0;
+}
+
+void native_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert(name));
+}
+
+expression_ptr native_expression::clone() const
+{
+	return std::make_shared<native_expression>(*this);
+}
+
+dyn_object local_native_expression::call(AMX *amx, const args_type &args, const call_args_type &call_args) const
+{
+	if(auto obj = target_amx.lock())
+	{
+		return native_expression::call(*obj, args, call_args);
+	}
+	amx_ExpressionError("target AMX was unloaded");
+	return {};
+}
+
+expression_ptr local_native_expression::clone() const
+{
+	return std::make_shared<local_native_expression>(*this);
+}
+
 bool logic_and_expression::execute_inner(AMX *amx, const args_type &args) const
 {
 	if(auto left_logic = dynamic_cast<const bool_expression*>(left.get()))

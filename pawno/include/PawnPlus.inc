@@ -1544,6 +1544,7 @@ native Expression:expr_comma(Expression:left, Expression:right);
 native Expression:expr_assign(Expression:left, Expression:right);
 
 native Expression:expr_symbol(Symbol:symbol);
+native Expression:expr_native(const function[], bool:local=true);
 native Expression:expr_call(Expression:func, Expression:...);
 
 native Expression:expr_add(Expression:left, Expression:right);

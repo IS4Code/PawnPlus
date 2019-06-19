@@ -280,6 +280,40 @@ public:
 	virtual expression_ptr clone() const override;
 };
 
+class native_expression : public expression_base
+{
+	AMX_NATIVE native;
+	std::string name;
+
+public:
+	native_expression(AMX_NATIVE native, const std::string &&name) : native(native), name(std::move(name))
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
+	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
+	virtual tag_ptr get_tag(const args_type &args) const override;
+	virtual cell get_size(const args_type &args) const override;
+	virtual cell get_rank(const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual expression_ptr clone() const override;
+};
+
+class local_native_expression : public native_expression
+{
+	amx::handle target_amx;
+
+public:
+	local_native_expression(AMX *amx, AMX_NATIVE native, const std::string &&name) : target_amx(amx::load(amx)), native_expression(native, std::move(name))
+	{
+
+	}
+
+	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
+	virtual expression_ptr clone() const override;
+};
+
 namespace impl
 {
 	template <dyn_object(dyn_object::*Func)() const>
