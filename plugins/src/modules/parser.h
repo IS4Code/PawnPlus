@@ -21,7 +21,7 @@ class expression_parser
 		while(begin != end)
 		{
 			cell c = *begin;
-			if(c == '@' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
+			if(c == '@' || c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
 			{
 				symbol.push_back(c);
 			}else{
@@ -355,7 +355,7 @@ class expression_parser
 						}
 						return std::make_shared<arg_expression>(index);
 					}
-					if(c == '@' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+					if(c == '@' || c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
 					{
 						auto symbol = parse_symbol(begin, end);
 						if(begin != end)
