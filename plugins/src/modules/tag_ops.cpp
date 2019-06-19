@@ -479,12 +479,15 @@ struct char_operations : public cell_operations
 
 	virtual cell_string to_string(tag_ptr tag, const cell *arg, cell size) const override
 	{
-		cell_string str(arg, size);
+		cell_string str;
+		str.push_back('"');
+		str.append(arg, size);
 		size_t null = str.find(0);
 		if(null != cell_string::npos)
 		{
 			str.resize(null, 0);
 		}
+		str.push_back('"');
 		return str;
 	}
 
@@ -495,7 +498,9 @@ struct char_operations : public cell_operations
 
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
-		str.append({arg});
+		str.push_back('\'');
+		str.push_back(arg);
+		str.push_back('\'');
 	}
 };
 
