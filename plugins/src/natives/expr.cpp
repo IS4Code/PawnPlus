@@ -123,6 +123,22 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
+	// native Expression:expr_bind(Expression:expr, Expression:...);
+	AMX_DEFINE_NATIVE(expr_bind, 1)
+	{
+		cell numargs = (params[0] / sizeof(cell)) - 1;
+		std::vector<expression_ptr> args;
+		for(cell i = 0; i < numargs; i++)
+		{
+			cell amx_addr = params[2 + i];
+			cell *addr = amx_GetAddrSafe(amx, amx_addr);
+			std::shared_ptr<expression> ptr;
+			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
+			args.emplace_back(std::move(ptr));
+		}
+		return expr_unary<bind_expression>(amx, params, std::move(args));
+	}
+
 	template <class Expr, class... Args>
 	static cell AMX_NATIVE_CALL expr_binary(AMX *amx, cell *params, Args &&...args)
 	{
@@ -433,6 +449,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_const_var),
 
 	AMX_DECLARE_NATIVE(expr_arg),
+	AMX_DECLARE_NATIVE(expr_bind),
 
 	AMX_DECLARE_NATIVE(expr_comma),
 	AMX_DECLARE_NATIVE(expr_assign),

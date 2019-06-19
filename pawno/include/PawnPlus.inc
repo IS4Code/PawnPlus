@@ -1539,6 +1539,7 @@ native Expression:expr_const_str(const value[]);
 native Expression:expr_const_var(VariantTag:value);
 
 native Expression:expr_arg(index);
+native Expression:expr_bind(Expression:expr, Expression:...);
 
 native Expression:expr_comma(Expression:left, Expression:right);
 native Expression:expr_assign(Expression:left, Expression:right);

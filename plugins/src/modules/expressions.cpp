@@ -371,7 +371,35 @@ auto bind_expression::combine_args(const args_type &args) const -> args_type
 	new_args.reserve(base_args.size() + args.size());
 	for(const auto &arg : base_args)
 	{
-		new_args.push_back(std::ref(arg));
+		if(auto const_expr = dynamic_cast<const constant_expression*>(arg.get()))
+		{
+			new_args.push_back(std::ref(const_expr->get_value()));
+		}else{
+			new_args.clear();
+			return new_args;
+		}
+	}
+	for(const auto &arg_ref : args)
+	{
+		new_args.push_back(arg_ref);
+	}
+	return new_args;
+}
+
+auto bind_expression::combine_args(AMX *amx, const args_type &args, std::vector<dyn_object> &storage) const -> args_type
+{
+	storage.reserve(base_args.size() + args.size());
+	args_type new_args;
+	new_args.reserve(base_args.size() + args.size());
+	for(const auto &arg : base_args)
+	{
+		if(auto const_expr = dynamic_cast<const constant_expression*>(arg.get()))
+		{
+			new_args.push_back(std::ref(const_expr->get_value()));
+		}else{
+			storage.push_back(arg->execute(amx, args));
+			new_args.push_back(std::ref(storage.back()));
+		}
 	}
 	for(const auto &arg_ref : args)
 	{
@@ -382,24 +410,27 @@ auto bind_expression::combine_args(const args_type &args) const -> args_type
 
 dyn_object bind_expression::execute(AMX *amx, const args_type &args) const
 {
-	return operand->execute(amx, combine_args(args));
+	std::vector<dyn_object> storage;
+	return operand->execute(amx, combine_args(amx, args, storage));
 }
 
 dyn_object bind_expression::call(AMX *amx, const args_type &args, const call_args_type &call_args) const
 {
-	return operand->call(amx, combine_args(args), call_args);
+	std::vector<dyn_object> storage;
+	return operand->call(amx, combine_args(amx, args, storage), call_args);
 }
 
 dyn_object bind_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
 {
-	return operand->assign(amx, combine_args(args), std::move(value));
+	std::vector<dyn_object> storage;
+	return operand->assign(amx, combine_args(amx, args, storage), std::move(value));
 }
 
 void bind_expression::to_string(strings::cell_string &str) const
 {
-	str.push_back('(');
+	str.push_back('[');
 	operand->to_string(str);
-	str.push_back(')');
+	str.push_back(']');
 	str.push_back('(');
 	bool first = true;
 	for(const auto &arg : base_args)
@@ -411,24 +442,39 @@ void bind_expression::to_string(strings::cell_string &str) const
 			str.push_back(',');
 			str.push_back(' ');
 		}
-		str.append(arg.to_string());
+		arg->to_string(str);
 	}
 	str.push_back(')');
 }
 
 tag_ptr bind_expression::get_tag(const args_type &args) const
 {
-	return operand->get_tag(combine_args(args));
+	auto all_args = combine_args(args);
+	if(all_args.size() >= base_args.size())
+	{
+		return operand->get_tag(all_args);
+	}
+	return nullptr;
 }
 
 cell bind_expression::get_size(const args_type &args) const
 {
-	return operand->get_size(combine_args(args));
+	auto all_args = combine_args(args);
+	if(all_args.size() >= base_args.size())
+	{
+		operand->get_size(all_args);
+	}
+	return 0;
 }
 
 cell bind_expression::get_rank(const args_type &args) const
 {
-	return operand->get_rank(combine_args(args));
+	auto all_args = combine_args(args);
+	if(all_args.size() >= base_args.size())
+	{
+		operand->get_rank(all_args);
+	}
+	return -1;
 }
 
 const expression_ptr &bind_expression::get_operand() const

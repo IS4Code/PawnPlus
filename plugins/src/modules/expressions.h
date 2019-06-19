@@ -63,6 +63,11 @@ public:
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual expression_ptr clone() const override;
+
+	const dyn_object &get_value() const
+	{
+		return value;
+	}
 };
 
 class weak_expression : public expression_base
@@ -203,18 +208,19 @@ public:
 class bind_expression : public expression_base, public unary_expression
 {
 	expression_ptr operand;
-	std::vector<dyn_object> base_args;
+	std::vector<expression_ptr> base_args;
 
 protected:
 	args_type combine_args(const args_type &args) const;
+	args_type combine_args(AMX *amx, const args_type &args, std::vector<dyn_object> &storage) const;
 
 public:
-	bind_expression(expression_ptr &&ptr, std::vector<dyn_object> &&base_args) : operand(std::move(ptr)), base_args(std::move(base_args))
+	bind_expression(expression_ptr &&ptr, std::vector<expression_ptr> &&base_args) : operand(std::move(ptr)), base_args(std::move(base_args))
 	{
 
 	}
 
-	bind_expression(const expression_ptr &ptr, const std::vector<dyn_object> &base_args) : operand(ptr), base_args(base_args)
+	bind_expression(const expression_ptr &ptr, const std::vector<expression_ptr> &base_args) : operand(ptr), base_args(base_args)
 	{
 
 	}
