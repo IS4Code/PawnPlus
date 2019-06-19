@@ -1533,6 +1533,7 @@ native expr_delete(Expression:expr);
 native bool:expr_valid(Expression:expr);
 
 native Expression:expr_parse(const string[]);
+native Expression:expr_parse_s(ConstString:string);
 
 native Expression:expr_weak(Expression:expr);
 native Expression:expr_weak_set(Expression:weak, Expression:target);

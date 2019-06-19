@@ -110,6 +110,14 @@ namespace Natives
 		return strings::select_iterator<parse_base>(str, amx);
 	}
 
+	// native Expression:expr_parse_s(ConstString:string);
+	AMX_DEFINE_NATIVE(expr_parse_s, 1)
+	{
+		strings::cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		return strings::select_iterator<parse_base>(str, amx);
+	}
+
 	// native Expression:expr_weak(Expression:expr);
 	AMX_DEFINE_NATIVE(expr_weak, 1)
 	{
@@ -595,6 +603,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_valid),
 
 	AMX_DECLARE_NATIVE(expr_parse),
+	AMX_DECLARE_NATIVE(expr_parse_s),
 
 	AMX_DECLARE_NATIVE(expr_weak),
 	AMX_DECLARE_NATIVE(expr_weak_set),
