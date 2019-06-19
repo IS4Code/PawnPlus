@@ -162,6 +162,12 @@ namespace Natives
 		return expr_binary<assign_expression>(amx, params);
 	}
 
+	// native Expression:expr_try(Expression:main, Expression:fallback);
+	AMX_DEFINE_NATIVE(expr_try, 2)
+	{
+		return expr_binary<try_expression>(amx, params);
+	}
+
 	// native Expression:expr_symbol(Symbol:symbol);
 	AMX_DEFINE_NATIVE(expr_symbol, 1)
 	{
@@ -453,6 +459,8 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(expr_comma),
 	AMX_DECLARE_NATIVE(expr_assign),
+
+	AMX_DECLARE_NATIVE(expr_try),
 
 	AMX_DECLARE_NATIVE(expr_symbol),
 	AMX_DECLARE_NATIVE(expr_native),

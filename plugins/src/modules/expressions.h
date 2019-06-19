@@ -180,6 +180,31 @@ public:
 	virtual expression_ptr clone() const override;
 };
 
+class try_expression : public expression_base, public binary_expression
+{
+	expression_ptr main;
+	expression_ptr fallback;
+
+public:
+	try_expression(expression_ptr &&main, expression_ptr &&fallback) : main(std::move(main)), fallback(std::move(fallback))
+	{
+
+	}
+
+	try_expression(const expression_ptr &main, const expression_ptr &fallback) : main(main), fallback(fallback)
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
+	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
+	virtual dyn_object assign(AMX *amx, const args_type &args, dyn_object &&value) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_left() const override;
+	virtual const expression_ptr &get_right() const override;
+	virtual expression_ptr clone() const override;
+};
+
 class call_expression : public expression_base, public unary_expression
 {
 	expression_ptr func;

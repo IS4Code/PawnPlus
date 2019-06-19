@@ -311,6 +311,60 @@ expression_ptr assign_expression::clone() const
 	return std::make_shared<assign_expression>(*this);
 }
 
+dyn_object try_expression::execute(AMX *amx, const args_type &args) const
+{
+	try{
+		return main->execute(amx, args);
+	}catch(const errors::native_error&)
+	{
+		return fallback->execute(amx, args);
+	}
+}
+
+dyn_object try_expression::call(AMX *amx, const args_type &args, const call_args_type &call_args) const
+{
+	try{
+		return main->call(amx, args, call_args);
+	}catch(const errors::native_error&)
+	{
+		return fallback->call(amx, args, call_args);
+	}
+}
+
+dyn_object try_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
+{
+	try{
+		return main->assign(amx, args, std::move(value));
+	}catch(const errors::native_error&)
+	{
+		return fallback->assign(amx, args, std::move(value));
+	}
+}
+
+void try_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert("try["));
+	main->to_string(str);
+	str.append(strings::convert("]catch["));
+	fallback->to_string(str);
+	str.push_back(']');
+}
+
+const expression_ptr &try_expression::get_left() const
+{
+	return main;
+}
+
+const expression_ptr &try_expression::get_right() const
+{
+	return fallback;
+}
+
+expression_ptr try_expression::clone() const
+{
+	return std::make_shared<try_expression>(*this);
+}
+
 dyn_object call_expression::execute(AMX *amx, const args_type &args) const
 {
 	std::vector<dyn_object> func_args;
