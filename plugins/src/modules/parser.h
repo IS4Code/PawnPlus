@@ -8,6 +8,9 @@
 #include "sdk/amx/amxdbg.h"
 #include <string>
 #include <cstring>
+#include <unordered_map>
+
+const std::unordered_map<std::string, expression_ptr> &parser_symbols();
 
 template <class Iter>
 class expression_parser
@@ -318,6 +321,12 @@ class expression_parser
 								}
 							}else{
 								begin = old;
+							}
+						}else{
+							auto it = parser_symbols().find(symbol);
+							if(it != parser_symbols().end())
+							{
+								return it->second;
 							}
 						}
 

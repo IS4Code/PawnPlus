@@ -148,6 +148,9 @@
     <ClCompile Include="src\natives\expr.cpp">
       <Filter>src\natives</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\parser.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">

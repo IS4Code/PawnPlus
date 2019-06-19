@@ -147,6 +147,7 @@
     <ClCompile Include="src\modules\events.cpp" />
     <ClCompile Include="src\modules\expressions.cpp" />
     <ClCompile Include="src\modules\guards.cpp" />
+    <ClCompile Include="src\modules\parser.cpp" />
     <ClCompile Include="src\modules\serialize.cpp" />
     <ClCompile Include="src\modules\strings.cpp" />
     <ClCompile Include="src\modules\tags.cpp" />
