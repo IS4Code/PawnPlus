@@ -126,8 +126,16 @@ class expression_parser
 					}
 					return std::make_shared<unary_logic_expression<&dyn_object::operator!>>(std::move(inner));
 				}
-				break;
-				break;
+				case '~':
+				{
+					++begin;
+					auto inner = parse_factor(amx, begin, end, endchar);
+					if(!inner)
+					{
+						amx_FormalError(errors::invalid_expression, "missing expression");
+					}
+					return std::make_shared<unary_object_expression<&dyn_object::operator~>>(std::move(inner));
+				}
 				case '*':
 				{
 					++begin;
@@ -138,7 +146,6 @@ class expression_parser
 					}
 					return std::make_shared<variant_value_expression>(std::move(inner));
 				}
-				continue;
 				case '&':
 				{
 					++begin;
@@ -149,7 +156,6 @@ class expression_parser
 					}
 					return std::make_shared<variant_expression>(std::move(inner));
 				}
-				continue;
 				case '(':
 				{
 					auto old = begin;
@@ -675,6 +681,15 @@ class expression_parser
 							amx_FormalError(errors::invalid_expression, "missing expression");
 						}
 						result = std::make_shared<binary_logic_expression<&dyn_object::operator<=>>(std::move(result), std::move(inner));
+					}else if(begin != end && *begin == '<')
+					{
+						++begin;
+						auto inner = parse_operand(amx, begin, end, endchar);
+						if(!inner)
+						{
+							amx_FormalError(errors::invalid_expression, "missing expression");
+						}
+						result = std::make_shared<binary_object_expression<&dyn_object::operator<<>>(std::move(result), std::move(inner));
 					}else{
 						auto inner = parse_operand(amx, begin, end, endchar);
 						if(!inner)
@@ -703,6 +718,15 @@ class expression_parser
 							amx_FormalError(errors::invalid_expression, "missing expression");
 						}
 						result = std::make_shared<binary_logic_expression<&dyn_object::operator>=>>(std::move(result), std::move(inner));
+					}else if(begin != end && *begin == '>')
+					{
+						++begin;
+						auto inner = parse_operand(amx, begin, end, endchar);
+						if(!inner)
+						{
+							amx_FormalError(errors::invalid_expression, "missing expression");
+						}
+						result = std::make_shared<binary_object_expression<(&dyn_object::operator>>)>>(std::move(result), std::move(inner));
 					}else{
 						auto inner = parse_operand(amx, begin, end, endchar);
 						if(!inner)
@@ -712,6 +736,51 @@ class expression_parser
 						}
 						result = std::make_shared<binary_logic_expression<(&dyn_object::operator>)>>(std::move(result), std::move(inner));
 					}
+				}
+				continue;
+				case '&':
+				{
+					if(!result)
+					{
+						break;
+					}
+					++begin;
+					auto inner = parse_operand(amx, begin, end, endchar);
+					if(!inner)
+					{
+						amx_FormalError(errors::invalid_expression, "missing expression");
+					}
+					result = std::make_shared<binary_object_expression<&dyn_object::operator&>>(std::move(result), std::move(inner));
+				}
+				continue;
+				case '|':
+				{
+					if(!result)
+					{
+						break;
+					}
+					++begin;
+					auto inner = parse_operand(amx, begin, end, endchar);
+					if(!inner)
+					{
+						amx_FormalError(errors::invalid_expression, "missing expression");
+					}
+					result = std::make_shared<binary_object_expression<&dyn_object::operator|>>(std::move(result), std::move(inner));
+				}
+				continue;
+				case '^':
+				{
+					if(!result)
+					{
+						break;
+					}
+					++begin;
+					auto inner = parse_operand(amx, begin, end, endchar);
+					if(!inner)
+					{
+						amx_FormalError(errors::invalid_expression, "missing expression");
+					}
+					result = std::make_shared<binary_object_expression<&dyn_object::operator^>>(std::move(result), std::move(inner));
 				}
 				continue;
 			}

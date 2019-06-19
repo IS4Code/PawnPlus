@@ -9,6 +9,7 @@
 #include <cstring>
 #include <type_traits>
 #include <algorithm>
+#include <functional>
 
 bool memequal(void const* ptr1, void const* ptr2, size_t size)
 {
@@ -1043,6 +1044,87 @@ dyn_object dyn_object::operator%(const dyn_object &obj) const
 	return operator_func<&tag_operations::mod>(obj);
 }
 
+template <class OpType>
+dyn_object dyn_object::operator_cell_func(const dyn_object &obj) const
+{
+	if(!tag_compatible(obj) || tag->strong() || empty() || obj.empty()) return dyn_object();
+	dyn_object result;
+	OpType op;
+	if(is_array() && obj.is_array())
+	{
+		if(!struct_compatible(obj)) return dyn_object();
+
+		result = dyn_object(*this, false);
+		auto it = obj.begin();
+		for(cell &c : result)
+		{
+			if(it == obj.end()) break;
+			c = op(c, *it);
+			it++;
+		}
+	}else if(is_array())
+	{
+		result = dyn_object(*this, false);
+		for(cell &c : result)
+		{
+			c = op(c, obj.cell_value);
+		}
+	}else if(obj.is_array())
+	{
+		result = dyn_object(obj, false);
+		for(cell &c : result)
+		{
+			c = op(cell_value, c);
+		}
+	}else{
+		result = dyn_object(op(cell_value, obj.cell_value), tag, false);
+	}
+	return result;
+}
+
+dyn_object dyn_object::operator&(const dyn_object &obj) const
+{
+	return operator_cell_func<std::bit_and<cell>>(obj);
+}
+
+dyn_object dyn_object::operator|(const dyn_object &obj) const
+{
+	return operator_cell_func<std::bit_or<cell>>(obj);
+}
+
+dyn_object dyn_object::operator^(const dyn_object &obj) const
+{
+	return operator_cell_func<std::bit_xor<cell>>(obj);
+}
+
+template <class Type>
+struct bit_right_shift
+{
+	Type operator()(const Type &a, const Type &b)
+	{
+		return a >> b;
+	}
+};
+
+template <class Type>
+struct bit_left_shift
+{
+	Type operator()(const Type &a, const Type &b)
+	{
+		return a << b;
+	}
+};
+
+dyn_object dyn_object::operator>>(const dyn_object &obj) const
+{
+	return operator_cell_func<bit_right_shift<cell>>(obj);
+}
+
+dyn_object dyn_object::operator<<(const dyn_object &obj) const
+{
+	return operator_cell_func<bit_left_shift<cell>>(obj);
+}
+
 template <cell(tag_operations::*OpFunc)(tag_ptr, cell) const>
 dyn_object dyn_object::operator_func() const
 {
@@ -1068,6 +1150,30 @@ dyn_object dyn_object::inc() const
 dyn_object dyn_object::dec() const
 {
 	return operator_func<&tag_operations::dec>();
+}
+
+template <class OpType>
+dyn_object dyn_object::operator_cell_func() const
+{
+	if(tag->strong() || empty()) return dyn_object();
+	dyn_object result = dyn_object(*this, false);
+	OpType op;
+	for(cell &c : result)
+	{
+		c = op(c);
+	}
+	return result;
+}
+
+dyn_object dyn_object::operator+() const
+{
+	if(tag->strong() || empty()) return dyn_object();
+	return dyn_object(*this, false);
+}
+
+dyn_object dyn_object::operator~() const
+{
+	return operator_cell_func<std::bit_not<cell>>();
 }
 
 std::basic_string<cell> dyn_object::to_string() const

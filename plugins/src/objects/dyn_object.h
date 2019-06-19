@@ -186,7 +186,14 @@ public:
 	dyn_object operator*(const dyn_object &obj) const;
 	dyn_object operator/(const dyn_object &obj) const;
 	dyn_object operator%(const dyn_object &obj) const;
+	dyn_object operator&(const dyn_object &obj) const;
+	dyn_object operator|(const dyn_object &obj) const;
+	dyn_object operator^(const dyn_object &obj) const;
+	dyn_object operator>>(const dyn_object &obj) const;
+	dyn_object operator<<(const dyn_object &obj) const;
 	dyn_object operator-() const;
+	dyn_object operator+() const;
+	dyn_object operator~() const;
 	dyn_object inc() const;
 	dyn_object dec() const;
 	bool operator==(const dyn_object &obj) const;
@@ -214,6 +221,10 @@ private:
 	dyn_object operator_func(const dyn_object &obj) const;
 	template <cell(tag_operations::*OpFunc)(tag_ptr, cell) const>
 	dyn_object operator_func() const;
+	template <class OpType>
+	dyn_object operator_cell_func(const dyn_object &obj) const;
+	template <class OpType>
+	dyn_object operator_cell_func() const;
 	template <bool(tag_operations::*OpFunc)(tag_ptr, cell, cell) const>
 	bool operator_log_func(const dyn_object &obj) const;
 };

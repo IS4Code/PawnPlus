@@ -341,6 +341,36 @@ namespace Natives
 		return expr_binary<binary_object_expression<&dyn_object::operator% >>(amx, params);
 	}
 
+	// native Expression:expr_bit_and(Expression:left, Expression:right);
+	AMX_DEFINE_NATIVE(expr_bit_and, 2)
+	{
+		return expr_binary<binary_object_expression<&dyn_object::operator&>>(amx, params);
+	}
+
+	// native Expression:expr_bit_or(Expression:left, Expression:right);
+	AMX_DEFINE_NATIVE(expr_bit_or, 2)
+	{
+		return expr_binary<binary_object_expression<&dyn_object::operator|>>(amx, params);
+	}
+
+	// native Expression:expr_bit_xor(Expression:left, Expression:right);
+	AMX_DEFINE_NATIVE(expr_bit_xor, 2)
+	{
+		return expr_binary<binary_object_expression<&dyn_object::operator^>>(amx, params);
+	}
+
+	// native Expression:expr_rs(Expression:left, Expression:right);
+	AMX_DEFINE_NATIVE(expr_rs, 2)
+	{
+		return expr_binary<binary_object_expression<(&dyn_object::operator>>)>>(amx, params);
+	}
+
+	// native Expression:expr_ls(Expression:left, Expression:right);
+	AMX_DEFINE_NATIVE(expr_ls, 2)
+	{
+		return expr_binary<binary_object_expression<&dyn_object::operator<<>>(amx, params);
+	}
+
 	// native Expression:expr_neg(Expression:expr);
 	AMX_DEFINE_NATIVE(expr_neg, 1)
 	{
@@ -357,6 +387,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE(expr_dec, 1)
 	{
 		return expr_unary<unary_object_expression<&dyn_object::dec>>(amx, params);
+	}
+
+	// native Expression:expr_bit_not(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_bit_not, 1)
+	{
+		return expr_unary<unary_object_expression<&dyn_object::operator~>>(amx, params);
 	}
 
 	// native Expression:expr_eq(Expression:left, Expression:right);
@@ -591,9 +627,17 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_div),
 	AMX_DECLARE_NATIVE(expr_mod),
 
+	AMX_DECLARE_NATIVE(expr_bit_and),
+	AMX_DECLARE_NATIVE(expr_bit_or),
+	AMX_DECLARE_NATIVE(expr_bit_xor),
+	AMX_DECLARE_NATIVE(expr_rs),
+	AMX_DECLARE_NATIVE(expr_ls),
+
 	AMX_DECLARE_NATIVE(expr_neg),
 	AMX_DECLARE_NATIVE(expr_inc),
 	AMX_DECLARE_NATIVE(expr_dec),
+
+	AMX_DECLARE_NATIVE(expr_bit_not),
 
 	AMX_DECLARE_NATIVE(expr_eq),
 	AMX_DECLARE_NATIVE(expr_neq),

@@ -1564,9 +1564,15 @@ native Expression:expr_sub(Expression:left, Expression:right);
 native Expression:expr_mul(Expression:left, Expression:right);
 native Expression:expr_div(Expression:left, Expression:right);
 native Expression:expr_mod(Expression:left, Expression:right);
+native Expression:expr_bit_and(Expression:left, Expression:right);
+native Expression:expr_bit_or(Expression:left, Expression:right);
+native Expression:expr_bit_xor(Expression:left, Expression:right);
+native Expression:expr_rs(Expression:left, Expression:right);
+native Expression:expr_ls(Expression:left, Expression:right);
 native Expression:expr_neg(Expression:expr);
 native Expression:expr_inc(Expression:expr);
 native Expression:expr_dec(Expression:expr);
+native Expression:expr_bit_not(Expression:expr);
 
 native Expression:expr_eq(Expression:left, Expression:right);
 native Expression:expr_neq(Expression:left, Expression:right);

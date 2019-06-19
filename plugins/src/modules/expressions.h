@@ -450,6 +450,26 @@ namespace expr_impl
 			return "--";
 		}
 	};
+
+	template <>
+	class unary_object_operator_name<&dyn_object::operator+>
+	{
+	public:
+		constexpr const char *operator()() const
+		{
+			return "+";
+		}
+	};
+
+	template <>
+	class unary_object_operator_name<&dyn_object::operator~>
+	{
+	public:
+		constexpr const char *operator()() const
+		{
+			return "~";
+		}
+	};
 }
 
 template <dyn_object(dyn_object::*Func)() const>
@@ -542,6 +562,56 @@ namespace expr_impl
 		constexpr const char *operator()() const
 		{
 			return "%";
+		}
+	};
+
+	template <>
+	class binary_object_operator_name<&dyn_object::operator&>
+	{
+	public:
+		constexpr const char *operator()() const
+		{
+			return "&";
+		}
+	};
+
+	template <>
+	class binary_object_operator_name<&dyn_object::operator|>
+	{
+	public:
+		constexpr const char *operator()() const
+		{
+			return "|";
+		}
+	};
+
+	template <>
+	class binary_object_operator_name<&dyn_object::operator^>
+	{
+	public:
+		constexpr const char *operator()() const
+		{
+			return "^";
+		}
+	};
+
+	template <>
+	class binary_object_operator_name<(&dyn_object::operator>>)>
+	{
+	public:
+		constexpr const char *operator()() const
+		{
+			return ">>";
+		}
+	};
+
+	template <>
+	class binary_object_operator_name<&dyn_object::operator<<>
+	{
+	public:
+		constexpr const char *operator()() const
+		{
+			return "<<";
 		}
 	};
 }
