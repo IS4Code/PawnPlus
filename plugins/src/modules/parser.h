@@ -90,6 +90,69 @@ class expression_parser
 		return std::make_shared<constant_expression>(dyn_object(value, tags::find_tag(tags::tag_cell)));
 	}
 
+	strings::cell_string parse_string(Iter &begin, Iter end, cell marker)
+	{
+		strings::cell_string buffer;
+		while(begin != end)
+		{
+			if(*begin == marker)
+			{
+				return buffer;
+			}else if(*begin == '\\')
+			{
+				++begin;
+				if(begin == end)
+				{
+					break;
+				}
+				switch(*begin)
+				{
+					case '\\':
+						buffer.push_back('\\');
+						++begin;
+						continue;
+					case '\'':
+						buffer.push_back('\'');
+						++begin;
+						continue;
+					case '"':
+						buffer.push_back('"');
+						++begin;
+						continue;
+					case '0':
+						buffer.push_back('\0');
+						++begin;
+						continue;
+					case 'r':
+						buffer.push_back('\r');
+						++begin;
+						continue;
+					case 'n':
+						buffer.push_back('\n');
+						++begin;
+						continue;
+					case 'v':
+						buffer.push_back('\v');
+						++begin;
+						continue;
+					case 't':
+						buffer.push_back('\t');
+						++begin;
+						continue;
+					case 'b':
+						buffer.push_back('\b');
+						++begin;
+						continue;
+				}
+				amx_FormalError(errors::invalid_expression, "unrecognized escape character");
+			}
+			buffer.push_back(*begin);
+			++begin;
+		}
+		amx_FormalError(errors::invalid_expression, "unexpected end of string");
+		return buffer;
+	}
+
 	expression_ptr parse_term(AMX *amx, Iter &begin, Iter end, cell endchar)
 	{
 		while(begin != end)
@@ -106,9 +169,25 @@ class expression_parser
 				}
 				continue;
 				case '\'':
-					break;
+				{
+					++begin;
+					auto str = parse_string(begin, end, c);
+					++begin;
+					if(str.size() != 1)
+					{
+						amx_FormalError(errors::invalid_expression, "character constant must be a single character");
+					}
+					return std::make_shared<constant_expression>(dyn_object(str[0], tags::find_tag(tags::tag_char)));
+				}
+				continue;
 				case '"':
-					break;
+				{
+					++begin;
+					auto str = parse_string(begin, end, c);
+					++begin;
+					return std::make_shared<constant_expression>(dyn_object(str.data(), str.size() + 1, tags::find_tag(tags::tag_char)));
+				}
+				continue;
 				case '-':
 				{
 					++begin;
