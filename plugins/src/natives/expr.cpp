@@ -235,6 +235,22 @@ namespace Natives
 		return expr_unary<call_expression>(amx, params, std::move(args));
 	}
 
+	// native Expression:expr_index(Expression:arr, Expression:...);
+	AMX_DEFINE_NATIVE(expr_index, 1)
+	{
+		cell numargs = (params[0] / sizeof(cell)) - 1;
+		std::vector<expression_ptr> args;
+		for(cell i = 0; i < numargs; i++)
+		{
+			cell amx_addr = params[2 + i];
+			cell *addr = amx_GetAddrSafe(amx, amx_addr);
+			std::shared_ptr<expression> ptr;
+			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
+			args.emplace_back(std::move(ptr));
+		}
+		return expr_unary<index_expression>(amx, params, std::move(args));
+	}
+
 	// native Expression:expr_add(Expression:left, Expression:right);
 	AMX_DEFINE_NATIVE(expr_add, 2)
 	{
@@ -490,6 +506,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_symbol),
 	AMX_DECLARE_NATIVE(expr_native),
 	AMX_DECLARE_NATIVE(expr_call),
+	AMX_DECLARE_NATIVE(expr_index),
 
 	AMX_DECLARE_NATIVE(expr_add),
 	AMX_DECLARE_NATIVE(expr_sub),

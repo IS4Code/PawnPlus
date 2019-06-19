@@ -5,6 +5,7 @@
 
 #include <string>
 #include <stdarg.h>
+#include <cstring>
 
 object_pool<expression> expression_pool;
 
@@ -28,6 +29,49 @@ dyn_object expression::assign(AMX *amx, const args_type &args, dyn_object &&valu
 {
 	amx_ExpressionError("attempt to assign to a non-lvalue expression");
 	return {};
+}
+
+dyn_object expression::index(AMX *amx, const args_type &args, const std::vector<dyn_object> &indices) const
+{
+	std::vector<cell> cell_indices;
+	for(const auto &index : indices)
+	{
+		if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
+		{
+			amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
+		}
+		if(index.get_rank() != 0)
+		{
+			amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
+		}
+		cell_indices.push_back(index.get_cell(0));
+	}
+	auto value = execute(amx, args);
+	return dyn_object(value.get_cell(cell_indices.data(), cell_indices.size()), value.get_tag());
+}
+
+std::tuple<cell*, size_t, tag_ptr> expression::address(AMX *amx, const args_type &args, const call_args_type &indices) const
+{
+	std::vector<cell> cell_indices;
+	for(const auto &index : indices)
+	{
+		if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
+		{
+			amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
+		}
+		if(index.get_rank() != 0)
+		{
+			amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
+		}
+		cell_indices.push_back(index.get_cell(0));
+	}
+	auto value = execute(amx, args);
+	cell *arr, size;
+	arr = value.get_array(cell_indices.data(), cell_indices.size(), size);
+	cell amx_addr, *addr;
+	amx_Allot(amx, size, &amx_addr, &addr);
+	std::memcpy(addr, arr, size * sizeof(cell));
+	return {addr, size, value.get_tag()};
 }
 
 tag_ptr expression::get_tag(const args_type &args) const
@@ -456,6 +500,100 @@ expression_ptr call_expression::clone() const
 	return std::make_shared<call_expression>(*this);
 }
 
+dyn_object index_expression::execute(AMX *amx, const args_type &args) const
+{
+	std::vector<dyn_object> indices;
+	for(const auto &index : this->indices)
+	{
+		indices.push_back(index->execute(amx, args));
+	}
+	return arr->index(amx, args, indices);
+}
+
+dyn_object index_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
+{
+	if(value.get_rank() != 0)
+	{
+		amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
+	}
+	auto addr = address(amx, args, {});
+	if(std::get<1>(addr) == 0)
+	{
+		amx_ExpressionError("index out of bounds");
+	}
+	if(!(value.tag_assignable(std::get<2>(addr))))
+	{
+		amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", std::get<2>(addr)->format_name(), value.get_tag()->format_name());
+	}
+	return dyn_object(std::get<0>(addr)[0] = value.get_cell(0), std::get<2>(addr));
+}
+
+dyn_object index_expression::index(AMX *amx, const args_type &args, const std::vector<dyn_object> &indices) const
+{
+	std::vector<dyn_object> new_indices;
+	new_indices.reserve(this->indices.size() + indices.size());
+	for(const auto &index : this->indices)
+	{
+		new_indices.push_back(index->execute(amx, args));
+	}
+	for(const auto &index : indices)
+	{
+		new_indices.push_back(index);
+	}
+	return arr->index(amx, args, new_indices);
+}
+
+std::tuple<cell*, size_t, tag_ptr> index_expression::address(AMX *amx, const args_type &args, const call_args_type &indices) const
+{
+	std::vector<dyn_object> new_indices;
+	new_indices.reserve(this->indices.size() + indices.size());
+	for(const auto &index : this->indices)
+	{
+		new_indices.push_back(index->execute(amx, args));
+	}
+	for(const auto &index : indices)
+	{
+		new_indices.push_back(index);
+	}
+	return arr->address(amx, args, new_indices);
+}
+
+void index_expression::to_string(strings::cell_string &str) const
+{
+	arr->to_string(str);
+	for(const auto &index : indices)
+	{
+		str.push_back('[');
+		index->to_string(str);
+		str.push_back(']');
+	}
+}
+
+tag_ptr index_expression::get_tag(const args_type &args) const
+{
+	return arr->get_tag(args);
+}
+
+cell index_expression::get_size(const args_type &args) const
+{
+	return 1;
+}
+
+cell index_expression::get_rank(const args_type &args) const
+{
+	return 0;
+}
+
+const expression_ptr &index_expression::get_operand() const
+{
+	return arr;
+}
+
+expression_ptr index_expression::clone() const
+{
+	return std::make_shared<index_expression>(*this);
+}
+
 auto bind_expression::combine_args(const args_type &args) const -> args_type
 {
 	args_type new_args;
@@ -645,7 +783,7 @@ dyn_object array_expression::execute(AMX *amx, const args_type &args) const
 		}
 		data.push_back(value.get_cell(0));
 	}
-	return dyn_object(data.size() > 0 ? &data[0] : nullptr, data.size(), tag ? tag : tags::find_tag(tags::tag_cell));
+	return dyn_object(data.data(), data.size(), tag ? tag : tags::find_tag(tags::tag_cell));
 }
 
 tag_ptr array_expression::get_tag(const args_type &args) const
@@ -670,7 +808,20 @@ cell array_expression::get_rank(const args_type &args) const
 
 void array_expression::to_string(strings::cell_string &str) const
 {
-
+	str.push_back('{');
+	bool first = true;
+	for(const auto &arg : args)
+	{
+		if(first)
+		{
+			first = false;
+		}else{
+			str.push_back(',');
+			str.push_back(' ');
+		}
+		arg->to_string(str);
+	}
+	str.push_back('}');
 }
 
 expression_ptr array_expression::clone() const
@@ -742,7 +893,7 @@ dyn_object symbol_expression::execute(AMX *amx, const args_type &args) const
 					case 3:
 						return dyn_object(amx, ptr, dim[0].size, dim[1].size, dim[2].size, tag_ptr);
 					default:
-						amx_ExpressionError("unrecognized array rank %d", symbol->dim);
+						amx_ExpressionError("array rank %d not supported", symbol->dim);
 				}
 			}
 		}
@@ -894,7 +1045,111 @@ dyn_object symbol_expression::assign(AMX *amx, const args_type &args, dyn_object
 					return std::move(value);
 				}
 			}
+			amx_ExpressionError("array rank %d not supported", symbol->dim);
 		}
+		amx_ExpressionError("incorrect rank of value (%d needed, %d given)", symbol->dim, value.get_rank());
+	}
+	amx_ExpressionError("target AMX was unloaded");
+	return {};
+}
+
+dyn_object symbol_expression::index(AMX *amx, const args_type &args, const std::vector<dyn_object> &indices) const
+{
+	auto addr = address(amx, args, indices);
+	if(std::get<1>(addr) == 0)
+	{
+		amx_ExpressionError("index out of bounds");
+	}
+	return dyn_object(std::get<0>(addr)[0], std::get<2>(addr));
+}
+
+std::tuple<cell*, size_t, tag_ptr> symbol_expression::address(AMX *amx, const args_type &args, const call_args_type &indices) const
+{
+	if(auto obj = target_amx.lock())
+	{
+		if(symbol->ident == iFUNCTN)
+		{
+			return expression::address(amx, args, indices);
+		}
+
+		amx = *obj;
+		auto data = amx_GetData(amx);
+		cell *ptr;
+		if(symbol->vclass == 0 || symbol->vclass == 2)
+		{
+			ptr = reinterpret_cast<cell*>(data + symbol->address);
+		}else{
+			cell frm = amx->frm;
+			ucell cip = amx->cip;
+			while(frm != 0)
+			{
+				if(frm == target_frm && symbol->codestart <= cip && cip < symbol->codeend)
+				{
+					break;
+				}else if(frm > target_frm)
+				{
+					frm = 0;
+					break;
+				}
+				cip = reinterpret_cast<cell*>(data + frm)[1];
+				frm = reinterpret_cast<cell*>(data + frm)[0];
+				if(cip == 0)
+				{
+					frm = 0;
+				}
+			}
+			if(frm == 0)
+			{
+				amx_ExpressionError("referenced variable was unloaded");
+				return {};
+			}
+			ptr = reinterpret_cast<cell*>(data + frm + symbol->address);
+		}
+
+		if(symbol->ident == iREFERENCE || symbol->ident == iREFARRAY)
+		{
+			ptr = reinterpret_cast<cell*>(data + *ptr);
+		}
+		tag_ptr tag_ptr = get_tag(args);
+
+		if(symbol->dim == indices.size())
+		{
+			std::vector<ucell> cell_indices;
+			for(const auto &index : indices)
+			{
+				if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
+				{
+					amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
+				}
+				if(index.get_rank() != 0)
+				{
+					amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
+				}
+				cell c = index.get_cell(0);
+				if(c < 0)
+				{
+					amx_ExpressionError("index out of bounds");
+				}
+				cell_indices.push_back(c);
+			}
+			if(symbol->dim == 0)
+			{
+				return {ptr, 1, tag_ptr};
+			}else if(symbol->dim == 1)
+			{
+				const AMX_DBG_SYMDIM *dim;
+				if(dbg_GetArrayDim(debug, symbol, &dim) == AMX_ERR_NONE)
+				{
+					if(cell_indices[0] > dim[0].size)
+					{
+						amx_ExpressionError("index out of bounds");
+					}
+					return {ptr + cell_indices[0], dim[0].size - cell_indices[0], tag_ptr};
+				}
+			}
+			amx_ExpressionError("array rank %d not supported", symbol->dim);
+		}
+		amx_ExpressionError("incorrect number of indices (%d needed, %d given)", symbol->dim, indices.size());
 	}
 	amx_ExpressionError("target AMX was unloaded");
 	return {};
