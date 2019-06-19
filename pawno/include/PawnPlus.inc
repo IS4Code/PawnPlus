@@ -1532,7 +1532,10 @@ native Expression:expr_release(Expression:expr);
 native expr_delete(Expression:expr);
 native bool:expr_valid(Expression:expr);
 
+native Expression:expr_parse(const string[]);
+
 native Expression:expr_weak(Expression:expr);
+native Expression:expr_weak_set(Expression:weak, Expression:target);
 
 native Expression:expr_const(AnyTag:value, TagTag:tag_id=tagof(value));
 native Expression:expr_const_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));

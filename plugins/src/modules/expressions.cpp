@@ -130,9 +130,9 @@ void constant_expression::to_string(strings::cell_string &str) const
 	str.append(value.to_string());
 }
 
-expression_ptr constant_expression::clone() const
+decltype(expression_pool)::object_ptr constant_expression::clone() const
 {
-	return std::make_shared<constant_expression>(*this);
+	return expression_pool.emplace_derived<constant_expression>(*this);
 }
 
 dyn_object weak_expression::execute(AMX *amx, const args_type &args) const
@@ -204,9 +204,9 @@ void weak_expression::to_string(strings::cell_string &str) const
 	amx_ExpressionError("weakly linked expression was destroyed");
 }
 
-expression_ptr weak_expression::clone() const
+decltype(expression_pool)::object_ptr weak_expression::clone() const
 {
-	return std::make_shared<weak_expression>(*this);
+	return expression_pool.emplace_derived<weak_expression>(*this);
 }
 
 dyn_object arg_expression::execute(AMX *amx, const args_type &args) const
@@ -251,9 +251,9 @@ void arg_expression::to_string(strings::cell_string &str) const
 	str.append(strings::convert(std::to_string(index)));
 }
 
-expression_ptr arg_expression::clone() const
+decltype(expression_pool)::object_ptr arg_expression::clone() const
 {
-	return std::make_shared<arg_expression>(*this);
+	return expression_pool.emplace_derived<arg_expression>(*this);
 }
 
 dyn_object comma_expression::execute(AMX *amx, const args_type &args) const
@@ -309,9 +309,9 @@ const expression_ptr &comma_expression::get_right() const
 	return right;
 }
 
-expression_ptr comma_expression::clone() const
+decltype(expression_pool)::object_ptr comma_expression::clone() const
 {
-	return std::make_shared<comma_expression>(*this);
+	return expression_pool.emplace_derived<comma_expression>(*this);
 }
 
 dyn_object assign_expression::execute(AMX *amx, const args_type &args) const
@@ -351,9 +351,9 @@ const expression_ptr &assign_expression::get_right() const
 	return right;
 }
 
-expression_ptr assign_expression::clone() const
+decltype(expression_pool)::object_ptr assign_expression::clone() const
 {
-	return std::make_shared<assign_expression>(*this);
+	return expression_pool.emplace_derived<assign_expression>(*this);
 }
 
 dyn_object try_expression::execute(AMX *amx, const args_type &args) const
@@ -405,9 +405,9 @@ const expression_ptr &try_expression::get_right() const
 	return fallback;
 }
 
-expression_ptr try_expression::clone() const
+decltype(expression_pool)::object_ptr try_expression::clone() const
 {
-	return std::make_shared<try_expression>(*this);
+	return expression_pool.emplace_derived<try_expression>(*this);
 }
 
 dyn_object call_expression::execute(AMX *amx, const args_type &args) const
@@ -459,9 +459,9 @@ const expression_ptr &call_expression::get_operand() const
 	return func;
 }
 
-expression_ptr call_expression::clone() const
+decltype(expression_pool)::object_ptr call_expression::clone() const
 {
-	return std::make_shared<call_expression>(*this);
+	return expression_pool.emplace_derived<call_expression>(*this);
 }
 
 dyn_object index_expression::execute(AMX *amx, const args_type &args) const
@@ -553,9 +553,9 @@ const expression_ptr &index_expression::get_operand() const
 	return arr;
 }
 
-expression_ptr index_expression::clone() const
+decltype(expression_pool)::object_ptr index_expression::clone() const
 {
-	return std::make_shared<index_expression>(*this);
+	return expression_pool.emplace_derived<index_expression>(*this);
 }
 
 auto bind_expression::combine_args(const args_type &args) const -> args_type
@@ -675,9 +675,9 @@ const expression_ptr &bind_expression::get_operand() const
 	return operand;
 }
 
-expression_ptr bind_expression::clone() const
+decltype(expression_pool)::object_ptr bind_expression::clone() const
 {
-	return std::make_shared<bind_expression>(*this);
+	return expression_pool.emplace_derived<bind_expression>(*this);
 }
 
 dyn_object cast_expression::execute(AMX *amx, const args_type &args) const
@@ -722,9 +722,9 @@ const expression_ptr &cast_expression::get_operand() const
 	return operand;
 }
 
-expression_ptr cast_expression::clone() const
+decltype(expression_pool)::object_ptr cast_expression::clone() const
 {
-	return std::make_shared<cast_expression>(*this);
+	return expression_pool.emplace_derived<cast_expression>(*this);
 }
 
 dyn_object array_expression::execute(AMX *amx, const args_type &args) const
@@ -788,9 +788,25 @@ void array_expression::to_string(strings::cell_string &str) const
 	str.push_back('}');
 }
 
-expression_ptr array_expression::clone() const
+decltype(expression_pool)::object_ptr array_expression::clone() const
 {
-	return std::make_shared<array_expression>(*this);
+	return expression_pool.emplace_derived<array_expression>(*this);
+}
+
+dyn_object unknown_expression::execute(AMX *amx, const args_type &args) const
+{
+	amx_ExpressionError("symbol %s is not defined", name.c_str());
+	return {};
+}
+
+void unknown_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert(name));
+}
+
+decltype(expression_pool)::object_ptr unknown_expression::clone() const
+{
+	return expression_pool.emplace_derived<unknown_expression>(*this);
 }
 
 dyn_object symbol_expression::execute(AMX *amx, const args_type &args) const
@@ -1202,9 +1218,9 @@ void symbol_expression::to_string(strings::cell_string &str) const
 	amx_ExpressionError("target AMX was unloaded");
 }
 
-expression_ptr symbol_expression::clone() const
+decltype(expression_pool)::object_ptr symbol_expression::clone() const
 {
-	return std::make_shared<symbol_expression>(*this);
+	return expression_pool.emplace_derived<symbol_expression>(*this);
 }
 
 dyn_object native_expression::execute(AMX *amx, const args_type &args) const
@@ -1263,9 +1279,9 @@ void native_expression::to_string(strings::cell_string &str) const
 	str.append(strings::convert(name));
 }
 
-expression_ptr native_expression::clone() const
+decltype(expression_pool)::object_ptr native_expression::clone() const
 {
-	return std::make_shared<native_expression>(*this);
+	return expression_pool.emplace_derived<native_expression>(*this);
 }
 
 dyn_object local_native_expression::call(AMX *amx, const args_type &args, const call_args_type &call_args) const
@@ -1278,9 +1294,9 @@ dyn_object local_native_expression::call(AMX *amx, const args_type &args, const 
 	return {};
 }
 
-expression_ptr local_native_expression::clone() const
+decltype(expression_pool)::object_ptr local_native_expression::clone() const
 {
-	return std::make_shared<local_native_expression>(*this);
+	return expression_pool.emplace_derived<local_native_expression>(*this);
 }
 
 bool logic_and_expression::execute_inner(AMX *amx, const args_type &args) const
@@ -1322,9 +1338,9 @@ const expression_ptr &logic_and_expression::get_right() const
 	return right;
 }
 
-expression_ptr logic_and_expression::clone() const
+decltype(expression_pool)::object_ptr logic_and_expression::clone() const
 {
-	return std::make_shared<logic_and_expression>(*this);
+	return expression_pool.emplace_derived<logic_and_expression>(*this);
 }
 
 bool logic_or_expression::execute_inner(AMX *amx, const args_type &args) const
@@ -1366,9 +1382,9 @@ const expression_ptr &logic_or_expression::get_right() const
 	return right;
 }
 
-expression_ptr logic_or_expression::clone() const
+decltype(expression_pool)::object_ptr logic_or_expression::clone() const
 {
-	return std::make_shared<logic_or_expression>(*this);
+	return expression_pool.emplace_derived<logic_or_expression>(*this);
 }
 
 dyn_object conditional_expression::execute(AMX *amx, const args_type &args) const
@@ -1427,9 +1443,9 @@ void conditional_expression::to_string(strings::cell_string &str) const
 	str.push_back(')');
 }
 
-expression_ptr conditional_expression::clone() const
+decltype(expression_pool)::object_ptr conditional_expression::clone() const
 {
-	return std::make_shared<conditional_expression>(*this);
+	return expression_pool.emplace_derived<conditional_expression>(*this);
 }
 
 cell tagof_expression::execute_inner(AMX *amx, const args_type &args) const
@@ -1450,9 +1466,9 @@ const expression_ptr &tagof_expression::get_operand() const
 	return operand;
 }
 
-expression_ptr tagof_expression::clone() const
+decltype(expression_pool)::object_ptr tagof_expression::clone() const
 {
-	return std::make_shared<tagof_expression>(*this);
+	return expression_pool.emplace_derived<tagof_expression>(*this);
 }
 
 cell sizeof_expression::execute_inner(AMX *amx, const args_type &args) const
@@ -1496,9 +1512,9 @@ const expression_ptr &sizeof_expression::get_operand() const
 	return operand;
 }
 
-expression_ptr sizeof_expression::clone() const
+decltype(expression_pool)::object_ptr sizeof_expression::clone() const
 {
-	return std::make_shared<sizeof_expression>(*this);
+	return expression_pool.emplace_derived<sizeof_expression>(*this);
 }
 
 cell rankof_expression::execute_inner(AMX *amx, const args_type &args) const
@@ -1519,9 +1535,9 @@ const expression_ptr &rankof_expression::get_operand() const
 	return operand;
 }
 
-expression_ptr rankof_expression::clone() const
+decltype(expression_pool)::object_ptr rankof_expression::clone() const
 {
-	return std::make_shared<rankof_expression>(*this);
+	return expression_pool.emplace_derived<rankof_expression>(*this);
 }
 
 dyn_object addressof_expression::execute(AMX *amx, const args_type &args) const
@@ -1575,11 +1591,10 @@ const expression_ptr &addressof_expression::get_operand() const
 	return operand;
 }
 
-expression_ptr addressof_expression::clone() const
+decltype(expression_pool)::object_ptr addressof_expression::clone() const
 {
-	return std::make_shared<addressof_expression>(*this);
+	return expression_pool.emplace_derived<addressof_expression>(*this);
 }
-
 
 dyn_object variant_value_expression::execute(AMX *amx, const args_type &args) const
 {
@@ -1612,9 +1627,9 @@ const expression_ptr &variant_value_expression::get_operand() const
 	return var;
 }
 
-expression_ptr variant_value_expression::clone() const
+decltype(expression_pool)::object_ptr variant_value_expression::clone() const
 {
-	return std::make_shared<variant_value_expression>(*this);
+	return expression_pool.emplace_derived<variant_value_expression>(*this);
 }
 
 cell variant_expression::execute_inner(AMX *amx, const args_type &args) const
@@ -1639,7 +1654,7 @@ const expression_ptr &variant_expression::get_operand() const
 	return value;
 }
 
-expression_ptr variant_expression::clone() const
+decltype(expression_pool)::object_ptr variant_expression::clone() const
 {
-	return std::make_shared<variant_expression>(*this);
+	return expression_pool.emplace_derived<variant_expression>(*this);
 }

@@ -338,6 +338,9 @@
     <ClInclude Include="src\modules\expressions.h">
       <Filter>src\modules</Filter>
     </ClInclude>
+    <ClInclude Include="src\modules\parser.h">
+      <Filter>src\modules</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />

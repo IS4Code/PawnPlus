@@ -31,7 +31,6 @@ public:
 	virtual cell get_rank(const args_type &args) const;
 	virtual void to_string(strings::cell_string &str) const = 0;
 
-	virtual expression_ptr clone() const = 0;
 	virtual ~expression() = default;
 	int &operator[](size_t index) const;
 };
@@ -43,6 +42,7 @@ class expression_base : public expression, public object_pool<expression>::ref_c
 public:
 	virtual expression *get() override;
 	virtual const expression *get() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const = 0;
 };
 
 class constant_expression : public expression_base
@@ -65,7 +65,7 @@ public:
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 
 	const dyn_object &get_value() const
 	{
@@ -75,9 +75,9 @@ public:
 
 class weak_expression : public expression_base
 {
+public:
 	std::weak_ptr<const expression> ptr;
 
-public:
 	weak_expression(std::weak_ptr<const expression> &&ptr) : ptr(std::move(ptr))
 	{
 
@@ -95,7 +95,7 @@ public:
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class arg_expression : public expression_base
@@ -113,7 +113,7 @@ public:
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class unary_expression
@@ -154,7 +154,7 @@ public:
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_left() const override;
 	virtual const expression_ptr &get_right() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class assign_expression : public expression_base, public binary_expression
@@ -180,7 +180,7 @@ public:
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_left() const override;
 	virtual const expression_ptr &get_right() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class try_expression : public expression_base, public binary_expression
@@ -205,7 +205,7 @@ public:
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_left() const override;
 	virtual const expression_ptr &get_right() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class call_expression : public expression_base, public unary_expression
@@ -230,7 +230,7 @@ public:
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class index_expression : public expression_base, public unary_expression
@@ -258,7 +258,7 @@ public:
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class bind_expression : public expression_base, public unary_expression
@@ -289,7 +289,7 @@ public:
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class cast_expression : public expression_base, public unary_expression
@@ -316,7 +316,7 @@ public:
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class array_expression : public expression_base
@@ -339,7 +339,22 @@ public:
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
+class unknown_expression : public expression_base
+{
+	std::string name;
+
+public:
+	unknown_expression(std::string &&name) : name(std::move(name))
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class symbol_expression : public expression_base
@@ -364,7 +379,7 @@ public:
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class native_expression : public expression_base
@@ -373,7 +388,7 @@ class native_expression : public expression_base
 	std::string name;
 
 public:
-	native_expression(AMX_NATIVE native, const std::string &&name) : native(native), name(std::move(name))
+	native_expression(AMX_NATIVE native, std::string &&name) : native(native), name(std::move(name))
 	{
 
 	}
@@ -384,7 +399,7 @@ public:
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class local_native_expression : public native_expression
@@ -392,16 +407,16 @@ class local_native_expression : public native_expression
 	amx::handle target_amx;
 
 public:
-	local_native_expression(AMX *amx, AMX_NATIVE native, const std::string &&name) : target_amx(amx::load(amx)), native_expression(native, std::move(name))
+	local_native_expression(AMX *amx, AMX_NATIVE native, std::string &&name) : target_amx(amx::load(amx)), native_expression(native, std::move(name))
 	{
 
 	}
 
 	virtual dyn_object call(AMX *amx, const args_type &args, const call_args_type &call_args) const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
-namespace impl
+namespace expr_impl
 {
 	template <dyn_object(dyn_object::*Func)() const>
 	class unary_object_operator_name;
@@ -460,7 +475,7 @@ public:
 
 	virtual void to_string(strings::cell_string &str) const override
 	{
-		str.append(strings::convert(impl::unary_object_operator_name<Func>()()));
+		str.append(strings::convert(expr_impl::unary_object_operator_name<Func>()()));
 		operand->to_string(str);
 	}
 
@@ -469,13 +484,13 @@ public:
 		return operand;
 	}
 
-	virtual expression_ptr clone() const override
+	virtual decltype(expression_pool)::object_ptr clone() const override
 	{
-		return std::make_shared<unary_object_expression<Func>>(*this);
+		return expression_pool.emplace_derived<unary_object_expression<Func>>(*this);
 	}
 };
 
-namespace impl
+namespace expr_impl
 {
 	template <dyn_object(dyn_object::*Func)(const dyn_object&) const>
 	class binary_object_operator_name;
@@ -496,7 +511,7 @@ namespace impl
 	public:
 		constexpr const char *operator()() const
 		{
-			return "+";
+			return "-";
 		}
 	};
 
@@ -506,7 +521,7 @@ namespace impl
 	public:
 		constexpr const char *operator()() const
 		{
-			return "-";
+			return "*";
 		}
 	};
 
@@ -516,7 +531,7 @@ namespace impl
 	public:
 		constexpr const char *operator()() const
 		{
-			return "*";
+			return "/";
 		}
 	};
 
@@ -526,7 +541,7 @@ namespace impl
 	public:
 		constexpr const char *operator()() const
 		{
-			return "/";
+			return "%";
 		}
 	};
 }
@@ -557,7 +572,7 @@ public:
 	{
 		str.push_back('(');
 		left->to_string(str);
-		str.append(strings::convert(impl::binary_object_operator_name<Func>()()));
+		str.append(strings::convert(expr_impl::binary_object_operator_name<Func>()()));
 		right->to_string(str);
 		str.push_back(')');
 	}
@@ -572,9 +587,9 @@ public:
 		return right;
 	}
 
-	virtual expression_ptr clone() const override
+	virtual decltype(expression_pool)::object_ptr clone() const override
 	{
-		return std::make_shared<binary_object_expression<Func>>(*this);
+		return expression_pool.emplace_derived<binary_object_expression<Func>>(*this);
 	}
 };
 
@@ -608,7 +623,7 @@ public:
 typedef simple_expression<cell, tags::tag_cell> cell_expression;
 typedef simple_expression<bool, tags::tag_bool> bool_expression;
 
-namespace impl
+namespace expr_impl
 {
 	template <bool(dyn_object::*Func)() const>
 	class unary_logic_operator_name;
@@ -647,7 +662,7 @@ public:
 
 	virtual void to_string(strings::cell_string &str) const override
 	{
-		str.append(strings::convert(impl::unary_logic_operator_name<Func>()()));
+		str.append(strings::convert(expr_impl::unary_logic_operator_name<Func>()()));
 		operand->to_string(str);
 	}
 
@@ -656,13 +671,13 @@ public:
 		return operand;
 	}
 
-	virtual expression_ptr clone() const override
+	virtual decltype(expression_pool)::object_ptr clone() const override
 	{
-		return std::make_shared<unary_logic_expression<Func>>(*this);
+		return expression_pool.emplace_derived<unary_logic_expression<Func>>(*this);
 	}
 };
 
-namespace impl
+namespace expr_impl
 {
 	template <bool(dyn_object::*Func)(const dyn_object&) const>
 	class binary_logic_operator_name;
@@ -754,7 +769,7 @@ public:
 	{
 		str.push_back('(');
 		left->to_string(str);
-		str.append(strings::convert(impl::binary_logic_operator_name<Func>()()));
+		str.append(strings::convert(expr_impl::binary_logic_operator_name<Func>()()));
 		right->to_string(str);
 		str.push_back(')');
 	}
@@ -769,9 +784,9 @@ public:
 		return right;
 	}
 
-	virtual expression_ptr clone() const override
+	virtual decltype(expression_pool)::object_ptr clone() const override
 	{
-		return std::make_shared<binary_logic_expression<Func>>(*this);
+		return expression_pool.emplace_derived<binary_logic_expression<Func>>(*this);
 	}
 };
 
@@ -795,7 +810,7 @@ public:
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_left() const override;
 	virtual const expression_ptr &get_right() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class logic_or_expression : public bool_expression, public binary_expression
@@ -818,7 +833,7 @@ public:
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_left() const override;
 	virtual const expression_ptr &get_right() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class conditional_expression : public expression_base, public unary_expression, public binary_expression
@@ -845,7 +860,7 @@ public:
 	virtual const expression_ptr &get_operand() const;
 	virtual const expression_ptr &get_left() const;
 	virtual const expression_ptr &get_right() const;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class tagof_expression : public cell_expression, public unary_expression
@@ -866,7 +881,7 @@ public:
 	virtual cell execute_inner(AMX *amx, const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class sizeof_expression : public cell_expression, public unary_expression
@@ -898,7 +913,7 @@ public:
 	virtual cell execute_inner(AMX *amx, const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class rankof_expression : public cell_expression, public unary_expression
@@ -919,7 +934,7 @@ public:
 	virtual cell execute_inner(AMX *amx, const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class addressof_expression : public expression_base, public unary_expression
@@ -943,7 +958,7 @@ public:
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class variant_value_expression : public expression_base, public unary_expression
@@ -964,7 +979,7 @@ public:
 	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 class variant_expression : public simple_expression<cell, tags::tag_variant>, public unary_expression
@@ -985,7 +1000,7 @@ public:
 	virtual cell execute_inner(AMX *amx, const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
 #endif

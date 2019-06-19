@@ -2,6 +2,7 @@
 #include "errors.h"
 #include "modules/containers.h"
 #include "modules/variants.h"
+#include "modules/parser.h"
 #include "objects/stored_param.h"
 
 #include <stddef.h>
@@ -713,8 +714,11 @@ struct format_base
 							continue;
 						}
 					}
-					amx_FormalError(errors::invalid_format, "expected ':'");
-					return;
+					auto value = expression_parser<Iter>().parse_simple(amx, std::next(color_begin), color_end)->execute(amx, {});
+					buf.append(value.to_string());
+					++color_end;
+					format_begin = last = color_end;
+					continue;
 				}
 
 				last = format_begin;

@@ -1,5 +1,7 @@
 #include "natives.h"
+#include "modules/strings.h"
 #include "modules/expressions.h"
+#include "modules/parser.h"
 #include "modules/variants.h"
 
 class amx_heap_guard
@@ -92,6 +94,22 @@ namespace Natives
 		return expression_pool.get_by_id(params[1], ptr);
 	}
 
+	template <class Iter>
+	struct parse_base
+	{
+		cell operator()(Iter begin, Iter end, AMX *amx)
+		{
+			return expression_pool.get_id(expression_parser<Iter>().parse(amx, begin, end));
+		}
+	};
+
+	// native Expression:expr_parse(const string[]);
+	AMX_DEFINE_NATIVE(expr_parse, 1)
+	{
+		cell *str = amx_GetAddrSafe(amx, params[1]);
+		return strings::select_iterator<parse_base>(str, amx);
+	}
+
 	// native Expression:expr_weak(Expression:expr);
 	AMX_DEFINE_NATIVE(expr_weak, 1)
 	{
@@ -99,6 +117,22 @@ namespace Natives
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		auto &expr = expression_pool.emplace_derived<weak_expression>(std::move(ptr));
 		return expression_pool.get_id(expr);
+	}
+
+	// native Expression:expr_weak_set(Expression:weak, Expression:target);
+	AMX_DEFINE_NATIVE(expr_weak_set, 2)
+	{
+		std::shared_ptr<expression> ptr1;
+		if(!expression_pool.get_by_id(params[1], ptr1)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
+		std::shared_ptr<expression> ptr2;
+		if(!expression_pool.get_by_id(params[2], ptr2)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+		auto weak = dynamic_cast<weak_expression*>(ptr1.get());
+		if(!weak)
+		{
+			amx_LogicError(errors::invalid_expression, "must be a weak expression");
+		}
+		weak->ptr = ptr2;
+		return params[1];
 	}
 
 	// native Expression:expr_const(AnyTag:value, TagTag:tag_id=tagof(value));
@@ -518,7 +552,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_delete),
 	AMX_DECLARE_NATIVE(expr_valid),
 
+	AMX_DECLARE_NATIVE(expr_parse),
+
 	AMX_DECLARE_NATIVE(expr_weak),
+	AMX_DECLARE_NATIVE(expr_weak_set),
 
 	AMX_DECLARE_NATIVE(expr_const),
 	AMX_DECLARE_NATIVE(expr_const_arr),
