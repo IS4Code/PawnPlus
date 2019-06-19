@@ -11,6 +11,7 @@
 #include "modules/containers.h"
 #include "modules/tags.h"
 #include "modules/debug.h"
+#include "modules/expressions.h"
 
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
@@ -58,6 +59,8 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload() noexcept
 	list_pool.clear();
 	map_pool.clear();
 	linked_list_pool.clear();
+	pool_pool.clear();
+	expression_pool.clear();
 	iter_pool.clear();
 	tasks::clear();
 	strings::pool.clear();
@@ -98,6 +101,7 @@ void gc_collect()
 {
 	variants::pool.clear_tmp();
 	handle_pool.clear_tmp();
+	expression_pool.clear_tmp();
 	iter_pool.clear_tmp();
 	strings::pool.clear_tmp();
 	for(const auto &it : gc_list)
