@@ -208,27 +208,6 @@ public:
 	virtual expression_ptr clone() const override;
 };
 
-class extract_expression : public expression_base, public unary_expression
-{
-	expression_ptr var;
-
-public:
-	extract_expression(expression_ptr &&var) : var(std::move(var))
-	{
-
-	}
-
-	extract_expression(const expression_ptr &var) : var(var)
-	{
-
-	}
-
-	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
-	virtual void to_string(strings::cell_string &str) const override;
-	virtual const expression_ptr &get_operand() const override;
-	virtual expression_ptr clone() const override;
-};
-
 class call_expression : public expression_base, public unary_expression
 {
 	expression_ptr func;
@@ -933,6 +912,72 @@ public:
 	}
 
 	rankof_expression(const expression_ptr &operand) : operand(operand)
+	{
+
+	}
+
+	virtual cell execute_inner(AMX *amx, const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_operand() const override;
+	virtual expression_ptr clone() const override;
+};
+
+class addressof_expression : public expression_base, public unary_expression
+{
+	expression_ptr operand;
+
+public:
+	addressof_expression(expression_ptr &&operand) : operand(std::move(operand))
+	{
+
+	}
+
+	addressof_expression(const expression_ptr &operand) : operand(operand)
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
+	virtual tag_ptr get_tag(const args_type &args) const override;
+	virtual cell get_size(const args_type &args) const override;
+	virtual cell get_rank(const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_operand() const override;
+	virtual expression_ptr clone() const override;
+};
+
+class variant_value_expression : public expression_base, public unary_expression
+{
+	expression_ptr var;
+
+public:
+	variant_value_expression(expression_ptr &&var) : var(std::move(var))
+	{
+
+	}
+
+	variant_value_expression(const expression_ptr &var) : var(var)
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_operand() const override;
+	virtual expression_ptr clone() const override;
+};
+
+class variant_expression : public simple_expression<cell, tags::tag_variant>, public unary_expression
+{
+	expression_ptr value;
+
+public:
+	variant_expression(expression_ptr &&value) : value(std::move(value))
+	{
+
+	}
+
+	variant_expression(const expression_ptr &value) : value(value)
 	{
 
 	}

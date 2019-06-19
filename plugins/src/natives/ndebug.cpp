@@ -1538,6 +1538,8 @@ namespace Natives
 
 		*--stk = 0;
 		amx->cip = sym->address;
+		amx->reset_hea = amx->hea;
+		amx->reset_stk = amx->stk;
 		cell ret;
 		amx->error = amx_Exec(amx, &ret, AMX_EXEC_CONT);
 		return ret;
@@ -1606,6 +1608,8 @@ namespace Natives
 		*--stk = num;
 		*--stk = 0;
 		amx->cip = sym->address;
+		amx->reset_hea = amx->hea;
+		amx->reset_stk = amx->stk;
 		cell ret;
 		amx->error = amx_Exec(amx, &ret, AMX_EXEC_CONT);
 		return ret;
@@ -1674,6 +1678,8 @@ namespace Natives
 
 		*--stk = 0;
 		amx->cip = sym->address;
+		amx->reset_hea = amx->hea;
+		amx->reset_stk = amx->stk;
 		int err = amx_Exec(amx, amx_GetAddrSafe(amx, params[2]), AMX_EXEC_CONT);
 		amx->error = AMX_ERR_NONE;
 		return err;
@@ -1742,6 +1748,8 @@ namespace Natives
 		*--stk = num;
 		*--stk = 0;
 		amx->cip = sym->address;
+		amx->reset_hea = amx->hea;
+		amx->reset_stk = amx->stk;
 		int err = amx_Exec(amx, amx_GetAddrSafe(amx, params[2]), AMX_EXEC_CONT);
 		amx->error = AMX_ERR_NONE;
 		return err;

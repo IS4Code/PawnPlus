@@ -258,6 +258,7 @@ const tag_uid:tag_uid_signed = tag_uid:19;
 const tag_uid:tag_uid_unsigned = tag_uid:20;
 const tag_uid:tag_uid_pool = tag_uid:21;
 const tag_uid:tag_uid_expression = tag_uid:22;
+const tag_uid:tag_uid_address = tag_uid:23;
 
 const TAG_EXPORTED = 0x80000000;
 const TAG_STRONG = 0x40000000;
@@ -1579,8 +1580,10 @@ native Expression:expr_cast(Expression:expr, TagTag:tag_id);
 native Expression:expr_tagof(Expression:expr);
 native Expression:expr_sizeof(Expression:expr, Expression:...);
 native Expression:expr_rankof(Expression:expr);
+native Expression:expr_addressof(Expression:expr);
 
 native Expression:expr_value(Expression:var);
+native Expression:expr_variant(Expression:value);
 
 native expr_get(Expression:expr, offset=0);
 native expr_get_arr(Expression:expr, AnyTag:value[], size=sizeof(value));

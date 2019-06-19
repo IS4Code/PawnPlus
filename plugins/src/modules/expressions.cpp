@@ -69,7 +69,7 @@ std::tuple<cell*, size_t, tag_ptr> expression::address(AMX *amx, const args_type
 	cell *arr, size;
 	arr = value.get_array(cell_indices.data(), cell_indices.size(), size);
 	cell amx_addr, *addr;
-	amx_Allot(amx, size, &amx_addr, &addr);
+	amx_Allot(amx, size ? size : 1, &amx_addr, &addr);
 	std::memcpy(addr, arr, size * sizeof(cell));
 	return {addr, size, value.get_tag()};
 }
@@ -408,42 +408,6 @@ const expression_ptr &try_expression::get_right() const
 expression_ptr try_expression::clone() const
 {
 	return std::make_shared<try_expression>(*this);
-}
-
-dyn_object extract_expression::execute(AMX *amx, const args_type &args) const
-{
-	auto value = var->execute(amx, args);
-	if(!(value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
-	{
-		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), value.get_tag()->format_name());
-	}
-	if(value.get_rank() != 0)
-	{
-		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", value.get_rank());
-	}
-	cell c = value.get_cell(0);
-	dyn_object *var;
-	if(!variants::pool.get_by_id(c, var))
-	{
-		amx_ExpressionError(errors::pointer_invalid, "variant", c);
-	}
-	return *var;
-}
-
-void extract_expression::to_string(strings::cell_string &str) const
-{
-	str.push_back('*');
-	var->to_string(str);
-}
-
-const expression_ptr &extract_expression::get_operand() const
-{
-	return var;
-}
-
-expression_ptr extract_expression::clone() const
-{
-	return std::make_shared<extract_expression>(*this);
 }
 
 dyn_object call_expression::execute(AMX *amx, const args_type &args) const
@@ -945,9 +909,30 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, const call_a
 							test_tag = tags::find_existing_tag(tagname);
 						}
 					}
+					bool isaddress = arg.tag_assignable(tags::find_tag(tags::tag_address));
+					if(isaddress && vsym->ident != iREFERENCE && vsym->ident != iARRAY && vsym->ident != iREFARRAY)
+					{
+						amx_ExpressionError("address argument not expected");
+					}
+					if(isaddress)
+					{
+						if(test_tag)
+						{
+							test_tag = tags::find_tag((tags::find_tag(tags::tag_address)->name + "@" + test_tag->name).c_str());
+						}
+					}else{
+						if(vsym->dim != arg.get_rank())
+						{
+							amx_ExpressionError("incorrect rank of argument (%d needed, %d given)", vsym->dim, arg.get_rank());
+						}
+					}
 					if(test_tag && !arg.tag_assignable(test_tag))
 					{
 						amx_ExpressionError("argument tag mismatch (%s: required, %s: provided)", test_tag->format_name(), arg.get_tag()->format_name());
+					}
+					if(!isaddress && (vsym->ident == iREFERENCE || vsym->ident == iARRAY || vsym->ident == iREFARRAY) && arg.get_rank() <= 0)
+					{
+						amx_ExpressionError("a reference argument must be provided with an array value or an address");
 					}
 				}
 			}
@@ -956,6 +941,9 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, const call_a
 		{
 			amx_ExpressionError("too few arguments provided to a function (%d needed, %d given)", argsneeded / sizeof(cell), argslen / sizeof(cell));
 		}
+
+		cell reset_hea, *tmp;
+		amx_Allot(amx, 0, &reset_hea, &tmp);
 
 		cell num = call_args.size() * sizeof(cell);
 		amx->stk -= num + 2 * sizeof(cell);
@@ -967,10 +955,13 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, const call_a
 		*--stk = num;
 		*--stk = 0;
 		amx->cip = symbol->address;
+		amx->reset_hea = amx->hea;
+		amx->reset_stk = amx->stk;
 		cell ret;
 		int old_error = amx->error;
 		int err = amx_Exec(amx, &ret, AMX_EXEC_CONT);
 		amx->error = old_error;
+		amx_Release(amx, reset_hea);
 		if(err == AMX_ERR_NONE)
 		{
 			return dyn_object(ret, get_tag(args));
@@ -1227,6 +1218,9 @@ dyn_object native_expression::call(AMX *amx, const args_type &args, const call_a
 	auto data = amx_GetData(amx);
 	auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
+	cell reset_hea, *tmp;
+	amx_Allot(amx, 0, &reset_hea, &tmp);
+
 	cell num = call_args.size() * sizeof(cell);
 	amx->stk -= num + 1 * sizeof(cell);
 	for(cell i = call_args.size() - 1; i >= 0; i--)
@@ -1240,6 +1234,7 @@ dyn_object native_expression::call(AMX *amx, const args_type &args, const call_a
 	amx->stk += num + 1 * sizeof(cell);
 	int err = amx->error;
 	amx->error = old_error;
+	amx_Release(amx, reset_hea);
 	if(err == AMX_ERR_NONE)
 	{
 		return dyn_object(ret, get_tag(args));
@@ -1527,4 +1522,124 @@ const expression_ptr &rankof_expression::get_operand() const
 expression_ptr rankof_expression::clone() const
 {
 	return std::make_shared<rankof_expression>(*this);
+}
+
+dyn_object addressof_expression::execute(AMX *amx, const args_type &args) const
+{
+	auto addr = operand->address(amx, args, {});
+	auto ptr = reinterpret_cast<unsigned char*>(std::get<0>(addr));
+	auto data = amx_GetData(amx);
+	if((ptr < data || ptr >= data + amx->hea) && (ptr < data + amx->stk || ptr >= data + amx->stp))
+	{
+		cell amx_addr;
+		cell size = std::get<1>(addr);
+		if(size == 0)
+		{
+			size = 1;
+		}
+		amx_Allot(amx, size, &amx_addr, &reinterpret_cast<cell*&>(ptr));
+		std::memcpy(ptr, std::get<0>(addr), std::get<1>(addr) * sizeof(cell));
+	}
+	return dyn_object(ptr - data, tags::find_tag((tags::find_tag(tags::tag_address)->name + "@" + std::get<2>(addr)->name).c_str()));
+}
+
+tag_ptr addressof_expression::get_tag(const args_type &args) const
+{
+	auto inner = operand->get_tag(args);
+	if(inner)
+	{
+		return tags::find_tag((tags::find_tag(tags::tag_address)->name + "@" + inner->name).c_str());
+	}
+	return nullptr;
+}
+
+cell addressof_expression::get_size(const args_type &args) const
+{
+	return 1;
+}
+
+cell addressof_expression::get_rank(const args_type &args) const
+{
+	return 0;
+}
+
+void addressof_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert("addressof("));
+	operand->to_string(str);
+	str.push_back(')');
+}
+
+const expression_ptr &addressof_expression::get_operand() const
+{
+	return operand;
+}
+
+expression_ptr addressof_expression::clone() const
+{
+	return std::make_shared<addressof_expression>(*this);
+}
+
+
+dyn_object variant_value_expression::execute(AMX *amx, const args_type &args) const
+{
+	auto value = var->execute(amx, args);
+	if(!(value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
+	{
+		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), value.get_tag()->format_name());
+	}
+	if(value.get_rank() != 0)
+	{
+		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", value.get_rank());
+	}
+	cell c = value.get_cell(0);
+	dyn_object *var;
+	if(!variants::pool.get_by_id(c, var))
+	{
+		amx_ExpressionError(errors::pointer_invalid, "variant", c);
+	}
+	return *var;
+}
+
+void variant_value_expression::to_string(strings::cell_string &str) const
+{
+	str.push_back('*');
+	var->to_string(str);
+}
+
+const expression_ptr &variant_value_expression::get_operand() const
+{
+	return var;
+}
+
+expression_ptr variant_value_expression::clone() const
+{
+	return std::make_shared<variant_value_expression>(*this);
+}
+
+cell variant_expression::execute_inner(AMX *amx, const args_type &args) const
+{
+	auto value = this->value->execute(amx, args);
+	if(value.is_null())
+	{
+		return 0;
+	}
+	auto &ptr = variants::pool.emplace(std::move(value));
+	return variants::pool.get_id(ptr);
+}
+
+void variant_expression::to_string(strings::cell_string &str) const
+{
+	str.push_back('&');
+	value->to_string(str);
+}
+
+const expression_ptr &variant_expression::get_operand() const
+{
+	return value;
+}
+
+expression_ptr variant_expression::clone() const
+{
+	return std::make_shared<variant_expression>(*this);
 }

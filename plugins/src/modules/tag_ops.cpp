@@ -1842,8 +1842,8 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	std::vector<std::unique_ptr<tag_info>> v;
 	auto unknown = std::make_unique<tag_info>(0, "{...}", nullptr, std::make_unique<null_operations>(tags::tag_unknown));
 	auto unknown_tag = unknown.get();
-	auto string_const = std::make_unique<tag_info>(23, "String@Const", unknown_tag, std::make_unique<string_operations>());
-	auto variant_const = std::make_unique<tag_info>(24, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
+	auto string_const = std::make_unique<tag_info>(24, "String@Const", unknown_tag, std::make_unique<string_operations>());
+	auto variant_const = std::make_unique<tag_info>(25, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
 	v.push_back(std::move(unknown));
 	v.push_back(std::make_unique<tag_info>(1, "", unknown_tag, std::make_unique<cell_operations>(tags::tag_cell)));
 	v.push_back(std::make_unique<tag_info>(2, "bool", unknown_tag, std::make_unique<bool_operations>()));
@@ -1867,9 +1867,10 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::make_unique<tag_info>(20, "unsigned", unknown_tag, std::make_unique<unsigned_operations>()));
 	v.push_back(std::make_unique<tag_info>(21, "Pool", unknown_tag, std::make_unique<pool_operations>()));
 	v.push_back(std::make_unique<tag_info>(22, "Expression", unknown_tag, std::make_unique<expression_operations>()));
+	v.push_back(std::make_unique<tag_info>(23, "address", unknown_tag, std::make_unique<cell_operations>(tags::tag_address)));
 	v.push_back(std::move(string_const));
 	v.push_back(std::move(variant_const));
-	v.push_back(std::make_unique<tag_info>(25, "char@", v[3].get(), std::make_unique<char_operations>()));
+	v.push_back(std::make_unique<tag_info>(26, "char@", v[3].get(), std::make_unique<char_operations>()));
 	return v;
 }());
 

@@ -2,6 +2,24 @@
 #include "modules/expressions.h"
 #include "modules/variants.h"
 
+class amx_heap_guard
+{
+	AMX *amx;
+	cell reset_hea;
+
+public:
+	amx_heap_guard(AMX *amx) : amx(amx)
+	{
+		cell *tmp;
+		amx_Allot(amx, 0, &reset_hea, &tmp);
+	}
+
+	~amx_heap_guard()
+	{
+		amx_Release(amx, reset_hea);
+	}
+};
+
 template <size_t... Indices>
 class value_at
 {
@@ -23,6 +41,7 @@ public:
 	{
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
+		amx_heap_guard guard(amx);
 		return Factory(amx, ptr->execute(amx, {}), params[Indices]...);
 	}
 
@@ -32,6 +51,7 @@ public:
 	{
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
+		amx_heap_guard guard(amx);
 		ptr->assign(amx, {}, Factory(amx, params[Indices]...));
 		return 1;
 	}
@@ -400,10 +420,22 @@ namespace Natives
 		return expr_unary<rankof_expression>(amx, params);
 	}
 
+	// native Expression:expr_addressof(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_addressof, 1)
+	{
+		return expr_unary<addressof_expression>(amx, params);
+	}
+
 	// native Expression:expr_value(Expression:var);
 	AMX_DEFINE_NATIVE(expr_value, 1)
 	{
-		return expr_unary<extract_expression>(amx, params);
+		return expr_unary<variant_value_expression>(amx, params);
+	}
+
+	// native Expression:expr_variant(Expression:value);
+	AMX_DEFINE_NATIVE(expr_variant, 1)
+	{
+		return expr_unary<variant_expression>(amx, params);
 	}
 
 	// native expr_get(Expression:expr, offset=0);
@@ -535,8 +567,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_tagof),
 	AMX_DECLARE_NATIVE(expr_sizeof),
 	AMX_DECLARE_NATIVE(expr_rankof),
+	AMX_DECLARE_NATIVE(expr_addressof),
 
 	AMX_DECLARE_NATIVE(expr_value),
+	AMX_DECLARE_NATIVE(expr_variant),
 
 	AMX_DECLARE_NATIVE(expr_get),
 	AMX_DECLARE_NATIVE(expr_get_arr),
