@@ -49,15 +49,54 @@ class expression_parser
 		return value;
 	}
 
-	expression_ptr parse_num(Iter &begin, Iter end)
+	expression_ptr parse_hex(Iter &begin, Iter end)
 	{
 		cell value = 0;
-		float fvalue = 0.0;
 		while(begin != end)
 		{
 			cell c = *begin;
 			if(c >= '0' && c <= '9')
 			{
+				value = value * 16 + (c - '0');
+			}else if(c >= 'A' && c <= 'F')
+			{
+				value = value * 16 + 10 + (c - 'A');
+			}else if(c >= 'a' && c <= 'f')
+			{
+				value = value * 16 + 10 + (c - 'a');
+			}else{
+				break;
+			}
+			++begin;
+		}
+		return std::make_shared<constant_expression>(dyn_object(value, tags::find_tag(tags::tag_cell)));
+	}
+
+	expression_ptr parse_num(Iter &begin, Iter end)
+	{
+		cell value = 0;
+		float fvalue = 0.0;
+		bool first = true;
+		bool maybe_hex = false;
+		while(begin != end)
+		{
+			cell c = *begin;
+			if(maybe_hex)
+			{
+				if(c == 'x')
+				{
+					++begin;
+					return parse_hex(begin, end);
+				}
+				maybe_hex = false;
+			}
+			if(c >= '0' && c <= '9')
+			{
+				if(first && c == '0')
+				{
+					first = false;
+					maybe_hex = true;
+				}
 				value = value * 10 + (c - '0');
 				fvalue = fvalue * 10.0f + (c - '0');
 			}else if(c == '.')
