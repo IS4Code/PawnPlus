@@ -1608,6 +1608,10 @@ dyn_object variant_value_expression::execute(AMX *amx, const args_type &args) co
 		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", value.get_rank());
 	}
 	cell c = value.get_cell(0);
+	if(c == 0)
+	{
+		return {};
+	}
 	dyn_object *var;
 	if(!variants::pool.get_by_id(c, var))
 	{
