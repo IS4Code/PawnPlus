@@ -127,6 +127,7 @@ struct tag_info
 	cell call_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const;
 	const tag_operations &get_ops() const;
 	tag_control *get_control() const;
+	const char *format_name() const;
 };
 
 namespace tags

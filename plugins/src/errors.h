@@ -63,6 +63,7 @@ namespace errors
 	extern error no_debug_error;
 	extern error unhandled_exception;
 	extern error invalid_format;
+	extern error invalid_expression;
 }
 
 namespace amx

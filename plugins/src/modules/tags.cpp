@@ -197,3 +197,8 @@ cell tag_info::get_id(AMX *amx) const
 	}
 	return 0;
 }
+
+const char *tag_info::format_name() const
+{
+	return uid == tags::tag_cell ? "_" : name.c_str();
+}

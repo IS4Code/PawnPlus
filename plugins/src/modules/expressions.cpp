@@ -1,15 +1,31 @@
 #include "expressions.h"
 #include "tags.h"
+#include "errors.h"
+
+#include <string>
+#include <stdarg.h>
 
 object_pool<expression> expression_pool;
 
+void amx_ExpressionError(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	std::string message(vsnprintf(NULL, 0, format, args), '\0');
+	vsprintf(&message[0], format, args);
+	va_end(args);
+	amx_LogicError(errors::invalid_expression, message.c_str());
+}
+
 dyn_object expression::call(AMX *amx, const args_type &args, const call_args_type &call_args) const
 {
+	amx_ExpressionError("attempt to call a non-function expression");
 	return {};
 }
 
 dyn_object expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
 {
+	amx_ExpressionError("attempt to assign to a non-lvalue expression");
 	return {};
 }
 
@@ -80,6 +96,7 @@ dyn_object weak_expression::execute(AMX *amx, const args_type &args) const
 	{
 		return lock->execute(amx, args);
 	}
+	amx_ExpressionError("weakly linked expression was destroyed");
 	return {};
 }
 
@@ -89,6 +106,7 @@ dyn_object weak_expression::call(AMX *amx, const args_type &args, const call_arg
 	{
 		return lock->call(amx, args, call_args);
 	}
+	amx_ExpressionError("weakly linked expression was destroyed");
 	return {};
 }
 
@@ -98,6 +116,7 @@ dyn_object weak_expression::assign(AMX *amx, const args_type &args, dyn_object &
 	{
 		return lock->assign(amx, args, std::move(value));
 	}
+	amx_ExpressionError("weakly linked expression was destroyed");
 	return {};
 }
 
@@ -107,6 +126,7 @@ tag_ptr weak_expression::get_tag(const args_type &args) const
 	{
 		return lock->get_tag(args);
 	}
+	amx_ExpressionError("weakly linked expression was destroyed");
 	return nullptr;
 }
 
@@ -116,6 +136,7 @@ cell weak_expression::get_size(const args_type &args) const
 	{
 		return lock->get_size(args);
 	}
+	amx_ExpressionError("weakly linked expression was destroyed");
 	return 0;
 }
 
@@ -125,6 +146,7 @@ cell weak_expression::get_rank(const args_type &args) const
 	{
 		return lock->get_rank(args);
 	}
+	amx_ExpressionError("weakly linked expression was destroyed");
 	return -1;
 }
 
@@ -134,6 +156,7 @@ void weak_expression::to_string(strings::cell_string &str) const
 	{
 		lock->to_string(str);
 	}
+	amx_ExpressionError("weakly linked expression was destroyed");
 }
 
 expression_ptr weak_expression::clone() const
@@ -143,25 +166,37 @@ expression_ptr weak_expression::clone() const
 
 dyn_object arg_expression::execute(AMX *amx, const args_type &args) const
 {
-	if(index >= args.size()) return {};
+	if(index >= args.size())
+	{
+		amx_ExpressionError("expression argument was not provided");
+	}
 	return args[index].get();
 }
 
 tag_ptr arg_expression::get_tag(const args_type &args) const
 {
-	if(index >= args.size()) return nullptr;
+	if(index >= args.size())
+	{
+		amx_ExpressionError("expression argument was not provided");
+	}
 	return args[index].get().get_tag();
 }
 
 cell arg_expression::get_size(const args_type &args) const
 {
-	if(index >= args.size()) return 0;
+	if(index >= args.size())
+	{
+		amx_ExpressionError("expression argument was not provided");
+	}
 	return args[index].get().get_size();
 }
 
 cell arg_expression::get_rank(const args_type &args) const
 {
-	if(index >= args.size()) return -1;
+	if(index >= args.size())
+	{
+		amx_ExpressionError("expression argument was not provided");
+	}
 	return args[index].get().get_rank();
 }
 
@@ -423,7 +458,8 @@ dyn_object cast_expression::assign(AMX *amx, const args_type &args, dyn_object &
 
 void cast_expression::to_string(strings::cell_string &str) const
 {
-	str.append(strings::convert(new_tag->uid == tags::tag_cell ? ("_:") : (new_tag->name + ":")));
+	str.append(strings::convert(new_tag->format_name()));
+	str.push_back(':');
 	operand->to_string(str);
 }
 
@@ -454,13 +490,13 @@ expression_ptr cast_expression::clone() const
 
 dyn_object symbol_expression::execute(AMX *amx, const args_type &args) const
 {
-	if(symbol->ident == iFUNCTN)
-	{
-		return {};
-	}
-
 	if(auto obj = target_amx.lock())
 	{
+		if(symbol->ident == iFUNCTN)
+		{
+			amx_ExpressionError("attempt to obtain the value of a function");
+		}
+
 		amx = *obj;
 		auto data = amx_GetData(amx);
 		cell *ptr;
@@ -515,29 +551,31 @@ dyn_object symbol_expression::execute(AMX *amx, const args_type &args) const
 						return dyn_object(amx, ptr, dim[0].size, dim[1].size, tag_ptr);
 					case 3:
 						return dyn_object(amx, ptr, dim[0].size, dim[1].size, dim[2].size, tag_ptr);
+					default:
+						amx_ExpressionError("unrecognized array rank %d", symbol->dim);
 				}
 			}
 		}
 	}
+	amx_ExpressionError("target AMX was unloaded");
 	return {};
 }
 
 dyn_object symbol_expression::call(AMX *amx, const args_type &args, const call_args_type &call_args) const
 {
-	if(symbol->ident != iFUNCTN)
-	{
-		return {};
-	}
-	
 	if(auto obj = target_amx.lock())
 	{
+		if(symbol->ident != iFUNCTN)
+		{
+			return expression::call(amx, args, call_args);
+		}
+
 		amx = *obj;
 		auto data = amx_GetData(amx);
 		auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
 		cell argslen = call_args.size() * sizeof(cell);
 		cell argsneeded = 0;
-		bool error = false;
 		for(uint16_t i = 0; i < debug->hdr->symbols; i++)
 		{
 			auto vsym = debug->symboltbl[i];
@@ -546,17 +584,36 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, const call_a
 				cell addr = vsym->address - 2 * sizeof(cell);
 				if(addr > argslen)
 				{
-					error = true;
 					if(addr > argsneeded)
 					{
 						argsneeded = addr;
 					}
+				}else if(!argsneeded)
+				{
+					const auto &arg = call_args[addr / sizeof(cell) - 1];
+					cell tag = vsym->tag;
+					tag_ptr test_tag = nullptr;
+
+					if(tag == 0)
+					{
+						test_tag = tags::find_tag(tags::tag_cell);
+					}else{
+						const char *tagname;
+						if(dbg_GetTagName(debug, tag, &tagname) == AMX_ERR_NONE)
+						{
+							test_tag = tags::find_existing_tag(tagname);
+						}
+					}
+					if(test_tag && !arg.tag_assignable(test_tag))
+					{
+						amx_ExpressionError("argument tag mismatch (%s: required, %s: provided)", test_tag->format_name(), arg.get_tag()->format_name());
+					}
 				}
 			}
 		}
-		if(error)
+		if(argsneeded)
 		{
-			return {};
+			amx_ExpressionError("too few arguments provided to a function (%d needed, %d given)", argsneeded / sizeof(cell), argslen / sizeof(cell));
 		}
 
 		cell num = call_args.size() * sizeof(cell);
@@ -577,19 +634,21 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, const call_a
 		{
 			return dyn_object(ret, get_tag(args));
 		}
+		amx_ExpressionError("inner function raised an AMX error %d", err);
 	}
+	amx_ExpressionError("target AMX was unloaded");
 	return {};
 }
 
 dyn_object symbol_expression::assign(AMX *amx, const args_type &args, dyn_object &&value) const
 {
-	if(symbol->ident == iFUNCTN)
-	{
-		return {};
-	}
-
 	if(auto obj = target_amx.lock())
 	{
+		if(symbol->ident == iFUNCTN)
+		{
+			return expression::assign(amx, args, std::move(value));
+		}
+
 		amx = *obj;
 		auto data = amx_GetData(amx);
 		cell *ptr;
@@ -618,6 +677,7 @@ dyn_object symbol_expression::assign(AMX *amx, const args_type &args, dyn_object
 			}
 			if(frm == 0)
 			{
+				amx_ExpressionError("referenced variable was unloaded");
 				return {};
 			}
 			ptr = reinterpret_cast<cell*>(data + frm + symbol->address);
@@ -646,43 +706,64 @@ dyn_object symbol_expression::assign(AMX *amx, const args_type &args, dyn_object
 			}
 		}
 	}
+	amx_ExpressionError("target AMX was unloaded");
 	return {};
 }
 
 tag_ptr symbol_expression::get_tag(const args_type &args) const
 {
-	cell tag = symbol->tag;
+	if(!target_amx.expired())
+	{
+		cell tag = symbol->tag;
 
-	if(tag == 0)
-	{
-		return tags::find_tag(tags::tag_cell);
+		if(tag == 0)
+		{
+			return tags::find_tag(tags::tag_cell);
+		}
+		const char *tagname;
+		if(dbg_GetTagName(debug, tag, &tagname) == AMX_ERR_NONE)
+		{
+			return tags::find_existing_tag(tagname);
+		}
+		return tags::find_tag(tags::tag_unknown);
 	}
-	const char *tagname;
-	if(dbg_GetTagName(debug, tag, &tagname) == AMX_ERR_NONE)
-	{
-		return tags::find_existing_tag(tagname);
-	}
-	return tags::find_tag(tags::tag_unknown);
+	amx_ExpressionError("target AMX was unloaded");
+	return nullptr;
 }
 
 cell symbol_expression::get_size(const args_type &args) const
 {
-	const AMX_DBG_SYMDIM *dim;
-	if(dbg_GetArrayDim(debug, symbol, &dim) == AMX_ERR_NONE)
+	if(!target_amx.expired())
 	{
-		return dim[0].size;
+		const AMX_DBG_SYMDIM *dim;
+		if(dbg_GetArrayDim(debug, symbol, &dim) == AMX_ERR_NONE)
+		{
+			return dim[0].size;
+		}
+		return 0;
 	}
+	amx_ExpressionError("target AMX was unloaded");
 	return 0;
 }
 
 cell symbol_expression::get_rank(const args_type &args) const
 {
-	return symbol->dim;
+	if(!target_amx.expired())
+	{
+		return symbol->dim;
+	}
+	amx_ExpressionError("target AMX was unloaded");
+	return -1;
 }
 
 void symbol_expression::to_string(strings::cell_string &str) const
 {
-	str.append(strings::convert(symbol->name));
+	if(!target_amx.expired())
+	{
+		str.append(strings::convert(symbol->name));
+		return;
+	}
+	amx_ExpressionError("target AMX was unloaded");
 }
 
 expression_ptr symbol_expression::clone() const

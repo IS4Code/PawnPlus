@@ -108,7 +108,8 @@ static func_ptr main_functions[] = {
 			errors::inner_error,
 			errors::no_debug_error,
 			errors::unhandled_exception,
-			errors::invalid_format
+			errors::invalid_format,
+			errors::invalid_expression
 		};
 		if(index < 0 || static_cast<size_t>(index) >= sizeof(err_table) / sizeof(*err_table))
 		{

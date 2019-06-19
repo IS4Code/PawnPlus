@@ -139,7 +139,7 @@ struct null_operations : public tag_operations
 		cell_string str;
 		if(tag->uid != tag_uid)
 		{
-			str.append(strings::convert(tag->name));
+			str.append(strings::convert(tag->format_name()));
 			str.push_back(':');
 		}
 		append_string(tag, arg, str);
@@ -151,7 +151,7 @@ struct null_operations : public tag_operations
 		cell_string str;
 		if(tag->uid != tag_uid)
 		{
-			str.append(strings::convert(tag->name));
+			str.append(strings::convert(tag->format_name()));
 			str.push_back(':');
 		}
 		str.push_back('{');
