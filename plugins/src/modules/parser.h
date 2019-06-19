@@ -51,7 +51,7 @@ class expression_parser
 
 	expression_ptr parse_hex(Iter &begin, Iter end)
 	{
-		cell value = 0;
+		ucell value = 0;
 		while(begin != end)
 		{
 			cell c = *begin;
@@ -74,13 +74,13 @@ class expression_parser
 
 	expression_ptr parse_num(Iter &begin, Iter end)
 	{
-		cell value = 0;
+		ucell value = 0;
 		float fvalue = 0.0;
 		bool first = true;
 		bool maybe_hex = false;
 		while(begin != end)
 		{
-			cell c = *begin;
+			ucell c = *begin;
 			if(maybe_hex)
 			{
 				if(c == 'x')
