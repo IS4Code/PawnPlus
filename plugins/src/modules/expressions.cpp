@@ -23,7 +23,7 @@ dyn_object expression::call(AMX *amx, const args_type &args, env_type &env, cons
 {
 	auto result = execute(amx, args, env);
 	expression *ptr;
-	if(!(result.tag_assignable(tags::find_tag(tags::tag_expression))) || result.get_rank() != 0 || !expression_pool.get_by_id(result.get_cell(0), ptr))
+	if(!(result.tag_assignable(tags::find_tag(tags::tag_expression))) || !result.is_cell() || !expression_pool.get_by_id(result.get_cell(0), ptr))
 	{
 		amx_ExpressionError("attempt to call a non-function expression");
 	}
@@ -44,6 +44,22 @@ dyn_object expression::assign(AMX *amx, const args_type &args, env_type &env, dy
 
 dyn_object expression::index(AMX *amx, const args_type &args, env_type &env, const std::vector<dyn_object> &indices) const
 {
+	auto value = execute(amx, args, env);
+	if(value.is_cell())
+	{
+		std::shared_ptr<expression> ptr;
+		tag_ptr tag = tags::find_tag(tags::tag_expression);
+		if(!(value.tag_assignable(tag)) || !expression_pool.get_by_id(value.get_cell(0), ptr))
+		{
+			amx_ExpressionError("attempt to index a non-array expression");
+		}
+		std::vector<expression_ptr> args;
+		for(const auto &arg : indices)
+		{
+			args.push_back(std::make_shared<constant_expression>(arg));
+		}
+		return dyn_object(expression_pool.get_id(expression_pool.emplace_derived<bind_expression>(std::move(ptr), std::move(args))), tag);
+	}
 	std::vector<cell> cell_indices;
 	for(const auto &index : indices)
 	{
@@ -57,7 +73,6 @@ dyn_object expression::index(AMX *amx, const args_type &args, env_type &env, con
 		}
 		cell_indices.push_back(index.get_cell(0));
 	}
-	auto value = execute(amx, args, env);
 	return dyn_object(value.get_cell(cell_indices.data(), cell_indices.size()), value.get_tag());
 }
 
@@ -1118,12 +1133,21 @@ dyn_object symbol_expression::assign(AMX *amx, const args_type &args, env_type &
 
 dyn_object symbol_expression::index(AMX *amx, const args_type &args, env_type &env, const std::vector<dyn_object> &indices) const
 {
-	auto addr = address(amx, args, env, indices);
-	if(std::get<1>(addr) == 0)
+	if(auto obj = target_amx.lock())
 	{
-		amx_ExpressionError("index out of bounds");
+		if(symbol->dim == 0)
+		{
+			return expression::index(amx, args, env, indices);
+		}
+		auto addr = address(amx, args, env, indices);
+		if(std::get<1>(addr) == 0)
+		{
+			amx_ExpressionError("index out of bounds");
+		}
+		return dyn_object(std::get<0>(addr)[0], std::get<2>(addr));
 	}
-	return dyn_object(std::get<0>(addr)[0], std::get<2>(addr));
+	amx_ExpressionError("target AMX was unloaded");
+	return {};
 }
 
 std::tuple<cell*, size_t, tag_ptr> symbol_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
