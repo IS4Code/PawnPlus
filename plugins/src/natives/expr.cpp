@@ -267,6 +267,11 @@ namespace Natives
 			return 0;
 		}
 		auto sym = dbg->symboltbl[index];
+		ucell cip = amx->cip;
+		if(sym->vclass == 1 && (sym->codestart > cip || cip >= sym->codeend))
+		{
+			amx_LogicError(errors::operation_not_supported, "symbol");
+		}
 		auto &expr = expression_pool.emplace_derived<symbol_expression>(obj, dbg, sym);
 		return expression_pool.get_id(expr);
 	}

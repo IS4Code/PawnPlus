@@ -131,6 +131,31 @@ public:
 	virtual const expression_ptr &get_right() const = 0;
 };
 
+class nested_expression : public expression_base, public unary_expression
+{
+	expression_ptr expr;
+
+public:
+	nested_expression(expression_ptr &&expr) : expr(std::move(expr))
+	{
+
+	}
+
+	nested_expression(const expression_ptr &expr) : expr(expr)
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
+	virtual tag_ptr get_tag(const args_type &args) const override;
+	virtual cell get_size(const args_type &args) const override;
+	virtual cell get_rank(const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_operand() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
 class comma_expression : public expression_base, public binary_expression
 {
 	expression_ptr left;
@@ -311,7 +336,6 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
-	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;

@@ -267,6 +267,48 @@ decltype(expression_pool)::object_ptr arg_expression::clone() const
 	return expression_pool.emplace_derived<arg_expression>(*this);
 }
 
+dyn_object nested_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+{
+	return expr->execute(amx, args, env);
+}
+
+dyn_object nested_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
+{
+	return expr->assign(amx, args, env, std::move(value));
+}
+
+tag_ptr nested_expression::get_tag(const args_type &args) const
+{
+	return expr->get_tag(args);
+}
+
+cell nested_expression::get_size(const args_type &args) const
+{
+	return expr->get_size(args);
+}
+
+cell nested_expression::get_rank(const args_type &args) const
+{
+	return expr->get_rank(args);
+}
+
+void nested_expression::to_string(strings::cell_string &str) const
+{
+	str.push_back('(');
+	expr->to_string(str);
+	str.push_back(')');
+}
+
+const expression_ptr &nested_expression::get_operand() const
+{
+	return expr;
+}
+
+decltype(expression_pool)::object_ptr nested_expression::clone() const
+{
+	return expression_pool.emplace_derived<nested_expression>(*this);
+}
+
 dyn_object comma_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
 	left->execute(amx, args, env);
@@ -694,11 +736,6 @@ decltype(expression_pool)::object_ptr bind_expression::clone() const
 dyn_object cast_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
 	return dyn_object(operand->execute(amx, args, env), new_tag);
-}
-
-dyn_object cast_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
-{
-	return dyn_object(operand->call(amx, args, env, call_args), new_tag);
 }
 
 dyn_object cast_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
