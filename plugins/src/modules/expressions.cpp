@@ -903,7 +903,7 @@ dyn_object symbol_expression::execute(AMX *amx, const args_type &args, env_type 
 			}
 			if(frm == 0)
 			{
-				return {};
+				amx_ExpressionError("referenced variable was unloaded");
 			}
 			ptr = reinterpret_cast<cell*>(data + frm + symbol->address);
 		}
@@ -1083,7 +1083,6 @@ dyn_object symbol_expression::assign(AMX *amx, const args_type &args, env_type &
 			if(frm == 0)
 			{
 				amx_ExpressionError("referenced variable was unloaded");
-				return {};
 			}
 			ptr = reinterpret_cast<cell*>(data + frm + symbol->address);
 		}
@@ -1165,7 +1164,6 @@ std::tuple<cell*, size_t, tag_ptr> symbol_expression::address(AMX *amx, const ar
 			if(frm == 0)
 			{
 				amx_ExpressionError("referenced variable was unloaded");
-				return {};
 			}
 			ptr = reinterpret_cast<cell*>(data + frm + symbol->address);
 		}
