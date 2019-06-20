@@ -714,7 +714,8 @@ struct format_base
 							continue;
 						}
 					}
-					auto value = expression_parser<Iter>().parse_simple(amx, std::next(color_begin), color_end)->execute(amx, {});
+					map_t env;
+					auto value = expression_parser<Iter>().parse_simple(amx, std::next(color_begin), color_end)->execute(amx, {}, env);
 					buf.append(value.to_string());
 					++color_end;
 					format_begin = last = color_end;

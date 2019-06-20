@@ -44,7 +44,8 @@ public:
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx_heap_guard guard(amx);
-		return Factory(amx, ptr->execute(amx, {}), params[Indices]...);
+		map_t env;
+		return Factory(amx, ptr->execute(amx, {}, env), params[Indices]...);
 	}
 
 	// native expr_set(Expression:expr, ...);
@@ -54,7 +55,8 @@ public:
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx_heap_guard guard(amx);
-		ptr->assign(amx, {}, Factory(amx, params[Indices]...));
+		map_t env;
+		ptr->assign(amx, {}, env, Factory(amx, params[Indices]...));
 		return 1;
 	}
 };

@@ -482,7 +482,7 @@ class expression_parser
 							{
 								return std::make_shared<local_native_expression>(amx, native, std::move(symbol));
 							}
-							return std::make_shared<unknown_expression>(std::move(symbol));
+							return std::make_shared<global_expression>(std::move(symbol));
 						}
 					}else if(c >= '0' && c <= '9')
 					{
@@ -994,6 +994,23 @@ class expression_parser
 					++begin;
 					auto inner2 = parse_outer_expression(amx, begin, end, endchar);
 					result = std::make_shared<conditional_expression>(std::move(result), std::move(inner1), std::move(inner2));
+				}
+				continue;
+				case '=':
+				{
+					if(!result)
+					{
+						break;
+					}
+					auto old = begin;
+					++begin;
+					auto inner = parse_expression(amx, begin, end, endchar);
+					if(!inner)
+					{
+						begin = old;
+						break;
+					}
+					result = std::make_shared<assign_expression>(std::move(result), std::move(inner));
 				}
 				continue;
 			}
