@@ -368,6 +368,10 @@ class expression_parser
 								{
 									amx_FormalError(errors::invalid_expression, "missing expression");
 								}
+								if(symbol == "_")
+								{
+									return std::make_shared<cast_expression>(std::move(inner), tags::find_tag(tags::tag_cell));
+								}
 								return std::make_shared<cast_expression>(std::move(inner), tags::find_tag(symbol.c_str()));
 							}
 						}
@@ -1083,6 +1087,10 @@ public:
 	decltype(expression_pool)::object_ptr parse(AMX *amx, Iter begin, Iter end)
 	{
 		auto expr = parse_outer_expression(amx, begin, end, '\0');
+		if(!expr)
+		{
+			amx_FormalError(errors::invalid_expression, "missing expression");
+		}
 		return static_cast<const expression_base*>(expr.get())->clone();
 	}
 };
