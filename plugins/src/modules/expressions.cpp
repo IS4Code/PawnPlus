@@ -1106,7 +1106,7 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, env_type &en
 					{
 						argsneeded = addr;
 					}
-				}else if(!argsneeded)
+				}else if(addr >= 0 && !argsneeded)
 				{
 					const auto &arg = call_args[addr / sizeof(cell) - 1];
 					cell tag = vsym->tag;
@@ -1179,7 +1179,7 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, env_type &en
 		{
 			return dyn_object(ret, get_tag(args));
 		}
-		amx_ExpressionError("inner function raised an AMX error %d", err);
+		amx_ExpressionError(errors::inner_error, "script", symbol->name, err, amx::StrError(err));
 	}
 	amx_ExpressionError("target AMX was unloaded");
 	return {};
@@ -1459,7 +1459,7 @@ dyn_object native_expression::call(AMX *amx, const args_type &args, env_type &en
 	{
 		return dyn_object(ret, get_tag(args));
 	}
-	amx_ExpressionError("inner function raised an AMX error %d", err);
+	amx_ExpressionError(errors::inner_error, "native", name.c_str(), err, amx::StrError(err));
 	return {};
 }
 
@@ -1503,6 +1503,91 @@ decltype(expression_pool)::object_ptr local_native_expression::clone() const
 	return expression_pool.emplace_derived<local_native_expression>(*this);
 }
 
+AMX *public_expression::load() const
+{
+	if(auto amx = target_amx.lock())
+	{
+		if(index != -1)
+		{
+			int len;
+			amx_NameLength(*amx, &len);
+			char *funcname = static_cast<char*>(alloca(len + 1));
+
+			if(amx_GetPublic(*amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(name.c_str(), funcname))
+			{
+				return *amx;
+			}else if(amx_FindPublicSafe(*amx, name.c_str(), &index) == AMX_ERR_NONE)
+			{
+				return *amx;
+			}
+		}else if(amx_FindPublicSafe(*amx, name.c_str(), &index) == AMX_ERR_NONE)
+		{
+			return *amx;
+		}
+		index = -1;
+		amx_ExpressionError(errors::func_not_found, "public", name.c_str());
+	}
+	amx_ExpressionError("target AMX was unloaded");
+	return nullptr;
+}
+
+dyn_object public_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+{
+	amx_ExpressionError("attempt to obtain the value of a function");
+	return {};
+}
+
+dyn_object public_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
+{
+	load();
+
+	auto data = amx_GetData(amx);
+	auto stk = reinterpret_cast<cell*>(data + amx->stk);
+
+	cell reset_hea, *tmp;
+	amx_Allot(amx, 0, &reset_hea, &tmp);
+
+	for(cell i = call_args.size() - 1; i >= 0; i--)
+	{
+		cell val = call_args[i].store(amx);
+		amx_Push(amx, val);
+	}
+	cell ret;
+	int err = amx_Exec(amx, &ret, index);
+	amx_Release(amx, reset_hea);
+	if(err == AMX_ERR_NONE)
+	{
+		return dyn_object(ret, get_tag(args));
+	}
+	amx_ExpressionError(errors::inner_error, "public", name.c_str(), err, amx::StrError(err));
+	return {};
+}
+
+tag_ptr public_expression::get_tag(const args_type &args) const
+{
+	return tags::find_tag(tags::tag_cell);
+}
+
+cell public_expression::get_size(const args_type &args) const
+{
+	return 1;
+}
+
+cell public_expression::get_rank(const args_type &args) const
+{
+	return 0;
+}
+
+void public_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert(name));
+}
+
+decltype(expression_pool)::object_ptr public_expression::clone() const
+{
+	return expression_pool.emplace_derived<public_expression>(*this);
+}
+
 cell quote_expression::execute_inner(AMX *amx, const args_type &args, env_type &env) const
 {
 	return expression_pool.get_id(static_cast<const expression_base*>(operand.get())->clone());
@@ -1528,7 +1613,7 @@ decltype(expression_pool)::object_ptr quote_expression::clone() const
 expression *dequote_expression::get_expr(AMX *amx, const args_type &args, env_type &env) const
 {
 	auto value = operand->execute(amx, args, env);
-	if(!(value.tag_assignable(tags::find_tag(tags::tag_expression)->base)))
+	if(!(value.tag_assignable(tags::find_tag(tags::tag_expression))))
 	{
 		amx_ExpressionError("dequote argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_expression)->format_name(), value.get_tag()->format_name());
 	}

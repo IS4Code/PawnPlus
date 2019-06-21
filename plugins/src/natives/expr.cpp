@@ -329,6 +329,21 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
+	// native Expression:expr_public(const function[]);
+	AMX_DEFINE_NATIVE(expr_public, 1)
+	{
+		const char *name;
+		amx_StrParam(amx, params[1], name);
+		if(name == nullptr) amx_FormalError(errors::arg_empty, "function");
+		int index;
+		if(amx_FindPublicSafe(amx, name, &index) != AMX_ERR_NONE)
+		{
+			amx_FormalError(errors::func_not_found, "public", name);
+		}
+		auto &expr = expression_pool.emplace_derived<public_expression>(amx, name, index);
+		return expression_pool.get_id(expr);
+	}
+
 	// native Expression:expr_call(Expression:func, Expression:...);
 	AMX_DEFINE_NATIVE(expr_call, 1)
 	{
@@ -684,6 +699,7 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(expr_symbol),
 	AMX_DECLARE_NATIVE(expr_native),
+	AMX_DECLARE_NATIVE(expr_public),
 	AMX_DECLARE_NATIVE(expr_call),
 	AMX_DECLARE_NATIVE(expr_index),
 

@@ -502,6 +502,11 @@ class expression_parser
 							{
 								return std::make_shared<local_native_expression>(amx, native, std::move(symbol));
 							}
+							int index;
+							if(amx_FindPublicSafe(amx, symbol.c_str(), &index) == AMX_ERR_NONE)
+							{
+								return std::make_shared<public_expression>(amx, std::move(symbol), index);
+							}
 							return std::make_shared<global_expression>(std::move(symbol));
 						}
 					}else if(c >= '0' && c <= '9')
