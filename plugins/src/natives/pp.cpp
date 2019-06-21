@@ -371,6 +371,26 @@ namespace Natives
 		return strings::create(strings::locale_name());
 	}
 
+	// native pp_format_env_push(Map:env);
+	AMX_DEFINE_NATIVE(pp_format_env_push, 1)
+	{
+		std::shared_ptr<map_t> ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		strings::format_env.push(std::move(ptr));
+		return 1;
+	}
+
+	// native pp_format_env_pop();
+	AMX_DEFINE_NATIVE(pp_format_env_pop, 0)
+	{
+		if(strings::format_env.size() == 0)
+		{
+			amx_LogicError(errors::element_not_present);
+		}
+		strings::format_env.pop();
+		return 1;
+	}
+
 	// native pp__reserved1();
 	AMX_DEFINE_NATIVE(pp__reserved1, 0)
 	{
@@ -520,6 +540,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_locale),
 	AMX_DECLARE_NATIVE(pp_locale_name),
 	AMX_DECLARE_NATIVE(pp_locale_name_s),
+	AMX_DECLARE_NATIVE(pp_format_env_push),
+	AMX_DECLARE_NATIVE(pp_format_env_pop),
 
 	//Reserved for private use
 	AMX_DECLARE_NATIVE(pp__reserved1),

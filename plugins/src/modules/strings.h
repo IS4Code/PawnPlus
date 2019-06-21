@@ -9,6 +9,8 @@
 #include <stdexcept>
 #include <type_traits>
 #include <locale>
+#include <memory>
+#include <stack>
 
 namespace strings
 {
@@ -286,6 +288,8 @@ namespace strings
 	cell create(const cell *addr, bool truncate, bool fixnulls);
 	cell create(const cell *addr, size_t length, bool packed, bool truncate, bool fixnulls);
 	cell create(const std::string &str);
+
+	extern std::stack<std::shared_ptr<map_t>> format_env;
 
 	void format(AMX *amx, strings::cell_string &str, const cell_string &format, cell argc, cell *args);
 	void format(AMX *amx, strings::cell_string &str, const cell *format, cell argc, cell *args);

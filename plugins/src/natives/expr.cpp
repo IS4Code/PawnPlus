@@ -258,6 +258,20 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
+	// native Expression:expr_nested(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_nested, 1)
+	{
+		return expr_unary<nested_expression>(amx, params);
+	}
+
+	// native Expression:expr_env(Expression:expr, Map:env);
+	AMX_DEFINE_NATIVE(expr_env, 2)
+	{
+		std::shared_ptr<map_t> ptr;
+		if(!map_pool.get_by_id(params[2], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[2]);
+		return expr_unary<env_set_expression>(amx, params, std::move(ptr));
+	}
+
 	// native Expression:expr_comma(Expression:left, Expression:right);
 	AMX_DEFINE_NATIVE(expr_comma, 2)
 	{
@@ -268,12 +282,6 @@ namespace Natives
 	AMX_DEFINE_NATIVE(expr_assign, 2)
 	{
 		return expr_binary<assign_expression>(amx, params);
-	}
-
-	// native Expression:expr_nested(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_nested, 1)
-	{
-		return expr_unary<nested_expression>(amx, params);
 	}
 
 	// native Expression:expr_try(Expression:main, Expression:fallback);
@@ -660,11 +668,11 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(expr_arg),
 	AMX_DECLARE_NATIVE(expr_bind),
+	AMX_DECLARE_NATIVE(expr_nested),
+	AMX_DECLARE_NATIVE(expr_env),
 
 	AMX_DECLARE_NATIVE(expr_comma),
 	AMX_DECLARE_NATIVE(expr_assign),
-
-	AMX_DECLARE_NATIVE(expr_nested),
 
 	AMX_DECLARE_NATIVE(expr_try),
 

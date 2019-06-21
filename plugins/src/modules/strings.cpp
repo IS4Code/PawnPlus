@@ -23,6 +23,8 @@
 
 using namespace strings;
 
+std::stack<std::shared_ptr<map_t>> strings::format_env;
+
 object_pool<cell_string> strings::pool;
 
 cell strings::null_value1[1] = {0};
@@ -714,9 +716,15 @@ struct format_base
 							continue;
 						}
 					}
-					map_t env;
-					auto value = expression_parser<Iter>().parse_simple(amx, std::next(color_begin), color_end)->execute(amx, {}, env);
-					buf.append(value.to_string());
+					auto expr = expression_parser<Iter>().parse_simple(amx, std::next(color_begin), color_end);
+					if(format_env.size() > 0)
+					{
+						buf.append(expr->execute(amx, {}, *format_env.top()).to_string());
+					}else{
+						map_t env;
+						buf.append(expr->execute(amx, {}, env).to_string());
+					}
+						
 					++color_end;
 					format_begin = last = color_end;
 					continue;

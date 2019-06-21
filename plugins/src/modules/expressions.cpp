@@ -52,7 +52,7 @@ dyn_object expression::assign(AMX *amx, const args_type &args, env_type &env, dy
 	return {};
 }
 
-dyn_object expression::index(AMX *amx, const args_type &args, env_type &env, const std::vector<dyn_object> &indices) const
+dyn_object expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
 	auto value = execute(amx, args, env);
 	if(value.is_cell())
@@ -196,6 +196,26 @@ dyn_object weak_expression::assign(AMX *amx, const args_type &args, env_type &en
 	if(auto lock = ptr.lock())
 	{
 		return lock->assign(amx, args, env, std::move(value));
+	}
+	amx_ExpressionError("weakly linked expression was destroyed");
+	return {};
+}
+
+dyn_object weak_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	if(auto lock = ptr.lock())
+	{
+		return lock->index(amx, args, env, indices);
+	}
+	amx_ExpressionError("weakly linked expression was destroyed");
+	return {};
+}
+
+std::tuple<cell*, size_t, tag_ptr> weak_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	if(auto lock = ptr.lock())
+	{
+		return lock->address(amx, args, env, indices);
 	}
 	amx_ExpressionError("weakly linked expression was destroyed");
 	return {};
@@ -346,6 +366,18 @@ dyn_object comma_expression::assign(AMX *amx, const args_type &args, env_type &e
 	return right->assign(amx, args, env, std::move(value));
 }
 
+dyn_object comma_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	left->execute(amx, args, env);
+	return right->index(amx, args, env, indices);
+}
+
+std::tuple<cell*, size_t, tag_ptr> comma_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	left->execute(amx, args, env);
+	return right->address(amx, args, env, indices);
+}
+
 tag_ptr comma_expression::get_tag(const args_type &args) const
 {
 	return right->get_tag(args);
@@ -384,6 +416,63 @@ const expression_ptr &comma_expression::get_right() const
 decltype(expression_pool)::object_ptr comma_expression::clone() const
 {
 	return expression_pool.emplace_derived<comma_expression>(*this);
+}
+
+dyn_object env_set_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+{
+	return expr->execute(amx, args, *new_env);
+}
+
+dyn_object env_set_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
+{
+	return expr->call(amx, args, *new_env, call_args);
+}
+
+dyn_object env_set_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
+{
+	return expr->assign(amx, args, *new_env, std::move(value));
+}
+
+dyn_object env_set_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	return expr->index(amx, args, *new_env, indices);
+}
+
+std::tuple<cell*, size_t, tag_ptr> env_set_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	return expr->address(amx, args, *new_env, indices);
+}
+
+tag_ptr env_set_expression::get_tag(const args_type &args) const
+{
+	return expr->get_tag(args);
+}
+
+cell env_set_expression::get_size(const args_type &args) const
+{
+	return expr->get_size(args);
+}
+
+cell env_set_expression::get_rank(const args_type &args) const
+{
+	return expr->get_rank(args);
+}
+
+void env_set_expression::to_string(strings::cell_string &str) const
+{
+	str.push_back('[');
+	expr->to_string(str);
+	str.append(strings::convert("]{env}"));
+}
+
+const expression_ptr &env_set_expression::get_operand() const
+{
+	return expr;
+}
+
+decltype(expression_pool)::object_ptr env_set_expression::clone() const
+{
+	return expression_pool.emplace_derived<env_set_expression>(*this);
 }
 
 dyn_object assign_expression::execute(AMX *amx, const args_type &args, env_type &env) const
@@ -458,6 +547,26 @@ dyn_object try_expression::assign(AMX *amx, const args_type &args, env_type &env
 	}
 }
 
+dyn_object try_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	try{
+		return main->index(amx, args, env, indices);
+	}catch(const errors::native_error&)
+	{
+		return fallback->index(amx, args, env, indices);
+	}
+}
+
+std::tuple<cell*, size_t, tag_ptr> try_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	try{
+		return main->address(amx, args, env, indices);
+	}catch(const errors::native_error&)
+	{
+		return fallback->address(amx, args, env, indices);
+	}
+}
+
 void try_expression::to_string(strings::cell_string &str) const
 {
 	str.append(strings::convert("try["));
@@ -484,7 +593,7 @@ decltype(expression_pool)::object_ptr try_expression::clone() const
 
 dyn_object call_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
-	std::vector<dyn_object> func_args;
+	call_args_type func_args;
 	for(const auto &arg : this->args)
 	{
 		func_args.push_back(arg->execute(amx, args, env));
@@ -538,7 +647,7 @@ decltype(expression_pool)::object_ptr call_expression::clone() const
 
 dyn_object index_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
-	std::vector<dyn_object> indices;
+	call_args_type indices;
 	for(const auto &index : this->indices)
 	{
 		indices.push_back(index->execute(amx, args, env));
@@ -564,9 +673,9 @@ dyn_object index_expression::assign(AMX *amx, const args_type &args, env_type &e
 	return dyn_object(std::get<0>(addr)[0] = value.get_cell(0), std::get<2>(addr));
 }
 
-dyn_object index_expression::index(AMX *amx, const args_type &args, env_type &env, const std::vector<dyn_object> &indices) const
+dyn_object index_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
-	std::vector<dyn_object> new_indices;
+	call_args_type new_indices;
 	new_indices.reserve(this->indices.size() + indices.size());
 	for(const auto &index : this->indices)
 	{
@@ -581,7 +690,7 @@ dyn_object index_expression::index(AMX *amx, const args_type &args, env_type &en
 
 std::tuple<cell*, size_t, tag_ptr> index_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
-	std::vector<dyn_object> new_indices;
+	call_args_type new_indices;
 	new_indices.reserve(this->indices.size() + indices.size());
 	for(const auto &index : this->indices)
 	{
@@ -651,7 +760,7 @@ auto bind_expression::combine_args(const args_type &args) const -> args_type
 	return new_args;
 }
 
-auto bind_expression::combine_args(AMX *amx, const args_type &args, env_type &env, std::vector<dyn_object> &storage) const -> args_type
+auto bind_expression::combine_args(AMX *amx, const args_type &args, env_type &env, call_args_type &storage) const -> args_type
 {
 	storage.reserve(base_args.size() + args.size());
 	args_type new_args;
@@ -675,20 +784,32 @@ auto bind_expression::combine_args(AMX *amx, const args_type &args, env_type &en
 
 dyn_object bind_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
-	std::vector<dyn_object> storage;
+	call_args_type storage;
 	return operand->execute(amx, combine_args(amx, args, env, storage), env);
 }
 
 dyn_object bind_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
-	std::vector<dyn_object> storage;
+	call_args_type storage;
 	return operand->call(amx, combine_args(amx, args, env, storage), env, call_args);
 }
 
 dyn_object bind_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
 {
-	std::vector<dyn_object> storage;
+	call_args_type storage;
 	return operand->assign(amx, combine_args(amx, args, env, storage), env, std::move(value));
+}
+
+dyn_object bind_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	call_args_type storage;
+	return operand->index(amx, combine_args(amx, args, env, storage), env, indices);
+}
+
+std::tuple<cell*, size_t, tag_ptr> bind_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	call_args_type storage;
+	return operand->address(amx, combine_args(amx, args, env, storage), env, indices);
 }
 
 void bind_expression::to_string(strings::cell_string &str) const
@@ -1135,7 +1256,7 @@ dyn_object symbol_expression::assign(AMX *amx, const args_type &args, env_type &
 	return {};
 }
 
-dyn_object symbol_expression::index(AMX *amx, const args_type &args, env_type &env, const std::vector<dyn_object> &indices) const
+dyn_object symbol_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
 	if(auto obj = target_amx.lock())
 	{
@@ -1464,17 +1585,27 @@ decltype(expression_pool)::object_ptr logic_or_expression::clone() const
 
 dyn_object conditional_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
-	return cond->execute_bool(amx, args, env) ? on_true->execute(amx, args, env) : on_false->execute(amx, args, env);
+	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->execute(amx, args, env);
 }
 
 dyn_object conditional_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
-	return cond->execute_bool(amx, args, env) ? on_true->call(amx, args, env, call_args) : on_false->call(amx, args, env, call_args);
+	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->call(amx, args, env, call_args);
 }
 
 dyn_object conditional_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
 {
-	return cond->execute_bool(amx, args, env) ? on_true->assign(amx, args, env, std::move(value)) : on_false->assign(amx, args, env, std::move(value));
+	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->assign(amx, args, env, std::move(value));
+}
+
+dyn_object conditional_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->index(amx, args, env, indices);
+}
+
+std::tuple<cell*, size_t, tag_ptr> conditional_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->address(amx, args, env, indices);
 }
 
 const expression_ptr &conditional_expression::get_operand() const

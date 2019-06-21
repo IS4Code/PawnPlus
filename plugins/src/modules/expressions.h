@@ -27,7 +27,7 @@ public:
 	bool execute_bool(AMX *amx, const args_type &args, env_type &env) const;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const;
-	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const std::vector<dyn_object> &indices) const;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const;
 	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const;
 	virtual tag_ptr get_tag(const args_type &args) const;
 	virtual cell get_size(const args_type &args) const;
@@ -94,6 +94,8 @@ public:
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
+	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
@@ -156,6 +158,35 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
+class env_set_expression : public expression_base, public unary_expression
+{
+	expression_ptr expr;
+	std::shared_ptr<env_type> new_env;
+
+public:
+	env_set_expression(expression_ptr &&expr, std::shared_ptr<env_type> &&env) : expr(std::move(expr)), new_env(std::move(env))
+	{
+
+	}
+
+	env_set_expression(const expression_ptr &expr, const std::shared_ptr<env_type> &env) : expr(expr), new_env(env)
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
+	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
+	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
+	virtual tag_ptr get_tag(const args_type &args) const override;
+	virtual cell get_size(const args_type &args) const override;
+	virtual cell get_rank(const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_operand() const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
 class comma_expression : public expression_base, public binary_expression
 {
 	expression_ptr left;
@@ -175,6 +206,8 @@ public:
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
+	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
@@ -229,6 +262,8 @@ public:
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
+	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_left() const override;
 	virtual const expression_ptr &get_right() const override;
@@ -278,7 +313,7 @@ public:
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
-	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const std::vector<dyn_object> &indices) const override;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
@@ -295,7 +330,7 @@ class bind_expression : public expression_base, public unary_expression
 
 protected:
 	args_type combine_args(const args_type &args) const;
-	args_type combine_args(AMX *amx, const args_type &args, env_type &env, std::vector<dyn_object> &storage) const;
+	args_type combine_args(AMX *amx, const args_type &args, env_type &env, call_args_type &storage) const;
 
 public:
 	bind_expression(expression_ptr &&ptr, std::vector<expression_ptr> &&base_args) : operand(std::move(ptr)), base_args(std::move(base_args))
@@ -311,6 +346,8 @@ public:
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
+	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
@@ -401,7 +438,7 @@ public:
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
-	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const std::vector<dyn_object> &indices) const override;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
@@ -975,6 +1012,8 @@ public:
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
+	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const;
 	virtual const expression_ptr &get_left() const;

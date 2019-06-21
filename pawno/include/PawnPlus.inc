@@ -175,6 +175,9 @@ native pp_locale(const locale[], locale_category:category=locale_all);
 native pp_locale_name(locale[], size=sizeof(locale));
 native String:pp_locale_name_s();
 
+native pp_format_env_push(Map:env);
+native pp_format_env_pop();
+
 
 /*                 */
 /*      Pawn       */
@@ -1264,7 +1267,9 @@ native Iter:iter_repeat_str(const value[], count);
 native Iter:iter_repeat_str_s(ConstStringTag:value, count);
 native Iter:iter_repeat_var(ConstVariantTag:value, count);
 native Iter:iter_filter(IterTag:iter, Expression:expr);
+native Iter:iter_filter_env(IterTag:iter, Expression:expr, Map:env);
 native Iter:iter_project(IterTag:iter, Expression:expr);
+native Iter:iter_project_env(IterTag:iter, Expression:expr, Map:env);
 
 native iter_get(IterTag:iter, offset=0);
 native iter_get_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
@@ -1554,10 +1559,11 @@ native Expression:expr_arr(Expression:...);
 
 native Expression:expr_arg(index);
 native Expression:expr_bind(Expression:expr, Expression:...);
+native Expression:expr_nested(Expression:expr);
+native Expression:expr_env(Expression:expr, Map:env);
 
 native Expression:expr_comma(Expression:left, Expression:right);
 native Expression:expr_assign(Expression:left, Expression:right);
-native Expression:expr_nested(Expression:expr);
 
 native Expression:expr_try(Expression:main, Expression:fallback);
 
