@@ -147,7 +147,6 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
-	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;

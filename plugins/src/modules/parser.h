@@ -237,6 +237,16 @@ class expression_parser
 					}
 					return std::make_shared<unary_object_expression<&dyn_object::operator- >>(std::move(inner));
 				}
+				case '+':
+				{
+					++begin;
+					auto inner = parse_factor(amx, begin, end, endchar);
+					if(!inner)
+					{
+						amx_FormalError(errors::invalid_expression, "missing expression");
+					}
+					return std::make_shared<nested_expression>(std::move(inner));
+				}
 				case '!':
 				{
 					++begin;

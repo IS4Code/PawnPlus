@@ -1555,6 +1555,7 @@ native Expression:expr_bind(Expression:expr, Expression:...);
 
 native Expression:expr_comma(Expression:left, Expression:right);
 native Expression:expr_assign(Expression:left, Expression:right);
+native Expression:expr_nested(Expression:expr);
 
 native Expression:expr_try(Expression:main, Expression:fallback);
 

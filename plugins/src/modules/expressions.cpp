@@ -287,11 +287,6 @@ dyn_object nested_expression::execute(AMX *amx, const args_type &args, env_type 
 	return expr->execute(amx, args, env);
 }
 
-dyn_object nested_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
-{
-	return expr->assign(amx, args, env, std::move(value));
-}
-
 tag_ptr nested_expression::get_tag(const args_type &args) const
 {
 	return expr->get_tag(args);
@@ -309,9 +304,8 @@ cell nested_expression::get_rank(const args_type &args) const
 
 void nested_expression::to_string(strings::cell_string &str) const
 {
-	str.push_back('(');
+	str.push_back('+');
 	expr->to_string(str);
-	str.push_back(')');
 }
 
 const expression_ptr &nested_expression::get_operand() const
