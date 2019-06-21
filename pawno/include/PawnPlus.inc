@@ -1527,10 +1527,15 @@ native handle_sizeof(HandleTag:handle);
 /*   Expressions   */
 /*                 */
 
+const Expression:INVALID_EXPRESSION = Expression:0;
+
 native Expression:expr_acquire(Expression:expr);
 native Expression:expr_release(Expression:expr);
 native expr_delete(Expression:expr);
 native bool:expr_valid(Expression:expr);
+native expr_type(Expression:expr);
+native expr_type_str(Expression:expr, type[], size=sizeof(type));
+native String:expr_type_str_s(Expression:expr);
 
 native Expression:expr_parse(const string[]);
 native Expression:expr_parse_s(ConstString:string);

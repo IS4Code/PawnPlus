@@ -96,6 +96,33 @@ namespace Natives
 		return expression_pool.get_by_id(params[1], ptr);
 	}
 
+	// native expr_type(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_type, 1)
+	{
+		expression *ptr;
+		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
+		return reinterpret_cast<cell>(&typeid(*ptr));
+	}
+
+	// native expr_type_str(Expression:expr, type[], size=sizeof(type));
+	AMX_DEFINE_NATIVE(expr_type_str, 3)
+	{
+		expression *ptr;
+		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
+		auto str = typeid(*ptr).name();
+		amx_SetString(addr, str, false, false, params[3]);
+		return std::strlen(str);
+	}
+
+	// native String:expr_type_str_s(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_type_str_s, 1)
+	{
+		expression *ptr;
+		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
+		return strings::create(typeid(*ptr).name());
+	}
+
 	template <class Iter>
 	struct parse_base
 	{
@@ -608,6 +635,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_release),
 	AMX_DECLARE_NATIVE(expr_delete),
 	AMX_DECLARE_NATIVE(expr_valid),
+	AMX_DECLARE_NATIVE(expr_type),
+	AMX_DECLARE_NATIVE(expr_type_str),
+	AMX_DECLARE_NATIVE(expr_type_str_s),
 
 	AMX_DECLARE_NATIVE(expr_parse),
 	AMX_DECLARE_NATIVE(expr_parse_s),
