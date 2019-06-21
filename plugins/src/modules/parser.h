@@ -1062,6 +1062,16 @@ class expression_parser
 					result.push_back(std::move(inner));
 				}
 				break;
+				case ';':
+				{
+					++begin;
+					inner = parse_expression(amx, begin, end, endchar);
+					if(inner)
+					{
+						result.push_back(std::move(inner));
+					}
+				}
+				break;
 				default:
 				{
 					if(c == endchar)
