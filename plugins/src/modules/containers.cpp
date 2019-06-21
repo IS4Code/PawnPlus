@@ -309,17 +309,17 @@ bool dyn_iterator::erase()
 	return false;
 }
 
-bool dyn_iterator::can_reset()
+bool dyn_iterator::can_reset() const
 {
 	return false;
 }
 
-bool dyn_iterator::can_insert()
+bool dyn_iterator::can_insert() const
 {
 	return false;
 }
 
-bool dyn_iterator::can_erase()
+bool dyn_iterator::can_erase() const
 {
 	return false;
 }
@@ -550,12 +550,12 @@ bool linked_list_iterator_t::erase()
 	return false;
 }
 
-bool linked_list_iterator_t::can_reset()
+bool linked_list_iterator_t::can_reset() const
 {
 	return !_source.expired();
 }
 
-bool linked_list_iterator_t::can_erase()
+bool linked_list_iterator_t::can_erase() const
 {
 	if(auto source = lock_same())
 	{
@@ -564,7 +564,7 @@ bool linked_list_iterator_t::can_erase()
 	return false;
 }
 
-bool linked_list_iterator_t::can_insert()
+bool linked_list_iterator_t::can_insert() const
 {
 	if(auto source = lock_same())
 	{

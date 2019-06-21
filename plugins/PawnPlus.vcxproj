@@ -147,6 +147,7 @@
     <ClCompile Include="src\modules\events.cpp" />
     <ClCompile Include="src\modules\expressions.cpp" />
     <ClCompile Include="src\modules\guards.cpp" />
+    <ClCompile Include="src\modules\iterators.cpp" />
     <ClCompile Include="src\modules\parser.cpp" />
     <ClCompile Include="src\modules\serialize.cpp" />
     <ClCompile Include="src\modules\strings.cpp" />
@@ -221,6 +222,7 @@
     <ClInclude Include="src\modules\events.h" />
     <ClInclude Include="src\modules\expressions.h" />
     <ClInclude Include="src\modules\guards.h" />
+    <ClInclude Include="src\modules\iterators.h" />
     <ClInclude Include="src\modules\parser.h" />
     <ClInclude Include="src\modules\serialize.h" />
     <ClInclude Include="src\modules\strings.h" />

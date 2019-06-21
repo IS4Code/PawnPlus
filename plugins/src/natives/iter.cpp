@@ -3,551 +3,12 @@
 #include "modules/containers.h"
 #include "modules/variants.h"
 #include "modules/strings.h"
+#include "modules/expressions.h"
+#include "modules/iterators.h"
 #include "objects/dyn_object.h"
 #include "fixes/linux.h"
 
 #include <cstring>
-
-class range_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
-{
-	cell index;
-	cell count;
-	cell skip;
-	dyn_object begin;
-	dyn_object current;
-
-public:
-	range_iterator(dyn_object &&start, cell count, cell skip) : count(count), skip(skip), index(-1), begin(std::move(start))
-	{
-
-	}
-
-	virtual bool expired() const override
-	{
-		return false;
-	}
-
-	virtual bool valid() const override
-	{
-		return index != -1;
-	}
-
-	virtual bool move_next() override
-	{
-		if(valid())
-		{
-			index++;
-			if(index != count)
-			{
-				if(skip > 0)
-				{
-					for(cell i = 0; i < skip; i++)
-					{
-						current = current.inc();
-					}
-				}else if(skip < 0)
-				{
-					for(cell i = skip; i < 0; i++)
-					{
-						current = current.dec();
-					}
-				}
-				return true;
-			}else{
-				reset();
-			}
-		}
-		return false;
-	}
-
-	virtual bool move_previous() override
-	{
-		if(valid())
-		{
-			if(index != 0)
-			{
-				if(skip > 0)
-				{
-					for(cell i = 0; i < skip; i++)
-					{
-						current = current.dec();
-					}
-				}else if(skip < 0)
-				{
-					for(cell i = skip; i < 0; i++)
-					{
-						current = current.inc();
-					}
-				}
-				index--;
-			}else{
-				reset();
-			}
-		}
-		return false;
-	}
-
-	virtual bool set_to_first() override
-	{
-		if(count == 0)
-		{
-			return false;
-		}
-		current = begin;
-		index = 0;
-		return true;
-	}
-
-	virtual bool set_to_last() override
-	{
-		return false;
-	}
-
-	virtual bool reset() override
-	{
-		index = -1;
-		return true;
-	}
-
-	virtual bool erase() override
-	{
-		return false;
-	}
-
-	virtual bool can_reset() override
-	{
-		return true;
-	}
-
-	virtual bool can_erase() override
-	{
-		return false;
-	}
-
-	virtual bool can_insert() override
-	{
-		return false;
-	}
-
-	virtual std::unique_ptr<dyn_iterator> clone() const override
-	{
-		return std::make_unique<range_iterator>(*this);
-	}
-
-	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
-	{
-		return std::make_shared<range_iterator>(*this);
-	}
-
-	virtual size_t get_hash() const override
-	{
-		if(valid())
-		{
-			return current.get_hash();
-		}else{
-			return begin.get_hash();
-		}
-	}
-
-	virtual bool operator==(const dyn_iterator &obj) const override
-	{
-		auto other = dynamic_cast<const range_iterator*>(&obj);
-		if(other != nullptr)
-		{
-			if(valid())
-			{
-				return other->valid() && current == other->current;
-			}else{
-				return !other->valid();
-			}
-		}
-		return false;
-	}
-
-protected:
-	virtual bool extract_dyn(const std::type_info &type, void *value) const override
-	{
-		if(valid())
-		{
-			if(type == typeid(const dyn_object*))
-			{
-				*reinterpret_cast<const dyn_object**>(value) = &current;
-				return true;
-			}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
-			{
-				*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(index, tags::find_tag(tags::tag_cell)), current));
-				return true;
-			}
-		}
-		return false;
-	}
-
-	virtual bool insert_dyn(const std::type_info &type, void *value) override
-	{
-		return false;
-	}
-
-	virtual bool insert_dyn(const std::type_info &type, const void *value) override
-	{
-		return false;
-	}
-
-public:
-	virtual dyn_iterator *get() override
-	{
-		return this;
-	}
-
-	virtual const dyn_iterator *get() const override
-	{
-		return this;
-	}
-};
-
-class repeat_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
-{
-	cell index;
-	cell count;
-	dyn_object value;
-
-public:
-	repeat_iterator(dyn_object &&value, cell count) : count(count), index(-1), value(std::move(value))
-	{
-
-	}
-
-	virtual bool expired() const override
-	{
-		return false;
-	}
-
-	virtual bool valid() const override
-	{
-		return index != -1;
-	}
-
-	virtual bool move_next() override
-	{
-		if(valid())
-		{
-			index++;
-			if(index != count)
-			{
-				return true;
-			}else{
-				reset();
-			}
-		}
-		return false;
-	}
-
-	virtual bool move_previous() override
-	{
-		if(valid())
-		{
-			if(index != 0)
-			{
-				index--;
-			}else{
-				reset();
-			}
-		}
-		return false;
-	}
-
-	virtual bool set_to_first() override
-	{
-		if(count == 0)
-		{
-			return false;
-		}
-		index = 0;
-		return true;
-	}
-
-	virtual bool set_to_last() override
-	{
-		if(count == 0)
-		{
-			return false;
-		}
-		index = count - 1;
-		return true;
-	}
-
-	virtual bool reset() override
-	{
-		index = -1;
-		return true;
-	}
-
-	virtual bool erase() override
-	{
-		return false;
-	}
-
-	virtual bool can_reset() override
-	{
-		return true;
-	}
-
-	virtual bool can_erase() override
-	{
-		return false;
-	}
-
-	virtual bool can_insert() override
-	{
-		return false;
-	}
-
-	virtual std::unique_ptr<dyn_iterator> clone() const override
-	{
-		return std::make_unique<repeat_iterator>(*this);
-	}
-
-	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
-	{
-		return std::make_shared<repeat_iterator>(*this);
-	}
-
-	virtual size_t get_hash() const override
-	{
-		return value.get_hash();
-	}
-
-	virtual bool operator==(const dyn_iterator &obj) const override
-	{
-		auto other = dynamic_cast<const repeat_iterator*>(&obj);
-		if(other != nullptr)
-		{
-			if(valid())
-			{
-				return other->valid() && index == other->index && value == other->value;
-			}else{
-				return !other->valid();
-			}
-		}
-		return false;
-	}
-
-protected:
-	virtual bool extract_dyn(const std::type_info &type, void *value) const override
-	{
-		if(valid())
-		{
-			if(type == typeid(const dyn_object*))
-			{
-				*reinterpret_cast<const dyn_object**>(value) = &this->value;
-				return true;
-			}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
-			{
-				*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(index, tags::find_tag(tags::tag_cell)), this->value));
-				return true;
-			}
-		}
-		return false;
-	}
-
-	virtual bool insert_dyn(const std::type_info &type, void *value) override
-	{
-		return false;
-	}
-
-	virtual bool insert_dyn(const std::type_info &type, const void *value) override
-	{
-		return false;
-	}
-
-public:
-	virtual dyn_iterator *get() override
-	{
-		return this;
-	}
-
-	virtual const dyn_iterator *get() const override
-	{
-		return this;
-	}
-};
-
-template <class T>
-class dyn_modifiable_const_ptr
-{
-	T *ptr;
-
-public:
-	dyn_modifiable_const_ptr() : ptr(nullptr)
-	{
-
-	}
-
-	dyn_modifiable_const_ptr(T *ptr) : ptr(ptr)
-	{
-
-	}
-
-	T &operator*() const
-	{
-		return *ptr;
-	}
-
-	T *operator->() const
-	{
-		return ptr;
-	}
-};
-
-class variant_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
-{
-	std::weak_ptr<dyn_object> var;
-	bool inside = true;
-
-public:
-	variant_iterator(const std::shared_ptr<dyn_object> &var) : var(var)
-	{
-
-	}
-
-	virtual bool expired() const override
-	{
-		return var.expired();
-	}
-
-	virtual bool valid() const override
-	{
-		return !expired() && inside;
-	}
-
-	virtual bool move_next() override
-	{
-		return inside = false;
-	}
-
-	virtual bool move_previous() override
-	{
-		return inside = false;
-	}
-
-	virtual bool set_to_first() override
-	{
-		if(!expired())
-		{
-			inside = true;
-		}
-		return false;
-	}
-
-	virtual bool set_to_last() override
-	{
-		if(!expired())
-		{
-			inside = true;
-		}
-		return false;
-	}
-
-	virtual bool reset() override
-	{
-		if(!expired())
-		{
-			inside = false;
-			return true;
-		}
-		return false;
-	}
-
-	virtual bool erase() override
-	{
-		return false;
-	}
-
-	virtual bool can_reset() override
-	{
-		return !expired();
-	}
-
-	virtual bool can_erase() override
-	{
-		return false;
-	}
-
-	virtual bool can_insert() override
-	{
-		return false;
-	}
-
-	virtual std::unique_ptr<dyn_iterator> clone() const override
-	{
-		return std::make_unique<variant_iterator>(*this);
-	}
-
-	virtual std::shared_ptr<dyn_iterator> clone_shared() const override
-	{
-		return std::make_shared<variant_iterator>(*this);
-	}
-
-	virtual size_t get_hash() const override
-	{
-		return std::hash<dyn_object*>()(&*var.lock());
-	}
-
-	virtual bool operator==(const dyn_iterator &obj) const override
-	{
-		auto other = dynamic_cast<const variant_iterator*>(&obj);
-		if(other != nullptr)
-		{
-			return !var.owner_before(other->var) && !other->var.owner_before(var) && inside == other->inside;
-		}
-		return false;
-	}
-
-protected:
-	virtual bool extract_dyn(const std::type_info &type, void *value) const override
-	{
-		if(inside)
-		{
-			if(auto obj = var.lock())
-			{
-				if(type == typeid(const dyn_object*))
-				{
-					*reinterpret_cast<const dyn_object**>(value) = obj.get();
-					return true;
-				}else if(type == typeid(std::shared_ptr<const dyn_object>))
-				{
-					*reinterpret_cast<std::shared_ptr<const dyn_object>*>(value) = obj;
-					return true;
-				}else if(type == typeid(dyn_modifiable_const_ptr<dyn_object>))
-				{
-					*reinterpret_cast<dyn_modifiable_const_ptr<dyn_object>*>(value) = obj.get();
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	virtual bool insert_dyn(const std::type_info &type, void *value) override
-	{
-		return false;
-	}
-
-	virtual bool insert_dyn(const std::type_info &type, const void *value) override
-	{
-		return false;
-	}
-
-public:
-	virtual dyn_iterator *get() override
-	{
-		return this;
-	}
-
-	virtual const dyn_iterator *get() const override
-	{
-		return this;
-	}
-};
 
 template <class Func>
 auto value_write(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)>::type
@@ -555,27 +16,7 @@ auto value_write(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)>
 	dyn_iterator *iter;
 	if(iter_pool.get_by_id(arg, iter))
 	{
-		dyn_object *obj;
-		if(iter->extract(obj))
-		{
-			return f(*obj);
-		}
-		std::shared_ptr<dyn_object> sobj;
-		if(iter->extract(sobj))
-		{
-			return f(*sobj);
-		}
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			return f(pair->second);
-		}
-		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return f(spair->second);
-		}
-		amx_LogicError(errors::operation_not_supported, "iterator");
+		return value_write(iter, f);
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
 	dyn_object tmp;
@@ -588,67 +29,9 @@ auto value_modify(cell arg, Func f) -> typename std::result_of<Func(dyn_object&)
 	dyn_iterator *iter;
 	if(iter_pool.get_by_id(arg, iter))
 	{
-		dyn_object *obj;
-		if(iter->extract(obj))
-		{
-			return f(*obj);
-		}
-		std::shared_ptr<dyn_object> sobj;
-		if(iter->extract(sobj))
-		{
-			return f(*sobj);
-		}
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			return f(pair->second);
-		}
-		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return f(spair->second);
-		}
-		dyn_modifiable_const_ptr<dyn_object> mobj;
-		if(iter->extract(mobj))
-		{
-			return f(*mobj);
-		}
-		dyn_modifiable_const_ptr<std::pair<const dyn_object, dyn_object>> mpair;
-		if(iter->extract(mpair))
-		{
-			return f(mpair->second);
-		}
-		amx_LogicError(errors::operation_not_supported, "iterator");
+		return value_modify(iter, f);
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
-	dyn_object tmp;
-	return f(tmp);
-}
-
-template <class Func>
-auto value_read(cell arg, dyn_iterator *iter, Func f) -> typename std::result_of<Func(const dyn_object&)>::type
-{
-	const dyn_object *cobj;
-	if(iter->extract(cobj))
-	{
-		return f(*cobj);
-	}
-	std::shared_ptr<const dyn_object> scobj;
-	if(iter->extract(scobj))
-	{
-		return f(*scobj);
-	}
-	const std::pair<const dyn_object, dyn_object> *cpair;
-	if(iter->extract(cpair))
-	{
-		return f(cpair->second);
-	}
-	std::shared_ptr<const std::pair<const dyn_object, dyn_object>> scpair;
-	if(iter->extract(scpair))
-	{
-		return f(scpair->second);
-	}
-	amx_LogicError(errors::operation_not_supported, "iterator");
 	dyn_object tmp;
 	return f(tmp);
 }
@@ -659,7 +42,7 @@ auto value_read(cell arg, Func f) -> typename std::result_of<Func(const dyn_obje
 	dyn_iterator *iter;
 	if(iter_pool.get_by_id(arg, iter))
 	{
-		return value_read(arg, iter, f);
+		return value_read(iter, f);
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
 	dyn_object tmp;
@@ -672,17 +55,7 @@ auto key_read(cell arg, Func f) -> typename std::result_of<Func(const dyn_object
 	dyn_iterator *iter;
 	if(iter_pool.get_by_id(arg, iter))
 	{
-		const std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			return f(pair->first);
-		}
-		std::shared_ptr<const std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			return f(spair->first);
-		}
-		amx_LogicError(errors::operation_not_supported, "iterator");
+		return key_read(iter, f);
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
 	dyn_object tmp;
@@ -694,29 +67,7 @@ auto key_value_access(cell arg, dyn_iterator *&iter, Func f) -> typename std::re
 {
 	if(iter_pool.get_by_id(arg, iter))
 	{
-		dyn_object *obj;
-		if(iter->extract(obj))
-		{
-			return f(*obj);
-		}
-		std::shared_ptr<dyn_object> sobj;
-		if(iter->extract(sobj))
-		{
-			return f(*sobj);
-		}
-		std::pair<const dyn_object, dyn_object> *pair;
-		if(iter->extract(pair))
-		{
-			f(pair->first);
-			return f(pair->second);
-		}
-		std::shared_ptr<std::pair<const dyn_object, dyn_object>> spair;
-		if(iter->extract(spair))
-		{
-			f(spair->first);
-			return f(spair->second);
-		}
-		amx_LogicError(errors::operation_not_supported, "iterator");
+		return key_value_access(iter, f);
 	}
 	amx_LogicError(errors::pointer_invalid, "iterator", arg);
 	dyn_object tmp;
@@ -913,7 +264,7 @@ namespace Natives
 		}
 		while(iter->valid())
 		{
-			value_read(params[2], iter, [&](const dyn_object &obj)
+			value_read(iter, [&](const dyn_object &obj)
 			{
 				pos = ptr->insert(pos, obj);
 				++pos;
@@ -1019,7 +370,7 @@ namespace Natives
 		}
 		while(iter->valid())
 		{
-			value_read(params[2], iter, [&](const dyn_object &obj)
+			value_read(iter, [&](const dyn_object &obj)
 			{
 				pos = ptr->insert(pos, obj);
 				++pos;
@@ -1338,6 +689,26 @@ namespace Natives
 	AMX_DEFINE_NATIVE(iter_repeat_var, 2)
 	{
 		return value_at<1>::iter_repeat<dyn_func_var>(amx, params);
+	}
+
+	// native Iter:iter_filter(IterTag:iter, Expression:expr);
+	AMX_DEFINE_NATIVE(iter_filter, 2)
+	{
+		std::shared_ptr<dyn_iterator> iter;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		std::shared_ptr<expression> expr;
+		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+		return iter_pool.get_id(iter_pool.emplace_derived<filter_iterator>(amx, std::move(iter), std::move(expr)));
+	}
+
+	// native Iter:iter_project(IterTag:iter, Expression:expr);
+	AMX_DEFINE_NATIVE(iter_project, 2)
+	{
+		std::shared_ptr<dyn_iterator> iter;
+		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		std::shared_ptr<expression> expr;
+		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+		return iter_pool.get_id(iter_pool.emplace_derived<project_iterator>(amx, std::move(iter), std::move(expr)));
 	}
 
 	// native Iter:iter_move_next(IterTag:iter, steps=1);
@@ -1893,6 +1264,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_repeat_str),
 	AMX_DECLARE_NATIVE(iter_repeat_str_s),
 	AMX_DECLARE_NATIVE(iter_repeat_var),
+	AMX_DECLARE_NATIVE(iter_filter),
+	AMX_DECLARE_NATIVE(iter_project),
 
 	AMX_DECLARE_NATIVE(iter_move_next),
 	AMX_DECLARE_NATIVE(iter_move_previous),

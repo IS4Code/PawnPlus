@@ -151,6 +151,9 @@
     <ClCompile Include="src\modules\parser.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\iterators.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -342,6 +345,9 @@
       <Filter>src\modules</Filter>
     </ClInclude>
     <ClInclude Include="src\modules\parser.h">
+      <Filter>src\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\iterators.h">
       <Filter>src\modules</Filter>
     </ClInclude>
   </ItemGroup>

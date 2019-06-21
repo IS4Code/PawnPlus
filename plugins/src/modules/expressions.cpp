@@ -19,6 +19,16 @@ void amx_ExpressionError(const char *format, ...)
 	amx_LogicError(errors::invalid_expression, message.c_str());
 }
 
+bool expression::execute_bool(AMX *amx, const args_type &args, env_type &env) const
+{
+	auto bool_exp = dynamic_cast<const bool_expression*>(this);
+	if(bool_exp)
+	{
+		return bool_exp->execute_inner(amx, args, env);
+	}
+	return !!execute(amx, args, env);
+}
+
 dyn_object expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
 	auto result = execute(amx, args, env);
@@ -1396,22 +1406,7 @@ decltype(expression_pool)::object_ptr quote_expression::clone() const
 
 bool logic_and_expression::execute_inner(AMX *amx, const args_type &args, env_type &env) const
 {
-	if(auto left_logic = dynamic_cast<const bool_expression*>(left.get()))
-	{
-		if(auto right_logic = dynamic_cast<const bool_expression*>(right.get()))
-		{
-			return left_logic->execute_inner(amx, args, env) && right_logic->execute_inner(amx, args, env);
-		}else{
-			return left_logic->execute_inner(amx, args, env) && !!right->execute(amx, args, env);
-		}
-	}else{
-		if(auto right_logic = dynamic_cast<const bool_expression*>(right.get()))
-		{
-			return !!left->execute(amx, args, env) && right_logic->execute_inner(amx, args, env);
-		}else{
-			return !!left->execute(amx, args, env) && !!right->execute(amx, args, env);
-		}
-	}
+	return left->execute_bool(amx, args, env) && right->execute_bool(amx, args, env);
 }
 
 void logic_and_expression::to_string(strings::cell_string &str) const
@@ -1440,22 +1435,7 @@ decltype(expression_pool)::object_ptr logic_and_expression::clone() const
 
 bool logic_or_expression::execute_inner(AMX *amx, const args_type &args, env_type &env) const
 {
-	if(auto left_logic = dynamic_cast<const bool_expression*>(left.get()))
-	{
-		if(auto right_logic = dynamic_cast<const bool_expression*>(right.get()))
-		{
-			return left_logic->execute_inner(amx, args, env) || right_logic->execute_inner(amx, args, env);
-		}else{
-			return left_logic->execute_inner(amx, args, env) || !!right->execute(amx, args, env);
-		}
-	}else{
-		if(auto right_logic = dynamic_cast<const bool_expression*>(right.get()))
-		{
-			return !!left->execute(amx, args, env) || right_logic->execute_inner(amx, args, env);
-		}else{
-			return !!left->execute(amx, args, env) || !!right->execute(amx, args, env);
-		}
-	}
+	return left->execute_bool(amx, args, env) || right->execute_bool(amx, args, env);
 }
 
 void logic_or_expression::to_string(strings::cell_string &str) const
@@ -1484,32 +1464,17 @@ decltype(expression_pool)::object_ptr logic_or_expression::clone() const
 
 dyn_object conditional_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
-	if(auto logic_cond = dynamic_cast<const bool_expression*>(cond.get()))
-	{
-		return logic_cond->execute_inner(amx, args, env) ? on_true->execute(amx, args, env) : on_false->execute(amx, args, env);
-	}else{
-		return !cond->execute(amx, args, env) ? on_false->execute(amx, args, env) : on_true->execute(amx, args, env);
-	}
+	return cond->execute_bool(amx, args, env) ? on_true->execute(amx, args, env) : on_false->execute(amx, args, env);
 }
 
 dyn_object conditional_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
-	if(auto logic_cond = dynamic_cast<const bool_expression*>(cond.get()))
-	{
-		return logic_cond->execute_inner(amx, args, env) ? on_true->call(amx, args, env, call_args) : on_false->call(amx, args, env, call_args);
-	}else{
-		return !cond->execute(amx, args, env) ? on_false->call(amx, args, env, call_args) : on_true->call(amx, args, env, call_args);
-	}
+	return cond->execute_bool(amx, args, env) ? on_true->call(amx, args, env, call_args) : on_false->call(amx, args, env, call_args);
 }
 
 dyn_object conditional_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
 {
-	if(auto logic_cond = dynamic_cast<const bool_expression*>(cond.get()))
-	{
-		return logic_cond->execute_inner(amx, args, env) ? on_true->assign(amx, args, env, std::move(value)) : on_false->assign(amx, args, env, std::move(value));
-	}else{
-		return !cond->execute(amx, args, env) ? on_false->assign(amx, args, env, std::move(value)) : on_true->assign(amx, args, env, std::move(value));
-	}
+	return cond->execute_bool(amx, args, env) ? on_true->assign(amx, args, env, std::move(value)) : on_false->assign(amx, args, env, std::move(value));
 }
 
 const expression_ptr &conditional_expression::get_operand() const

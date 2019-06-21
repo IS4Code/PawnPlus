@@ -225,17 +225,17 @@ public:
 		return false;
 	}
 
-	virtual bool can_reset() override
+	virtual bool can_reset() const override
 	{
 		return true;
 	}
 
-	virtual bool can_erase() override
+	virtual bool can_erase() const override
 	{
 		return false;
 	}
 
-	virtual bool can_insert() override
+	virtual bool can_insert() const override
 	{
 		return false;
 	}

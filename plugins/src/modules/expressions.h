@@ -24,6 +24,7 @@ public:
 	typedef map_t env_type;
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const = 0;
+	bool execute_bool(AMX *amx, const args_type &args, env_type &env) const;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const;
 	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const std::vector<dyn_object> &indices) const;

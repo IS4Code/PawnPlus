@@ -324,9 +324,9 @@ public:
 	virtual bool set_to_last();
 	virtual bool reset();
 	virtual bool erase();
-	virtual bool can_reset();
-	virtual bool can_insert();
-	virtual bool can_erase();
+	virtual bool can_reset() const;
+	virtual bool can_insert() const;
+	virtual bool can_erase() const;
 	virtual std::unique_ptr<dyn_iterator> clone() const;
 	virtual std::shared_ptr<dyn_iterator> clone_shared() const;
 	virtual size_t get_hash() const;
@@ -352,7 +352,6 @@ public:
 		return insert_dyn(typeid(Type), &value);
 	}
 
-protected:
 	virtual bool extract_dyn(const std::type_info &type, void *value) const;
 	virtual bool insert_dyn(const std::type_info &type, void *value);
 	virtual bool insert_dyn(const std::type_info &type, const void *value);
@@ -467,7 +466,7 @@ public:
 		return false;
 	}
 
-	virtual bool can_reset() override
+	virtual bool can_reset() const override
 	{
 		return !_source.expired();
 	}
@@ -499,7 +498,7 @@ public:
 		return 0;
 	}
 
-	virtual bool can_erase() override
+	virtual bool can_erase() const override
 	{
 		if(auto source = lock_same())
 		{
@@ -532,7 +531,7 @@ public:
 		return false;
 	}
 
-	virtual bool can_insert() override
+	virtual bool can_insert() const override
 	{
 		if(auto source = lock_same())
 		{
@@ -541,7 +540,6 @@ public:
 		return false;
 	}
 
-protected:
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override
 	{
 		if(valid())
@@ -585,7 +583,6 @@ protected:
 		return false;
 	}
 
-public:
 	virtual dyn_iterator *get() override
 	{
 		return this;
@@ -664,7 +661,6 @@ public:
 		return std::make_shared<list_iterator_t>(*this);
 	}
 
-protected:
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
 };
 
@@ -783,11 +779,10 @@ public:
 	virtual std::shared_ptr<dyn_iterator> clone_shared() const override;
 	virtual bool operator==(const dyn_iterator &obj) const override;
 
-	virtual bool can_reset() override;
-	virtual bool can_insert() override;
-	virtual bool can_erase() override;
+	virtual bool can_reset() const override;
+	virtual bool can_insert() const override;
+	virtual bool can_erase() const override;
 
-protected:
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
 	virtual bool insert_dyn(const std::type_info &type, void *value) override;
 	virtual bool insert_dyn(const std::type_info &type, const void *value) override;
@@ -871,7 +866,6 @@ public:
 		return std::make_shared<pool_iterator_t>(*this);
 	}
 
-protected:
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
 };
 
