@@ -1525,6 +1525,67 @@ decltype(expression_pool)::object_ptr quote_expression::clone() const
 	return expression_pool.emplace_derived<quote_expression>(*this);
 }
 
+expression *dequote_expression::get_expr(AMX *amx, const args_type &args, env_type &env) const
+{
+	auto value = operand->execute(amx, args, env);
+	if(!(value.tag_assignable(tags::find_tag(tags::tag_expression)->base)))
+	{
+		amx_ExpressionError("dequote argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_expression)->format_name(), value.get_tag()->format_name());
+	}
+	if(value.get_rank() != 0)
+	{
+		amx_ExpressionError("dequote operation requires a single cell value (value of rank %d provided)", value.get_rank());
+	}
+	cell c = value.get_cell(0);
+	expression *expr;
+	if(!expression_pool.get_by_id(c, expr))
+	{
+		amx_ExpressionError(errors::pointer_invalid, "expression", c);
+	}
+	return expr;
+}
+
+dyn_object dequote_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+{
+	return get_expr(amx, args, env)->execute(amx, args, env);
+}
+
+dyn_object dequote_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
+{
+	return get_expr(amx, args, env)->call(amx, args, env, call_args);
+}
+
+dyn_object dequote_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
+{
+	return get_expr(amx, args, env)->assign(amx, args, env, std::move(value));
+}
+
+dyn_object dequote_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	return get_expr(amx, args, env)->index(amx, args, env, indices);
+}
+
+std::tuple<cell*, size_t, tag_ptr> dequote_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	return get_expr(amx, args, env)->address(amx, args, env, indices);
+}
+
+void dequote_expression::to_string(strings::cell_string &str) const
+{
+	str.push_back('^');
+	operand->to_string(str);
+}
+
+const expression_ptr &dequote_expression::get_operand() const
+{
+	return operand;
+}
+
+decltype(expression_pool)::object_ptr dequote_expression::clone() const
+{
+	return expression_pool.emplace_derived<dequote_expression>(*this);
+}
+
 bool logic_and_expression::execute_inner(AMX *amx, const args_type &args, env_type &env) const
 {
 	return left->execute_bool(amx, args, env) && right->execute_bool(amx, args, env);

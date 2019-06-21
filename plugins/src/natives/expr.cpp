@@ -367,6 +367,12 @@ namespace Natives
 		return expr_unary<quote_expression>(amx, params);
 	}
 
+	// native Expression:expr_dequote(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_dequote, 1)
+	{
+		return expr_unary<dequote_expression>(amx, params);
+	}
+
 	// native Expression:expr_add(Expression:left, Expression:right);
 	AMX_DEFINE_NATIVE(expr_add, 2)
 	{
@@ -682,6 +688,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_index),
 
 	AMX_DECLARE_NATIVE(expr_quote),
+	AMX_DECLARE_NATIVE(expr_dequote),
 
 	AMX_DECLARE_NATIVE(expr_add),
 	AMX_DECLARE_NATIVE(expr_sub),

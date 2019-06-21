@@ -287,6 +287,16 @@ class expression_parser
 					}
 					return std::make_shared<variant_expression>(std::move(inner));
 				}
+				case '^':
+				{
+					++begin;
+					auto inner = parse_factor(amx, begin, end, endchar);
+					if(!inner)
+					{
+						amx_FormalError(errors::invalid_expression, "missing expression");
+					}
+					return std::make_shared<dequote_expression>(std::move(inner));
+				}
 				case '(':
 				{
 					auto old = begin;
