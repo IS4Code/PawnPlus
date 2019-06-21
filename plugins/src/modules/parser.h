@@ -523,13 +523,13 @@ class expression_parser
 					while(true)
 					{
 						++begin;
-						auto inner = parse_outer_expression(amx, begin, end, ']');
-						if(!inner)
+						auto inner = parse_expressions(amx, begin, end, ']');
+						if(inner.size() == 0)
 						{
 							amx_FormalError(errors::invalid_expression, "missing expression");
 						}
 						++begin;
-						indices.push_back(std::move(inner));
+						indices.insert(indices.end(), std::make_move_iterator(inner.begin()), std::make_move_iterator(inner.end()));
 						while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
 						{
 							++begin;
