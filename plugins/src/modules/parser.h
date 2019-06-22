@@ -427,6 +427,14 @@ class expression_parser
 								amx_FormalError(errors::invalid_expression, "missing expression");
 							}
 							return std::make_shared<addressof_expression>(std::move(inner));
+						}else if(symbol == "nameof")
+						{
+							auto inner = parse_element(amx, begin, end, endchar);
+							if(!inner)
+							{
+								amx_FormalError(errors::invalid_expression, "missing expression");
+							}
+							return std::make_shared<nameof_expression>(std::move(inner));
 						}else if(symbol == "try")
 						{
 							auto old = begin;

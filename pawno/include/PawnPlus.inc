@@ -492,6 +492,7 @@ native String:str_cat(ConstStringTag:str1, ConstStringTag:str2);
 native String:str_sub(ConstStringTag:str, start=0, end=cellmax);
 native String:str_val(AnyTag:value, TagTag:tag_id=tagof(value));
 native String:str_val_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native String:str_val_var(ConstVariantTag:value);
 native List:str_split(ConstStringTag:str, const delims[]);
 native List:str_split_s(ConstStringTag:str, ConstStringTag:delims);
 native String:str_join(List:list, const delim[]);
@@ -1576,6 +1577,9 @@ native Expression:expr_index(Expression:arr, Expression:...);
 native Expression:expr_quote(Expression:expr);
 native Expression:expr_dequote(Expression:expr);
 
+native Expression:expr_value(Expression:var);
+native Expression:expr_variant(Expression:value);
+
 native Expression:expr_add(Expression:left, Expression:right);
 native Expression:expr_sub(Expression:left, Expression:right);
 native Expression:expr_mul(Expression:left, Expression:right);
@@ -1609,9 +1613,7 @@ native Expression:expr_tagof(Expression:expr);
 native Expression:expr_sizeof(Expression:expr, Expression:...);
 native Expression:expr_rankof(Expression:expr);
 native Expression:expr_addressof(Expression:expr);
-
-native Expression:expr_value(Expression:var);
-native Expression:expr_variant(Expression:value);
+native Expression:expr_nameof(Expression:expr);
 
 native expr_get(Expression:expr, offset=0);
 native expr_get_arr(Expression:expr, AnyTag:value[], size=sizeof(value));

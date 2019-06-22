@@ -2,6 +2,7 @@
 #include "errors.h"
 #include "modules/containers.h"
 #include "modules/strings.h"
+#include "modules/variants.h"
 #include "objects/dyn_object.h"
 
 #include <cstring>
@@ -204,6 +205,14 @@ namespace Natives
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		dyn_object obj{amx, addr, params[2], params[3]};
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
+	}
+
+	// native String:str_val_var(ConstVariantTag:value);
+	AMX_DEFINE_NATIVE(str_val_var, 1)
+	{
+		dyn_object *var;
+		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		return strings::pool.get_id(strings::pool.add(var->to_string()));
 	}
 
 	template <class Iter>
@@ -1158,6 +1167,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_sub),
 	AMX_DECLARE_NATIVE(str_val),
 	AMX_DECLARE_NATIVE(str_val_arr),
+	AMX_DECLARE_NATIVE(str_val_var),
 	AMX_DECLARE_NATIVE(str_split),
 	AMX_DECLARE_NATIVE(str_split_s),
 	AMX_DECLARE_NATIVE(str_join),

@@ -579,6 +579,12 @@ namespace Natives
 		return expr_unary<addressof_expression>(amx, params);
 	}
 
+	// native Expression:expr_nameof(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_nameof, 1)
+	{
+		return expr_unary<nameof_expression>(amx, params);
+	}
+
 	// native Expression:expr_value(Expression:var);
 	AMX_DEFINE_NATIVE(expr_value, 1)
 	{
@@ -742,6 +748,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_sizeof),
 	AMX_DECLARE_NATIVE(expr_rankof),
 	AMX_DECLARE_NATIVE(expr_addressof),
+	AMX_DECLARE_NATIVE(expr_nameof),
 
 	AMX_DECLARE_NATIVE(expr_value),
 	AMX_DECLARE_NATIVE(expr_variant),

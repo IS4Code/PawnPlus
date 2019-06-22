@@ -86,6 +86,24 @@ dyn_object expression::index(AMX *amx, const args_type &args, env_type &env, con
 	return dyn_object(value.get_cell(cell_indices.data(), cell_indices.size()), value.get_tag());
 }
 
+dyn_object expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	if(value.get_rank() != 0)
+	{
+		amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
+	}
+	auto addr = address(amx, args, env, indices);
+	if(std::get<1>(addr) == 0)
+	{
+		amx_ExpressionError("index out of bounds");
+	}
+	if(!(value.tag_assignable(std::get<2>(addr))))
+	{
+		amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", std::get<2>(addr)->format_name(), value.get_tag()->format_name());
+	}
+	return dyn_object(std::get<0>(addr)[0] = value.get_cell(0), std::get<2>(addr));
+}
+
 std::tuple<cell*, size_t, tag_ptr> expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
 	std::vector<cell> cell_indices;
@@ -206,6 +224,16 @@ dyn_object weak_expression::index(AMX *amx, const args_type &args, env_type &env
 	if(auto lock = ptr.lock())
 	{
 		return lock->index(amx, args, env, indices);
+	}
+	amx_ExpressionError("weakly linked expression was destroyed");
+	return {};
+}
+
+dyn_object weak_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	if(auto lock = ptr.lock())
+	{
+		return lock->index_assign(amx, args, env, indices, std::move(value));
 	}
 	amx_ExpressionError("weakly linked expression was destroyed");
 	return {};
@@ -372,6 +400,12 @@ dyn_object comma_expression::index(AMX *amx, const args_type &args, env_type &en
 	return right->index(amx, args, env, indices);
 }
 
+dyn_object comma_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	left->execute(amx, args, env);
+	return right->index_assign(amx, args, env, indices, std::move(value));
+}
+
 std::tuple<cell*, size_t, tag_ptr> comma_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
 	left->execute(amx, args, env);
@@ -436,6 +470,11 @@ dyn_object env_set_expression::assign(AMX *amx, const args_type &args, env_type 
 dyn_object env_set_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
 	return expr->index(amx, args, *new_env, indices);
+}
+
+dyn_object env_set_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	return expr->index_assign(amx, args, *new_env, indices, std::move(value));
 }
 
 std::tuple<cell*, size_t, tag_ptr> env_set_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
@@ -557,6 +596,16 @@ dyn_object try_expression::index(AMX *amx, const args_type &args, env_type &env,
 	}
 }
 
+dyn_object try_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	try{
+		return main->index_assign(amx, args, env, indices, std::move(value));
+	}catch(const errors::native_error&)
+	{
+		return fallback->index_assign(amx, args, env, indices, std::move(value));
+	}
+}
+
 std::tuple<cell*, size_t, tag_ptr> try_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
 	try{
@@ -657,20 +706,12 @@ dyn_object index_expression::execute(AMX *amx, const args_type &args, env_type &
 
 dyn_object index_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
 {
-	if(value.get_rank() != 0)
+	call_args_type indices;
+	for(const auto &index : this->indices)
 	{
-		amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
+		indices.push_back(index->execute(amx, args, env));
 	}
-	auto addr = address(amx, args, env, {});
-	if(std::get<1>(addr) == 0)
-	{
-		amx_ExpressionError("index out of bounds");
-	}
-	if(!(value.tag_assignable(std::get<2>(addr))))
-	{
-		amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", std::get<2>(addr)->format_name(), value.get_tag()->format_name());
-	}
-	return dyn_object(std::get<0>(addr)[0] = value.get_cell(0), std::get<2>(addr));
+	return arr->index_assign(amx, args, env, indices, std::move(value));
 }
 
 dyn_object index_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
@@ -806,6 +847,12 @@ dyn_object bind_expression::index(AMX *amx, const args_type &args, env_type &env
 	return operand->index(amx, combine_args(amx, args, env, storage), env, indices);
 }
 
+dyn_object bind_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	call_args_type storage;
+	return operand->index_assign(amx, combine_args(amx, args, env, storage), env, indices, std::move(value));
+}
+
 std::tuple<cell*, size_t, tag_ptr> bind_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
 	call_args_type storage;
@@ -881,6 +928,11 @@ dyn_object cast_expression::execute(AMX *amx, const args_type &args, env_type &e
 dyn_object cast_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
 {
 	return dyn_object(operand->assign(amx, args, env, dyn_object(std::move(value), operand->get_tag(args))), new_tag);
+}
+
+dyn_object cast_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	return dyn_object(operand->index_assign(amx, args, env, indices, dyn_object(std::move(value), operand->get_tag(args))), new_tag);
 }
 
 void cast_expression::to_string(strings::cell_string &str) const
@@ -994,6 +1046,44 @@ dyn_object global_expression::execute(AMX *amx, const args_type &args, env_type 
 dyn_object global_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
 {
 	return env[key] = std::move(value);
+}
+
+dyn_object global_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	auto it = env.find(key);
+	if(it == env.end())
+	{
+		amx_ExpressionError("symbol is not defined");
+	}
+	auto &obj = it->second;
+	if(value.get_rank() != 0)
+	{
+		amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
+	}
+	if(!(value.tag_assignable(obj.get_tag())))
+	{
+		amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", obj.get_tag()->format_name(), value.get_tag()->format_name());
+	}
+	std::vector<cell> cell_indices;
+	for(const auto &index : indices)
+	{
+		if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
+		{
+			amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
+		}
+		if(index.get_rank() != 0)
+		{
+			amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
+		}
+		cell c = index.get_cell(0);
+		if(c < 0)
+		{
+			amx_ExpressionError("index out of bounds");
+		}
+		cell_indices.push_back(c);
+	}
+	obj.set_cell(cell_indices.data(), cell_indices.size(), value.get_cell(0));
+	return value;
 }
 
 void global_expression::to_string(strings::cell_string &str) const
@@ -1650,6 +1740,11 @@ dyn_object dequote_expression::index(AMX *amx, const args_type &args, env_type &
 	return get_expr(amx, args, env)->index(amx, args, env, indices);
 }
 
+dyn_object dequote_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	return get_expr(amx, args, env)->index_assign(amx, args, env, indices, std::move(value));
+}
+
 std::tuple<cell*, size_t, tag_ptr> dequote_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
 	return get_expr(amx, args, env)->address(amx, args, env, indices);
@@ -1747,6 +1842,11 @@ dyn_object conditional_expression::assign(AMX *amx, const args_type &args, env_t
 dyn_object conditional_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
 	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->index(amx, args, env, indices);
+}
+
+dyn_object conditional_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->index_assign(amx, args, env, indices, std::move(value));
 }
 
 std::tuple<cell*, size_t, tag_ptr> conditional_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
@@ -1933,18 +2033,58 @@ decltype(expression_pool)::object_ptr addressof_expression::clone() const
 	return expression_pool.emplace_derived<addressof_expression>(*this);
 }
 
+dyn_object nameof_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+{
+	strings::cell_string str;
+	operand->to_string(str);
+	return dyn_object(str.data(), str.size() + 1, tags::find_tag(tags::tag_char));
+}
+
+tag_ptr nameof_expression::get_tag(const args_type &args) const
+{
+	return tags::find_tag(tags::tag_char);
+}
+
+cell nameof_expression::get_size(const args_type &args) const
+{
+	strings::cell_string str;
+	operand->to_string(str);
+	return str.size() + 1;
+}
+
+cell nameof_expression::get_rank(const args_type &args) const
+{
+	return 1;
+}
+
+void nameof_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert("nameof("));
+	operand->to_string(str);
+	str.push_back(')');
+}
+
+const expression_ptr &nameof_expression::get_operand() const
+{
+	return operand;
+}
+
+decltype(expression_pool)::object_ptr nameof_expression::clone() const
+{
+	return expression_pool.emplace_derived<nameof_expression>(*this);
+}
 dyn_object variant_value_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
-	auto value = var->execute(amx, args, env);
-	if(!(value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
+	auto var_value = var->execute(amx, args, env);
+	if(!(var_value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
 	{
-		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), value.get_tag()->format_name());
+		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), var_value.get_tag()->format_name());
 	}
-	if(value.get_rank() != 0)
+	if(var_value.get_rank() != 0)
 	{
-		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", value.get_rank());
+		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", var_value.get_rank());
 	}
-	cell c = value.get_cell(0);
+	cell c = var_value.get_cell(0);
 	if(c == 0)
 	{
 		return {};
@@ -1955,6 +2095,58 @@ dyn_object variant_value_expression::execute(AMX *amx, const args_type &args, en
 		amx_ExpressionError(errors::pointer_invalid, "variant", c);
 	}
 	return *var;
+}
+
+dyn_object variant_value_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	auto var_value = var->execute(amx, args, env);
+	if(!(var_value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
+	{
+		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), var_value.get_tag()->format_name());
+	}
+	if(var_value.get_rank() != 0)
+	{
+		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", var_value.get_rank());
+	}
+	cell c = var_value.get_cell(0);
+	if(c == 0)
+	{
+		return {};
+	}
+	dyn_object *var;
+	if(!variants::pool.get_by_id(c, var))
+	{
+		amx_ExpressionError(errors::pointer_invalid, "variant", c);
+	}
+	auto &obj = *var;
+	if(value.get_rank() != 0)
+	{
+		amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
+	}
+	if(!(value.tag_assignable(obj.get_tag())))
+	{
+		amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", obj.get_tag()->format_name(), value.get_tag()->format_name());
+	}
+	std::vector<cell> cell_indices;
+	for(const auto &index : indices)
+	{
+		if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
+		{
+			amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
+		}
+		if(index.get_rank() != 0)
+		{
+			amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
+		}
+		cell c = index.get_cell(0);
+		if(c < 0)
+		{
+			amx_ExpressionError("index out of bounds");
+		}
+		cell_indices.push_back(c);
+	}
+	obj.set_cell(cell_indices.data(), cell_indices.size(), value.get_cell(0));
+	return value;
 }
 
 void variant_value_expression::to_string(strings::cell_string &str) const
