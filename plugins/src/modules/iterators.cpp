@@ -656,7 +656,7 @@ bool filter_iterator::insert_dyn(const std::type_info &type, void *value)
 		if(auto lock = amx.lock())
 		{
 			auto &obj = *reinterpret_cast<dyn_object*>(value);
-			if(expr->execute_bool(*lock, {std::ref(obj)}, *env))
+			if(expr->execute_bool(*lock, {std::cref(obj)}, *env))
 			{
 				return source->insert_dyn(type, value);
 			}
@@ -666,7 +666,7 @@ bool filter_iterator::insert_dyn(const std::type_info &type, void *value)
 		if(auto lock = amx.lock())
 		{
 			auto &obj = *reinterpret_cast<std::pair<const dyn_object, dyn_object>*>(value);
-			if(expr->execute_bool(*lock, {std::ref(obj.second), std::ref(obj.first)}, *env))
+			if(expr->execute_bool(*lock, {std::cref(obj.second), std::cref(obj.first)}, *env))
 			{
 				return source->insert_dyn(type, value);
 			}

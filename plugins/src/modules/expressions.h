@@ -87,11 +87,6 @@ public:
 
 	}
 
-	weak_expression(const expression_ptr &ptr) : ptr(ptr)
-	{
-
-	}
-
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;

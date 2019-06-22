@@ -41,7 +41,7 @@ dyn_object expression::call(AMX *amx, const args_type &args, env_type &env, cons
 	new_args.reserve(call_args.size());
 	for(const auto &arg : call_args)
 	{
-		new_args.push_back(std::ref(arg));
+		new_args.push_back(std::cref(arg));
 	}
 	return ptr->execute(amx, new_args, env);
 }
@@ -827,7 +827,7 @@ auto bind_expression::combine_args(const args_type &args) const -> args_type
 	{
 		if(auto const_expr = dynamic_cast<const constant_expression*>(arg.get()))
 		{
-			new_args.push_back(std::ref(const_expr->get_value()));
+			new_args.push_back(std::cref(const_expr->get_value()));
 		}else{
 			new_args.clear();
 			return new_args;
@@ -849,10 +849,10 @@ auto bind_expression::combine_args(AMX *amx, const args_type &args, env_type &en
 	{
 		if(auto const_expr = dynamic_cast<const constant_expression*>(arg.get()))
 		{
-			new_args.push_back(std::ref(const_expr->get_value()));
+			new_args.push_back(std::cref(const_expr->get_value()));
 		}else{
 			storage.push_back(arg->execute(amx, args, env));
-			new_args.push_back(std::ref(storage.back()));
+			new_args.push_back(std::cref(storage.back()));
 		}
 	}
 	for(const auto &arg_ref : args)
