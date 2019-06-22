@@ -264,8 +264,15 @@ namespace Natives
 		return expr_unary<nested_expression>(amx, params);
 	}
 
-	// native Expression:expr_env(Expression:expr, Map:env);
-	AMX_DEFINE_NATIVE(expr_env, 2)
+	// native Expression:expr_env();
+	AMX_DEFINE_NATIVE(expr_env, 0)
+	{
+		auto &expr = expression_pool.emplace_derived<env_expression>();
+		return expression_pool.get_id(expr);
+	}
+
+	// native Expression:expr_set_env(Expression:expr, Map:env);
+	AMX_DEFINE_NATIVE(expr_set_env, 2)
 	{
 		std::shared_ptr<map_t> ptr;
 		if(!map_pool.get_by_id(params[2], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[2]);
@@ -697,6 +704,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_bind),
 	AMX_DECLARE_NATIVE(expr_nested),
 	AMX_DECLARE_NATIVE(expr_env),
+	AMX_DECLARE_NATIVE(expr_set_env),
 
 	AMX_DECLARE_NATIVE(expr_comma),
 	AMX_DECLARE_NATIVE(expr_assign),

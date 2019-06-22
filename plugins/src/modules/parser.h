@@ -360,20 +360,25 @@ class expression_parser
 					}
 					if(c == '$')
 					{
-						if( ++begin == end || *begin != 'a' ||
-							++begin == end || *begin != 'r' ||
-							++begin == end || *begin != 'g' )
+						if(++begin != end)
 						{
-							amx_FormalError(errors::invalid_expression, "invalid argument format");
+							if(*begin == 'a' && ++begin != end && *begin == 'r' && ++begin != end && *begin == 'g')
+							{
+								++begin;
+								auto old = begin;
+								cell index = parse_int(begin, end);
+								if(old == begin)
+								{
+									amx_FormalError(errors::invalid_expression, "invalid argument format");
+								}
+								return std::make_shared<arg_expression>(index);
+							}else if(*begin == 'e' && ++begin != end && *begin == 'n' && ++begin != end && *begin == 'v')
+							{
+								++begin;
+								return std::make_shared<env_expression>();
+							}
+							amx_FormalError(errors::invalid_expression, "invalid special symbol");
 						}
-						++begin;
-						auto old = begin;
-						cell index = parse_int(begin, end);
-						if(old == begin)
-						{
-							amx_FormalError(errors::invalid_expression, "invalid argument format");
-						}
-						return std::make_shared<arg_expression>(index);
 					}
 					if(c == '@' || c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
 					{

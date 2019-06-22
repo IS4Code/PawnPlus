@@ -160,6 +160,21 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
+class env_expression : public expression_base
+{
+public:
+	env_expression()
+	{
+
+	}
+
+	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
+	virtual dyn_object index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
 class env_set_expression : public expression_base, public unary_expression
 {
 	expression_ptr expr;

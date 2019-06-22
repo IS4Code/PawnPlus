@@ -452,6 +452,45 @@ decltype(expression_pool)::object_ptr comma_expression::clone() const
 	return expression_pool.emplace_derived<comma_expression>(*this);
 }
 
+dyn_object env_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+{
+	amx_ExpressionError("attempt to obtain the value of the environment");
+	return {};
+}
+
+dyn_object env_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
+{
+	if(indices.size() != 1)
+	{
+		amx_ExpressionError("exactly one index must be specified to access the environment");
+	}
+	auto it = env.find(indices[0]);
+	if(it == env.end())
+	{
+		amx_ExpressionError("the element is not present in the environment");
+	}
+	return it->second;
+}
+
+dyn_object env_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
+{
+	if(indices.size() != 1)
+	{
+		amx_ExpressionError("exactly one index must be specified to access the environment");
+	}
+	return env[indices[0]] = std::move(value);
+}
+
+void env_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert("$env"));
+}
+
+decltype(expression_pool)::object_ptr env_expression::clone() const
+{
+	return expression_pool.emplace_derived<env_expression>(*this);
+}
+
 dyn_object env_set_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
 	return expr->execute(amx, args, *new_env);
