@@ -585,7 +585,7 @@ namespace Natives
 		if(addr != -1)
 		{
 			amx_RaiseError(amx, AMX_ERR_SLEEP);
-			return SleepReturnFreeVar | (SleepReturnValueMask & addr);
+			return SleepReturnFreeVar | (SleepReturnValueMask & ((addr - amx->hlw) / sizeof(cell)));
 		}
 
 		amx_LogicError(errors::operation_not_supported, "AMX variable", params[1]);

@@ -467,7 +467,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				break;
 				case SleepReturnFreeVar:
 				{
-					amx_Release(amx, SleepReturnValueMask & amx->pri);
+					amx_Release(amx, (SleepReturnValueMask & amx->pri) * sizeof(cell) + amx->hlw);
 					amx->pri = 1;
 					amx->error = ret = AMX_ERR_NONE;
 					continue;
