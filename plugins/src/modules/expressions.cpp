@@ -125,7 +125,7 @@ std::tuple<cell*, size_t, tag_ptr> expression::address(AMX *amx, const args_type
 	cell amx_addr, *addr;
 	amx_Allot(amx, size ? size : 1, &amx_addr, &addr);
 	std::memcpy(addr, arr, size * sizeof(cell));
-	return {addr, size, value.get_tag()};
+	return std::tuple<cell*, size_t, tag_ptr>(addr, size, value.get_tag());
 }
 
 tag_ptr expression::get_tag(const args_type &args) const
@@ -1450,7 +1450,7 @@ std::tuple<cell*, size_t, tag_ptr> symbol_expression::address(AMX *amx, const ar
 		{
 			ptr = reinterpret_cast<cell*>(data + *ptr);
 		}
-		tag_ptr tag_ptr = get_tag(args);
+		tag_ptr tag = get_tag(args);
 
 		if(symbol->dim == indices.size())
 		{
@@ -1474,7 +1474,7 @@ std::tuple<cell*, size_t, tag_ptr> symbol_expression::address(AMX *amx, const ar
 			}
 			if(symbol->dim == 0)
 			{
-				return {ptr, 1, tag_ptr};
+				return std::tuple<cell*, size_t, tag_ptr>(ptr, 1, tag);
 			}else if(symbol->dim == 1)
 			{
 				const AMX_DBG_SYMDIM *dim;
@@ -1484,7 +1484,7 @@ std::tuple<cell*, size_t, tag_ptr> symbol_expression::address(AMX *amx, const ar
 					{
 						amx_ExpressionError("index out of bounds");
 					}
-					return {ptr + cell_indices[0], dim[0].size - cell_indices[0], tag_ptr};
+					return std::tuple<cell*, size_t, tag_ptr>(ptr + cell_indices[0], dim[0].size - cell_indices[0], tag);
 				}
 			}
 			amx_ExpressionError("array rank %d not supported", symbol->dim);
