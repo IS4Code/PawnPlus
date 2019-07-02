@@ -297,7 +297,7 @@ dyn_object arg_expression::execute(AMX *amx, const args_type &args, env_type &en
 {
 	if(index >= args.size())
 	{
-		amx_ExpressionError("expression argument was not provided");
+		amx_ExpressionError("expression argument #%d was not provided", index);
 	}
 	return args[index].get();
 }
@@ -306,7 +306,7 @@ tag_ptr arg_expression::get_tag(const args_type &args) const
 {
 	if(index >= args.size())
 	{
-		amx_ExpressionError("expression argument was not provided");
+		amx_ExpressionError("expression argument #%d was not provided", index);
 	}
 	return args[index].get().get_tag();
 }
@@ -315,7 +315,7 @@ cell arg_expression::get_size(const args_type &args) const
 {
 	if(index >= args.size())
 	{
-		amx_ExpressionError("expression argument was not provided");
+		amx_ExpressionError("expression argument #%d was not provided", index);
 	}
 	return args[index].get().get_size();
 }
@@ -324,7 +324,7 @@ cell arg_expression::get_rank(const args_type &args) const
 {
 	if(index >= args.size())
 	{
-		amx_ExpressionError("expression argument was not provided");
+		amx_ExpressionError("expression argument #%d was not provided", index);
 	}
 	return args[index].get().get_rank();
 }
@@ -462,7 +462,7 @@ dyn_object env_expression::index(AMX *amx, const args_type &args, env_type &env,
 {
 	if(indices.size() != 1)
 	{
-		amx_ExpressionError("exactly one index must be specified to access the environment");
+		amx_ExpressionError("exactly one index must be specified to access the environment (%d given)", indices.size());
 	}
 	auto it = env.find(indices[0]);
 	if(it == env.end())
@@ -476,7 +476,7 @@ dyn_object env_expression::index_assign(AMX *amx, const args_type &args, env_typ
 {
 	if(indices.size() != 1)
 	{
-		amx_ExpressionError("exactly one index must be specified to access the environment");
+		amx_ExpressionError("exactly one index must be specified to access the environment (%d given)", indices.size());
 	}
 	return env[indices[0]] = std::move(value);
 }
@@ -1141,7 +1141,7 @@ dyn_object symbol_expression::execute(AMX *amx, const args_type &args, env_type 
 	{
 		if(symbol->ident == iFUNCTN)
 		{
-			amx_ExpressionError("attempt to obtain the value of a function");
+			amx_ExpressionError("attempt to obtain the value of function '%s'", symbol->name);
 		}
 
 		amx = *obj;
@@ -1558,7 +1558,7 @@ decltype(expression_pool)::object_ptr symbol_expression::clone() const
 
 dyn_object native_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
-	amx_ExpressionError("attempt to obtain the value of a function");
+	amx_ExpressionError("attempt to obtain the value of function '%s'", name.c_str());
 	return {};
 }
 
@@ -1662,7 +1662,7 @@ AMX *public_expression::load() const
 
 dyn_object public_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
-	amx_ExpressionError("attempt to obtain the value of a function");
+	amx_ExpressionError("attempt to obtain the value of function '%s'", name.c_str());
 	return {};
 }
 
