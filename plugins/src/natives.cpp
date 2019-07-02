@@ -1,6 +1,8 @@
 #include "natives.h"
 #include "amxinfo.h"
 
+tag_ptr native_return_tag;
+
 cell impl::handle_error(AMX *amx, const cell *params, const char *native, const errors::native_error &error)
 {
 	int handler;

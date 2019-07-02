@@ -4,6 +4,7 @@
 #include "main.h"
 #include "errors.h"
 #include "amxinfo.h"
+#include "modules/tags.h"
 #include "sdk/amx/amx.h"
 
 #define optparam(idx, optvalue) (params[0] / sizeof(cell) < (idx) ? (optvalue) : params[idx])
@@ -34,6 +35,8 @@
     } while (0)
 #endif
 
+extern tag_ptr native_return_tag;
+
 namespace impl
 {
 	cell handle_error(AMX *amx, const cell *params, const char *native, const errors::native_error &error);
@@ -49,6 +52,7 @@ namespace impl
 			{
 				amx_FormalError(errors::not_enough_args, native_info<Native>::arg_count(), params[0] / static_cast<cell>(sizeof(cell)));
 			}
+			native_return_tag = nullptr;
 			return Native(amx, params);
 		}catch(const errors::end_of_arguments_error &err)
 		{

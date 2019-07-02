@@ -1,4 +1,5 @@
 #include "variants.h"
+#include "natives.h"
 #include "strings.h"
 #include "errors.h"
 
@@ -35,13 +36,14 @@ cell *get_offsets(AMX *amx, cell offsets, cell &offsets_size)
 
 cell dyn_func(AMX *amx, const dyn_object &obj, cell offset)
 {
+	native_return_tag = obj.get_tag();
 	return obj.get_cell(offset);
 }
 
 cell dyn_func(AMX *amx, const dyn_object &obj, cell offsets, cell offsets_size)
 {
 	cell *offsets_addr = get_offsets(amx, offsets, offsets_size);
-
+	native_return_tag = obj.get_tag();
 	return obj.get_cell(offsets_addr, offsets_size);
 }
 
