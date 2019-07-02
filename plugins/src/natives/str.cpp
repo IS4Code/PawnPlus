@@ -211,7 +211,11 @@ namespace Natives
 	AMX_DEFINE_NATIVE(str_val_var, 1)
 	{
 		dyn_object *var;
-		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if(!variants::pool.get_by_id(params[1], var) && var != nullptr) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		if(!var)
+		{
+			return strings::pool.get_id(strings::pool.add());
+		}
 		return strings::pool.get_id(strings::pool.add(var->to_string()));
 	}
 
