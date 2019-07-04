@@ -195,7 +195,7 @@ cell tag_info::get_id(AMX *amx) const
 	{
 		if(pair.second == this) return pair.first | 0x80000000;
 	}
-	return 0;
+	return uid;
 }
 
 const char *tag_info::format_name() const
