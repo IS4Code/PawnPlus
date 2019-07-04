@@ -33,6 +33,8 @@ namespace strings
 
 		public:
 			typedef typename std::conditional<std::is_const<Elem>::value, const unsigned char, unsigned char>::type char_type;
+
+			aligned_char_iterator() = default;
 			
 			aligned_char_iterator(Elem *it) : pos(reinterpret_cast<std::intptr_t>(it))
 			{
@@ -152,6 +154,8 @@ namespace strings
 			}
 			
 		public:
+			unaligned_char_iterator() = default;
+
 			unaligned_char_iterator(Elem *it) : base(reinterpret_cast<char_type*>(it)), pos(0)
 			{
 
