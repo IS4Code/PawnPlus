@@ -140,19 +140,23 @@ std::tuple<cell*, size_t, tag_ptr> expression::address(AMX *amx, const args_type
 	return std::tuple<cell*, size_t, tag_ptr>(addr, size, value.get_tag());
 }
 
-tag_ptr expression::get_tag(const args_type &args) const
+constexpr const tag_ptr invalid_tag = nullptr;
+constexpr const cell invalid_size = -1;
+constexpr const cell invalid_rank = -2;
+
+tag_ptr expression::get_tag(const args_type &args) const noexcept
 {
-	return nullptr;
+	return invalid_tag;
 }
 
-cell expression::get_size(const args_type &args) const
+cell expression::get_size(const args_type &args) const noexcept
 {
-	return 0;
+	return invalid_size;
 }
 
-cell expression::get_rank(const args_type &args) const
+cell expression::get_rank(const args_type &args) const noexcept
 {
-	return -1;
+	return invalid_rank;
 }
 
 int &expression::operator[](size_t index) const
@@ -184,22 +188,22 @@ dyn_object constant_expression::execute(AMX *amx, const args_type &args, env_typ
 	return value;
 }
 
-tag_ptr constant_expression::get_tag(const args_type &args) const
+tag_ptr constant_expression::get_tag(const args_type &args) const noexcept
 {
 	return value.get_tag();
 }
 
-cell constant_expression::get_size(const args_type &args) const
+cell constant_expression::get_size(const args_type &args) const noexcept
 {
 	return value.get_size();
 }
 
-cell constant_expression::get_rank(const args_type &args) const
+cell constant_expression::get_rank(const args_type &args) const noexcept
 {
 	return value.get_rank();
 }
 
-void constant_expression::to_string(strings::cell_string &str) const
+void constant_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(value.to_string());
 }
@@ -213,7 +217,6 @@ expression_ptr weak_expression::lock() const
 {
 	if(auto lock = ptr.lock())
 	{
-		checkstack();
 		return lock;
 	}
 	amx_ExpressionError("weakly linked expression was destroyed");
@@ -260,24 +263,41 @@ std::tuple<cell*, size_t, tag_ptr> weak_expression::address(AMX *amx, const args
 	return lock()->address(amx, args, env, indices);
 }
 
-tag_ptr weak_expression::get_tag(const args_type &args) const
+tag_ptr weak_expression::get_tag(const args_type &args) const noexcept
 {
-	return lock()->get_tag(args);
+	if(auto lock = ptr.lock())
+	{
+		return lock->get_tag(args);
+	}
+	return invalid_tag;
 }
 
-cell weak_expression::get_size(const args_type &args) const
+cell weak_expression::get_size(const args_type &args) const noexcept
 {
-	return lock()->get_size(args);
+	if(auto lock = ptr.lock())
+	{
+		return lock->get_size(args);
+	}
+	return invalid_size;
 }
 
-cell weak_expression::get_rank(const args_type &args) const
+cell weak_expression::get_rank(const args_type &args) const noexcept
 {
-	return lock()->get_rank(args);
+	if(auto lock = ptr.lock())
+	{
+		return lock->get_rank(args);
+	}
+	return invalid_rank;
 }
 
-void weak_expression::to_string(strings::cell_string &str) const
+void weak_expression::to_string(strings::cell_string &str) const noexcept
 {
-	return lock()->to_string(str);
+	if(auto lock = ptr.lock())
+	{
+		lock->to_string(str);
+	}else{
+		str.append(strings::convert("dead weak expression"));
+	}
 }
 
 decltype(expression_pool)::object_ptr weak_expression::clone() const
@@ -299,22 +319,34 @@ dyn_object arg_expression::execute(AMX *amx, const args_type &args, env_type &en
 	return arg(args);
 }
 
-tag_ptr arg_expression::get_tag(const args_type &args) const
+tag_ptr arg_expression::get_tag(const args_type &args) const noexcept
 {
-	return arg(args).get_tag();
+	if(index >= args.size())
+	{
+		return invalid_tag;
+	}
+	return args[index].get().get_tag();
 }
 
-cell arg_expression::get_size(const args_type &args) const
+cell arg_expression::get_size(const args_type &args) const noexcept
 {
-	return arg(args).get_size();
+	if(index >= args.size())
+	{
+		return invalid_size;
+	}
+	return args[index].get().get_size();
 }
 
-cell arg_expression::get_rank(const args_type &args) const
+cell arg_expression::get_rank(const args_type &args) const noexcept
 {
-	return arg(args).get_rank();
+	if(index >= args.size())
+	{
+		return invalid_rank;
+	}
+	return args[index].get().get_rank();
 }
 
-void arg_expression::to_string(strings::cell_string &str) const
+void arg_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("$arg"));
 	str.append(strings::convert(std::to_string(index)));
@@ -354,7 +386,7 @@ void empty_expression::execute_discard(AMX *amx, const args_type &args, env_type
 
 }
 
-void empty_expression::to_string(strings::cell_string &str) const
+void empty_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("()"));
 }
@@ -362,15 +394,6 @@ void empty_expression::to_string(strings::cell_string &str) const
 decltype(expression_pool)::object_ptr empty_expression::clone() const
 {
 	return expression_pool.emplace_derived<empty_expression>(*this);
-}
-
-const dyn_object &arg_pack_expression::arg(const args_type &args) const
-{
-	if(end >= args.size())
-	{
-		amx_ExpressionError("expression argument #%d was not provided", end);
-	}
-	return args[end].get();
 }
 
 void arg_pack_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
@@ -411,22 +434,67 @@ void arg_pack_expression::execute_multi(AMX *amx, const args_type &args, env_typ
 	}
 }
 
-tag_ptr arg_pack_expression::get_tag(const args_type &args) const
+tag_ptr arg_pack_expression::get_tag(const args_type &args) const noexcept
 {
-	return arg(args).get_tag();
+	if(end == -1)
+	{
+		if(begin >= args.size())
+		{
+			return invalid_tag;
+		}else{
+			return args.back().get().get_tag();
+		}
+	}else{
+		if(end >= args.size())
+		{
+			return invalid_tag;
+		}else{
+			return args[end].get().get_tag();
+		}
+	}
 }
 
-cell arg_pack_expression::get_size(const args_type &args) const
+cell arg_pack_expression::get_size(const args_type &args) const noexcept
 {
-	return arg(args).get_size();
+	if(end == -1)
+	{
+		if(begin >= args.size())
+		{
+			return invalid_size;
+		}else{
+			return args.back().get().get_size();
+		}
+	}else{
+		if(end >= args.size())
+		{
+			return invalid_size;
+		}else{
+			return args[end].get().get_size();
+		}
+	}
 }
 
-cell arg_pack_expression::get_rank(const args_type &args) const
+cell arg_pack_expression::get_rank(const args_type &args) const noexcept
 {
-	return arg(args).get_rank();
+	if(end == -1)
+	{
+		if(begin >= args.size())
+		{
+			return invalid_rank;
+		}else{
+			return args.back().get().get_rank();
+		}
+	}else{
+		if(end >= args.size())
+		{
+			return invalid_rank;
+		}else{
+			return args[end].get().get_rank();
+		}
+	}
 }
 
-void arg_pack_expression::to_string(strings::cell_string &str) const
+void arg_pack_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("$args"));
 	str.append(strings::convert(std::to_string(begin)));
@@ -447,28 +515,28 @@ dyn_object nested_expression::execute(AMX *amx, const args_type &args, env_type 
 	return expr->execute(amx, args, env);
 }
 
-tag_ptr nested_expression::get_tag(const args_type &args) const
+tag_ptr nested_expression::get_tag(const args_type &args) const noexcept
 {
 	return expr->get_tag(args);
 }
 
-cell nested_expression::get_size(const args_type &args) const
+cell nested_expression::get_size(const args_type &args) const noexcept
 {
 	return expr->get_size(args);
 }
 
-cell nested_expression::get_rank(const args_type &args) const
+cell nested_expression::get_rank(const args_type &args) const noexcept
 {
 	return expr->get_rank(args);
 }
 
-void nested_expression::to_string(strings::cell_string &str) const
+void nested_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('+');
 	expr->to_string(str);
 }
 
-const expression_ptr &nested_expression::get_operand() const
+const expression_ptr &nested_expression::get_operand() const noexcept
 {
 	return expr;
 }
@@ -526,22 +594,37 @@ std::tuple<cell*, size_t, tag_ptr> comma_expression::address(AMX *amx, const arg
 	return right->address(amx, args, env, indices);
 }
 
-tag_ptr comma_expression::get_tag(const args_type &args) const
+tag_ptr comma_expression::get_tag(const args_type &args) const noexcept
 {
-	return right->get_tag(args);
+	auto tag = left->get_tag(args);
+	if(tag == right->get_tag(args))
+	{
+		return tag;
+	}
+	return invalid_tag;
 }
 
-cell comma_expression::get_size(const args_type &args) const
+cell comma_expression::get_size(const args_type &args) const noexcept
 {
-	return right->get_size(args);
+	auto size = left->get_size(args);
+	if(size == right->get_size(args))
+	{
+		return size;
+	}
+	return invalid_size;
 }
 
-cell comma_expression::get_rank(const args_type &args) const
+cell comma_expression::get_rank(const args_type &args) const noexcept
 {
-	return right->get_rank(args);
+	auto rank = left->get_rank(args);
+	if(rank == right->get_rank(args))
+	{
+		return rank;
+	}
+	return invalid_rank;
 }
 
-void comma_expression::to_string(strings::cell_string &str) const
+void comma_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('(');
 	left->to_string(str);
@@ -551,12 +634,12 @@ void comma_expression::to_string(strings::cell_string &str) const
 	str.push_back(')');
 }
 
-const expression_ptr &comma_expression::get_left() const
+const expression_ptr &comma_expression::get_left() const noexcept
 {
 	return left;
 }
 
-const expression_ptr &comma_expression::get_right() const
+const expression_ptr &comma_expression::get_right() const noexcept
 {
 	return right;
 }
@@ -595,7 +678,7 @@ dyn_object env_expression::index_assign(AMX *amx, const args_type &args, env_typ
 	return env[indices[0]] = std::move(value);
 }
 
-void env_expression::to_string(strings::cell_string &str) const
+void env_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("$env"));
 }
@@ -635,29 +718,29 @@ std::tuple<cell*, size_t, tag_ptr> env_set_expression::address(AMX *amx, const a
 	return expr->address(amx, args, *new_env, indices);
 }
 
-tag_ptr env_set_expression::get_tag(const args_type &args) const
+tag_ptr env_set_expression::get_tag(const args_type &args) const noexcept
 {
 	return expr->get_tag(args);
 }
 
-cell env_set_expression::get_size(const args_type &args) const
+cell env_set_expression::get_size(const args_type &args) const noexcept
 {
 	return expr->get_size(args);
 }
 
-cell env_set_expression::get_rank(const args_type &args) const
+cell env_set_expression::get_rank(const args_type &args) const noexcept
 {
 	return expr->get_rank(args);
 }
 
-void env_set_expression::to_string(strings::cell_string &str) const
+void env_set_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('[');
 	expr->to_string(str);
 	str.append(strings::convert("]{env}"));
 }
 
-const expression_ptr &env_set_expression::get_operand() const
+const expression_ptr &env_set_expression::get_operand() const noexcept
 {
 	return expr;
 }
@@ -672,34 +755,34 @@ dyn_object assign_expression::execute(AMX *amx, const args_type &args, env_type 
 	return left->assign(amx, args, env, right->execute(amx, args, env));
 }
 
-tag_ptr assign_expression::get_tag(const args_type &args) const
+tag_ptr assign_expression::get_tag(const args_type &args) const noexcept
 {
 	return left->get_tag(args);
 }
 
-cell assign_expression::get_size(const args_type &args) const
+cell assign_expression::get_size(const args_type &args) const noexcept
 {
 	return left->get_size(args);
 }
 
-cell assign_expression::get_rank(const args_type &args) const
+cell assign_expression::get_rank(const args_type &args) const noexcept
 {
 	return left->get_rank(args);
 }
 
-void assign_expression::to_string(strings::cell_string &str) const
+void assign_expression::to_string(strings::cell_string &str) const noexcept
 {
 	left->to_string(str);
 	str.append(strings::convert(" = "));
 	right->to_string(str);
 }
 
-const expression_ptr &assign_expression::get_left() const
+const expression_ptr &assign_expression::get_left() const noexcept
 {
 	return left;
 }
 
-const expression_ptr &assign_expression::get_right() const
+const expression_ptr &assign_expression::get_right() const noexcept
 {
 	return right;
 }
@@ -791,7 +874,37 @@ std::tuple<cell*, size_t, tag_ptr> try_expression::address(AMX *amx, const args_
 	}
 }
 
-void try_expression::to_string(strings::cell_string &str) const
+tag_ptr try_expression::get_tag(const args_type &args) const noexcept
+{
+	auto tag = main->get_tag(args);
+	if(tag == fallback->get_tag(args))
+	{
+		return tag;
+	}
+	return invalid_tag;
+}
+
+cell try_expression::get_size(const args_type &args) const noexcept
+{
+	auto size = main->get_size(args);
+	if(size == fallback->get_size(args))
+	{
+		return size;
+	}
+	return invalid_size;
+}
+
+cell try_expression::get_rank(const args_type &args) const noexcept
+{
+	auto rank = main->get_rank(args);
+	if(rank == fallback->get_rank(args))
+	{
+		return rank;
+	}
+	return invalid_rank;
+}
+
+void try_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("try["));
 	main->to_string(str);
@@ -800,12 +913,12 @@ void try_expression::to_string(strings::cell_string &str) const
 	str.push_back(']');
 }
 
-const expression_ptr &try_expression::get_left() const
+const expression_ptr &try_expression::get_left() const noexcept
 {
 	return main;
 }
 
-const expression_ptr &try_expression::get_right() const
+const expression_ptr &try_expression::get_right() const noexcept
 {
 	return fallback;
 }
@@ -826,7 +939,7 @@ dyn_object call_expression::execute(AMX *amx, const args_type &args, env_type &e
 	return func->call(amx, args, env, func_args);
 }
 
-void call_expression::to_string(strings::cell_string &str) const
+void call_expression::to_string(strings::cell_string &str) const noexcept
 {
 	func->to_string(str);
 	str.push_back('(');
@@ -845,22 +958,22 @@ void call_expression::to_string(strings::cell_string &str) const
 	str.push_back(')');
 }
 
-tag_ptr call_expression::get_tag(const args_type &args) const
+tag_ptr call_expression::get_tag(const args_type &args) const noexcept
 {
 	return func->get_tag(args);
 }
 
-cell call_expression::get_size(const args_type &args) const
+cell call_expression::get_size(const args_type &args) const noexcept
 {
 	return func->get_size(args);
 }
 
-cell call_expression::get_rank(const args_type &args) const
+cell call_expression::get_rank(const args_type &args) const noexcept
 {
 	return func->get_rank(args);
 }
 
-const expression_ptr &call_expression::get_operand() const
+const expression_ptr &call_expression::get_operand() const noexcept
 {
 	return func;
 }
@@ -920,7 +1033,7 @@ std::tuple<cell*, size_t, tag_ptr> index_expression::address(AMX *amx, const arg
 	return arr->address(amx, args, env, new_indices);
 }
 
-void index_expression::to_string(strings::cell_string &str) const
+void index_expression::to_string(strings::cell_string &str) const noexcept
 {
 	arr->to_string(str);
 	for(const auto &index : indices)
@@ -931,22 +1044,30 @@ void index_expression::to_string(strings::cell_string &str) const
 	}
 }
 
-tag_ptr index_expression::get_tag(const args_type &args) const
+tag_ptr index_expression::get_tag(const args_type &args) const noexcept
 {
 	return arr->get_tag(args);
 }
 
-cell index_expression::get_size(const args_type &args) const
+cell index_expression::get_size(const args_type &args) const noexcept
 {
-	return 1;
+	if(arr->get_size(args) != invalid_size)
+	{
+		return 1;
+	}
+	return invalid_size;
 }
 
-cell index_expression::get_rank(const args_type &args) const
+cell index_expression::get_rank(const args_type &args) const noexcept
 {
-	return 0;
+	if(arr->get_rank(args) != invalid_rank)
+	{
+		return 1;
+	}
+	return invalid_rank;
 }
 
-const expression_ptr &index_expression::get_operand() const
+const expression_ptr &index_expression::get_operand() const noexcept
 {
 	return arr;
 }
@@ -966,7 +1087,6 @@ auto bind_expression::combine_args(const args_type &args) const -> args_type
 		{
 			new_args.push_back(std::cref(const_expr->get_value()));
 		}else{
-			new_args.clear();
 			return new_args;
 		}
 	}
@@ -1051,7 +1171,7 @@ std::tuple<cell*, size_t, tag_ptr> bind_expression::address(AMX *amx, const args
 	return operand->address(amx, combine_args(amx, args, env, storage), env, indices);
 }
 
-void bind_expression::to_string(strings::cell_string &str) const
+void bind_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('[');
 	operand->to_string(str);
@@ -1072,37 +1192,22 @@ void bind_expression::to_string(strings::cell_string &str) const
 	str.push_back(')');
 }
 
-tag_ptr bind_expression::get_tag(const args_type &args) const
+tag_ptr bind_expression::get_tag(const args_type &args) const noexcept
 {
-	auto all_args = combine_args(args);
-	if(all_args.size() >= base_args.size())
-	{
-		return operand->get_tag(all_args);
-	}
-	return nullptr;
+	return operand->get_tag(combine_args(args));
 }
 
-cell bind_expression::get_size(const args_type &args) const
+cell bind_expression::get_size(const args_type &args) const noexcept
 {
-	auto all_args = combine_args(args);
-	if(all_args.size() >= base_args.size())
-	{
-		operand->get_size(all_args);
-	}
-	return 0;
+	return operand->get_size(combine_args(args));
 }
 
-cell bind_expression::get_rank(const args_type &args) const
+cell bind_expression::get_rank(const args_type &args) const noexcept
 {
-	auto all_args = combine_args(args);
-	if(all_args.size() >= base_args.size())
-	{
-		operand->get_rank(all_args);
-	}
-	return -1;
+	return operand->get_rank(combine_args(args));
 }
 
-const expression_ptr &bind_expression::get_operand() const
+const expression_ptr &bind_expression::get_operand() const noexcept
 {
 	return operand;
 }
@@ -1144,29 +1249,29 @@ dyn_object cast_expression::index_assign(AMX *amx, const args_type &args, env_ty
 	return dyn_object(operand->index_assign(amx, args, env, indices, dyn_object(std::move(value), operand->get_tag(args))), new_tag);
 }
 
-void cast_expression::to_string(strings::cell_string &str) const
+void cast_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert(new_tag->format_name()));
 	str.push_back(':');
 	operand->to_string(str);
 }
 
-tag_ptr cast_expression::get_tag(const args_type &args) const
+tag_ptr cast_expression::get_tag(const args_type &args) const noexcept
 {
 	return new_tag;
 }
 
-cell cast_expression::get_size(const args_type &args) const
+cell cast_expression::get_size(const args_type &args) const noexcept
 {
 	return operand->get_size(args);
 }
 
-cell cast_expression::get_rank(const args_type &args) const
+cell cast_expression::get_rank(const args_type &args) const noexcept
 {
 	return operand->get_rank(args);
 }
 
-const expression_ptr &cast_expression::get_operand() const
+const expression_ptr &cast_expression::get_operand() const noexcept
 {
 	return operand;
 }
@@ -1203,27 +1308,38 @@ dyn_object array_expression::execute(AMX *amx, const args_type &args, env_type &
 	return dyn_object(data.data(), data.size(), tag ? tag : tags::find_tag(tags::tag_cell));
 }
 
-tag_ptr array_expression::get_tag(const args_type &args) const
+tag_ptr array_expression::get_tag(const args_type &args) const noexcept
 {
-	if(args.size() > 0)
+	tag_ptr tag = nullptr;
+	for(const auto &arg : this->args)
 	{
-		return this->args[0]->get_tag(args);
-	}else{
-		return tags::find_tag(tags::tag_cell);
+		auto arg_tag = arg->get_tag(args);
+		if(arg_tag == invalid_tag)
+		{
+			return invalid_tag;
+		}
+		if(!tag)
+		{
+			tag = arg_tag;
+		}else if(tag != arg_tag)
+		{
+			return invalid_tag;
+		}
 	}
+	return tag ? tag : tags::find_tag(tags::tag_cell);
 }
 
-cell array_expression::get_size(const args_type &args) const
+cell array_expression::get_size(const args_type &args) const noexcept
 {
-	return args.size();
+	return invalid_size;
 }
 
-cell array_expression::get_rank(const args_type &args) const
+cell array_expression::get_rank(const args_type &args) const noexcept
 {
 	return 1;
 }
 
-void array_expression::to_string(strings::cell_string &str) const
+void array_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('{');
 	bool first = true;
@@ -1299,7 +1415,7 @@ dyn_object global_expression::index_assign(AMX *amx, const args_type &args, env_
 	return value;
 }
 
-void global_expression::to_string(strings::cell_string &str) const
+void global_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(name);
 }
@@ -1669,7 +1785,7 @@ std::tuple<cell*, size_t, tag_ptr> symbol_expression::address(AMX *amx, const ar
 	return {};
 }
 
-tag_ptr symbol_expression::get_tag(const args_type &args) const
+tag_ptr symbol_expression::get_tag(const args_type &args) const noexcept
 {
 	if(!target_amx.expired())
 	{
@@ -1686,11 +1802,10 @@ tag_ptr symbol_expression::get_tag(const args_type &args) const
 		}
 		return tags::find_tag(tags::tag_unknown);
 	}
-	amx_ExpressionError("target AMX was unloaded");
-	return nullptr;
+	return invalid_tag;
 }
 
-cell symbol_expression::get_size(const args_type &args) const
+cell symbol_expression::get_size(const args_type &args) const noexcept
 {
 	if(!target_amx.expired())
 	{
@@ -1701,28 +1816,26 @@ cell symbol_expression::get_size(const args_type &args) const
 		}
 		return 0;
 	}
-	amx_ExpressionError("target AMX was unloaded");
-	return 0;
+	return invalid_size;
 }
 
-cell symbol_expression::get_rank(const args_type &args) const
+cell symbol_expression::get_rank(const args_type &args) const noexcept
 {
 	if(!target_amx.expired())
 	{
 		return symbol->dim;
 	}
-	amx_ExpressionError("target AMX was unloaded");
-	return -1;
+	return invalid_rank;
 }
 
-void symbol_expression::to_string(strings::cell_string &str) const
+void symbol_expression::to_string(strings::cell_string &str) const noexcept
 {
 	if(!target_amx.expired())
 	{
 		str.append(strings::convert(symbol->name));
 		return;
 	}
-	amx_ExpressionError("target AMX was unloaded");
+	str.append(strings::convert("unknown symbol"));
 }
 
 decltype(expression_pool)::object_ptr symbol_expression::clone() const
@@ -1766,22 +1879,22 @@ dyn_object native_expression::call(AMX *amx, const args_type &args, env_type &en
 	return {};
 }
 
-tag_ptr native_expression::get_tag(const args_type &args) const
+tag_ptr native_expression::get_tag(const args_type &args) const noexcept
 {
 	return tags::find_tag(tags::tag_cell);
 }
 
-cell native_expression::get_size(const args_type &args) const
+cell native_expression::get_size(const args_type &args) const noexcept
 {
 	return 1;
 }
 
-cell native_expression::get_rank(const args_type &args) const
+cell native_expression::get_rank(const args_type &args) const noexcept
 {
 	return 0;
 }
 
-void native_expression::to_string(strings::cell_string &str) const
+void native_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert(name));
 }
@@ -1866,22 +1979,22 @@ dyn_object public_expression::call(AMX *amx, const args_type &args, env_type &en
 	return {};
 }
 
-tag_ptr public_expression::get_tag(const args_type &args) const
+tag_ptr public_expression::get_tag(const args_type &args) const noexcept
 {
 	return tags::find_tag(tags::tag_cell);
 }
 
-cell public_expression::get_size(const args_type &args) const
+cell public_expression::get_size(const args_type &args) const noexcept
 {
 	return 1;
 }
 
-cell public_expression::get_rank(const args_type &args) const
+cell public_expression::get_rank(const args_type &args) const noexcept
 {
 	return 0;
 }
 
-void public_expression::to_string(strings::cell_string &str) const
+void public_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert(name));
 }
@@ -1896,14 +2009,14 @@ cell quote_expression::execute_inner(AMX *amx, const args_type &args, env_type &
 	return expression_pool.get_id(static_cast<const expression_base*>(operand.get())->clone());
 }
 
-void quote_expression::to_string(strings::cell_string &str) const
+void quote_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('<');
 	operand->to_string(str);
 	str.push_back('>');
 }
 
-const expression_ptr &quote_expression::get_operand() const
+const expression_ptr &quote_expression::get_operand() const noexcept
 {
 	return operand;
 }
@@ -1974,13 +2087,13 @@ std::tuple<cell*, size_t, tag_ptr> dequote_expression::address(AMX *amx, const a
 	return get_expr(amx, args, env)->address(amx, args, env, indices);
 }
 
-void dequote_expression::to_string(strings::cell_string &str) const
+void dequote_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('^');
 	operand->to_string(str);
 }
 
-const expression_ptr &dequote_expression::get_operand() const
+const expression_ptr &dequote_expression::get_operand() const noexcept
 {
 	return operand;
 }
@@ -1995,7 +2108,7 @@ bool logic_and_expression::execute_inner(AMX *amx, const args_type &args, env_ty
 	return left->execute_bool(amx, args, env) && right->execute_bool(amx, args, env);
 }
 
-void logic_and_expression::to_string(strings::cell_string &str) const
+void logic_and_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('(');
 	left->to_string(str);
@@ -2004,12 +2117,12 @@ void logic_and_expression::to_string(strings::cell_string &str) const
 	str.push_back(')');
 }
 
-const expression_ptr &logic_and_expression::get_left() const
+const expression_ptr &logic_and_expression::get_left() const noexcept
 {
 	return left;
 }
 
-const expression_ptr &logic_and_expression::get_right() const
+const expression_ptr &logic_and_expression::get_right() const noexcept
 {
 	return right;
 }
@@ -2024,7 +2137,7 @@ bool logic_or_expression::execute_inner(AMX *amx, const args_type &args, env_typ
 	return left->execute_bool(amx, args, env) || right->execute_bool(amx, args, env);
 }
 
-void logic_or_expression::to_string(strings::cell_string &str) const
+void logic_or_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('(');
 	left->to_string(str);
@@ -2033,12 +2146,12 @@ void logic_or_expression::to_string(strings::cell_string &str) const
 	str.push_back(')');
 }
 
-const expression_ptr &logic_or_expression::get_left() const
+const expression_ptr &logic_or_expression::get_left() const noexcept
 {
 	return left;
 }
 
-const expression_ptr &logic_or_expression::get_right() const
+const expression_ptr &logic_or_expression::get_right() const noexcept
 {
 	return right;
 }
@@ -2088,22 +2201,52 @@ std::tuple<cell*, size_t, tag_ptr> conditional_expression::address(AMX *amx, con
 	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->address(amx, args, env, indices);
 }
 
-const expression_ptr &conditional_expression::get_operand() const
+tag_ptr conditional_expression::get_tag(const args_type &args) const noexcept
+{
+	auto tag = on_true->get_tag(args);
+	if(tag == on_false->get_tag(args))
+	{
+		return tag;
+	}
+	return invalid_tag;
+}
+
+cell conditional_expression::get_size(const args_type &args) const noexcept
+{
+	auto size = on_true->get_size(args);
+	if(size == on_false->get_size(args))
+	{
+		return size;
+	}
+	return invalid_size;
+}
+
+cell conditional_expression::get_rank(const args_type &args) const noexcept
+{
+	auto rank = on_true->get_rank(args);
+	if(rank == on_false->get_rank(args))
+	{
+		return rank;
+	}
+	return invalid_rank;
+}
+
+const expression_ptr &conditional_expression::get_operand() const noexcept
 {
 	return cond;
 }
 
-const expression_ptr &conditional_expression::get_left() const
+const expression_ptr &conditional_expression::get_left() const noexcept
 {
 	return on_true;
 }
 
-const expression_ptr &conditional_expression::get_right() const
+const expression_ptr &conditional_expression::get_right() const noexcept
 {
 	return on_false;
 }
 
-void conditional_expression::to_string(strings::cell_string &str) const
+void conditional_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('(');
 	cond->to_string(str);
@@ -2137,17 +2280,32 @@ void select_expression::execute_multi(AMX *amx, const args_type &args, env_type 
 	}
 }
 
-const expression_ptr &select_expression::get_left() const
+tag_ptr select_expression::get_tag(const args_type &args) const noexcept
+{
+	return func->get_tag(args_type());
+}
+
+cell select_expression::get_size(const args_type &args) const noexcept
+{
+	return func->get_size(args_type());
+}
+
+cell select_expression::get_rank(const args_type &args) const noexcept
+{
+	return func->get_rank(args_type());
+}
+
+const expression_ptr &select_expression::get_left() const noexcept
 {
 	return func;
 }
 
-const expression_ptr &select_expression::get_right() const
+const expression_ptr &select_expression::get_right() const noexcept
 {
 	return list;
 }
 
-void select_expression::to_string(strings::cell_string &str) const
+void select_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("select["));
 	func->to_string(str);
@@ -2182,17 +2340,32 @@ void where_expression::execute_multi(AMX *amx, const args_type &args, env_type &
 	}
 }
 
-const expression_ptr &where_expression::get_left() const
+tag_ptr where_expression::get_tag(const args_type &args) const noexcept
+{
+	return list->get_tag(args);
+}
+
+cell where_expression::get_size(const args_type &args) const noexcept
+{
+	return list->get_size(args);
+}
+
+cell where_expression::get_rank(const args_type &args) const noexcept
+{
+	return list->get_rank(args);
+}
+
+const expression_ptr &where_expression::get_left() const noexcept
 {
 	return func;
 }
 
-const expression_ptr &where_expression::get_right() const
+const expression_ptr &where_expression::get_right() const noexcept
 {
 	return list;
 }
 
-void where_expression::to_string(strings::cell_string &str) const
+void where_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("where["));
 	func->to_string(str);
@@ -2209,17 +2382,17 @@ decltype(expression_pool)::object_ptr where_expression::clone() const
 cell tagof_expression::execute_inner(AMX *amx, const args_type &args, env_type &env) const
 {
 	tag_ptr static_tag = operand->get_tag(args);
-	return (static_tag ? static_tag : operand->execute(amx, args, env).get_tag())->get_id(amx);
+	return (static_tag != invalid_tag ? static_tag : operand->execute(amx, args, env).get_tag())->get_id(amx);
 }
 
-void tagof_expression::to_string(strings::cell_string &str) const
+void tagof_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("tagof("));
 	operand->to_string(str);
 	str.push_back(')');
 }
 
-const expression_ptr &tagof_expression::get_operand() const
+const expression_ptr &tagof_expression::get_operand() const noexcept
 {
 	return operand;
 }
@@ -2234,7 +2407,7 @@ cell sizeof_expression::execute_inner(AMX *amx, const args_type &args, env_type 
 	if(indices.size() == 0)
 	{
 		cell static_size = operand->get_size(args);
-		return static_size ? static_size : operand->execute(amx, args, env).get_size();
+		return static_size != invalid_size ? static_size : operand->execute(amx, args, env).get_size();
 	}else{
 		std::vector<cell> cell_indices;
 		cell_indices.reserve(indices.size());
@@ -2257,7 +2430,7 @@ cell sizeof_expression::execute_inner(AMX *amx, const args_type &args, env_type 
 	}
 }
 
-void sizeof_expression::to_string(strings::cell_string &str) const
+void sizeof_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("sizeof("));
 	operand->to_string(str);
@@ -2270,7 +2443,7 @@ void sizeof_expression::to_string(strings::cell_string &str) const
 	str.push_back(')');
 }
 
-const expression_ptr &sizeof_expression::get_operand() const
+const expression_ptr &sizeof_expression::get_operand() const noexcept
 {
 	return operand;
 }
@@ -2283,17 +2456,17 @@ decltype(expression_pool)::object_ptr sizeof_expression::clone() const
 cell rankof_expression::execute_inner(AMX *amx, const args_type &args, env_type &env) const
 {
 	cell static_rank = operand->get_rank(args);
-	return static_rank != -1 ? static_rank : operand->execute(amx, args, env).get_rank();
+	return static_rank != invalid_rank ? static_rank : operand->execute(amx, args, env).get_rank();
 }
 
-void rankof_expression::to_string(strings::cell_string &str) const
+void rankof_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("rankof("));
 	operand->to_string(str);
 	str.push_back(')');
 }
 
-const expression_ptr &rankof_expression::get_operand() const
+const expression_ptr &rankof_expression::get_operand() const noexcept
 {
 	return operand;
 }
@@ -2322,7 +2495,7 @@ dyn_object addressof_expression::execute(AMX *amx, const args_type &args, env_ty
 	return dyn_object(ptr - data, tags::find_tag((tags::find_tag(tags::tag_address)->name + "@" + std::get<2>(addr)->name).c_str()));
 }
 
-tag_ptr addressof_expression::get_tag(const args_type &args) const
+tag_ptr addressof_expression::get_tag(const args_type &args) const noexcept
 {
 	auto inner = operand->get_tag(args);
 	if(inner)
@@ -2332,24 +2505,24 @@ tag_ptr addressof_expression::get_tag(const args_type &args) const
 	return nullptr;
 }
 
-cell addressof_expression::get_size(const args_type &args) const
+cell addressof_expression::get_size(const args_type &args) const noexcept
 {
 	return 1;
 }
 
-cell addressof_expression::get_rank(const args_type &args) const
+cell addressof_expression::get_rank(const args_type &args) const noexcept
 {
 	return 0;
 }
 
-void addressof_expression::to_string(strings::cell_string &str) const
+void addressof_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("addressof("));
 	operand->to_string(str);
 	str.push_back(')');
 }
 
-const expression_ptr &addressof_expression::get_operand() const
+const expression_ptr &addressof_expression::get_operand() const noexcept
 {
 	return operand;
 }
@@ -2366,31 +2539,31 @@ dyn_object nameof_expression::execute(AMX *amx, const args_type &args, env_type 
 	return dyn_object(str.data(), str.size() + 1, tags::find_tag(tags::tag_char));
 }
 
-tag_ptr nameof_expression::get_tag(const args_type &args) const
+tag_ptr nameof_expression::get_tag(const args_type &args) const noexcept
 {
 	return tags::find_tag(tags::tag_char);
 }
 
-cell nameof_expression::get_size(const args_type &args) const
+cell nameof_expression::get_size(const args_type &args) const noexcept
 {
 	strings::cell_string str;
 	operand->to_string(str);
 	return str.size() + 1;
 }
 
-cell nameof_expression::get_rank(const args_type &args) const
+cell nameof_expression::get_rank(const args_type &args) const noexcept
 {
 	return 1;
 }
 
-void nameof_expression::to_string(strings::cell_string &str) const
+void nameof_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("nameof("));
 	operand->to_string(str);
 	str.push_back(')');
 }
 
-const expression_ptr &nameof_expression::get_operand() const
+const expression_ptr &nameof_expression::get_operand() const noexcept
 {
 	return operand;
 }
@@ -2475,13 +2648,13 @@ dyn_object variant_value_expression::index_assign(AMX *amx, const args_type &arg
 	return value;
 }
 
-void variant_value_expression::to_string(strings::cell_string &str) const
+void variant_value_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('*');
 	var->to_string(str);
 }
 
-const expression_ptr &variant_value_expression::get_operand() const
+const expression_ptr &variant_value_expression::get_operand() const noexcept
 {
 	return var;
 }
@@ -2502,13 +2675,13 @@ cell variant_expression::execute_inner(AMX *amx, const args_type &args, env_type
 	return variants::pool.get_id(ptr);
 }
 
-void variant_expression::to_string(strings::cell_string &str) const
+void variant_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('&');
 	value->to_string(str);
 }
 
-const expression_ptr &variant_expression::get_operand() const
+const expression_ptr &variant_expression::get_operand() const noexcept
 {
 	return value;
 }
