@@ -20,6 +20,16 @@ void amx_ExpressionError(const char *format, ...)
 	amx_LogicError(errors::invalid_expression, message.c_str());
 }
 
+void expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	execute(amx, args, env);
+}
+
+void expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	output.push_back(execute(amx, args, env));
+}
+
 bool expression::execute_bool(AMX *amx, const args_type &args, env_type &env) const
 {
 	auto bool_exp = dynamic_cast<const bool_expression*>(this);
@@ -215,6 +225,16 @@ dyn_object weak_expression::execute(AMX *amx, const args_type &args, env_type &e
 	return lock()->execute(amx, args, env);
 }
 
+void weak_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	lock()->execute_discard(amx, args, env);
+}
+
+void weak_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	lock()->execute_multi(amx, args, env, output);
+}
+
 dyn_object weak_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
 	return lock()->call(amx, args, env, call_args);
@@ -305,6 +325,123 @@ decltype(expression_pool)::object_ptr arg_expression::clone() const
 	return expression_pool.emplace_derived<arg_expression>(*this);
 }
 
+dyn_object sequence_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+{
+	call_args_type output;
+	execute_multi(amx, args, env, output);
+	if(output.size() == 0)
+	{
+		amx_ExpressionError("expression has no value");
+	}
+	return output.back();
+}
+
+void sequence_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	call_args_type output;
+	execute_multi(amx, args, env, output);
+}
+
+expression_ptr empty_expression::instance = std::make_shared<empty_expression>();
+
+void empty_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+
+}
+
+void empty_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+
+}
+
+void empty_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert("()"));
+}
+
+decltype(expression_pool)::object_ptr empty_expression::clone() const
+{
+	return expression_pool.emplace_derived<empty_expression>(*this);
+}
+
+const dyn_object &arg_pack_expression::arg(const args_type &args) const
+{
+	if(end >= args.size())
+	{
+		amx_ExpressionError("expression argument #%d was not provided", end);
+	}
+	return args[end].get();
+}
+
+void arg_pack_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	if(end == -1)
+	{
+		if(begin > args.size())
+		{
+			amx_ExpressionError("expression argument #%d was not provided", begin - 1);
+		}
+	}else{
+		if(end >= args.size())
+		{
+			amx_ExpressionError("expression argument #%d was not provided", args.size());
+		}
+	}
+}
+
+void arg_pack_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	if(end == -1)
+	{
+		if(begin > args.size())
+		{
+			amx_ExpressionError("expression argument #%d was not provided", begin - 1);
+		}else for(size_t i = begin; i < args.size(); i++)
+		{
+			output.push_back(args[i]);
+		}
+	}else{
+		if(end >= args.size())
+		{
+			amx_ExpressionError("expression argument #%d was not provided", args.size());
+		}else for(size_t i = begin; i <= end; i++)
+		{
+			output.push_back(args[i]);
+		}
+	}
+}
+
+tag_ptr arg_pack_expression::get_tag(const args_type &args) const
+{
+	return arg(args).get_tag();
+}
+
+cell arg_pack_expression::get_size(const args_type &args) const
+{
+	return arg(args).get_size();
+}
+
+cell arg_pack_expression::get_rank(const args_type &args) const
+{
+	return arg(args).get_rank();
+}
+
+void arg_pack_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert("$args"));
+	str.append(strings::convert(std::to_string(begin)));
+	if(end != -1)
+	{
+		str.push_back('_');
+		str.append(strings::convert(std::to_string(end)));
+	}
+}
+
+decltype(expression_pool)::object_ptr arg_pack_expression::clone() const
+{
+	return expression_pool.emplace_derived<arg_pack_expression>(*this);
+}
+
 dyn_object nested_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
 	return expr->execute(amx, args, env);
@@ -343,37 +480,49 @@ decltype(expression_pool)::object_ptr nested_expression::clone() const
 
 dyn_object comma_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
-	left->execute(amx, args, env);
+	left->execute_discard(amx, args, env);
 	return right->execute(amx, args, env);
+}
+
+void comma_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	left->execute_discard(amx, args, env);
+	right->execute_discard(amx, args, env);
+}
+
+void comma_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	left->execute_multi(amx, args, env, output);
+	right->execute_multi(amx, args, env, output);
 }
 
 dyn_object comma_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
-	left->execute(amx, args, env);
+	left->execute_discard(amx, args, env);
 	return right->call(amx, args, env, call_args);
 }
 
 dyn_object comma_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
 {
-	left->execute(amx, args, env);
+	left->execute_discard(amx, args, env);
 	return right->assign(amx, args, env, std::move(value));
 }
 
 dyn_object comma_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
-	left->execute(amx, args, env);
+	left->execute_discard(amx, args, env);
 	return right->index(amx, args, env, indices);
 }
 
 dyn_object comma_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
 {
-	left->execute(amx, args, env);
+	left->execute_discard(amx, args, env);
 	return right->index_assign(amx, args, env, indices, std::move(value));
 }
 
 std::tuple<cell*, size_t, tag_ptr> comma_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
-	left->execute(amx, args, env);
+	left->execute_discard(amx, args, env);
 	return right->address(amx, args, env, indices);
 }
 
@@ -570,6 +719,28 @@ dyn_object try_expression::execute(AMX *amx, const args_type &args, env_type &en
 	}
 }
 
+void try_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	try{
+		main->execute_discard(amx, args, env);
+	}catch(const errors::native_error&)
+	{
+		fallback->execute_discard(amx, args, env);
+	}
+}
+
+void try_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	size_t size = output.size();
+	try{
+		main->execute_multi(amx, args, env, output);
+	}catch(const errors::native_error&)
+	{
+		output.resize(size);
+		fallback->execute_multi(amx, args, env, output);
+	}
+}
+
 dyn_object try_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
 	try{
@@ -650,7 +821,7 @@ dyn_object call_expression::execute(AMX *amx, const args_type &args, env_type &e
 	call_args_type func_args;
 	for(const auto &arg : this->args)
 	{
-		func_args.push_back(arg->execute(amx, args, env));
+		arg->execute_multi(amx, args, env, func_args);
 	}
 	return func->call(amx, args, env, func_args);
 }
@@ -704,7 +875,7 @@ dyn_object index_expression::execute(AMX *amx, const args_type &args, env_type &
 	call_args_type indices;
 	for(const auto &index : this->indices)
 	{
-		indices.push_back(index->execute(amx, args, env));
+		index->execute_multi(amx, args, env, indices);
 	}
 	return arr->index(amx, args, env, indices);
 }
@@ -714,7 +885,7 @@ dyn_object index_expression::assign(AMX *amx, const args_type &args, env_type &e
 	call_args_type indices;
 	for(const auto &index : this->indices)
 	{
-		indices.push_back(index->execute(amx, args, env));
+		index->execute_multi(amx, args, env, indices);
 	}
 	return arr->index_assign(amx, args, env, indices, std::move(value));
 }
@@ -725,7 +896,7 @@ dyn_object index_expression::index(AMX *amx, const args_type &args, env_type &en
 	new_indices.reserve(this->indices.size() + indices.size());
 	for(const auto &index : this->indices)
 	{
-		new_indices.push_back(index->execute(amx, args, env));
+		index->execute_multi(amx, args, env, new_indices);
 	}
 	for(const auto &index : indices)
 	{
@@ -740,7 +911,7 @@ std::tuple<cell*, size_t, tag_ptr> index_expression::address(AMX *amx, const arg
 	new_indices.reserve(this->indices.size() + indices.size());
 	for(const auto &index : this->indices)
 	{
-		new_indices.push_back(index->execute(amx, args, env));
+		index->execute_multi(amx, args, env, new_indices);
 	}
 	for(const auto &index : indices)
 	{
@@ -817,8 +988,12 @@ auto bind_expression::combine_args(AMX *amx, const args_type &args, env_type &en
 		{
 			new_args.push_back(std::cref(const_expr->get_value()));
 		}else{
-			storage.push_back(arg->execute(amx, args, env));
-			new_args.push_back(std::cref(storage.back()));
+			size_t index = storage.size();
+			arg->execute_multi(amx, args, env, storage);
+			while(index < storage.size())
+			{
+				new_args.push_back(std::cref(storage[index++]));
+			}
 		}
 	}
 	for(const auto &arg_ref : args)
@@ -826,6 +1001,18 @@ auto bind_expression::combine_args(AMX *amx, const args_type &args, env_type &en
 		new_args.push_back(arg_ref);
 	}
 	return new_args;
+}
+
+void bind_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	call_args_type storage;
+	operand->execute_discard(amx, combine_args(amx, args, env, storage), env);
+}
+
+void bind_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	call_args_type storage;
+	operand->execute_multi(amx, combine_args(amx, args, env, storage), env, output);
 }
 
 dyn_object bind_expression::execute(AMX *amx, const args_type &args, env_type &env) const
@@ -930,6 +1117,23 @@ dyn_object cast_expression::execute(AMX *amx, const args_type &args, env_type &e
 	return dyn_object(operand->execute(amx, args, env), new_tag);
 }
 
+void cast_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	operand->execute_discard(amx, args, env);
+}
+
+void cast_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	size_t size = output.size();
+	operand->execute_multi(amx, args, env, output);
+	while(size < output.size())
+	{
+		dyn_object val(output[size], new_tag);
+		output[size] = std::move(val);
+		size++;
+	}
+}
+
 dyn_object cast_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
 {
 	return dyn_object(operand->assign(amx, args, env, dyn_object(std::move(value), operand->get_tag(args))), new_tag);
@@ -978,19 +1182,23 @@ dyn_object array_expression::execute(AMX *amx, const args_type &args, env_type &
 	tag_ptr tag = nullptr;
 	for(const auto &arg : this->args)
 	{
-		dyn_object value = arg->execute(amx, args, env);
-		if(tag == nullptr)
+		call_args_type values;
+		arg->execute_multi(amx, args, env, values);
+		for(const auto &value : values)
 		{
-			tag = value.get_tag();
-		}else if(tag != value.get_tag())
-		{
-			amx_ExpressionError("array constructor argument tag mismatch (%s: required, %s: provided)", tag->format_name(), value.get_tag()->format_name());
+			if(tag == nullptr)
+			{
+				tag = value.get_tag();
+			}else if(tag != value.get_tag())
+			{
+				amx_ExpressionError("array constructor argument tag mismatch (%s: required, %s: provided)", tag->format_name(), value.get_tag()->format_name());
+			}
+			if(value.get_rank() != 0)
+			{
+				amx_ExpressionError("only single cell arguments are supported in array construction (value of rank %d provided)", value.get_rank());
+			}
+			data.push_back(value.get_cell(0));
 		}
-		if(value.get_rank() != 0)
-		{
-			amx_ExpressionError("only single cell arguments are supported in array construction (value of rank %d provided)", value.get_rank());
-		}
-		data.push_back(value.get_cell(0));
 	}
 	return dyn_object(data.data(), data.size(), tag ? tag : tags::find_tag(tags::tag_cell));
 }
@@ -1731,6 +1939,16 @@ dyn_object dequote_expression::execute(AMX *amx, const args_type &args, env_type
 	return get_expr(amx, args, env)->execute(amx, args, env);
 }
 
+void dequote_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	return get_expr(amx, args, env)->execute_discard(amx, args, env);
+}
+
+void dequote_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	return get_expr(amx, args, env)->execute_multi(amx, args, env, output);
+}
+
 dyn_object dequote_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
 	return get_expr(amx, args, env)->call(amx, args, env, call_args);
@@ -1835,6 +2053,16 @@ dyn_object conditional_expression::execute(AMX *amx, const args_type &args, env_
 	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->execute(amx, args, env);
 }
 
+void conditional_expression::execute_discard(AMX *amx, const args_type &args, env_type &env) const
+{
+	(cond->execute_bool(amx, args, env) ? on_true : on_false)->execute_discard(amx, args, env);
+}
+
+void conditional_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	(cond->execute_bool(amx, args, env) ? on_true : on_false)->execute_multi(amx, args, env, output);
+}
+
 dyn_object conditional_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
 	return (cond->execute_bool(amx, args, env) ? on_true : on_false)->call(amx, args, env, call_args);
@@ -1891,6 +2119,93 @@ decltype(expression_pool)::object_ptr conditional_expression::clone() const
 	return expression_pool.emplace_derived<conditional_expression>(*this);
 }
 
+void select_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	call_args_type values;
+	list->execute_multi(amx, args, env, values);
+	args_type new_args;
+	for(const auto &value : values)
+	{
+		if(new_args.size() == 0)
+		{
+			new_args.push_back(std::cref(value));
+			new_args.insert(new_args.end(), args.begin(), args.end());
+		}else{
+			new_args[0] = std::cref(value);
+		}
+		func->execute_multi(amx, new_args, env, output);
+	}
+}
+
+const expression_ptr &select_expression::get_left() const
+{
+	return func;
+}
+
+const expression_ptr &select_expression::get_right() const
+{
+	return list;
+}
+
+void select_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert("select["));
+	func->to_string(str);
+	str.append(strings::convert("]in["));
+	list->to_string(str);
+	str.push_back(']');
+}
+
+decltype(expression_pool)::object_ptr select_expression::clone() const
+{
+	return expression_pool.emplace_derived<select_expression>(*this);
+}
+
+void where_expression::execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const
+{
+	call_args_type values;
+	list->execute_multi(amx, args, env, values);
+	args_type new_args;
+	for(auto &value : values)
+	{
+		if(new_args.size() == 0)
+		{
+			new_args.push_back(std::cref(value));
+			new_args.insert(new_args.end(), args.begin(), args.end());
+		}else{
+			new_args[0] = std::cref(value);
+		}
+		if(func->execute_bool(amx, new_args, env))
+		{
+			output.push_back(std::move(value));
+		}
+	}
+}
+
+const expression_ptr &where_expression::get_left() const
+{
+	return func;
+}
+
+const expression_ptr &where_expression::get_right() const
+{
+	return list;
+}
+
+void where_expression::to_string(strings::cell_string &str) const
+{
+	str.append(strings::convert("where["));
+	func->to_string(str);
+	str.append(strings::convert("]in["));
+	list->to_string(str);
+	str.push_back(']');
+}
+
+decltype(expression_pool)::object_ptr where_expression::clone() const
+{
+	return expression_pool.emplace_derived<where_expression>(*this);
+}
+
 cell tagof_expression::execute_inner(AMX *amx, const args_type &args, env_type &env) const
 {
 	tag_ptr static_tag = operand->get_tag(args);
@@ -1929,8 +2244,13 @@ cell sizeof_expression::execute_inner(AMX *amx, const args_type &args, env_type 
 			{
 				cell_indices.push_back(cell_expr->execute_inner(amx, args, env));
 			}else{
-				cell value = expr->execute(amx, args, env).get_cell(0);
-				cell_indices.push_back(value);
+				call_args_type indices;
+				expr->execute_multi(amx, args, env, indices);
+				for(const auto &index : indices)
+				{
+					cell value = index.get_cell(0);
+					cell_indices.push_back(value);
+				}
 			}
 		}
 		return operand->execute(amx, args, env).get_size(cell_indices.data(), cell_indices.size());

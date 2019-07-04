@@ -24,6 +24,8 @@ public:
 	typedef map_t env_type;
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const = 0;
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const;
 	bool execute_bool(AMX *amx, const args_type &args, env_type &env) const;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const;
@@ -91,6 +93,8 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
 	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
@@ -117,6 +121,58 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual tag_ptr get_tag(const args_type &args) const override;
+	virtual cell get_size(const args_type &args) const override;
+	virtual cell get_rank(const args_type &args) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+
+protected:
+	const dyn_object &arg(const args_type &args) const;
+};
+
+class sequence_expression : public expression_base
+{
+public:
+	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const = 0;
+};
+
+class empty_expression : public sequence_expression
+{
+public:
+	static expression_ptr instance;
+
+	empty_expression()
+	{
+
+	}
+
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
+class arg_pack_expression : public sequence_expression
+{
+	size_t begin;
+	size_t end;
+
+public:
+	arg_pack_expression(size_t begin) : begin(begin), end(-1)
+	{
+
+	}
+
+	arg_pack_expression(size_t begin, size_t end) : begin(begin), end(end)
+	{
+
+	}
+
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
 	virtual cell get_size(const args_type &args) const override;
 	virtual cell get_rank(const args_type &args) const override;
@@ -226,6 +282,8 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
 	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
@@ -283,6 +341,8 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
 	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
@@ -368,6 +428,8 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
 	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
@@ -398,6 +460,8 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
 	virtual dyn_object index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const override;
 	virtual tag_ptr get_tag(const args_type &args) const override;
@@ -847,6 +911,8 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
 	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
@@ -1088,6 +1154,8 @@ public:
 	}
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_discard(AMX *amx, const args_type &args, env_type &env) const override;
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
 	virtual dyn_object call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const override;
 	virtual dyn_object assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const override;
 	virtual dyn_object index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
@@ -1095,6 +1163,52 @@ public:
 	virtual std::tuple<cell*, size_t, tag_ptr> address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_operand() const;
+	virtual const expression_ptr &get_left() const;
+	virtual const expression_ptr &get_right() const;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
+class select_expression : public sequence_expression, public binary_expression
+{
+	expression_ptr func;
+	expression_ptr list;
+
+public:
+	select_expression(expression_ptr &&func, expression_ptr &&list) : func(std::move(func)), list(std::move(list))
+	{
+
+	}
+
+	select_expression(const expression_ptr &func, const expression_ptr &list) : func(func), list(list)
+	{
+
+	}
+
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
+	virtual void to_string(strings::cell_string &str) const override;
+	virtual const expression_ptr &get_left() const;
+	virtual const expression_ptr &get_right() const;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
+class where_expression : public sequence_expression, public binary_expression
+{
+	expression_ptr func;
+	expression_ptr list;
+
+public:
+	where_expression(expression_ptr &&func, expression_ptr &&list) : func(std::move(func)), list(std::move(list))
+	{
+
+	}
+
+	where_expression(const expression_ptr &func, const expression_ptr &list) : func(func), list(list)
+	{
+
+	}
+
+	virtual void execute_multi(AMX *amx, const args_type &args, env_type &env, call_args_type &output) const override;
+	virtual void to_string(strings::cell_string &str) const override;
 	virtual const expression_ptr &get_left() const;
 	virtual const expression_ptr &get_right() const;
 	virtual decltype(expression_pool)::object_ptr clone() const override;

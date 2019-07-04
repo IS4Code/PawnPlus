@@ -147,6 +147,13 @@ namespace Natives
 		return strings::select_iterator<parse_base>(str, amx);
 	}
 
+	// native Expression:expr_empty();
+	AMX_DEFINE_NATIVE(expr_empty, 0)
+	{
+		auto &expr = expression_pool.emplace_derived<empty_expression>();
+		return expression_pool.get_id(expr);
+	}
+
 	// native Expression:expr_weak(Expression:expr);
 	AMX_DEFINE_NATIVE(expr_weak, 1)
 	{
@@ -217,8 +224,19 @@ namespace Natives
 	AMX_DEFINE_NATIVE(expr_arg, 1)
 	{
 		cell index = params[1];
-		if(index < 0) amx_LogicError(errors::out_of_range, "argument index");
+		if(index < 0) amx_LogicError(errors::out_of_range, "index");
 		auto &expr = expression_pool.emplace_derived<arg_expression>(index);
+		return expression_pool.get_id(expr);
+	}
+
+	// native Expression:expr_arg_pack(begin, end=-1);
+	AMX_DEFINE_NATIVE(expr_arg_pack, 1)
+	{
+		cell begin = params[1];
+		if(begin < 0) amx_LogicError(errors::out_of_range, "begin");
+		cell end = optparam(2, -1);
+		if(end < -1) amx_LogicError(errors::out_of_range, "end");
+		auto &expr = expression_pool.emplace_derived<arg_pack_expression>(begin, end);
 		return expression_pool.get_id(expr);
 	}
 
@@ -546,6 +564,18 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
+	// native Expression:expr_select(Expression:func, Expression:list);
+	AMX_DEFINE_NATIVE(expr_select, 2)
+	{
+		return expr_binary<select_expression>(amx, params);
+	}
+
+	// native Expression:expr_where(Expression:cond, Expression:list);
+	AMX_DEFINE_NATIVE(expr_where, 2)
+	{
+		return expr_binary<where_expression>(amx, params);
+	}
+
 	// native Expression:expr_cast(Expression:expr, TagTag:tag_id);
 	AMX_DEFINE_NATIVE(expr_cast, 1)
 	{
@@ -690,6 +720,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_parse),
 	AMX_DECLARE_NATIVE(expr_parse_s),
 
+	AMX_DECLARE_NATIVE(expr_empty),
+
 	AMX_DECLARE_NATIVE(expr_weak),
 	AMX_DECLARE_NATIVE(expr_weak_set),
 
@@ -701,6 +733,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_arr),
 
 	AMX_DECLARE_NATIVE(expr_arg),
+	AMX_DECLARE_NATIVE(expr_arg_pack),
 	AMX_DECLARE_NATIVE(expr_bind),
 	AMX_DECLARE_NATIVE(expr_nested),
 	AMX_DECLARE_NATIVE(expr_env),
@@ -750,6 +783,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_or),
 
 	AMX_DECLARE_NATIVE(expr_cond),
+
+	AMX_DECLARE_NATIVE(expr_select),
+	AMX_DECLARE_NATIVE(expr_where),
 
 	AMX_DECLARE_NATIVE(expr_cast),
 	AMX_DECLARE_NATIVE(expr_tagof),

@@ -1548,6 +1548,8 @@ native String:expr_type_str_s(Expression:expr);
 native Expression:expr_parse(const string[]);
 native Expression:expr_parse_s(ConstString:string);
 
+native Expression:expr_empty();
+
 native Expression:expr_weak(Expression:expr);
 native Expression:expr_weak_set(Expression:weak, Expression:target);
 
@@ -1559,6 +1561,7 @@ native Expression:expr_const_var(VariantTag:value);
 native Expression:expr_arr(Expression:...);
 
 native Expression:expr_arg(index);
+native Expression:expr_arg_pack(begin, end=-1);
 native Expression:expr_bind(Expression:expr, Expression:...);
 native Expression:expr_nested(Expression:expr);
 native Expression:expr_env();
@@ -1608,6 +1611,9 @@ native Expression:expr_and(Expression:left, Expression:right);
 native Expression:expr_or(Expression:left, Expression:right);
 
 native Expression:expr_cond(Expression:cond, Expression:on_true, Expression:on_false);
+
+native Expression:expr_select(Expression:func, Expression:list);
+native Expression:expr_where(Expression:cond, Expression:list);
 
 native Expression:expr_cast(Expression:expr, TagTag:tag_id);
 native Expression:expr_tagof(Expression:expr);
