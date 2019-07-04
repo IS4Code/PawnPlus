@@ -2,6 +2,7 @@
 #include "tags.h"
 #include "errors.h"
 #include "modules/variants.h"
+#include "utils/systools.h"
 
 #include <string>
 #include <stdarg.h>
@@ -31,6 +32,7 @@ bool expression::execute_bool(AMX *amx, const args_type &args, env_type &env) co
 
 dyn_object expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
+	checkstack();
 	auto result = execute(amx, args, env);
 	expression *ptr;
 	if(!(result.tag_assignable(tags::find_tag(tags::tag_expression))) || !result.is_cell() || !expression_pool.get_by_id(result.get_cell(0), ptr))
@@ -149,6 +151,14 @@ int &expression::operator[](size_t index) const
 	return unused;
 }
 
+void expression::checkstack() const
+{
+	if(stackspace() < 32768)
+	{
+		amx_ExpressionError("recursion too deep");
+	}
+}
+
 expression *expression_base::get()
 {
 	return this;
@@ -189,103 +199,65 @@ decltype(expression_pool)::object_ptr constant_expression::clone() const
 	return expression_pool.emplace_derived<constant_expression>(*this);
 }
 
-dyn_object weak_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+expression_ptr weak_expression::lock() const
 {
 	if(auto lock = ptr.lock())
 	{
-		return lock->execute(amx, args, env);
+		checkstack();
+		return lock;
 	}
 	amx_ExpressionError("weakly linked expression was destroyed");
 	return {};
+}
+
+dyn_object weak_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+{
+	return lock()->execute(amx, args, env);
 }
 
 dyn_object weak_expression::call(AMX *amx, const args_type &args, env_type &env, const call_args_type &call_args) const
 {
-	if(auto lock = ptr.lock())
-	{
-		return lock->call(amx, args, env, call_args);
-	}
-	amx_ExpressionError("weakly linked expression was destroyed");
-	return {};
+	return lock()->call(amx, args, env, call_args);
 }
 
 dyn_object weak_expression::assign(AMX *amx, const args_type &args, env_type &env, dyn_object &&value) const
 {
-	if(auto lock = ptr.lock())
-	{
-		return lock->assign(amx, args, env, std::move(value));
-	}
-	amx_ExpressionError("weakly linked expression was destroyed");
-	return {};
+	return lock()->assign(amx, args, env, std::move(value));
 }
 
 dyn_object weak_expression::index(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
-	if(auto lock = ptr.lock())
-	{
-		return lock->index(amx, args, env, indices);
-	}
-	amx_ExpressionError("weakly linked expression was destroyed");
-	return {};
+	return lock()->index(amx, args, env, indices);
 }
 
 dyn_object weak_expression::index_assign(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices, dyn_object &&value) const
 {
-	if(auto lock = ptr.lock())
-	{
-		return lock->index_assign(amx, args, env, indices, std::move(value));
-	}
-	amx_ExpressionError("weakly linked expression was destroyed");
-	return {};
+	return lock()->index_assign(amx, args, env, indices, std::move(value));
 }
 
 std::tuple<cell*, size_t, tag_ptr> weak_expression::address(AMX *amx, const args_type &args, env_type &env, const call_args_type &indices) const
 {
-	if(auto lock = ptr.lock())
-	{
-		return lock->address(amx, args, env, indices);
-	}
-	amx_ExpressionError("weakly linked expression was destroyed");
-	return {};
+	return lock()->address(amx, args, env, indices);
 }
 
 tag_ptr weak_expression::get_tag(const args_type &args) const
 {
-	if(auto lock = ptr.lock())
-	{
-		return lock->get_tag(args);
-	}
-	amx_ExpressionError("weakly linked expression was destroyed");
-	return nullptr;
+	return lock()->get_tag(args);
 }
 
 cell weak_expression::get_size(const args_type &args) const
 {
-	if(auto lock = ptr.lock())
-	{
-		return lock->get_size(args);
-	}
-	amx_ExpressionError("weakly linked expression was destroyed");
-	return 0;
+	return lock()->get_size(args);
 }
 
 cell weak_expression::get_rank(const args_type &args) const
 {
-	if(auto lock = ptr.lock())
-	{
-		return lock->get_rank(args);
-	}
-	amx_ExpressionError("weakly linked expression was destroyed");
-	return -1;
+	return lock()->get_rank(args);
 }
 
 void weak_expression::to_string(strings::cell_string &str) const
 {
-	if(auto lock = ptr.lock())
-	{
-		lock->to_string(str);
-	}
-	amx_ExpressionError("weakly linked expression was destroyed");
+	return lock()->to_string(str);
 }
 
 decltype(expression_pool)::object_ptr weak_expression::clone() const
@@ -293,7 +265,7 @@ decltype(expression_pool)::object_ptr weak_expression::clone() const
 	return expression_pool.emplace_derived<weak_expression>(*this);
 }
 
-dyn_object arg_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+const dyn_object &arg_expression::arg(const args_type &args) const
 {
 	if(index >= args.size())
 	{
@@ -302,31 +274,24 @@ dyn_object arg_expression::execute(AMX *amx, const args_type &args, env_type &en
 	return args[index].get();
 }
 
+dyn_object arg_expression::execute(AMX *amx, const args_type &args, env_type &env) const
+{
+	return arg(args);
+}
+
 tag_ptr arg_expression::get_tag(const args_type &args) const
 {
-	if(index >= args.size())
-	{
-		amx_ExpressionError("expression argument #%d was not provided", index);
-	}
-	return args[index].get().get_tag();
+	return arg(args).get_tag();
 }
 
 cell arg_expression::get_size(const args_type &args) const
 {
-	if(index >= args.size())
-	{
-		amx_ExpressionError("expression argument #%d was not provided", index);
-	}
-	return args[index].get().get_size();
+	return arg(args).get_size();
 }
 
 cell arg_expression::get_rank(const args_type &args) const
 {
-	if(index >= args.size())
-	{
-		amx_ExpressionError("expression argument #%d was not provided", index);
-	}
-	return args[index].get().get_rank();
+	return arg(args).get_rank();
 }
 
 void arg_expression::to_string(strings::cell_string &str) const
@@ -681,6 +646,7 @@ decltype(expression_pool)::object_ptr try_expression::clone() const
 
 dyn_object call_expression::execute(AMX *amx, const args_type &args, env_type &env) const
 {
+	checkstack();
 	call_args_type func_args;
 	for(const auto &arg : this->args)
 	{
@@ -1741,6 +1707,7 @@ decltype(expression_pool)::object_ptr quote_expression::clone() const
 
 expression *dequote_expression::get_expr(AMX *amx, const args_type &args, env_type &env) const
 {
+	checkstack();
 	auto value = operand->execute(amx, args, env);
 	if(!(value.tag_assignable(tags::find_tag(tags::tag_expression))))
 	{

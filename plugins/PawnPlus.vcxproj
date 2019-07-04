@@ -177,6 +177,7 @@
     <ClCompile Include="src\objects\dyn_object.cpp" />
     <ClCompile Include="src\objects\reset.cpp" />
     <ClCompile Include="src\objects\stored_param.cpp" />
+    <ClCompile Include="src\utils\systools.cpp" />
     <ClCompile Include="src\utils\thread.cpp" />
     <ClCompile Include="src\utils\thread_posix.cpp" />
     <ClCompile Include="src\utils\thread_win.cpp" />
@@ -245,6 +246,7 @@
     <ClInclude Include="src\utils\linear_pool.h" />
     <ClInclude Include="src\utils\id_set_pool.h" />
     <ClInclude Include="src\utils\shared_id_set_pool.h" />
+    <ClInclude Include="src\utils\systools.h" />
     <ClInclude Include="src\utils\thread.h" />
   </ItemGroup>
   <ItemGroup>

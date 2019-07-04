@@ -178,6 +178,8 @@ native String:pp_locale_name_s();
 native pp_format_env_push(Map:env);
 native pp_format_env_pop();
 
+native pp_stackspace();
+
 
 /*                 */
 /*      Pawn       */

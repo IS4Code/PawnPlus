@@ -9,6 +9,7 @@
 #include "modules/guards.h"
 #include "modules/containers.h"
 #include "modules/amxhook.h"
+#include "utils/systools.h"
 
 #include <cstring>
 #ifdef _WIN32
@@ -391,6 +392,12 @@ namespace Natives
 		return 1;
 	}
 
+	// native pp_stackspace();
+	AMX_DEFINE_NATIVE(pp_stackspace, 0)
+	{
+		return stackspace();
+	}
+
 	// native pp__reserved1();
 	AMX_DEFINE_NATIVE(pp__reserved1, 0)
 	{
@@ -542,6 +549,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_locale_name_s),
 	AMX_DECLARE_NATIVE(pp_format_env_push),
 	AMX_DECLARE_NATIVE(pp_format_env_pop),
+	AMX_DECLARE_NATIVE(pp_stackspace),
 
 	//Reserved for private use
 	AMX_DECLARE_NATIVE(pp__reserved1),

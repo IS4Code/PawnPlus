@@ -154,6 +154,9 @@
     <ClCompile Include="src\modules\iterators.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
+    <ClCompile Include="src\utils\systools.cpp">
+      <Filter>src\natives</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -349,6 +352,9 @@
     </ClInclude>
     <ClInclude Include="src\modules\iterators.h">
       <Filter>src\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utils\systools.h">
+      <Filter>src\natives</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

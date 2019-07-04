@@ -37,6 +37,9 @@ public:
 
 	virtual ~expression() = default;
 	int &operator[](size_t index) const;
+
+protected:
+	void checkstack() const;
 };
 
 extern object_pool<expression> expression_pool;
@@ -98,6 +101,9 @@ public:
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
+
+protected:
+	expression_ptr lock() const;
 };
 
 class arg_expression : public expression_base
@@ -116,6 +122,9 @@ public:
 	virtual cell get_rank(const args_type &args) const override;
 	virtual void to_string(strings::cell_string &str) const override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
+
+protected:
+	const dyn_object &arg(const args_type &args) const;
 };
 
 class unary_expression
