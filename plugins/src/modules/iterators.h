@@ -283,17 +283,18 @@ class filter_iterator : public dyn_iterator, public object_pool<dyn_iterator>::r
 	std::shared_ptr<dyn_iterator> source;
 	expression_ptr expr;
 	std::shared_ptr<map_t> env;
+	bool env_readonly;
 
 	bool is_valid(AMX *amx, expression::args_type args) const;
 	void find_valid();
 
 public:
-	filter_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::make_shared<map_t>())
+	filter_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::make_shared<map_t>()), env_readonly(true)
 	{
 		find_valid();
 	}
 
-	filter_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr, std::shared_ptr<map_t> &&env) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::move(env))
+	filter_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr, std::shared_ptr<map_t> &&env, bool env_readonly) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::move(env)), env_readonly(env_readonly)
 	{
 		find_valid();
 	}
@@ -326,14 +327,15 @@ class project_iterator : public dyn_iterator, public object_pool<dyn_iterator>::
 	std::shared_ptr<dyn_iterator> source;
 	expression_ptr expr;
 	std::shared_ptr<map_t> env;
+	bool env_readonly;
 
 public:
-	project_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::make_shared<map_t>())
+	project_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::make_shared<map_t>()), env_readonly(true)
 	{
 
 	}
 
-	project_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr, std::shared_ptr<map_t> &&env) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::move(env))
+	project_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr, std::shared_ptr<map_t> &&env, bool env_readonly) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::move(env)), env_readonly(env_readonly)
 	{
 
 	}

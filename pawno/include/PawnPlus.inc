@@ -1269,8 +1269,8 @@ native Iter:iter_repeat_arr(const AnyTag:value[], count, size=sizeof(value), tag
 native Iter:iter_repeat_str(const value[], count);
 native Iter:iter_repeat_str_s(ConstStringTag:value, count);
 native Iter:iter_repeat_var(ConstVariantTag:value, count);
-native Iter:iter_filter(IterTag:iter, Expression:expr, Map:env=INVALID_MAP);
-native Iter:iter_project(IterTag:iter, Expression:expr, Map:env=INVALID_MAP);
+native Iter:iter_filter(IterTag:iter, Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
+native Iter:iter_project(IterTag:iter, Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
 
 native iter_get(IterTag:iter, offset=0);
 native iter_get_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
@@ -1565,7 +1565,8 @@ native Expression:expr_arg_pack(begin, end=-1);
 native Expression:expr_bind(Expression:expr, Expression:...);
 native Expression:expr_nested(Expression:expr);
 native Expression:expr_env();
-native Expression:expr_set_env(Expression:expr, Map:env);
+native Expression:expr_set_env(Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
+native Expression:expr_global(const name[]);
 
 native Expression:expr_comma(Expression:left, Expression:right);
 native Expression:expr_assign(Expression:left, Expression:right);

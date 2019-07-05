@@ -45,7 +45,7 @@ public:
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx_heap_guard guard(amx);
 		map_t env;
-		return Factory(amx, ptr->execute(amx, {}, env), params[Indices]...);
+		return Factory(amx, ptr->execute(amx, {}, expression::exec_info(env, true)), params[Indices]...);
 	}
 
 	// native expr_set(Expression:expr, ...);
@@ -56,7 +56,7 @@ public:
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx_heap_guard guard(amx);
 		map_t env;
-		ptr->assign(amx, {}, env, Factory(amx, params[Indices]...));
+		ptr->assign(amx, {}, expression::exec_info(env, true), Factory(amx, params[Indices]...));
 		return 1;
 	}
 };
@@ -289,12 +289,22 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
-	// native Expression:expr_set_env(Expression:expr, Map:env);
-	AMX_DEFINE_NATIVE(expr_set_env, 2)
+	// native Expression:expr_set_env(Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
+	AMX_DEFINE_NATIVE(expr_set_env, 1)
 	{
-		std::shared_ptr<map_t> ptr;
-		if(!map_pool.get_by_id(params[2], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[2]);
-		return expr_unary<env_set_expression>(amx, params, std::move(ptr));
+		std::shared_ptr<map_t> map;
+		if(optparam(2, 0) && !map_pool.get_by_id(params[2], map)) amx_LogicError(errors::pointer_invalid, "map", params[2]);
+		return expr_unary<env_set_expression>(amx, params, std::move(map), optparam(3, 0));
+	}
+
+	// native Expression:expr_global(const name[]);
+	AMX_DEFINE_NATIVE(expr_global, 1)
+	{
+		const char *name;
+		amx_StrParam(amx, params[1], name);
+		if(name == nullptr) amx_FormalError(errors::arg_empty, "name");
+		auto &expr = expression_pool.emplace_derived<global_expression>(name);
+		return expression_pool.get_id(expr);
 	}
 
 	// native Expression:expr_comma(Expression:left, Expression:right);
@@ -738,6 +748,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_nested),
 	AMX_DECLARE_NATIVE(expr_env),
 	AMX_DECLARE_NATIVE(expr_set_env),
+	AMX_DECLARE_NATIVE(expr_global),
 
 	AMX_DECLARE_NATIVE(expr_comma),
 	AMX_DECLARE_NATIVE(expr_assign),

@@ -691,7 +691,7 @@ namespace Natives
 		return value_at<1>::iter_repeat<dyn_func_var>(amx, params);
 	}
 
-	// native Iter:iter_filter(IterTag:iter, Expression:expr, Map:env=INVALID_MAP);
+	// native Iter:iter_filter(IterTag:iter, Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
 	AMX_DEFINE_NATIVE(iter_filter, 2)
 	{
 		std::shared_ptr<dyn_iterator> iter;
@@ -702,12 +702,12 @@ namespace Natives
 		{
 			std::shared_ptr<map_t> map;
 			if(!map_pool.get_by_id(params[3], map)) amx_LogicError(errors::pointer_invalid, "map", params[3]);
-			return iter_pool.get_id(iter_pool.emplace_derived<filter_iterator>(amx, std::move(iter), std::move(expr), std::move(map)));
+			return iter_pool.get_id(iter_pool.emplace_derived<filter_iterator>(amx, std::move(iter), std::move(expr), std::move(map), optparam(4, 0)));
 		}
 		return iter_pool.get_id(iter_pool.emplace_derived<filter_iterator>(amx, std::move(iter), std::move(expr)));
 	}
 
-	// native Iter:iter_project(IterTag:iter, Expression:expr, Map:env=INVALID_MAP);
+	// native Iter:iter_project(IterTag:iter, Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
 	AMX_DEFINE_NATIVE(iter_project, 2)
 	{
 		std::shared_ptr<dyn_iterator> iter;
@@ -718,7 +718,7 @@ namespace Natives
 		{
 			std::shared_ptr<map_t> map;
 			if(!map_pool.get_by_id(params[3], map)) amx_LogicError(errors::pointer_invalid, "map", params[3]);
-			return iter_pool.get_id(iter_pool.emplace_derived<project_iterator>(amx, std::move(iter), std::move(expr), std::move(map)));
+			return iter_pool.get_id(iter_pool.emplace_derived<project_iterator>(amx, std::move(iter), std::move(expr), std::move(map), optparam(4, 0)));
 		}
 		return iter_pool.get_id(iter_pool.emplace_derived<project_iterator>(amx, std::move(iter), std::move(expr)));
 	}
