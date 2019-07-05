@@ -63,8 +63,8 @@ public:
 		obj.rank = 1;
 	}
 
-	bool tag_assignable(tag_ptr test_tag) const;
-	bool struct_compatible(const dyn_object &obj) const;
+	bool tag_assignable(tag_ptr test_tag) const noexcept;
+	bool struct_compatible(const dyn_object &obj) const noexcept;
 	cell get_cell(const cell *indices, cell num_indices) const;
 	void set_cell(const cell *indices, cell num_indices, cell value);
 	cell set_cells(const cell *indices, cell num_indices, const cell *values, cell size);
@@ -196,13 +196,13 @@ public:
 	dyn_object operator~() const;
 	dyn_object inc() const;
 	dyn_object dec() const;
-	bool operator==(const dyn_object &obj) const;
-	bool operator!=(const dyn_object &obj) const;
-	bool operator<(const dyn_object &obj) const;
-	bool operator>(const dyn_object &obj) const;
-	bool operator<=(const dyn_object &obj) const;
-	bool operator>=(const dyn_object &obj) const;
-	bool operator!() const;
+	bool operator==(const dyn_object &obj) const noexcept;
+	bool operator!=(const dyn_object &obj) const noexcept;
+	bool operator<(const dyn_object &obj) const noexcept;
+	bool operator>(const dyn_object &obj) const noexcept;
+	bool operator<=(const dyn_object &obj) const noexcept;
+	bool operator>=(const dyn_object &obj) const noexcept;
+	bool operator!() const noexcept;
 	dyn_object &operator=(const dyn_object &obj);
 	dyn_object &operator=(dyn_object &&obj) noexcept;
 

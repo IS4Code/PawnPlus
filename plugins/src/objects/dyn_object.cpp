@@ -237,7 +237,7 @@ dyn_object::dyn_object(const dyn_object &obj, bool assign) : rank(obj.rank), tag
 	}
 }
 
-bool dyn_object::tag_assignable(tag_ptr test_tag) const
+bool dyn_object::tag_assignable(tag_ptr test_tag) const noexcept
 {
 	if(test_tag->uid == tags::tag_cell)
 	{
@@ -787,7 +787,7 @@ bool dyn_object::collect_op(cell *start, cell size) const
 	return ops.collect(tag, start, size);
 }
 
-bool dyn_object::struct_compatible(const dyn_object &obj) const
+bool dyn_object::struct_compatible(const dyn_object &obj) const noexcept
 {
 	if(empty() && obj.empty()) return true;
 	if(rank != obj.rank) return false;
@@ -801,7 +801,7 @@ bool dyn_object::struct_compatible(const dyn_object &obj) const
 	return true;
 }
 
-bool dyn_object::operator==(const dyn_object &obj) const
+bool dyn_object::operator==(const dyn_object &obj) const noexcept
 {
 	if(!tag_compatible(obj) || !struct_compatible(obj)) return false;
 	if(empty()) return true;
@@ -818,7 +818,7 @@ bool dyn_object::operator==(const dyn_object &obj) const
 	}
 }
 
-bool dyn_object::operator!=(const dyn_object &obj) const
+bool dyn_object::operator!=(const dyn_object &obj) const noexcept
 {
 	if(!tag_compatible(obj) || !struct_compatible(obj)) return true;
 	if(empty()) return false;
@@ -835,7 +835,7 @@ bool dyn_object::operator!=(const dyn_object &obj) const
 	}
 }
 
-bool dyn_object::operator<(const dyn_object &obj) const
+bool dyn_object::operator<(const dyn_object &obj) const noexcept
 {
 	cell this_tag = tag->find_top_base()->uid;
 	cell obj_tag = obj.tag->find_top_base()->uid;
@@ -867,7 +867,7 @@ bool dyn_object::operator<(const dyn_object &obj) const
 	return false;
 }
 
-bool dyn_object::operator>(const dyn_object &obj) const
+bool dyn_object::operator>(const dyn_object &obj) const noexcept
 {
 	cell this_tag = tag->find_top_base()->uid;
 	cell obj_tag = obj.tag->find_top_base()->uid;
@@ -902,7 +902,7 @@ bool dyn_object::operator>(const dyn_object &obj) const
 	return false;
 }
 
-bool dyn_object::operator<=(const dyn_object &obj) const
+bool dyn_object::operator<=(const dyn_object &obj) const noexcept
 {
 	cell this_tag = tag->find_top_base()->uid;
 	cell obj_tag = obj.tag->find_top_base()->uid;
@@ -934,7 +934,7 @@ bool dyn_object::operator<=(const dyn_object &obj) const
 	return true;
 }
 
-bool dyn_object::operator>=(const dyn_object &obj) const
+bool dyn_object::operator>=(const dyn_object &obj) const noexcept
 {
 	cell this_tag = tag->find_top_base()->uid;
 	cell obj_tag = obj.tag->find_top_base()->uid;
@@ -966,7 +966,7 @@ bool dyn_object::operator>=(const dyn_object &obj) const
 	return true;
 }
 
-bool dyn_object::operator!() const
+bool dyn_object::operator!() const noexcept
 {
 	if(empty()) return true;
 	const cell *begin1 = begin();
@@ -980,16 +980,15 @@ bool dyn_object::operator!() const
 	return true;
 }
 
-
 template <cell (tag_operations::*OpFunc)(tag_ptr, cell, cell) const>
 dyn_object dyn_object::operator_func(const dyn_object &obj) const
 {
-	if(!tag_compatible(obj) || empty() || obj.empty()) return dyn_object();
+	if(!tag_compatible(obj) || empty() || obj.empty()) amx_LogicError(errors::operation_not_supported, "variant");
 	dyn_object result;
 	const auto &ops = tag->get_ops();
 	if(is_array() && obj.is_array())
 	{
-		if(!struct_compatible(obj)) return dyn_object();
+		if(!struct_compatible(obj)) amx_LogicError(errors::operation_not_supported, "variant");
 
 		result = dyn_object(*this, false);
 		auto it = obj.begin();
@@ -1047,12 +1046,12 @@ dyn_object dyn_object::operator%(const dyn_object &obj) const
 template <class OpType>
 dyn_object dyn_object::operator_cell_func(const dyn_object &obj) const
 {
-	if(!tag_compatible(obj) || tag->strong() || empty() || obj.empty()) return dyn_object();
+	if(!tag_compatible(obj) || tag->strong() || empty() || obj.empty()) amx_LogicError(errors::operation_not_supported, "variant");
 	dyn_object result;
 	OpType op;
 	if(is_array() && obj.is_array())
 	{
-		if(!struct_compatible(obj)) return dyn_object();
+		if(!struct_compatible(obj)) amx_LogicError(errors::operation_not_supported, "variant");
 
 		result = dyn_object(*this, false);
 		auto it = obj.begin();
@@ -1155,7 +1154,7 @@ dyn_object dyn_object::dec() const
 template <class OpType>
 dyn_object dyn_object::operator_cell_func() const
 {
-	if(tag->strong() || empty()) return dyn_object();
+	if(tag->strong() || empty()) amx_LogicError(errors::operation_not_supported, "variant");
 	dyn_object result = dyn_object(*this, false);
 	OpType op;
 	for(cell &c : result)
@@ -1167,7 +1166,7 @@ dyn_object dyn_object::operator_cell_func() const
 
 dyn_object dyn_object::operator+() const
 {
-	if(tag->strong() || empty()) return dyn_object();
+	if(tag->strong() || empty()) amx_LogicError(errors::operation_not_supported, "variant");
 	return dyn_object(*this, false);
 }
 
