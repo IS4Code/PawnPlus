@@ -497,11 +497,14 @@ cell arg_pack_expression::get_rank(const args_type &args) const noexcept
 void arg_pack_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.append(strings::convert("$args"));
-	str.append(strings::convert(std::to_string(begin)));
-	if(end != -1)
+	if(begin != 0 || end != -1)
 	{
-		str.push_back('_');
-		str.append(strings::convert(std::to_string(end)));
+		str.append(strings::convert(std::to_string(begin)));
+		if(end != -1)
+		{
+			str.push_back('_');
+			str.append(strings::convert(std::to_string(end)));
+		}
 	}
 }
 
@@ -694,17 +697,15 @@ decltype(expression_pool)::object_ptr env_expression::clone() const
 
 expression::exec_info env_set_expression::get_info(const exec_info &info) const
 {
-	exec_info new_info(info);
-	if(readonly)
-	{
-		new_info.env_readonly = true;
-	}
 	if(new_env)
 	{
-		new_info.env = *new_env;
-		new_info.env_readonly = readonly;
+		return exec_info(info, *new_env, readonly);
 	}
-	return new_info;
+	if(readonly)
+	{
+		return exec_info(info, readonly);
+	}
+	return info;
 }
 
 dyn_object env_set_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const

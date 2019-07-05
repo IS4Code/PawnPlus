@@ -379,7 +379,7 @@ class expression_parser
 									cell first = parse_int(begin, end);
 									if(old == begin)
 									{
-										amx_ParserError("invalid argument pack format", begin);
+										return std::make_shared<arg_pack_expression>(0);
 									}
 									if(begin != end && *begin == '_')
 									{

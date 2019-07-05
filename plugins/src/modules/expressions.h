@@ -31,6 +31,16 @@ public:
 		{
 
 		}
+
+		exec_info(const exec_info &obj, map_t &env, bool env_readonly) : env(env), env_readonly(env_readonly)
+		{
+
+		}
+
+		exec_info(const exec_info &obj, bool env_readonly) : env(obj.env), env_readonly(env_readonly)
+		{
+
+		}
 	};
 
 	virtual dyn_object execute(AMX *amx, const args_type &args, const exec_info &info) const = 0;
