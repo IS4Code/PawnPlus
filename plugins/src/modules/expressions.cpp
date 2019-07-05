@@ -40,12 +40,22 @@ bool expression::execute_bool(AMX *amx, const args_type &args, const exec_info &
 	return !!execute(amx, args, info);
 }
 
+expression_ptr expression::execute_expression(AMX *amx, const args_type &args, const exec_info &info) const
+{
+	auto result = execute(amx, args, info);
+	std::shared_ptr<expression> ptr;
+	if(!(result.tag_assignable(tags::find_tag(tags::tag_expression))) || !result.is_cell() || !expression_pool.get_by_id(result.get_cell(0), ptr))
+	{
+		return {};
+	}
+	return ptr;
+}
+
 dyn_object expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	checkstack();
-	auto result = execute(amx, args, info);
-	expression *ptr;
-	if(!(result.tag_assignable(tags::find_tag(tags::tag_expression))) || !result.is_cell() || !expression_pool.get_by_id(result.get_cell(0), ptr))
+	auto ptr = execute_expression(amx, args, info);
+	if(!ptr)
 	{
 		amx_ExpressionError("attempt to call a non-function expression");
 	}
@@ -56,6 +66,40 @@ dyn_object expression::call(AMX *amx, const args_type &args, const exec_info &in
 		new_args.push_back(std::cref(arg));
 	}
 	return ptr->execute(amx, new_args, info);
+}
+
+void expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	checkstack();
+	auto ptr = execute_expression(amx, args, info);
+	if(!ptr)
+	{
+		amx_ExpressionError("attempt to call a non-function expression");
+	}
+	args_type new_args;
+	new_args.reserve(call_args.size());
+	for(const auto &arg : call_args)
+	{
+		new_args.push_back(std::cref(arg));
+	}
+	ptr->execute_discard(amx, new_args, info);
+}
+
+void expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	checkstack();
+	auto ptr = execute_expression(amx, args, info);
+	if(!ptr)
+	{
+		amx_ExpressionError("attempt to call a non-function expression");
+	}
+	args_type new_args;
+	new_args.reserve(call_args.size());
+	for(const auto &arg : call_args)
+	{
+		new_args.push_back(std::cref(arg));
+	}
+	ptr->execute_multi(amx, new_args, info, output);
 }
 
 dyn_object expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
@@ -241,6 +285,16 @@ void weak_expression::execute_multi(AMX *amx, const args_type &args, const exec_
 dyn_object weak_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	return lock()->call(amx, args, info, call_args);
+}
+
+void weak_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	lock()->call_discard(amx, args, info, call_args);
+}
+
+void weak_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	lock()->call_multi(amx, args, info, call_args, output);
 }
 
 dyn_object weak_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
@@ -551,8 +605,14 @@ decltype(expression_pool)::object_ptr nested_expression::clone() const
 
 dyn_object comma_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
 {
-	left->execute_discard(amx, args, info);
-	return right->execute(amx, args, info);
+	call_args_type output;
+	left->execute_multi(amx, args, info, output);
+	if(output.size() == 0)
+	{
+		return right->execute(amx, args, info);
+	}
+	right->execute_multi(amx, args, info, output);
+	return output.back();
 }
 
 void comma_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
@@ -571,6 +631,18 @@ dyn_object comma_expression::call(AMX *amx, const args_type &args, const exec_in
 {
 	left->execute_discard(amx, args, info);
 	return right->call(amx, args, info, call_args);
+}
+
+void comma_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	left->execute_discard(amx, args, info);
+	right->call_discard(amx, args, info, call_args);
+}
+
+void comma_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	left->execute_discard(amx, args, info);
+	right->call_multi(amx, args, info, call_args, output);
 }
 
 dyn_object comma_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
@@ -718,6 +790,16 @@ dyn_object env_set_expression::call(AMX *amx, const args_type &args, const exec_
 	return expr->call(amx, args, get_info(info), call_args);
 }
 
+void env_set_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	expr->call_discard(amx, args, get_info(info), call_args);
+}
+
+void env_set_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	expr->call_multi(amx, args, get_info(info), call_args, output);
+}
+
 dyn_object env_set_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	return expr->assign(amx, args, get_info(info), std::move(value));
@@ -854,6 +936,28 @@ dyn_object try_expression::call(AMX *amx, const args_type &args, const exec_info
 	}
 }
 
+void try_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	try{
+		main->call_discard(amx, args, info, call_args);
+	}catch(const errors::native_error&)
+	{
+		fallback->call_discard(amx, args, info, call_args);
+	}
+}
+
+void try_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	size_t size = output.size();
+	try{
+		main->call_multi(amx, args, info, call_args, output);
+	}catch(const errors::native_error&)
+	{
+		output.resize(size);
+		fallback->call_multi(amx, args, info, call_args, output);
+	}
+}
+
 dyn_object try_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	try{
@@ -957,6 +1061,28 @@ dyn_object call_expression::execute(AMX *amx, const args_type &args, const exec_
 		arg->execute_multi(amx, args, info, func_args);
 	}
 	return func->call(amx, args, info, func_args);
+}
+
+void call_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+{
+	checkstack();
+	call_args_type func_args;
+	for(const auto &arg : this->args)
+	{
+		arg->execute_multi(amx, args, info, func_args);
+	}
+	func->call_discard(amx, args, info, func_args);
+}
+
+void call_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+{
+	checkstack();
+	call_args_type func_args;
+	for(const auto &arg : this->args)
+	{
+		arg->execute_multi(amx, args, info, func_args);
+	}
+	func->call_multi(amx, args, info, func_args, output);
 }
 
 void call_expression::to_string(strings::cell_string &str) const noexcept
@@ -1165,6 +1291,18 @@ dyn_object bind_expression::call(AMX *amx, const args_type &args, const exec_inf
 {
 	call_args_type storage;
 	return operand->call(amx, combine_args(amx, args, info, storage), info, call_args);
+}
+
+void bind_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	call_args_type storage;
+	operand->call_discard(amx, combine_args(amx, args, info, storage), info, call_args);
+}
+
+void bind_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	call_args_type storage;
+	operand->call_multi(amx, combine_args(amx, args, info, storage), info, call_args, output);
 }
 
 dyn_object bind_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
@@ -1632,6 +1770,32 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, const exec_i
 	return {};
 }
 
+void symbol_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	if(auto obj = target_amx.lock())
+	{
+		if(symbol->ident != iFUNCTN)
+		{
+			expression::call_discard(amx, args, info, call_args);
+			return;
+		}
+	}
+	call(amx, args, info, call_args);
+}
+
+void symbol_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	if(auto obj = target_amx.lock())
+	{
+		if(symbol->ident != iFUNCTN)
+		{
+			expression::call_multi(amx, args, info, call_args, output);
+			return;
+		}
+	}
+	output.push_back(call(amx, args, info, call_args));
+}
+
 dyn_object symbol_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	if(auto obj = target_amx.lock())
@@ -1901,10 +2065,20 @@ dyn_object native_expression::call(AMX *amx, const args_type &args, const exec_i
 	amx_Release(amx, reset_hea);
 	if(err == AMX_ERR_NONE)
 	{
-		return dyn_object(ret, get_tag(args));
+		return dyn_object(ret, tags::find_tag(tags::tag_cell));
 	}
 	amx_ExpressionError(errors::inner_error, "native", name.c_str(), err, amx::StrError(err));
 	return {};
+}
+
+void native_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	call(amx, args, info, call_args);
+}
+
+void native_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	output.push_back(call(amx, args, info, call_args));
 }
 
 tag_ptr native_expression::get_tag(const args_type &args) const noexcept
@@ -1940,6 +2114,26 @@ dyn_object local_native_expression::call(AMX *amx, const args_type &args, const 
 	}
 	amx_ExpressionError("target AMX was unloaded");
 	return {};
+}
+
+void local_native_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	if(auto obj = target_amx.lock())
+	{
+		native_expression::call_discard(*obj, args, info, call_args);
+		return;
+	}
+	amx_ExpressionError("target AMX was unloaded");
+}
+
+void local_native_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	if(auto obj = target_amx.lock())
+	{
+		native_expression::call_multi(*obj, args, info, call_args, output);
+		return;
+	}
+	amx_ExpressionError("target AMX was unloaded");
 }
 
 decltype(expression_pool)::object_ptr local_native_expression::clone() const
@@ -2001,10 +2195,20 @@ dyn_object public_expression::call(AMX *amx, const args_type &args, const exec_i
 	amx_Release(amx, reset_hea);
 	if(err == AMX_ERR_NONE)
 	{
-		return dyn_object(ret, get_tag(args));
+		return dyn_object(ret, tags::find_tag(tags::tag_cell));
 	}
 	amx_ExpressionError(errors::inner_error, "public", name.c_str(), err, amx::StrError(err));
 	return {};
+}
+
+void public_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	call(amx, args, info, call_args);
+}
+
+void public_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	output.push_back(call(amx, args, info, call_args));
 }
 
 tag_ptr public_expression::get_tag(const args_type &args) const noexcept
@@ -2093,6 +2297,16 @@ void dequote_expression::execute_multi(AMX *amx, const args_type &args, const ex
 dyn_object dequote_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	return get_expr(amx, args, info)->call(amx, args, info, call_args);
+}
+
+void dequote_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	get_expr(amx, args, info)->call_discard(amx, args, info, call_args);
+}
+
+void dequote_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	get_expr(amx, args, info)->call_multi(amx, args, info, call_args, output);
 }
 
 dyn_object dequote_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
@@ -2207,6 +2421,16 @@ void conditional_expression::execute_multi(AMX *amx, const args_type &args, cons
 dyn_object conditional_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	return (cond->execute_bool(amx, args, info) ? on_true : on_false)->call(amx, args, info, call_args);
+}
+
+void conditional_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	(cond->execute_bool(amx, args, info) ? on_true : on_false)->call_discard(amx, args, info, call_args);
+}
+
+void conditional_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	(cond->execute_bool(amx, args, info) ? on_true : on_false)->call_multi(amx, args, info, call_args, output);
 }
 
 dyn_object conditional_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
