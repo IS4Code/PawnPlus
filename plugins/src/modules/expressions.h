@@ -218,6 +218,32 @@ public:
 	virtual const expression_ptr &get_right() const noexcept = 0;
 };
 
+class range_expression : public sequence_expression, public binary_expression
+{
+	expression_ptr begin;
+	expression_ptr end;
+
+public:
+	range_expression(expression_ptr &&begin, expression_ptr &&end) : begin(std::move(begin)), end(std::move(end))
+	{
+
+	}
+
+	range_expression(const expression_ptr &begin, const expression_ptr &end) : begin(begin), end(end)
+	{
+
+	}
+
+	virtual void execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const override;
+	virtual const expression_ptr &get_left() const noexcept override;
+	virtual const expression_ptr &get_right() const noexcept override;
+	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
+	virtual cell get_size(const args_type &args) const noexcept override;
+	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
 class nested_expression : public expression_base, public unary_expression
 {
 	expression_ptr expr;
@@ -1224,16 +1250,16 @@ public:
 
 class select_expression : public sequence_expression, public binary_expression
 {
-	expression_ptr func;
 	expression_ptr list;
+	expression_ptr func;
 
 public:
-	select_expression(expression_ptr &&func, expression_ptr &&list) : func(std::move(func)), list(std::move(list))
+	select_expression(expression_ptr &&list, expression_ptr &&func) : list(std::move(list)), func(std::move(func))
 	{
 
 	}
 
-	select_expression(const expression_ptr &func, const expression_ptr &list) : func(func), list(list)
+	select_expression(const expression_ptr &list, const expression_ptr &func) : list(list), func(func)
 	{
 
 	}
@@ -1250,16 +1276,16 @@ public:
 
 class where_expression : public sequence_expression, public binary_expression
 {
-	expression_ptr func;
 	expression_ptr list;
+	expression_ptr func;
 
 public:
-	where_expression(expression_ptr &&func, expression_ptr &&list) : func(std::move(func)), list(std::move(list))
+	where_expression(expression_ptr &&list, expression_ptr &&func) : list(std::move(list)), func(std::move(func))
 	{
 
 	}
 
-	where_expression(const expression_ptr &func, const expression_ptr &list) : func(func), list(list)
+	where_expression(const expression_ptr &list, const expression_ptr &func) : list(list), func(func)
 	{
 
 	}

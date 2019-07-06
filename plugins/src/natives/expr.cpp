@@ -574,13 +574,19 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
-	// native Expression:expr_select(Expression:func, Expression:list);
+	// native Expression:expr_range(Expression:begin, Expression:end);
+	AMX_DEFINE_NATIVE(expr_range, 2)
+	{
+		return expr_binary<range_expression>(amx, params);
+	}
+
+	// native Expression:expr_select(Expression:list, Expression:func);
 	AMX_DEFINE_NATIVE(expr_select, 2)
 	{
 		return expr_binary<select_expression>(amx, params);
 	}
 
-	// native Expression:expr_where(Expression:cond, Expression:list);
+	// native Expression:expr_where(Expression:list, Expression:code);
 	AMX_DEFINE_NATIVE(expr_where, 2)
 	{
 		return expr_binary<where_expression>(amx, params);
@@ -795,6 +801,7 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(expr_cond),
 
+	AMX_DECLARE_NATIVE(expr_range),
 	AMX_DECLARE_NATIVE(expr_select),
 	AMX_DECLARE_NATIVE(expr_where),
 

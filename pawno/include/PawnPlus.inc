@@ -1613,8 +1613,9 @@ native Expression:expr_or(Expression:left, Expression:right);
 
 native Expression:expr_cond(Expression:cond, Expression:on_true, Expression:on_false);
 
-native Expression:expr_select(Expression:func, Expression:list);
-native Expression:expr_where(Expression:cond, Expression:list);
+native Expression:expr_range(Expression:begin, Expression:end);
+native Expression:expr_select(Expression:list, Expression:func);
+native Expression:expr_where(Expression:list, Expression:cond);
 
 native Expression:expr_cast(Expression:expr, TagTag:tag_id);
 native Expression:expr_tagof(Expression:expr);

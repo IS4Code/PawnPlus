@@ -32,6 +32,14 @@ class expression_parser
 		amx_ExpressionError("%s at %d", message, pos - parse_start);
 	}
 
+	void skip_whitespace(Iter &begin, Iter end)
+	{
+		while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
+		{
+			++begin;
+		}
+	}
+
 	std::string parse_symbol(Iter &begin, Iter end)
 	{
 		std::string symbol;
@@ -138,6 +146,7 @@ class expression_parser
 					return std::make_shared<constant_expression>(dyn_object(amx_ftoc(fvalue), tags::find_tag(tags::tag_float)));
 				}
 				begin = old;
+				break;
 			}else{
 				break;
 			}
@@ -346,10 +355,7 @@ class expression_parser
 					++begin;
 					auto inner = parse_outer_expression(amx, begin, end, ']');
 					++begin;
-					while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-					{
-						++begin;
-					}
+					skip_whitespace(begin, end);
 					if(begin == end || *begin != '(')
 					{
 						begin = old;
@@ -473,105 +479,22 @@ class expression_parser
 						}else if(symbol == "try")
 						{
 							auto old = begin;
-							while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-							{
-								++begin;
-							}
+							skip_whitespace(begin, end);
 							if(begin != end && *begin == '[')
 							{
 								++begin;
 								auto main = parse_outer_expression(amx, begin, end, ']');
 								++begin;
-								while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-								{
-									++begin;
-								}
+								skip_whitespace(begin, end);
 								if(parse_symbol(begin, end) == "catch")
 								{
-									while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-									{
-										++begin;
-									}
+									skip_whitespace(begin, end);
 									if(begin != end && *begin == '[')
 									{
 										++begin;
 										auto fallback = parse_outer_expression(amx, begin, end, ']');
 										++begin;
 										return std::make_shared<try_expression>(std::move(main), std::move(fallback));
-									}else{
-										begin = old;
-									}
-								}else{
-									begin = old;
-								}
-							}else{
-								begin = old;
-							}
-						}else if(symbol == "select")
-						{
-							auto old = begin;
-							while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-							{
-								++begin;
-							}
-							if(begin != end && *begin == '[')
-							{
-								++begin;
-								auto func = parse_outer_expression(amx, begin, end, ']');
-								++begin;
-								while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-								{
-									++begin;
-								}
-								if(parse_symbol(begin, end) == "in")
-								{
-									while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-									{
-										++begin;
-									}
-									if(begin != end && *begin == '[')
-									{
-										++begin;
-										auto list = parse_outer_expression(amx, begin, end, ']');
-										++begin;
-										return std::make_shared<select_expression>(std::move(func), std::move(list));
-									}else{
-										begin = old;
-									}
-								}else{
-									begin = old;
-								}
-							}else{
-								begin = old;
-							}
-						}else if(symbol == "where")
-						{
-							auto old = begin;
-							while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-							{
-								++begin;
-							}
-							if(begin != end && *begin == '[')
-							{
-								++begin;
-								auto func = parse_outer_expression(amx, begin, end, ']');
-								++begin;
-								while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-								{
-									++begin;
-								}
-								if(parse_symbol(begin, end) == "in")
-								{
-									while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-									{
-										++begin;
-									}
-									if(begin != end && *begin == '[')
-									{
-										++begin;
-										auto list = parse_outer_expression(amx, begin, end, ']');
-										++begin;
-										return std::make_shared<where_expression>(std::move(func), std::move(list));
 									}else{
 										begin = old;
 									}
@@ -672,10 +595,7 @@ class expression_parser
 						}
 						++begin;
 						indices.insert(indices.end(), std::make_move_iterator(inner.begin()), std::make_move_iterator(inner.end()));
-						while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-						{
-							++begin;
-						}
+						skip_whitespace(begin, end);
 						if(begin == end || *begin != '[')
 						{
 							break;
@@ -694,6 +614,46 @@ class expression_parser
 					auto args = parse_expressions(amx, begin, end, ')');
 					++begin;
 					result = std::make_shared<call_expression>(std::move(result), std::move(args));
+				}
+				continue;
+				default:
+				{
+					if(!result)
+					{
+						break;
+					}
+					auto old = begin;
+					auto symbol = parse_symbol(begin, end);
+					if(symbol == "select")
+					{
+						skip_whitespace(begin, end);
+						if(begin != end && *begin == '[')
+						{
+							++begin;
+							auto func = parse_outer_expression(amx, begin, end, ']');
+							++begin;
+							result = std::make_shared<select_expression>(std::move(result), std::move(func));
+						}else{
+							begin = old;
+							break;
+						}
+					}else if(symbol == "where")
+					{
+						skip_whitespace(begin, end);
+						if(begin != end && *begin == '[')
+						{
+							++begin;
+							auto func = parse_outer_expression(amx, begin, end, ']');
+							++begin;
+							result = std::make_shared<where_expression>(std::move(result), std::move(func));
+						}else{
+							begin = old;
+							break;
+						}
+					}else{
+						begin = old;
+						break;
+					}
 				}
 				continue;
 			}
@@ -785,10 +745,7 @@ class expression_parser
 						auto inner = parse_outer_expression(amx, begin, end, ']');
 						++begin;
 						indices.push_back(std::move(inner));
-						while(begin != end && (*begin == ' ' || *begin == '\t' || *begin == '\r' || *begin == '\n'))
-						{
-							++begin;
-						}
+						skip_whitespace(begin, end);
 						if(begin == end || *begin != '[')
 						{
 							break;
@@ -1151,6 +1108,29 @@ class expression_parser
 						break;
 					}
 					result = std::make_shared<assign_expression>(std::move(result), std::move(inner));
+				}
+				continue;
+				case '.':
+				{
+					if(!result)
+					{
+						break;
+					}
+					auto old = begin;
+					++begin;
+					if(begin == end || *begin != '.')
+					{
+						begin = old;
+						break;
+					}
+					++begin;
+					auto inner = parse_condition(amx, begin, end, endchar);
+					if(!inner)
+					{
+						begin = old;
+						break;
+					}
+					result = std::make_shared<range_expression>(std::move(result), std::move(inner));
 				}
 				continue;
 			}

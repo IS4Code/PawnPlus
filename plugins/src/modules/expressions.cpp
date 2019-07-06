@@ -567,6 +567,78 @@ decltype(expression_pool)::object_ptr arg_pack_expression::clone() const
 	return expression_pool.emplace_derived<arg_pack_expression>(*this);
 }
 
+void range_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+{
+	auto a = begin->execute(amx, args, info);
+	auto b = end->execute(amx, args, info);
+	auto tag = tags::find_tag(tags::tag_cell);
+	if(!a.tag_assignable(tag) || !a.is_cell())
+	{
+		amx_ExpressionError("range bound tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), a.get_tag()->format_name());
+	}
+	if(!b.tag_assignable(tag) || !b.is_cell())
+	{
+		amx_ExpressionError("range bound tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), b.get_tag()->format_name());
+	}
+	cell ca = a.get_cell(0);
+	cell cb = b.get_cell(0);
+	if(ca <= cb)
+	{
+		while(ca < cb)
+		{
+			output.emplace_back(ca, tag);
+			ca++;
+		}
+		output.emplace_back(cb, tag);
+	}else{
+		while(ca > cb)
+		{
+			output.emplace_back(ca, tag);
+			ca--;
+		}
+		output.emplace_back(cb, tag);
+	}
+}
+
+tag_ptr range_expression::get_tag(const args_type &args) const noexcept
+{
+	return tags::find_tag(tags::tag_cell);
+}
+
+cell range_expression::get_size(const args_type &args) const noexcept
+{
+	return 1;
+}
+
+cell range_expression::get_rank(const args_type &args) const noexcept
+{
+	return 0;
+}
+
+void range_expression::to_string(strings::cell_string &str) const noexcept
+{
+	str.push_back('(');
+	begin->to_string(str);
+	str.append(strings::convert(".."));
+	end->to_string(str);
+	str.push_back(')');
+}
+
+const expression_ptr &range_expression::get_left() const noexcept
+{
+	return begin;
+}
+
+const expression_ptr &range_expression::get_right() const noexcept
+{
+	return end;
+}
+
+decltype(expression_pool)::object_ptr range_expression::clone() const
+{
+	return expression_pool.emplace_derived<range_expression>(*this);
+}
+
 dyn_object nested_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
 {
 	return expr->execute(amx, args, info);
@@ -2559,10 +2631,11 @@ const expression_ptr &select_expression::get_right() const noexcept
 
 void select_expression::to_string(strings::cell_string &str) const noexcept
 {
+	str.push_back('(');
+	list->to_string(str);
+	str.push_back(')');
 	str.append(strings::convert("select["));
 	func->to_string(str);
-	str.append(strings::convert("]in["));
-	list->to_string(str);
 	str.push_back(']');
 }
 
@@ -2619,10 +2692,11 @@ const expression_ptr &where_expression::get_right() const noexcept
 
 void where_expression::to_string(strings::cell_string &str) const noexcept
 {
+	str.push_back('(');
+	list->to_string(str);
+	str.push_back(')');
 	str.append(strings::convert("where["));
 	func->to_string(str);
-	str.append(strings::convert("]in["));
-	list->to_string(str);
 	str.push_back(']');
 }
 

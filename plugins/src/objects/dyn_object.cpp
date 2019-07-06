@@ -1046,7 +1046,7 @@ dyn_object dyn_object::operator%(const dyn_object &obj) const
 template <class OpType>
 dyn_object dyn_object::operator_cell_func(const dyn_object &obj) const
 {
-	if(!tag_compatible(obj) || tag->strong() || empty() || obj.empty()) amx_LogicError(errors::operation_not_supported, "variant");
+	if(!tag_compatible(obj) || !tag_assignable(tags::find_tag(tags::tag_cell)) || empty() || obj.empty()) amx_LogicError(errors::operation_not_supported, "variant");
 	dyn_object result;
 	OpType op;
 	if(is_array() && obj.is_array())
@@ -1154,7 +1154,7 @@ dyn_object dyn_object::dec() const
 template <class OpType>
 dyn_object dyn_object::operator_cell_func() const
 {
-	if(tag->strong() || empty()) amx_LogicError(errors::operation_not_supported, "variant");
+	if(!tag_assignable(tags::find_tag(tags::tag_cell)) || empty()) amx_LogicError(errors::operation_not_supported, "variant");
 	dyn_object result = dyn_object(*this, false);
 	OpType op;
 	for(cell &c : result)
@@ -1166,7 +1166,7 @@ dyn_object dyn_object::operator_cell_func() const
 
 dyn_object dyn_object::operator+() const
 {
-	if(tag->strong() || empty()) amx_LogicError(errors::operation_not_supported, "variant");
+	if(!tag_assignable(tags::find_tag(tags::tag_cell)) || empty()) amx_LogicError(errors::operation_not_supported, "variant");
 	return dyn_object(*this, false);
 }
 
