@@ -120,7 +120,10 @@ tag_ptr tags::new_tag(const char *name, cell base_id)
 		tag_name.append(base->name);
 		tag_name.append(1, '@');
 	}
-	tag_name.append(name);
+	if(name)
+	{
+		tag_name.append(name);
+	}
 	tag_name.append(1, '+');
 
 	cell id = ::tag_list.size();
