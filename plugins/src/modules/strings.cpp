@@ -719,10 +719,10 @@ struct format_base
 					auto expr = expression_parser<Iter>().parse_simple(amx, std::next(color_begin), color_end);
 					if(format_env.size() > 0)
 					{
-						buf.append(expr->execute(amx, {}, expression::exec_info(*format_env.top(), true)).to_string());
+						buf.append(expr->execute({}, expression::exec_info(amx, *format_env.top(), true)).to_string());
 					}else{
 						static map_t env;
-						buf.append(expr->execute(amx, {}, expression::exec_info(env, true)).to_string());
+						buf.append(expr->execute({}, expression::exec_info(amx, env, true)).to_string());
 					}
 						
 					++color_end;

@@ -1567,6 +1567,7 @@ native Expression:expr_nested(Expression:expr);
 native Expression:expr_env();
 native Expression:expr_set_env(Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
 native Expression:expr_global(const name[]);
+native Expression:expr_set_amx(Expression:expr, Amx:amx=INVALID_AMX);
 
 native Expression:expr_comma(Expression:left, Expression:right);
 native Expression:expr_assign(Expression:left, Expression:right);
@@ -1574,7 +1575,7 @@ native Expression:expr_assign(Expression:left, Expression:right);
 native Expression:expr_try(Expression:main, Expression:fallback);
 
 native Expression:expr_symbol(Symbol:symbol);
-native Expression:expr_native(const function[], bool:local=true);
+native Expression:expr_native(const function[]);
 native Expression:expr_public(const function[]);
 native Expression:expr_call(Expression:func, Expression:...);
 native Expression:expr_index(Expression:arr, Expression:...);

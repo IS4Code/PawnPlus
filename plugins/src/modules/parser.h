@@ -540,12 +540,12 @@ class expression_parser
 							auto native = amx::find_native(amx, symbol);
 							if(native)
 							{
-								return std::make_shared<local_native_expression>(amx, native, std::move(symbol));
+								return std::make_shared<native_expression>(native, std::move(symbol));
 							}
 							int index;
 							if(amx_FindPublicSafe(amx, symbol.c_str(), &index) == AMX_ERR_NONE)
 							{
-								return std::make_shared<public_expression>(amx, std::move(symbol), index);
+								return std::make_shared<public_expression>(std::move(symbol), index);
 							}
 							return std::make_shared<global_expression>(std::move(symbol));
 						}

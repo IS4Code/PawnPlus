@@ -20,29 +20,29 @@ void amx_ExpressionError(const char *format, ...)
 	amx_LogicError(errors::invalid_expression, message.c_str());
 }
 
-void expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void expression::execute_discard(const args_type &args, const exec_info &info) const
 {
-	execute(amx, args, info);
+	execute(args, info);
 }
 
-void expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
-	output.push_back(execute(amx, args, info));
+	output.push_back(execute(args, info));
 }
 
-bool expression::execute_bool(AMX *amx, const args_type &args, const exec_info &info) const
+bool expression::execute_bool(const args_type &args, const exec_info &info) const
 {
 	auto bool_exp = dynamic_cast<const bool_expression*>(this);
 	if(bool_exp)
 	{
-		return bool_exp->execute_inner(amx, args, info);
+		return bool_exp->execute_inner(args, info);
 	}
-	return !!execute(amx, args, info);
+	return !!execute(args, info);
 }
 
-expression_ptr expression::execute_expression(AMX *amx, const args_type &args, const exec_info &info) const
+expression_ptr expression::execute_expression(const args_type &args, const exec_info &info) const
 {
-	auto result = execute(amx, args, info);
+	auto result = execute(args, info);
 	std::shared_ptr<expression> ptr;
 	if(!(result.tag_assignable(tags::find_tag(tags::tag_expression))) || !result.is_cell() || !expression_pool.get_by_id(result.get_cell(0), ptr))
 	{
@@ -51,10 +51,10 @@ expression_ptr expression::execute_expression(AMX *amx, const args_type &args, c
 	return ptr;
 }
 
-dyn_object expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	checkstack();
-	auto ptr = execute_expression(amx, args, info);
+	auto ptr = execute_expression(args, info);
 	if(!ptr)
 	{
 		amx_ExpressionError("attempt to call a non-function expression");
@@ -65,13 +65,13 @@ dyn_object expression::call(AMX *amx, const args_type &args, const exec_info &in
 	{
 		new_args.push_back(std::cref(arg));
 	}
-	return ptr->execute(amx, new_args, info);
+	return ptr->execute(new_args, info);
 }
 
-void expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	checkstack();
-	auto ptr = execute_expression(amx, args, info);
+	auto ptr = execute_expression(args, info);
 	if(!ptr)
 	{
 		amx_ExpressionError("attempt to call a non-function expression");
@@ -82,13 +82,13 @@ void expression::call_discard(AMX *amx, const args_type &args, const exec_info &
 	{
 		new_args.push_back(std::cref(arg));
 	}
-	ptr->execute_discard(amx, new_args, info);
+	ptr->execute_discard(new_args, info);
 }
 
-void expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
 	checkstack();
-	auto ptr = execute_expression(amx, args, info);
+	auto ptr = execute_expression(args, info);
 	if(!ptr)
 	{
 		amx_ExpressionError("attempt to call a non-function expression");
@@ -99,18 +99,18 @@ void expression::call_multi(AMX *amx, const args_type &args, const exec_info &in
 	{
 		new_args.push_back(std::cref(arg));
 	}
-	ptr->execute_multi(amx, new_args, info, output);
+	ptr->execute_multi(new_args, info, output);
 }
 
-dyn_object expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	amx_ExpressionError("attempt to assign to a non-lvalue expression");
 	return {};
 }
 
-dyn_object expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
-	auto value = execute(amx, args, info);
+	auto value = execute(args, info);
 	if(value.is_cell())
 	{
 		std::shared_ptr<expression> ptr;
@@ -142,13 +142,13 @@ dyn_object expression::index(AMX *amx, const args_type &args, const exec_info &i
 	return dyn_object(value.get_cell(cell_indices.data(), cell_indices.size()), value.get_tag());
 }
 
-dyn_object expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
 	if(value.get_rank() != 0)
 	{
 		amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
 	}
-	auto addr = address(amx, args, info, indices);
+	auto addr = address(args, info, indices);
 	if(std::get<1>(addr) == 0)
 	{
 		amx_ExpressionError("index out of bounds");
@@ -160,7 +160,7 @@ dyn_object expression::index_assign(AMX *amx, const args_type &args, const exec_
 	return dyn_object(std::get<0>(addr)[0] = value.get_cell(0), std::get<2>(addr));
 }
 
-std::tuple<cell*, size_t, tag_ptr> expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+std::tuple<cell*, size_t, tag_ptr> expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	std::vector<cell> cell_indices;
 	for(const auto &index : indices)
@@ -175,11 +175,11 @@ std::tuple<cell*, size_t, tag_ptr> expression::address(AMX *amx, const args_type
 		}
 		cell_indices.push_back(index.get_cell(0));
 	}
-	auto value = execute(amx, args, info);
+	auto value = execute(args, info);
 	cell *arr, size;
 	arr = value.get_array(cell_indices.data(), cell_indices.size(), size);
 	cell amx_addr, *addr;
-	amx_Allot(amx, size ? size : 1, &amx_addr, &addr);
+	amx_Allot(info.amx, size ? size : 1, &amx_addr, &addr);
 	std::memcpy(addr, arr, size * sizeof(cell));
 	return std::tuple<cell*, size_t, tag_ptr>(addr, size, value.get_tag());
 }
@@ -227,7 +227,7 @@ const expression *expression_base::get() const
 	return this;
 }
 
-dyn_object constant_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object constant_expression::execute(const args_type &args, const exec_info &info) const
 {
 	return value;
 }
@@ -267,54 +267,54 @@ expression_ptr weak_expression::lock() const
 	return {};
 }
 
-dyn_object weak_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object weak_expression::execute(const args_type &args, const exec_info &info) const
 {
-	return lock()->execute(amx, args, info);
+	return lock()->execute(args, info);
 }
 
-void weak_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void weak_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
-	lock()->execute_discard(amx, args, info);
+	lock()->execute_discard(args, info);
 }
 
-void weak_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void weak_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
-	lock()->execute_multi(amx, args, info, output);
+	lock()->execute_multi(args, info, output);
 }
 
-dyn_object weak_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object weak_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	return lock()->call(amx, args, info, call_args);
+	return lock()->call(args, info, call_args);
 }
 
-void weak_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void weak_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	lock()->call_discard(amx, args, info, call_args);
+	lock()->call_discard(args, info, call_args);
 }
 
-void weak_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void weak_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
-	lock()->call_multi(amx, args, info, call_args, output);
+	lock()->call_multi(args, info, call_args, output);
 }
 
-dyn_object weak_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object weak_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
-	return lock()->assign(amx, args, info, std::move(value));
+	return lock()->assign(args, info, std::move(value));
 }
 
-dyn_object weak_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object weak_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
-	return lock()->index(amx, args, info, indices);
+	return lock()->index(args, info, indices);
 }
 
-dyn_object weak_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object weak_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
-	return lock()->index_assign(amx, args, info, indices, std::move(value));
+	return lock()->index_assign(args, info, indices, std::move(value));
 }
 
-std::tuple<cell*, size_t, tag_ptr> weak_expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+std::tuple<cell*, size_t, tag_ptr> weak_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
-	return lock()->address(amx, args, info, indices);
+	return lock()->address(args, info, indices);
 }
 
 tag_ptr weak_expression::get_tag(const args_type &args) const noexcept
@@ -368,7 +368,7 @@ const dyn_object &arg_expression::arg(const args_type &args) const
 	return args[index].get();
 }
 
-dyn_object arg_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object arg_expression::execute(const args_type &args, const exec_info &info) const
 {
 	return arg(args);
 }
@@ -411,10 +411,10 @@ decltype(expression_pool)::object_ptr arg_expression::clone() const
 	return expression_pool.emplace_derived<arg_expression>(*this);
 }
 
-dyn_object sequence_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object sequence_expression::execute(const args_type &args, const exec_info &info) const
 {
 	call_args_type output;
-	execute_multi(amx, args, info, output);
+	execute_multi(args, info, output);
 	if(output.size() == 0)
 	{
 		amx_ExpressionError("expression has no value");
@@ -422,20 +422,20 @@ dyn_object sequence_expression::execute(AMX *amx, const args_type &args, const e
 	return output.back();
 }
 
-void sequence_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void sequence_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
 	call_args_type output;
-	execute_multi(amx, args, info, output);
+	execute_multi(args, info, output);
 }
 
 expression_ptr empty_expression::instance = std::make_shared<empty_expression>();
 
-void empty_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void empty_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
 
 }
 
-void empty_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void empty_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
 
 }
@@ -450,7 +450,7 @@ decltype(expression_pool)::object_ptr empty_expression::clone() const
 	return expression_pool.emplace_derived<empty_expression>(*this);
 }
 
-void arg_pack_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void arg_pack_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
 	if(end == -1)
 	{
@@ -466,7 +466,7 @@ void arg_pack_expression::execute_discard(AMX *amx, const args_type &args, const
 	}
 }
 
-void arg_pack_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void arg_pack_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
 	if(end == -1)
 	{
@@ -567,10 +567,10 @@ decltype(expression_pool)::object_ptr arg_pack_expression::clone() const
 	return expression_pool.emplace_derived<arg_pack_expression>(*this);
 }
 
-void range_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void range_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
-	auto a = begin->execute(amx, args, info);
-	auto b = end->execute(amx, args, info);
+	auto a = begin->execute(args, info);
+	auto b = end->execute(args, info);
 	auto tag = tags::find_tag(tags::tag_cell);
 	if(!a.tag_assignable(tag) || !a.is_cell())
 	{
@@ -639,9 +639,9 @@ decltype(expression_pool)::object_ptr range_expression::clone() const
 	return expression_pool.emplace_derived<range_expression>(*this);
 }
 
-dyn_object nested_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object nested_expression::execute(const args_type &args, const exec_info &info) const
 {
-	return expr->execute(amx, args, info);
+	return expr->execute(args, info);
 }
 
 tag_ptr nested_expression::get_tag(const args_type &args) const noexcept
@@ -675,70 +675,70 @@ decltype(expression_pool)::object_ptr nested_expression::clone() const
 	return expression_pool.emplace_derived<nested_expression>(*this);
 }
 
-dyn_object comma_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object comma_expression::execute(const args_type &args, const exec_info &info) const
 {
 	call_args_type output;
-	left->execute_multi(amx, args, info, output);
+	left->execute_multi(args, info, output);
 	if(output.size() == 0)
 	{
-		return right->execute(amx, args, info);
+		return right->execute(args, info);
 	}
-	right->execute_multi(amx, args, info, output);
+	right->execute_multi(args, info, output);
 	return output.back();
 }
 
-void comma_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void comma_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
-	left->execute_discard(amx, args, info);
-	right->execute_discard(amx, args, info);
+	left->execute_discard(args, info);
+	right->execute_discard(args, info);
 }
 
-void comma_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void comma_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
-	left->execute_multi(amx, args, info, output);
-	right->execute_multi(amx, args, info, output);
+	left->execute_multi(args, info, output);
+	right->execute_multi(args, info, output);
 }
 
-dyn_object comma_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object comma_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	left->execute_discard(amx, args, info);
-	return right->call(amx, args, info, call_args);
+	left->execute_discard(args, info);
+	return right->call(args, info, call_args);
 }
 
-void comma_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void comma_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	left->execute_discard(amx, args, info);
-	right->call_discard(amx, args, info, call_args);
+	left->execute_discard(args, info);
+	right->call_discard(args, info, call_args);
 }
 
-void comma_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void comma_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
-	left->execute_discard(amx, args, info);
-	right->call_multi(amx, args, info, call_args, output);
+	left->execute_discard(args, info);
+	right->call_multi(args, info, call_args, output);
 }
 
-dyn_object comma_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object comma_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
-	left->execute_discard(amx, args, info);
-	return right->assign(amx, args, info, std::move(value));
+	left->execute_discard(args, info);
+	return right->assign(args, info, std::move(value));
 }
 
-dyn_object comma_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object comma_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
-	left->execute_discard(amx, args, info);
-	return right->index(amx, args, info, indices);
+	left->execute_discard(args, info);
+	return right->index(args, info, indices);
 }
 
-dyn_object comma_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object comma_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
-	left->execute_discard(amx, args, info);
-	return right->index_assign(amx, args, info, indices, std::move(value));
+	left->execute_discard(args, info);
+	return right->index_assign(args, info, indices, std::move(value));
 }
 
-std::tuple<cell*, size_t, tag_ptr> comma_expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+std::tuple<cell*, size_t, tag_ptr> comma_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
-	left->execute_discard(amx, args, info);
-	return right->address(amx, args, info, indices);
+	left->execute_discard(args, info);
+	return right->address(args, info, indices);
 }
 
 tag_ptr comma_expression::get_tag(const args_type &args) const noexcept
@@ -796,13 +796,13 @@ decltype(expression_pool)::object_ptr comma_expression::clone() const
 	return expression_pool.emplace_derived<comma_expression>(*this);
 }
 
-dyn_object env_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object env_expression::execute(const args_type &args, const exec_info &info) const
 {
 	amx_ExpressionError("attempt to obtain the value of the environment");
 	return {};
 }
 
-dyn_object env_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object env_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	if(indices.size() != 1)
 	{
@@ -816,7 +816,7 @@ dyn_object env_expression::index(AMX *amx, const args_type &args, const exec_inf
 	return it->second;
 }
 
-dyn_object env_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object env_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
 	if(indices.size() != 1)
 	{
@@ -839,6 +839,73 @@ decltype(expression_pool)::object_ptr env_expression::clone() const
 	return expression_pool.emplace_derived<env_expression>(*this);
 }
 
+dyn_object info_set_expression::execute(const args_type &args, const exec_info &info) const
+{
+	return expr->execute(args, get_info(info));
+}
+
+dyn_object info_set_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	return expr->call(args, get_info(info), call_args);
+}
+
+void info_set_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	expr->call_discard(args, get_info(info), call_args);
+}
+
+void info_set_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	expr->call_multi(args, get_info(info), call_args, output);
+}
+
+dyn_object info_set_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
+{
+	return expr->assign(args, get_info(info), std::move(value));
+}
+
+dyn_object info_set_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
+{
+	return expr->index(args, get_info(info), indices);
+}
+
+dyn_object info_set_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+{
+	return expr->index_assign(args, get_info(info), indices, std::move(value));
+}
+
+std::tuple<cell*, size_t, tag_ptr> info_set_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
+{
+	return expr->address(args, get_info(info), indices);
+}
+
+tag_ptr info_set_expression::get_tag(const args_type &args) const noexcept
+{
+	return expr->get_tag(args);
+}
+
+cell info_set_expression::get_size(const args_type &args) const noexcept
+{
+	return expr->get_size(args);
+}
+
+cell info_set_expression::get_rank(const args_type &args) const noexcept
+{
+	return expr->get_rank(args);
+}
+
+const expression_ptr &info_set_expression::get_operand() const noexcept
+{
+	return expr;
+}
+
+void env_set_expression::to_string(strings::cell_string &str) const noexcept
+{
+	str.push_back('[');
+	expr->to_string(str);
+	str.append(strings::convert("]{env}"));
+}
+
 expression::exec_info env_set_expression::get_info(const exec_info &info) const
 {
 	if(new_env)
@@ -852,81 +919,36 @@ expression::exec_info env_set_expression::get_info(const exec_info &info) const
 	return info;
 }
 
-dyn_object env_set_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
-{
-	return expr->execute(amx, args, get_info(info));
-}
-
-dyn_object env_set_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
-{
-	return expr->call(amx, args, get_info(info), call_args);
-}
-
-void env_set_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
-{
-	expr->call_discard(amx, args, get_info(info), call_args);
-}
-
-void env_set_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
-{
-	expr->call_multi(amx, args, get_info(info), call_args, output);
-}
-
-dyn_object env_set_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
-{
-	return expr->assign(amx, args, get_info(info), std::move(value));
-}
-
-dyn_object env_set_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
-{
-	return expr->index(amx, args, get_info(info), indices);
-}
-
-dyn_object env_set_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
-{
-	return expr->index_assign(amx, args, get_info(info), indices, std::move(value));
-}
-
-std::tuple<cell*, size_t, tag_ptr> env_set_expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
-{
-	return expr->address(amx, args, get_info(info), indices);
-}
-
-tag_ptr env_set_expression::get_tag(const args_type &args) const noexcept
-{
-	return expr->get_tag(args);
-}
-
-cell env_set_expression::get_size(const args_type &args) const noexcept
-{
-	return expr->get_size(args);
-}
-
-cell env_set_expression::get_rank(const args_type &args) const noexcept
-{
-	return expr->get_rank(args);
-}
-
-void env_set_expression::to_string(strings::cell_string &str) const noexcept
-{
-	str.push_back('[');
-	expr->to_string(str);
-	str.append(strings::convert("]{env}"));
-}
-
-const expression_ptr &env_set_expression::get_operand() const noexcept
-{
-	return expr;
-}
-
 decltype(expression_pool)::object_ptr env_set_expression::clone() const
 {
 	return expression_pool.emplace_derived<env_set_expression>(*this);
 }
 
-dyn_object assign_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+expression::exec_info amx_set_expression::get_info(const exec_info &info) const
 {
-	return left->assign(amx, args, info, right->execute(amx, args, info));
+	if(auto obj = target_amx.lock())
+	{
+		return exec_info(info, *obj);
+	}
+	amx_ExpressionError("target AMX was unloaded");
+	return info;
+}
+
+void amx_set_expression::to_string(strings::cell_string &str) const noexcept
+{
+	str.push_back('[');
+	expr->to_string(str);
+	str.append(strings::convert("]{amx}"));
+}
+
+decltype(expression_pool)::object_ptr amx_set_expression::clone() const
+{
+	return expression_pool.emplace_derived<amx_set_expression>(*this);
+}
+
+dyn_object assign_expression::execute(const args_type &args, const exec_info &info) const
+{
+	return left->assign(args, info, right->execute(args, info));
 }
 
 tag_ptr assign_expression::get_tag(const args_type &args) const noexcept
@@ -966,107 +988,107 @@ decltype(expression_pool)::object_ptr assign_expression::clone() const
 	return expression_pool.emplace_derived<assign_expression>(*this);
 }
 
-dyn_object try_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object try_expression::execute(const args_type &args, const exec_info &info) const
 {
 	try{
-		return main->execute(amx, args, info);
+		return main->execute(args, info);
 	}catch(const errors::native_error&)
 	{
-		return fallback->execute(amx, args, info);
+		return fallback->execute(args, info);
 	}
 }
 
-void try_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void try_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
 	try{
-		main->execute_discard(amx, args, info);
+		main->execute_discard(args, info);
 	}catch(const errors::native_error&)
 	{
-		fallback->execute_discard(amx, args, info);
+		fallback->execute_discard(args, info);
 	}
 }
 
-void try_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void try_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
 	size_t size = output.size();
 	try{
-		main->execute_multi(amx, args, info, output);
+		main->execute_multi(args, info, output);
 	}catch(const errors::native_error&)
 	{
 		output.resize(size);
-		fallback->execute_multi(amx, args, info, output);
+		fallback->execute_multi(args, info, output);
 	}
 }
 
-dyn_object try_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object try_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	try{
-		return main->call(amx, args, info, call_args);
+		return main->call(args, info, call_args);
 	}catch(const errors::native_error&)
 	{
-		return fallback->call(amx, args, info, call_args);
+		return fallback->call(args, info, call_args);
 	}
 }
 
-void try_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void try_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	try{
-		main->call_discard(amx, args, info, call_args);
+		main->call_discard(args, info, call_args);
 	}catch(const errors::native_error&)
 	{
-		fallback->call_discard(amx, args, info, call_args);
+		fallback->call_discard(args, info, call_args);
 	}
 }
 
-void try_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void try_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
 	size_t size = output.size();
 	try{
-		main->call_multi(amx, args, info, call_args, output);
+		main->call_multi(args, info, call_args, output);
 	}catch(const errors::native_error&)
 	{
 		output.resize(size);
-		fallback->call_multi(amx, args, info, call_args, output);
+		fallback->call_multi(args, info, call_args, output);
 	}
 }
 
-dyn_object try_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object try_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	try{
-		return main->assign(amx, args, info, std::move(value));
+		return main->assign(args, info, std::move(value));
 	}catch(const errors::native_error&)
 	{
-		return fallback->assign(amx, args, info, std::move(value));
+		return fallback->assign(args, info, std::move(value));
 	}
 }
 
-dyn_object try_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object try_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	try{
-		return main->index(amx, args, info, indices);
+		return main->index(args, info, indices);
 	}catch(const errors::native_error&)
 	{
-		return fallback->index(amx, args, info, indices);
+		return fallback->index(args, info, indices);
 	}
 }
 
-dyn_object try_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object try_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
 	try{
-		return main->index_assign(amx, args, info, indices, std::move(value));
+		return main->index_assign(args, info, indices, std::move(value));
 	}catch(const errors::native_error&)
 	{
-		return fallback->index_assign(amx, args, info, indices, std::move(value));
+		return fallback->index_assign(args, info, indices, std::move(value));
 	}
 }
 
-std::tuple<cell*, size_t, tag_ptr> try_expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+std::tuple<cell*, size_t, tag_ptr> try_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	try{
-		return main->address(amx, args, info, indices);
+		return main->address(args, info, indices);
 	}catch(const errors::native_error&)
 	{
-		return fallback->address(amx, args, info, indices);
+		return fallback->address(args, info, indices);
 	}
 }
 
@@ -1124,37 +1146,37 @@ decltype(expression_pool)::object_ptr try_expression::clone() const
 	return expression_pool.emplace_derived<try_expression>(*this);
 }
 
-dyn_object call_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object call_expression::execute(const args_type &args, const exec_info &info) const
 {
 	checkstack();
 	call_args_type func_args;
 	for(const auto &arg : this->args)
 	{
-		arg->execute_multi(amx, args, info, func_args);
+		arg->execute_multi(args, info, func_args);
 	}
-	return func->call(amx, args, info, func_args);
+	return func->call(args, info, func_args);
 }
 
-void call_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void call_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
 	checkstack();
 	call_args_type func_args;
 	for(const auto &arg : this->args)
 	{
-		arg->execute_multi(amx, args, info, func_args);
+		arg->execute_multi(args, info, func_args);
 	}
-	func->call_discard(amx, args, info, func_args);
+	func->call_discard(args, info, func_args);
 }
 
-void call_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void call_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
 	checkstack();
 	call_args_type func_args;
 	for(const auto &arg : this->args)
 	{
-		arg->execute_multi(amx, args, info, func_args);
+		arg->execute_multi(args, info, func_args);
 	}
-	func->call_multi(amx, args, info, func_args, output);
+	func->call_multi(args, info, func_args, output);
 }
 
 void call_expression::to_string(strings::cell_string &str) const noexcept
@@ -1201,54 +1223,54 @@ decltype(expression_pool)::object_ptr call_expression::clone() const
 	return expression_pool.emplace_derived<call_expression>(*this);
 }
 
-dyn_object index_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object index_expression::execute(const args_type &args, const exec_info &info) const
 {
 	call_args_type indices;
 	for(const auto &index : this->indices)
 	{
-		index->execute_multi(amx, args, info, indices);
+		index->execute_multi(args, info, indices);
 	}
-	return arr->index(amx, args, info, indices);
+	return arr->index(args, info, indices);
 }
 
-dyn_object index_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object index_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	call_args_type indices;
 	for(const auto &index : this->indices)
 	{
-		index->execute_multi(amx, args, info, indices);
+		index->execute_multi(args, info, indices);
 	}
-	return arr->index_assign(amx, args, info, indices, std::move(value));
+	return arr->index_assign(args, info, indices, std::move(value));
 }
 
-dyn_object index_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object index_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	call_args_type new_indices;
 	new_indices.reserve(this->indices.size() + indices.size());
 	for(const auto &index : this->indices)
 	{
-		index->execute_multi(amx, args, info, new_indices);
+		index->execute_multi(args, info, new_indices);
 	}
 	for(const auto &index : indices)
 	{
 		new_indices.push_back(index);
 	}
-	return arr->index(amx, args, info, new_indices);
+	return arr->index(args, info, new_indices);
 }
 
-std::tuple<cell*, size_t, tag_ptr> index_expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+std::tuple<cell*, size_t, tag_ptr> index_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	call_args_type new_indices;
 	new_indices.reserve(this->indices.size() + indices.size());
 	for(const auto &index : this->indices)
 	{
-		index->execute_multi(amx, args, info, new_indices);
+		index->execute_multi(args, info, new_indices);
 	}
 	for(const auto &index : indices)
 	{
 		new_indices.push_back(index);
 	}
-	return arr->address(amx, args, info, new_indices);
+	return arr->address(args, info, new_indices);
 }
 
 void index_expression::to_string(strings::cell_string &str) const noexcept
@@ -1315,7 +1337,7 @@ auto bind_expression::combine_args(const args_type &args) const -> args_type
 	return new_args;
 }
 
-auto bind_expression::combine_args(AMX *amx, const args_type &args, const exec_info &info, call_args_type &storage) const -> args_type
+auto bind_expression::combine_args(const args_type &args, const exec_info &info, call_args_type &storage) const -> args_type
 {
 	storage.reserve(base_args.size() + args.size());
 	args_type new_args;
@@ -1327,7 +1349,7 @@ auto bind_expression::combine_args(AMX *amx, const args_type &args, const exec_i
 			new_args.push_back(std::cref(const_expr->get_value()));
 		}else{
 			size_t index = storage.size();
-			arg->execute_multi(amx, args, info, storage);
+			arg->execute_multi(args, info, storage);
 			while(index < storage.size())
 			{
 				new_args.push_back(std::cref(storage[index++]));
@@ -1341,64 +1363,64 @@ auto bind_expression::combine_args(AMX *amx, const args_type &args, const exec_i
 	return new_args;
 }
 
-void bind_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void bind_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
 	call_args_type storage;
-	operand->execute_discard(amx, combine_args(amx, args, info, storage), info);
+	operand->execute_discard(combine_args(args, info, storage), info);
 }
 
-void bind_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void bind_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
 	call_args_type storage;
-	operand->execute_multi(amx, combine_args(amx, args, info, storage), info, output);
+	operand->execute_multi(combine_args(args, info, storage), info, output);
 }
 
-dyn_object bind_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object bind_expression::execute(const args_type &args, const exec_info &info) const
 {
 	call_args_type storage;
-	return operand->execute(amx, combine_args(amx, args, info, storage), info);
+	return operand->execute(combine_args(args, info, storage), info);
 }
 
-dyn_object bind_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object bind_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	call_args_type storage;
-	return operand->call(amx, combine_args(amx, args, info, storage), info, call_args);
+	return operand->call(combine_args(args, info, storage), info, call_args);
 }
 
-void bind_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void bind_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	call_args_type storage;
-	operand->call_discard(amx, combine_args(amx, args, info, storage), info, call_args);
+	operand->call_discard(combine_args(args, info, storage), info, call_args);
 }
 
-void bind_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void bind_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
 	call_args_type storage;
-	operand->call_multi(amx, combine_args(amx, args, info, storage), info, call_args, output);
+	operand->call_multi(combine_args(args, info, storage), info, call_args, output);
 }
 
-dyn_object bind_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object bind_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	call_args_type storage;
-	return operand->assign(amx, combine_args(amx, args, info, storage), info, std::move(value));
+	return operand->assign(combine_args(args, info, storage), info, std::move(value));
 }
 
-dyn_object bind_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object bind_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	call_args_type storage;
-	return operand->index(amx, combine_args(amx, args, info, storage), info, indices);
+	return operand->index(combine_args(args, info, storage), info, indices);
 }
 
-dyn_object bind_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object bind_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
 	call_args_type storage;
-	return operand->index_assign(amx, combine_args(amx, args, info, storage), info, indices, std::move(value));
+	return operand->index_assign(combine_args(args, info, storage), info, indices, std::move(value));
 }
 
-std::tuple<cell*, size_t, tag_ptr> bind_expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+std::tuple<cell*, size_t, tag_ptr> bind_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	call_args_type storage;
-	return operand->address(amx, combine_args(amx, args, info, storage), info, indices);
+	return operand->address(combine_args(args, info, storage), info, indices);
 }
 
 void bind_expression::to_string(strings::cell_string &str) const noexcept
@@ -1447,20 +1469,20 @@ decltype(expression_pool)::object_ptr bind_expression::clone() const
 	return expression_pool.emplace_derived<bind_expression>(*this);
 }
 
-dyn_object cast_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object cast_expression::execute(const args_type &args, const exec_info &info) const
 {
-	return dyn_object(operand->execute(amx, args, info), new_tag);
+	return dyn_object(operand->execute(args, info), new_tag);
 }
 
-void cast_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void cast_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
-	operand->execute_discard(amx, args, info);
+	operand->execute_discard(args, info);
 }
 
-void cast_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void cast_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
 	size_t size = output.size();
-	operand->execute_multi(amx, args, info, output);
+	operand->execute_multi(args, info, output);
 	while(size < output.size())
 	{
 		dyn_object val(output[size], new_tag);
@@ -1469,14 +1491,14 @@ void cast_expression::execute_multi(AMX *amx, const args_type &args, const exec_
 	}
 }
 
-dyn_object cast_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object cast_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
-	return dyn_object(operand->assign(amx, args, info, dyn_object(std::move(value), operand->get_tag(args))), new_tag);
+	return dyn_object(operand->assign(args, info, dyn_object(std::move(value), operand->get_tag(args))), new_tag);
 }
 
-dyn_object cast_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object cast_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
-	return dyn_object(operand->index_assign(amx, args, info, indices, dyn_object(std::move(value), operand->get_tag(args))), new_tag);
+	return dyn_object(operand->index_assign(args, info, indices, dyn_object(std::move(value), operand->get_tag(args))), new_tag);
 }
 
 void cast_expression::to_string(strings::cell_string &str) const noexcept
@@ -1511,14 +1533,14 @@ decltype(expression_pool)::object_ptr cast_expression::clone() const
 	return expression_pool.emplace_derived<cast_expression>(*this);
 }
 
-dyn_object array_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object array_expression::execute(const args_type &args, const exec_info &info) const
 {
 	std::vector<cell> data;
 	tag_ptr tag = nullptr;
 	for(const auto &arg : this->args)
 	{
 		call_args_type values;
-		arg->execute_multi(amx, args, info, values);
+		arg->execute_multi(args, info, values);
 		for(const auto &value : values)
 		{
 			if(tag == nullptr)
@@ -1592,7 +1614,7 @@ decltype(expression_pool)::object_ptr array_expression::clone() const
 	return expression_pool.emplace_derived<array_expression>(*this);
 }
 
-dyn_object global_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object global_expression::execute(const args_type &args, const exec_info &info) const
 {
 	auto it = info.env.find(key);
 	if(it == info.env.end())
@@ -1602,7 +1624,7 @@ dyn_object global_expression::execute(AMX *amx, const args_type &args, const exe
 	return it->second;
 }
 
-dyn_object global_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object global_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	if(info.env_readonly)
 	{
@@ -1611,7 +1633,7 @@ dyn_object global_expression::assign(AMX *amx, const args_type &args, const exec
 	return info.env[key] = std::move(value);
 }
 
-dyn_object global_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object global_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
 	auto it = info.env.find(key);
 	if(it == info.env.end())
@@ -1663,7 +1685,7 @@ decltype(expression_pool)::object_ptr global_expression::clone() const
 	return expression_pool.emplace_derived<global_expression>(*this);
 }
 
-dyn_object symbol_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object symbol_expression::execute(const args_type &args, const exec_info &info) const
 {
 	if(auto obj = target_amx.lock())
 	{
@@ -1672,7 +1694,7 @@ dyn_object symbol_expression::execute(AMX *amx, const args_type &args, const exe
 			amx_ExpressionError("attempt to obtain the value of function '%s'", symbol->name);
 		}
 
-		amx = *obj;
+		AMX *amx = *obj;
 		auto data = amx_GetData(amx);
 		cell *ptr;
 		if(symbol->vclass == 0 || symbol->vclass == 2)
@@ -1736,16 +1758,16 @@ dyn_object symbol_expression::execute(AMX *amx, const args_type &args, const exe
 	return {};
 }
 
-dyn_object symbol_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object symbol_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	if(auto obj = target_amx.lock())
 	{
 		if(symbol->ident != iFUNCTN)
 		{
-			return expression::call(amx, args, info, call_args);
+			return expression::call(args, info, call_args);
 		}
 
-		amx = *obj;
+		AMX *amx = *obj;
 		auto data = amx_GetData(amx);
 		auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
@@ -1842,42 +1864,42 @@ dyn_object symbol_expression::call(AMX *amx, const args_type &args, const exec_i
 	return {};
 }
 
-void symbol_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void symbol_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	if(auto obj = target_amx.lock())
 	{
 		if(symbol->ident != iFUNCTN)
 		{
-			expression::call_discard(amx, args, info, call_args);
+			expression::call_discard(args, info, call_args);
 			return;
 		}
 	}
-	call(amx, args, info, call_args);
+	call(args, info, call_args);
 }
 
-void symbol_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void symbol_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
 	if(auto obj = target_amx.lock())
 	{
 		if(symbol->ident != iFUNCTN)
 		{
-			expression::call_multi(amx, args, info, call_args, output);
+			expression::call_multi(args, info, call_args, output);
 			return;
 		}
 	}
-	output.push_back(call(amx, args, info, call_args));
+	output.push_back(call(args, info, call_args));
 }
 
-dyn_object symbol_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object symbol_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	if(auto obj = target_amx.lock())
 	{
 		if(symbol->ident == iFUNCTN)
 		{
-			return expression::assign(amx, args, info, std::move(value));
+			return expression::assign(args, info, std::move(value));
 		}
 
-		amx = *obj;
+		AMX *amx = *obj;
 		auto data = amx_GetData(amx);
 		cell *ptr;
 		if(symbol->vclass == 0 || symbol->vclass == 2)
@@ -1939,15 +1961,15 @@ dyn_object symbol_expression::assign(AMX *amx, const args_type &args, const exec
 	return {};
 }
 
-dyn_object symbol_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object symbol_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	if(auto obj = target_amx.lock())
 	{
 		if(symbol->dim == 0)
 		{
-			return expression::index(amx, args, info, indices);
+			return expression::index(args, info, indices);
 		}
-		auto addr = address(amx, args, info, indices);
+		auto addr = address(args, info, indices);
 		if(std::get<1>(addr) == 0)
 		{
 			amx_ExpressionError("index out of bounds");
@@ -1958,16 +1980,16 @@ dyn_object symbol_expression::index(AMX *amx, const args_type &args, const exec_
 	return {};
 }
 
-std::tuple<cell*, size_t, tag_ptr> symbol_expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+std::tuple<cell*, size_t, tag_ptr> symbol_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	if(auto obj = target_amx.lock())
 	{
 		if(symbol->ident == iFUNCTN)
 		{
-			return expression::address(amx, args, info, indices);
+			return expression::address(args, info, indices);
 		}
 
-		amx = *obj;
+		AMX *amx = *obj;
 		auto data = amx_GetData(amx);
 		cell *ptr;
 		if(symbol->vclass == 0 || symbol->vclass == 2)
@@ -2107,14 +2129,15 @@ decltype(expression_pool)::object_ptr symbol_expression::clone() const
 	return expression_pool.emplace_derived<symbol_expression>(*this);
 }
 
-dyn_object native_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object native_expression::execute(const args_type &args, const exec_info &info) const
 {
 	amx_ExpressionError("attempt to obtain the value of function '%s'", name.c_str());
 	return {};
 }
 
-dyn_object native_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object native_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
+	AMX *amx = info.amx;
 	auto data = amx_GetData(amx);
 	auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
@@ -2143,14 +2166,14 @@ dyn_object native_expression::call(AMX *amx, const args_type &args, const exec_i
 	return {};
 }
 
-void native_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void native_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	call(amx, args, info, call_args);
+	call(args, info, call_args);
 }
 
-void native_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void native_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
-	output.push_back(call(amx, args, info, call_args));
+	output.push_back(call(args, info, call_args));
 }
 
 tag_ptr native_expression::get_tag(const args_type &args) const noexcept
@@ -2178,78 +2201,39 @@ decltype(expression_pool)::object_ptr native_expression::clone() const
 	return expression_pool.emplace_derived<native_expression>(*this);
 }
 
-dyn_object local_native_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void public_expression::load(AMX *amx) const
 {
-	if(auto obj = target_amx.lock())
+	if(index != -1)
 	{
-		return native_expression::call(*obj, args, info, call_args);
-	}
-	amx_ExpressionError("target AMX was unloaded");
-	return {};
-}
+		int len;
+		amx_NameLength(amx, &len);
+		char *funcname = static_cast<char*>(alloca(len + 1));
 
-void local_native_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
-{
-	if(auto obj = target_amx.lock())
-	{
-		native_expression::call_discard(*obj, args, info, call_args);
-		return;
-	}
-	amx_ExpressionError("target AMX was unloaded");
-}
-
-void local_native_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
-{
-	if(auto obj = target_amx.lock())
-	{
-		native_expression::call_multi(*obj, args, info, call_args, output);
-		return;
-	}
-	amx_ExpressionError("target AMX was unloaded");
-}
-
-decltype(expression_pool)::object_ptr local_native_expression::clone() const
-{
-	return expression_pool.emplace_derived<local_native_expression>(*this);
-}
-
-AMX *public_expression::load() const
-{
-	if(auto amx = target_amx.lock())
-	{
-		if(index != -1)
+		if(amx_GetPublic(amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(name.c_str(), funcname))
 		{
-			int len;
-			amx_NameLength(*amx, &len);
-			char *funcname = static_cast<char*>(alloca(len + 1));
-
-			if(amx_GetPublic(*amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(name.c_str(), funcname))
-			{
-				return *amx;
-			}else if(amx_FindPublicSafe(*amx, name.c_str(), &index) == AMX_ERR_NONE)
-			{
-				return *amx;
-			}
-		}else if(amx_FindPublicSafe(*amx, name.c_str(), &index) == AMX_ERR_NONE)
+			return;
+		}else if(amx_FindPublicSafe(amx, name.c_str(), &index) == AMX_ERR_NONE)
 		{
-			return *amx;
+			return;
 		}
-		index = -1;
-		amx_ExpressionError(errors::func_not_found, "public", name.c_str());
+	}else if(amx_FindPublicSafe(amx, name.c_str(), &index) == AMX_ERR_NONE)
+	{
+		return;
 	}
-	amx_ExpressionError("target AMX was unloaded");
-	return nullptr;
+	index = -1;
+	amx_ExpressionError(errors::func_not_found, "public", name.c_str());
 }
 
-dyn_object public_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object public_expression::execute(const args_type &args, const exec_info &info) const
 {
 	amx_ExpressionError("attempt to obtain the value of function '%s'", name.c_str());
 	return {};
 }
 
-dyn_object public_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object public_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	load();
+	AMX *amx = info.amx;
+	load(amx);
 
 	auto data = amx_GetData(amx);
 	auto stk = reinterpret_cast<cell*>(data + amx->stk);
@@ -2273,14 +2257,14 @@ dyn_object public_expression::call(AMX *amx, const args_type &args, const exec_i
 	return {};
 }
 
-void public_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void public_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	call(amx, args, info, call_args);
+	call(args, info, call_args);
 }
 
-void public_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void public_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
-	output.push_back(call(amx, args, info, call_args));
+	output.push_back(call(args, info, call_args));
 }
 
 tag_ptr public_expression::get_tag(const args_type &args) const noexcept
@@ -2308,7 +2292,7 @@ decltype(expression_pool)::object_ptr public_expression::clone() const
 	return expression_pool.emplace_derived<public_expression>(*this);
 }
 
-cell quote_expression::execute_inner(AMX *amx, const args_type &args, const exec_info &info) const
+cell quote_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
 	return expression_pool.get_id(static_cast<const expression_base*>(operand.get())->clone());
 }
@@ -2330,10 +2314,10 @@ decltype(expression_pool)::object_ptr quote_expression::clone() const
 	return expression_pool.emplace_derived<quote_expression>(*this);
 }
 
-expression *dequote_expression::get_expr(AMX *amx, const args_type &args, const exec_info &info) const
+expression *dequote_expression::get_expr(const args_type &args, const exec_info &info) const
 {
 	checkstack();
-	auto value = operand->execute(amx, args, info);
+	auto value = operand->execute(args, info);
 	if(!(value.tag_assignable(tags::find_tag(tags::tag_expression))))
 	{
 		amx_ExpressionError("dequote argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_expression)->format_name(), value.get_tag()->format_name());
@@ -2351,54 +2335,54 @@ expression *dequote_expression::get_expr(AMX *amx, const args_type &args, const 
 	return expr;
 }
 
-dyn_object dequote_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object dequote_expression::execute(const args_type &args, const exec_info &info) const
 {
-	return get_expr(amx, args, info)->execute(amx, args, info);
+	return get_expr(args, info)->execute(args, info);
 }
 
-void dequote_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void dequote_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
-	return get_expr(amx, args, info)->execute_discard(amx, args, info);
+	return get_expr(args, info)->execute_discard(args, info);
 }
 
-void dequote_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void dequote_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
-	return get_expr(amx, args, info)->execute_multi(amx, args, info, output);
+	return get_expr(args, info)->execute_multi(args, info, output);
 }
 
-dyn_object dequote_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object dequote_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	return get_expr(amx, args, info)->call(amx, args, info, call_args);
+	return get_expr(args, info)->call(args, info, call_args);
 }
 
-void dequote_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void dequote_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	get_expr(amx, args, info)->call_discard(amx, args, info, call_args);
+	get_expr(args, info)->call_discard(args, info, call_args);
 }
 
-void dequote_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void dequote_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
-	get_expr(amx, args, info)->call_multi(amx, args, info, call_args, output);
+	get_expr(args, info)->call_multi(args, info, call_args, output);
 }
 
-dyn_object dequote_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object dequote_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
-	return get_expr(amx, args, info)->assign(amx, args, info, std::move(value));
+	return get_expr(args, info)->assign(args, info, std::move(value));
 }
 
-dyn_object dequote_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object dequote_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
-	return get_expr(amx, args, info)->index(amx, args, info, indices);
+	return get_expr(args, info)->index(args, info, indices);
 }
 
-dyn_object dequote_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object dequote_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
-	return get_expr(amx, args, info)->index_assign(amx, args, info, indices, std::move(value));
+	return get_expr(args, info)->index_assign(args, info, indices, std::move(value));
 }
 
-std::tuple<cell*, size_t, tag_ptr> dequote_expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+std::tuple<cell*, size_t, tag_ptr> dequote_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
-	return get_expr(amx, args, info)->address(amx, args, info, indices);
+	return get_expr(args, info)->address(args, info, indices);
 }
 
 void dequote_expression::to_string(strings::cell_string &str) const noexcept
@@ -2417,9 +2401,9 @@ decltype(expression_pool)::object_ptr dequote_expression::clone() const
 	return expression_pool.emplace_derived<dequote_expression>(*this);
 }
 
-bool logic_and_expression::execute_inner(AMX *amx, const args_type &args, const exec_info &info) const
+bool logic_and_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
-	return left->execute_bool(amx, args, info) && right->execute_bool(amx, args, info);
+	return left->execute_bool(args, info) && right->execute_bool(args, info);
 }
 
 void logic_and_expression::to_string(strings::cell_string &str) const noexcept
@@ -2446,9 +2430,9 @@ decltype(expression_pool)::object_ptr logic_and_expression::clone() const
 	return expression_pool.emplace_derived<logic_and_expression>(*this);
 }
 
-bool logic_or_expression::execute_inner(AMX *amx, const args_type &args, const exec_info &info) const
+bool logic_or_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
-	return left->execute_bool(amx, args, info) || right->execute_bool(amx, args, info);
+	return left->execute_bool(args, info) || right->execute_bool(args, info);
 }
 
 void logic_or_expression::to_string(strings::cell_string &str) const noexcept
@@ -2475,54 +2459,54 @@ decltype(expression_pool)::object_ptr logic_or_expression::clone() const
 	return expression_pool.emplace_derived<logic_or_expression>(*this);
 }
 
-dyn_object conditional_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object conditional_expression::execute(const args_type &args, const exec_info &info) const
 {
-	return (cond->execute_bool(amx, args, info) ? on_true : on_false)->execute(amx, args, info);
+	return (cond->execute_bool(args, info) ? on_true : on_false)->execute(args, info);
 }
 
-void conditional_expression::execute_discard(AMX *amx, const args_type &args, const exec_info &info) const
+void conditional_expression::execute_discard(const args_type &args, const exec_info &info) const
 {
-	(cond->execute_bool(amx, args, info) ? on_true : on_false)->execute_discard(amx, args, info);
+	(cond->execute_bool(args, info) ? on_true : on_false)->execute_discard(args, info);
 }
 
-void conditional_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void conditional_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
-	(cond->execute_bool(amx, args, info) ? on_true : on_false)->execute_multi(amx, args, info, output);
+	(cond->execute_bool(args, info) ? on_true : on_false)->execute_multi(args, info, output);
 }
 
-dyn_object conditional_expression::call(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+dyn_object conditional_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	return (cond->execute_bool(amx, args, info) ? on_true : on_false)->call(amx, args, info, call_args);
+	return (cond->execute_bool(args, info) ? on_true : on_false)->call(args, info, call_args);
 }
 
-void conditional_expression::call_discard(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args) const
+void conditional_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	(cond->execute_bool(amx, args, info) ? on_true : on_false)->call_discard(amx, args, info, call_args);
+	(cond->execute_bool(args, info) ? on_true : on_false)->call_discard(args, info, call_args);
 }
 
-void conditional_expression::call_multi(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+void conditional_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
-	(cond->execute_bool(amx, args, info) ? on_true : on_false)->call_multi(amx, args, info, call_args, output);
+	(cond->execute_bool(args, info) ? on_true : on_false)->call_multi(args, info, call_args, output);
 }
 
-dyn_object conditional_expression::assign(AMX *amx, const args_type &args, const exec_info &info, dyn_object &&value) const
+dyn_object conditional_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
-	return (cond->execute_bool(amx, args, info) ? on_true : on_false)->assign(amx, args, info, std::move(value));
+	return (cond->execute_bool(args, info) ? on_true : on_false)->assign(args, info, std::move(value));
 }
 
-dyn_object conditional_expression::index(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+dyn_object conditional_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
-	return (cond->execute_bool(amx, args, info) ? on_true : on_false)->index(amx, args, info, indices);
+	return (cond->execute_bool(args, info) ? on_true : on_false)->index(args, info, indices);
 }
 
-dyn_object conditional_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object conditional_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
-	return (cond->execute_bool(amx, args, info) ? on_true : on_false)->index_assign(amx, args, info, indices, std::move(value));
+	return (cond->execute_bool(args, info) ? on_true : on_false)->index_assign(args, info, indices, std::move(value));
 }
 
-std::tuple<cell*, size_t, tag_ptr> conditional_expression::address(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices) const
+std::tuple<cell*, size_t, tag_ptr> conditional_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
-	return (cond->execute_bool(amx, args, info) ? on_true : on_false)->address(amx, args, info, indices);
+	return (cond->execute_bool(args, info) ? on_true : on_false)->address(args, info, indices);
 }
 
 tag_ptr conditional_expression::get_tag(const args_type &args) const noexcept
@@ -2586,10 +2570,10 @@ decltype(expression_pool)::object_ptr conditional_expression::clone() const
 	return expression_pool.emplace_derived<conditional_expression>(*this);
 }
 
-void select_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void select_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
 	call_args_type values;
-	list->execute_multi(amx, args, info, values);
+	list->execute_multi(args, info, values);
 	args_type new_args;
 	for(const auto &value : values)
 	{
@@ -2600,7 +2584,7 @@ void select_expression::execute_multi(AMX *amx, const args_type &args, const exe
 		}else{
 			new_args[0] = std::cref(value);
 		}
-		func->execute_multi(amx, new_args, info, output);
+		func->execute_multi(new_args, info, output);
 	}
 }
 
@@ -2644,10 +2628,10 @@ decltype(expression_pool)::object_ptr select_expression::clone() const
 	return expression_pool.emplace_derived<select_expression>(*this);
 }
 
-void where_expression::execute_multi(AMX *amx, const args_type &args, const exec_info &info, call_args_type &output) const
+void where_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
 {
 	call_args_type values;
-	list->execute_multi(amx, args, info, values);
+	list->execute_multi(args, info, values);
 	args_type new_args;
 	for(auto &value : values)
 	{
@@ -2658,7 +2642,7 @@ void where_expression::execute_multi(AMX *amx, const args_type &args, const exec
 		}else{
 			new_args[0] = std::cref(value);
 		}
-		if(func->execute_bool(amx, new_args, info))
+		if(func->execute_bool(new_args, info))
 		{
 			output.push_back(std::move(value));
 		}
@@ -2705,10 +2689,10 @@ decltype(expression_pool)::object_ptr where_expression::clone() const
 	return expression_pool.emplace_derived<where_expression>(*this);
 }
 
-cell tagof_expression::execute_inner(AMX *amx, const args_type &args, const exec_info &info) const
+cell tagof_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
 	tag_ptr static_tag = operand->get_tag(args);
-	return (static_tag != invalid_tag ? static_tag : operand->execute(amx, args, info).get_tag())->get_id(amx);
+	return (static_tag != invalid_tag ? static_tag : operand->execute(args, info).get_tag())->get_id(info.amx);
 }
 
 void tagof_expression::to_string(strings::cell_string &str) const noexcept
@@ -2728,12 +2712,12 @@ decltype(expression_pool)::object_ptr tagof_expression::clone() const
 	return expression_pool.emplace_derived<tagof_expression>(*this);
 }
 
-cell sizeof_expression::execute_inner(AMX *amx, const args_type &args, const exec_info &info) const
+cell sizeof_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
 	if(indices.size() == 0)
 	{
 		cell static_size = operand->get_size(args);
-		return static_size != invalid_size ? static_size : operand->execute(amx, args, info).get_size();
+		return static_size != invalid_size ? static_size : operand->execute(args, info).get_size();
 	}else{
 		std::vector<cell> cell_indices;
 		cell_indices.reserve(indices.size());
@@ -2741,10 +2725,10 @@ cell sizeof_expression::execute_inner(AMX *amx, const args_type &args, const exe
 		{
 			if(auto cell_expr = dynamic_cast<const cell_expression*>(expr.get()))
 			{
-				cell_indices.push_back(cell_expr->execute_inner(amx, args, info));
+				cell_indices.push_back(cell_expr->execute_inner(args, info));
 			}else{
 				call_args_type indices;
-				expr->execute_multi(amx, args, info, indices);
+				expr->execute_multi(args, info, indices);
 				for(const auto &index : indices)
 				{
 					cell value = index.get_cell(0);
@@ -2752,7 +2736,7 @@ cell sizeof_expression::execute_inner(AMX *amx, const args_type &args, const exe
 				}
 			}
 		}
-		return operand->execute(amx, args, info).get_size(cell_indices.data(), cell_indices.size());
+		return operand->execute(args, info).get_size(cell_indices.data(), cell_indices.size());
 	}
 }
 
@@ -2779,10 +2763,10 @@ decltype(expression_pool)::object_ptr sizeof_expression::clone() const
 	return expression_pool.emplace_derived<sizeof_expression>(*this);
 }
 
-cell rankof_expression::execute_inner(AMX *amx, const args_type &args, const exec_info &info) const
+cell rankof_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
 	cell static_rank = operand->get_rank(args);
-	return static_rank != invalid_rank ? static_rank : operand->execute(amx, args, info).get_rank();
+	return static_rank != invalid_rank ? static_rank : operand->execute(args, info).get_rank();
 }
 
 void rankof_expression::to_string(strings::cell_string &str) const noexcept
@@ -2802,10 +2786,11 @@ decltype(expression_pool)::object_ptr rankof_expression::clone() const
 	return expression_pool.emplace_derived<rankof_expression>(*this);
 }
 
-dyn_object addressof_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object addressof_expression::execute(const args_type &args, const exec_info &info) const
 {
-	auto addr = operand->address(amx, args, info, {});
+	auto addr = operand->address(args, info, {});
 	auto ptr = reinterpret_cast<unsigned char*>(std::get<0>(addr));
+	AMX *amx = info.amx;
 	auto data = amx_GetData(amx);
 	if((ptr < data || ptr >= data + amx->hea) && (ptr < data + amx->stk || ptr >= data + amx->stp))
 	{
@@ -2858,7 +2843,7 @@ decltype(expression_pool)::object_ptr addressof_expression::clone() const
 	return expression_pool.emplace_derived<addressof_expression>(*this);
 }
 
-dyn_object nameof_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object nameof_expression::execute(const args_type &args, const exec_info &info) const
 {
 	strings::cell_string str;
 	operand->to_string(str);
@@ -2898,9 +2883,9 @@ decltype(expression_pool)::object_ptr nameof_expression::clone() const
 {
 	return expression_pool.emplace_derived<nameof_expression>(*this);
 }
-dyn_object variant_value_expression::execute(AMX *amx, const args_type &args, const exec_info &info) const
+dyn_object variant_value_expression::execute(const args_type &args, const exec_info &info) const
 {
-	auto var_value = var->execute(amx, args, info);
+	auto var_value = var->execute(args, info);
 	if(!(var_value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
 	{
 		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), var_value.get_tag()->format_name());
@@ -2922,9 +2907,9 @@ dyn_object variant_value_expression::execute(AMX *amx, const args_type &args, co
 	return *var;
 }
 
-dyn_object variant_value_expression::index_assign(AMX *amx, const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object variant_value_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
-	auto var_value = var->execute(amx, args, info);
+	auto var_value = var->execute(args, info);
 	if(!(var_value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
 	{
 		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), var_value.get_tag()->format_name());
@@ -2990,9 +2975,9 @@ decltype(expression_pool)::object_ptr variant_value_expression::clone() const
 	return expression_pool.emplace_derived<variant_value_expression>(*this);
 }
 
-cell variant_expression::execute_inner(AMX *amx, const args_type &args, const exec_info &info) const
+cell variant_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
-	auto value = this->value->execute(amx, args, info);
+	auto value = this->value->execute(args, info);
 	if(value.is_null())
 	{
 		return 0;

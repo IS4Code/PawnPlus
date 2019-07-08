@@ -487,12 +487,12 @@ bool filter_iterator::is_valid(AMX *amx, expression::args_type args) const
 				} else {
 					args[1] = std::ref(key);
 				}
-				return expr->execute_bool(amx, args, expression::exec_info(*env, env_readonly));
+				return expr->execute_bool(args, expression::exec_info(amx, *env, env_readonly));
 			});
 		}catch(const errors::native_error&)
 		{
 			args.erase(std::next(args.begin()), args.end());
-			return expr->execute_bool(amx, args, expression::exec_info(*env, env_readonly));
+			return expr->execute_bool(args, expression::exec_info(amx, *env, env_readonly));
 		}
 	});
 }
@@ -656,7 +656,7 @@ bool filter_iterator::insert_dyn(const std::type_info &type, void *value)
 		if(auto lock = amx.lock())
 		{
 			auto &obj = *reinterpret_cast<dyn_object*>(value);
-			if(expr->execute_bool(*lock, {std::cref(obj)}, expression::exec_info(*env, env_readonly)))
+			if(expr->execute_bool({std::cref(obj)}, expression::exec_info(*lock, *env, env_readonly)))
 			{
 				return source->insert_dyn(type, value);
 			}
@@ -666,7 +666,7 @@ bool filter_iterator::insert_dyn(const std::type_info &type, void *value)
 		if(auto lock = amx.lock())
 		{
 			auto &obj = *reinterpret_cast<std::pair<const dyn_object, dyn_object>*>(value);
-			if(expr->execute_bool(*lock, {std::cref(obj.second), std::cref(obj.first)}, expression::exec_info(*env, env_readonly)))
+			if(expr->execute_bool({std::cref(obj.second), std::cref(obj.first)}, expression::exec_info(*lock, *env, env_readonly)))
 			{
 				return source->insert_dyn(type, value);
 			}
@@ -682,7 +682,7 @@ bool filter_iterator::insert_dyn(const std::type_info &type, const void *value)
 		if(auto lock = amx.lock())
 		{
 			auto &obj = *reinterpret_cast<const dyn_object*>(value);
-			if(expr->execute_bool(*lock, {std::ref(obj)}, expression::exec_info(*env, env_readonly)))
+			if(expr->execute_bool({std::ref(obj)}, expression::exec_info(*lock, *env, env_readonly)))
 			{
 				return source->insert_dyn(type, value);
 			}
@@ -692,7 +692,7 @@ bool filter_iterator::insert_dyn(const std::type_info &type, const void *value)
 		if(auto lock = amx.lock())
 		{
 			auto &obj = *reinterpret_cast<const std::pair<const dyn_object, dyn_object>*>(value);
-			if(expr->execute_bool(*lock, {std::ref(obj.second), std::ref(obj.first)}, expression::exec_info(*env, env_readonly)))
+			if(expr->execute_bool({std::ref(obj.second), std::ref(obj.first)}, expression::exec_info(*lock, *env, env_readonly)))
 			{
 				return source->insert_dyn(type, value);
 			}
@@ -804,7 +804,7 @@ bool project_iterator::extract_dyn(const std::type_info &type, void *value) cons
 		{
 			return value_read(source.get(), [&](const dyn_object &obj)
 			{
-				*reinterpret_cast<std::shared_ptr<const dyn_object>*>(value) = std::make_shared<dyn_object>(expr->execute(*lock, {std::ref(obj)}, expression::exec_info(*env, env_readonly)));
+				*reinterpret_cast<std::shared_ptr<const dyn_object>*>(value) = std::make_shared<dyn_object>(expr->execute({std::ref(obj)}, expression::exec_info(*lock, *env, env_readonly)));
 				return true;
 			});
 		}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
@@ -813,7 +813,7 @@ bool project_iterator::extract_dyn(const std::type_info &type, void *value) cons
 			{
 				return key_read(source.get(), [&](const dyn_object &key)
 				{
-					*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(key, expr->execute(*lock, {std::ref(val), std::ref(key)}, expression::exec_info(*env, env_readonly)));
+					*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(key, expr->execute({std::ref(val), std::ref(key)}, expression::exec_info(*lock, *env, env_readonly)));
 					return true;
 				});
 			});

@@ -45,7 +45,7 @@ public:
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx_heap_guard guard(amx);
 		static map_t env;
-		return Factory(amx, ptr->execute(amx, {}, expression::exec_info(env, true)), params[Indices]...);
+		return Factory(amx, ptr->execute({}, expression::exec_info(amx, env, true)), params[Indices]...);
 	}
 
 	// native expr_set(Expression:expr, ...);
@@ -56,7 +56,7 @@ public:
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx_heap_guard guard(amx);
 		static map_t env;
-		ptr->assign(amx, {}, expression::exec_info(env, true), Factory(amx, params[Indices]...));
+		ptr->assign({}, expression::exec_info(amx, env, true), Factory(amx, params[Indices]...));
 		return 1;
 	}
 };
@@ -307,6 +307,23 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
+	// native Expression:expr_set_amx(Expression:expr, Amx:amx=INVALID_AMX);
+	AMX_DEFINE_NATIVE(expr_set_amx, 1)
+	{
+		AMX *set_amx;
+		if(optparam(2, 0))
+		{
+			set_amx = reinterpret_cast<AMX*>(params[2]);
+			if(!amx::valid(set_amx))
+			{
+				amx_LogicError(errors::pointer_invalid, "AMX", params[2]);
+			}
+		}else{
+			set_amx = amx;
+		}
+		return expr_unary<amx_set_expression>(amx, params, amx::load_lock(set_amx));
+	}
+
 	// native Expression:expr_comma(Expression:left, Expression:right);
 	AMX_DEFINE_NATIVE(expr_comma, 2)
 	{
@@ -352,7 +369,7 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
-	// native Expression:expr_native(const function[], bool:local=true);
+	// native Expression:expr_native(const function[]);
 	AMX_DEFINE_NATIVE(expr_native, 1)
 	{
 		const char *name;
@@ -360,7 +377,7 @@ namespace Natives
 		if(name == nullptr) amx_FormalError(errors::arg_empty, "function");
 		auto func = amx::find_native(amx, name);
 		if(func == nullptr) amx_FormalError(errors::func_not_found, "native", name);
-		auto &expr = optparam(2, 1) ? expression_pool.emplace_derived<local_native_expression>(amx, func, name) : expression_pool.emplace_derived<native_expression>(func, name);
+		auto &expr = expression_pool.emplace_derived<native_expression>(func, name);
 		return expression_pool.get_id(expr);
 	}
 
@@ -375,7 +392,7 @@ namespace Natives
 		{
 			amx_FormalError(errors::func_not_found, "public", name);
 		}
-		auto &expr = expression_pool.emplace_derived<public_expression>(amx, name, index);
+		auto &expr = expression_pool.emplace_derived<public_expression>(name, index);
 		return expression_pool.get_id(expr);
 	}
 
@@ -755,6 +772,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_env),
 	AMX_DECLARE_NATIVE(expr_set_env),
 	AMX_DECLARE_NATIVE(expr_global),
+	AMX_DECLARE_NATIVE(expr_set_amx),
 
 	AMX_DECLARE_NATIVE(expr_comma),
 	AMX_DECLARE_NATIVE(expr_assign),
