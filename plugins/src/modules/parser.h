@@ -27,9 +27,14 @@ class expression_parser
 		amx_LogicError(errors::invalid_expression, message.c_str());
 	}
 
-	void amx_ParserError(const char *message, const Iter &pos)
+	void amx_ParserError(const char *message, const Iter &pos, const Iter &end)
 	{
-		amx_ExpressionError("%s at %d", message, pos - parse_start);
+		if(pos != end)
+		{
+			amx_ExpressionError("%s at %d ('%c')", message, pos - parse_start, *pos);
+		}else{
+			amx_ExpressionError("%s at %d", message, pos - parse_start);
+		}
 	}
 
 	void skip_whitespace(Iter &begin, Iter end)
@@ -213,12 +218,12 @@ class expression_parser
 						++begin;
 						continue;
 				}
-				amx_ParserError("unrecognized escape character", begin);
+				amx_ParserError("unrecognized escape character", begin, end);
 			}
 			buffer.push_back(*begin);
 			++begin;
 		}
-		amx_ParserError("unexpected end of string", begin);
+		amx_ParserError("unexpected end of string", begin, end);
 		return buffer;
 	}
 
@@ -244,7 +249,7 @@ class expression_parser
 					++begin;
 					if(str.size() != 1)
 					{
-						amx_ParserError("character constant must be a single character", begin);
+						amx_ParserError("character constant must be a single character", begin, end);
 					}
 					return std::make_shared<constant_expression>(dyn_object(str[0], tags::find_tag(tags::tag_char)));
 				}
@@ -263,7 +268,7 @@ class expression_parser
 					auto inner = parse_factor(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					return std::make_shared<unary_object_expression<&dyn_object::operator- >>(std::move(inner));
 				}
@@ -273,7 +278,7 @@ class expression_parser
 					auto inner = parse_factor(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					return std::make_shared<nested_expression>(std::move(inner));
 				}
@@ -283,7 +288,7 @@ class expression_parser
 					auto inner = parse_factor(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					return std::make_shared<unary_logic_expression<&dyn_object::operator!>>(std::move(inner));
 				}
@@ -293,7 +298,7 @@ class expression_parser
 					auto inner = parse_factor(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					return std::make_shared<unary_object_expression<&dyn_object::operator~>>(std::move(inner));
 				}
@@ -303,7 +308,7 @@ class expression_parser
 					auto inner = parse_factor(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					return std::make_shared<variant_value_expression>(std::move(inner));
 				}
@@ -313,7 +318,7 @@ class expression_parser
 					auto inner = parse_factor(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					return std::make_shared<variant_expression>(std::move(inner));
 				}
@@ -323,7 +328,7 @@ class expression_parser
 					auto inner = parse_factor(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					return std::make_shared<dequote_expression>(std::move(inner));
 				}
@@ -394,7 +399,7 @@ class expression_parser
 										cell last = parse_int(begin, end);
 										if(old == begin)
 										{
-											amx_ParserError("invalid argument pack format", begin);
+											amx_ParserError("invalid argument pack format", begin, end);
 										}
 										return std::make_shared<arg_pack_expression>(first, last);
 									}
@@ -404,7 +409,7 @@ class expression_parser
 									cell index = parse_int(begin, end);
 									if(old == begin)
 									{
-										amx_ParserError("invalid argument format", begin);
+										amx_ParserError("invalid argument format", begin, end);
 									}
 									return std::make_shared<arg_expression>(index);
 								}
@@ -413,7 +418,7 @@ class expression_parser
 								++begin;
 								return std::make_shared<env_expression>();
 							}
-							amx_ParserError("invalid special symbol", begin);
+							amx_ParserError("invalid special symbol", begin, end);
 						}
 					}
 					if(c == '@' || c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
@@ -427,7 +432,7 @@ class expression_parser
 								auto inner = parse_factor(amx, begin, end, endchar);
 								if(!inner)
 								{
-									amx_ParserError("missing expression", begin);
+									amx_ParserError("missing expression", begin, end);
 								}
 								if(symbol == "_")
 								{
@@ -441,7 +446,7 @@ class expression_parser
 							auto inner = parse_element(amx, begin, end, endchar);
 							if(!inner)
 							{
-								amx_ParserError("missing expression", begin);
+								amx_ParserError("missing expression", begin, end);
 							}
 							return std::make_shared<tagof_expression>(std::move(inner));
 						}else if(symbol == "sizeof")
@@ -449,7 +454,7 @@ class expression_parser
 							auto inner = parse_element(amx, begin, end, endchar);
 							if(!inner)
 							{
-								amx_ParserError("missing expression", begin);
+								amx_ParserError("missing expression", begin, end);
 							}
 							return std::make_shared<sizeof_expression>(std::move(inner), std::vector<expression_ptr>());
 						}else if(symbol == "rankof")
@@ -457,7 +462,7 @@ class expression_parser
 							auto inner = parse_element(amx, begin, end, endchar);
 							if(!inner)
 							{
-								amx_ParserError("missing expression", begin);
+								amx_ParserError("missing expression", begin, end);
 							}
 							return std::make_shared<rankof_expression>(std::move(inner));
 						}else if(symbol == "addressof")
@@ -465,7 +470,7 @@ class expression_parser
 							auto inner = parse_element(amx, begin, end, endchar);
 							if(!inner)
 							{
-								amx_ParserError("missing expression", begin);
+								amx_ParserError("missing expression", begin, end);
 							}
 							return std::make_shared<addressof_expression>(std::move(inner));
 						}else if(symbol == "nameof")
@@ -473,7 +478,7 @@ class expression_parser
 							auto inner = parse_element(amx, begin, end, endchar);
 							if(!inner)
 							{
-								amx_ParserError("missing expression", begin);
+								amx_ParserError("missing expression", begin, end);
 							}
 							return std::make_shared<nameof_expression>(std::move(inner));
 						}else if(symbol == "try")
@@ -591,7 +596,7 @@ class expression_parser
 						auto inner = parse_expressions(amx, begin, end, ']');
 						if(inner.size() == 0)
 						{
-							amx_ParserError("missing expression", begin);
+							amx_ParserError("missing expression", begin, end);
 						}
 						++begin;
 						indices.insert(indices.end(), std::make_move_iterator(inner.begin()), std::make_move_iterator(inner.end()));
@@ -697,7 +702,7 @@ class expression_parser
 					auto inner = parse_element(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result = std::make_shared<binary_object_expression<&dyn_object::operator*>>(std::move(result), std::move(inner));
 				}
@@ -712,7 +717,7 @@ class expression_parser
 					auto inner = parse_element(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result = std::make_shared<binary_object_expression<&dyn_object::operator/>>(std::move(result), std::move(inner));
 				}
@@ -727,7 +732,7 @@ class expression_parser
 					auto inner = parse_element(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result = std::make_shared<binary_object_expression<&dyn_object::operator% >>(std::move(result), std::move(inner));
 				}
@@ -794,7 +799,7 @@ class expression_parser
 					auto inner = parse_factor(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result = std::make_shared<binary_object_expression<&dyn_object::operator+>>(std::move(result), std::move(inner));
 				}
@@ -807,7 +812,7 @@ class expression_parser
 						auto inner = parse_factor(amx, begin, end, endchar);
 						if(!inner)
 						{
-							amx_ParserError("missing expression", begin);
+							amx_ParserError("missing expression", begin, end);
 						}
 						result = std::make_shared<binary_object_expression<&dyn_object::operator- >>(std::move(result), std::move(inner));
 					}else{
@@ -863,7 +868,7 @@ class expression_parser
 					auto inner = parse_operand(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result = std::make_shared<binary_logic_expression<&dyn_object::operator==>>(std::move(result), std::move(inner));
 				}
@@ -885,7 +890,7 @@ class expression_parser
 					auto inner = parse_operand(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result = std::make_shared<binary_logic_expression<&dyn_object::operator!=>>(std::move(result), std::move(inner));
 				}
@@ -904,7 +909,7 @@ class expression_parser
 						auto inner = parse_operand(amx, begin, end, endchar);
 						if(!inner)
 						{
-							amx_ParserError("missing expression", begin);
+							amx_ParserError("missing expression", begin, end);
 						}
 						result = std::make_shared<binary_logic_expression<&dyn_object::operator<=>>(std::move(result), std::move(inner));
 					}else if(begin != end && *begin == '<')
@@ -913,7 +918,7 @@ class expression_parser
 						auto inner = parse_operand(amx, begin, end, endchar);
 						if(!inner)
 						{
-							amx_ParserError("missing expression", begin);
+							amx_ParserError("missing expression", begin, end);
 						}
 						result = std::make_shared<binary_object_expression<&dyn_object::operator<<>>(std::move(result), std::move(inner));
 					}else{
@@ -976,7 +981,7 @@ class expression_parser
 					auto inner = parse_operand(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result = std::make_shared<binary_object_expression<&dyn_object::operator&>>(std::move(result), std::move(inner));
 				}
@@ -991,7 +996,7 @@ class expression_parser
 					auto inner = parse_operand(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result = std::make_shared<binary_object_expression<&dyn_object::operator|>>(std::move(result), std::move(inner));
 				}
@@ -1006,7 +1011,7 @@ class expression_parser
 					auto inner = parse_operand(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result = std::make_shared<binary_object_expression<&dyn_object::operator^>>(std::move(result), std::move(inner));
 				}
@@ -1025,7 +1030,7 @@ class expression_parser
 		}
 		if(endchar != '\0')
 		{
-			amx_ParserError("unexpected end of string", begin);
+			amx_ParserError("unexpected end of string", begin, end);
 		}
 		return result;
 	}
@@ -1147,7 +1152,7 @@ class expression_parser
 		}
 		if(endchar != '\0')
 		{
-			amx_ParserError("unexpected end of string", begin);
+			amx_ParserError("unexpected end of string", begin, end);
 		}
 		return result;
 	}
@@ -1177,7 +1182,7 @@ class expression_parser
 					inner = parse_expression(amx, begin, end, endchar);
 					if(!inner)
 					{
-						amx_ParserError("missing expression", begin);
+						amx_ParserError("missing expression", begin, end);
 					}
 					result.push_back(std::move(inner));
 				}
@@ -1198,14 +1203,14 @@ class expression_parser
 					{
 						return result;
 					}
-					amx_ParserError("unrecognized character", begin);
+					amx_ParserError("unrecognized character", begin, end);
 				}
 				break;
 			}
 		}
 		if(endchar != '\0')
 		{
-			amx_ParserError("unexpected end of string", begin);
+			amx_ParserError("unexpected end of string", begin, end);
 		}
 		return result;
 	}
@@ -1229,18 +1234,21 @@ public:
 	expression_ptr parse_simple(AMX *amx, Iter begin, Iter end)
 	{
 		parse_start = begin;
-		return parse_outer_expression(amx, begin, end, '\0');
+		auto expr = parse_outer_expression(amx, begin, end, '\0');
+		if(!expr)
+		{
+			amx_ParserError("missing expression", begin, end);
+		}
+		if(begin != end)
+		{
+			amx_ParserError("unrecognized character", begin, end);
+		}
+		return expr;
 	}
 
 	decltype(expression_pool)::object_ptr parse(AMX *amx, Iter begin, Iter end)
 	{
-		parse_start = begin;
-		auto expr = parse_outer_expression(amx, begin, end, '\0');
-		if(!expr)
-		{
-			amx_ParserError("missing expression", begin);
-		}
-		return static_cast<const expression_base*>(expr.get())->clone();
+		return static_cast<const expression_base*>(parse_simple(amx, begin, end).get())->clone();
 	}
 };
 
