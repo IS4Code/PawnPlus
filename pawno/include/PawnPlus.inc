@@ -1548,7 +1548,7 @@ native String:expr_type_str_s(Expression:expr);
 native Expression:expr_parse(const string[]);
 native Expression:expr_parse_s(ConstString:string);
 
-native Expression:expr_empty();
+native Expression:expr_empty(Expression:...);
 
 native Expression:expr_weak(Expression:expr);
 native Expression:expr_weak_set(Expression:weak, Expression:target);
@@ -1557,6 +1557,8 @@ native Expression:expr_const(AnyTag:value, TagTag:tag_id=tagof(value));
 native Expression:expr_const_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native Expression:expr_const_str(const value[]);
 native Expression:expr_const_var(VariantTag:value);
+native Expression:expr_true();
+native Expression:expr_false();
 
 native Expression:expr_arr(Expression:...);
 

@@ -147,10 +147,19 @@ namespace Natives
 		return strings::select_iterator<parse_base>(str, amx);
 	}
 
-	// native Expression:expr_empty();
+	// native Expression:expr_empty(Expression:...);
 	AMX_DEFINE_NATIVE(expr_empty, 0)
 	{
-		auto &expr = expression_pool.emplace_derived<empty_expression>();
+		cell numargs = params[0] / sizeof(cell);
+		std::vector<expression_ptr> args;
+		for(cell i = 0; i < numargs; i++)
+		{
+			cell *addr = amx_GetAddrSafe(amx, params[1 + i]);
+			std::shared_ptr<expression> ptr;
+			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
+			args.emplace_back(std::move(ptr));
+		}
+		auto &expr = expression_pool.emplace_derived<empty_expression>(std::move(args));
 		return expression_pool.get_id(expr);
 	}
 
@@ -201,6 +210,20 @@ namespace Natives
 	AMX_DEFINE_NATIVE(expr_const_var, 1)
 	{
 		return value_at<1>::expr_const<dyn_func_var>(amx, params);
+	}
+
+	// native Expression:expr_true();
+	AMX_DEFINE_NATIVE(expr_true, 0)
+	{
+		auto &expr = expression_pool.emplace_derived<const_bool_expression<true>>();
+		return expression_pool.get_id(expr);
+	}
+
+	// native Expression:expr_false();
+	AMX_DEFINE_NATIVE(expr_false, 0)
+	{
+		auto &expr = expression_pool.emplace_derived<const_bool_expression<false>>();
+		return expression_pool.get_id(expr);
 	}
 
 	// native Expression:expr_arr(Expression:...);
@@ -762,6 +785,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_const_arr),
 	AMX_DECLARE_NATIVE(expr_const_str),
 	AMX_DECLARE_NATIVE(expr_const_var),
+	AMX_DECLARE_NATIVE(expr_true),
+	AMX_DECLARE_NATIVE(expr_false),
 
 	AMX_DECLARE_NATIVE(expr_arr),
 

@@ -172,10 +172,17 @@ public:
 
 class empty_expression : public sequence_expression
 {
+	std::vector<expression_ptr> captures;
+
 public:
 	static expression_ptr instance;
 
 	empty_expression()
+	{
+
+	}
+
+	empty_expression(std::vector<expression_ptr> &&captures) : captures(std::move(captures))
 	{
 
 	}
@@ -1027,6 +1034,31 @@ public:
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
+template <bool Value>
+class const_bool_expression : public bool_expression
+{
+public:
+	const_bool_expression()
+	{
+
+	}
+
+	virtual bool execute_inner(const args_type &args, const exec_info &info) const override
+	{
+		return Value;
+	}
+
+	virtual void to_string(strings::cell_string &str) const noexcept override
+	{
+		str.append(strings::convert(Value ? "true" : "false"));
+	}
+
+	virtual decltype(expression_pool)::object_ptr clone() const override
+	{
+		return expression_pool.emplace_derived<const_bool_expression<Value>>(*this);
+	}
 };
 
 namespace expr_impl
