@@ -63,7 +63,7 @@ struct amx_stack
 	}
 };
 
-cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, AMX *target_amx)
+cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, std::string *msg, AMX *target_amx)
 {
 	size_t args_start = try_ ? 3 : 2;
 
@@ -266,15 +266,38 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, A
 	}
 
 	int ret;
-	target_amx->error = AMX_ERR_NONE;
 	if(native)
 	{
-		*resultptr = func(target_amx, reinterpret_cast<cell*>(stack.data + target_amx->stk));
-		ret = target_amx->error;
+		try{
+			tag_ptr out_tag;
+			*resultptr = amx::dynamic_call(target_amx, func, reinterpret_cast<cell*>(stack.data + target_amx->stk), out_tag);
+			ret = AMX_ERR_NONE;
+		}catch(errors::native_error &err)
+		{
+			if(try_)
+			{
+				if(msg)
+				{
+					*msg = std::move(err.message);
+				}
+				ret = AMX_ERR_NATIVE;
+			}else{
+				for(auto &pair : storage)
+				{
+					pair.first->load(target_amx, pair.second);
+				}
+				stack.reset();
+				amx_LogicError(errors::inner_error_msg, "native", fname, err.message.c_str());
+			}
+		}catch(errors::amx_error &err)
+		{
+			ret = err.code;
+		}
 	}else{
+		target_amx->error = AMX_ERR_NONE;
 		ret = amx_Exec(target_amx, resultptr, pubindex);
+		target_amx->error = AMX_ERR_NONE;
 	}
-	target_amx->error = AMX_ERR_NONE;
 	for(auto &pair : storage)
 	{
 		pair.first->load(target_amx, pair.second);
@@ -341,25 +364,55 @@ namespace Natives
 	// native pawn_call_native(const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_call_native, 2)
 	{
-		return pawn_call(amx, params[0], params + 1, true, false, amx);
+		return pawn_call(amx, params[0], params + 1, true, false, nullptr, amx);
 	}
 
 	// native pawn_call_public(const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_call_public, 2)
 	{
-		return pawn_call(amx, params[0], params + 1, false, false, amx);
+		return pawn_call(amx, params[0], params + 1, false, false, nullptr, amx);
 	}
 
 	// native amx_err:pawn_try_call_native(const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_try_call_native, 3)
 	{
-		return pawn_call(amx, params[0], params + 1, true, true, amx);
+		return pawn_call(amx, params[0], params + 1, true, true, nullptr, amx);
+	}
+
+	// native amx_err:pawn_try_call_native_msg(const function[], &result, msg[], msg_size=sizeof(msg), const format[]="", AnyTag:...);
+	AMX_DEFINE_NATIVE(pawn_try_call_native_msg, 4)
+	{
+		std::string msg;
+		cell *msg_addr = amx_GetAddrSafe(amx, params[3]);
+		cell result = pawn_call(amx, params[0], params + 1, true, true, &msg, amx);
+		if(msg.size() == 0)
+		{
+			amx_SetString(msg_addr, amx::StrError(result), false, false, params[4]);
+		}else{
+			amx_SetString(msg_addr, msg.c_str(), false, false, params[4]);
+		}
+		return result;
+	}
+
+	// native amx_err:pawn_try_call_native_msg_s(const function[], &result, &StringTag:msg, const format[], AnyTag:...);
+	AMX_DEFINE_NATIVE(pawn_try_call_native_msg_s, 3)
+	{
+		std::string msg;
+		cell *msg_addr = amx_GetAddrSafe(amx, params[3]);
+		cell result = pawn_call(amx, params[0], params + 1, true, true, &msg, amx);
+		if(msg.size() == 0)
+		{
+			*msg_addr = strings::create(amx::StrError(result));
+		}else{
+			*msg_addr = strings::create(msg);
+		}
+		return result;
 	}
 
 	// native amx_err:pawn_try_call_public(const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_try_call_public, 3)
 	{
-		return pawn_call(amx, params[0], params + 1, false, true, amx);
+		return pawn_call(amx, params[0], params + 1, false, true, nullptr, amx);
 	}
 
 	// native CallbackHandler:pawn_register_callback(const callback[], const function[], handler_flags:flags=handler_default, const additional_format[], AnyTag:...);
@@ -650,6 +703,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_call_native),
 	AMX_DECLARE_NATIVE(pawn_call_public),
 	AMX_DECLARE_NATIVE(pawn_try_call_native),
+	AMX_DECLARE_NATIVE(pawn_try_call_native_msg),
+	AMX_DECLARE_NATIVE(pawn_try_call_native_msg_s),
 	AMX_DECLARE_NATIVE(pawn_try_call_public),
 	AMX_DECLARE_NATIVE(pawn_register_callback),
 	AMX_DECLARE_NATIVE(pawn_unregister_callback),

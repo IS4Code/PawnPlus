@@ -17,6 +17,8 @@ namespace errors
 	error unhandled_exception = "unhandled C++ exception: %s";
 	error invalid_format = "invalid format string: %s";
 	error invalid_expression = "invalid expression: %s";
+	error inner_error_msg = "%s function '%s' has raised an error: %s";
+	error unhandled_system_exception = "unhandled system exception 0x%x (possibly corrupted memory)";
 }
 
 errors::native_error::native_error(const char *format, va_list args, int level) : message(vsnprintf(NULL, 0, format, args), '\0'), level(level)

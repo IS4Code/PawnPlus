@@ -1,6 +1,7 @@
 #ifndef AMXINFO_H_INCLUDED
 #define AMXINFO_H_INCLUDED
 
+#include "modules/tags.h"
 #include "sdk/amx/amx.h"
 #include "sdk/amx/amxdbg.h"
 #include <string>
@@ -188,6 +189,8 @@ namespace amx
 	AMX_NATIVE find_native(AMX *amx, const std::string &name);
 	size_t num_natives(AMX *amx);
 
+	cell dynamic_call(AMX *amx, AMX_NATIVE native, cell *params, tag_ptr &out_tag);
+
 	inline cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist)
 	{
 		return native(amx, &arglist[0]);
@@ -301,6 +304,26 @@ namespace amx
 		amx_Release(amx, reset_hea);
 		return result;
 	}
+
+	class guard
+	{
+		AMX *amx;
+		cell reset_hea;
+		cell reset_stk;
+
+	public:
+		guard(AMX *amx) : amx(amx)
+		{
+			reset_hea = amx->hea;
+			reset_stk = amx->stk;
+		}
+
+		~guard()
+		{
+			amx->hea = reset_hea;
+			amx->stk = reset_stk;
+		}
+	};
 }
 
 #endif

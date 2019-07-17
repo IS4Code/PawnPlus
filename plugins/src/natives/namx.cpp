@@ -8,7 +8,7 @@
 #include "utils/shared_id_set_pool.h"
 #include <limits>
 
-cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, AMX *target_amx);
+cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, std::string *msg, AMX *target_amx);
 AMX *source_amx;
 
 namespace Natives
@@ -53,7 +53,7 @@ namespace Natives
 		return strings::create(amx::load_lock(amx)->name);
 	}
 
-	cell amx_call(AMX *amx, cell *params, bool native, bool try_)
+	cell amx_call(AMX *amx, cell *params, bool native, bool try_, std::string *msg)
 	{
 		cell result = 0;
 		switch(params[1])
@@ -61,7 +61,7 @@ namespace Natives
 			case -1:
 				amx::call_all([&](AMX *target_amx)
 				{
-					result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, target_amx);
+					result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, msg, target_amx);
 				});
 				break;
 			case -2:
@@ -69,14 +69,14 @@ namespace Natives
 				{
 					if(amx != target_amx)
 					{
-						result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, target_amx);
+						result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, msg, target_amx);
 					}
 				});
 				break;
 			default:
 				auto target_amx = reinterpret_cast<AMX*>(params[1]);
 				if(!amx::valid(target_amx)) amx_LogicError(errors::pointer_invalid, "AMX", params[1]);
-				result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, target_amx);
+				result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, msg, target_amx);
 				break;
 		}
 		return result;
@@ -85,25 +85,55 @@ namespace Natives
 	// native amx_call_native(Amx:amx, const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(amx_call_native, 3)
 	{
-		return amx_call(amx, params, true, false);
+		return amx_call(amx, params, true, false, nullptr);
 	}
 
 	// native amx_call_public(Amx:amx, const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(amx_call_public, 3)
 	{
-		return amx_call(amx, params, false, false);
+		return amx_call(amx, params, false, false, nullptr);
 	}
 
 	// native amx_err:amx_try_call_native(Amx:amx, const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(amx_try_call_native, 4)
 	{
-		return amx_call(amx, params, true, true);
+		return amx_call(amx, params, true, true, nullptr);
+	}
+
+	// native amx_err:amx_try_call_native_msg(Amx:amx, const function[], &result, msg[], msg_size=sizeof(msg), const format[]="", AnyTag:...);
+	AMX_DEFINE_NATIVE(amx_try_call_native_msg, 5)
+	{
+		std::string msg;
+		cell *msg_addr = amx_GetAddrSafe(amx, params[4]);
+		cell result = amx_call(amx, params, true, true, &msg);
+		if(msg.size() == 0)
+		{
+			amx_SetString(msg_addr, amx::StrError(result), false, false, params[5]);
+		}else{
+			amx_SetString(msg_addr, msg.c_str(), false, false, params[5]);
+		}
+		return result;
+	}
+
+	// native amx_err:amx_try_call_native_msg_s(Amx:amx, const function[], &result, &StringTag:msg, const format[], AnyTag:...);
+	AMX_DEFINE_NATIVE(amx_try_call_native_msg_s, 4)
+	{
+		std::string msg;
+		cell *msg_addr = amx_GetAddrSafe(amx, params[4]);
+		cell result = amx_call(amx, params, true, true, &msg);
+		if(msg.size() == 0)
+		{
+			*msg_addr = strings::create(amx::StrError(result));
+		}else{
+			*msg_addr = strings::create(msg);
+		}
+		return result;
 	}
 
 	// native amx_err:amx_try_call_public(Amx:amx, const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(amx_try_call_public, 4)
 	{
-		return amx_call(amx, params, false, true);
+		return amx_call(amx, params, false, true, nullptr);
 	}
 
 	// native amx_name_length();
@@ -625,6 +655,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_call_native),
 	AMX_DECLARE_NATIVE(amx_call_public),
 	AMX_DECLARE_NATIVE(amx_try_call_native),
+	AMX_DECLARE_NATIVE(amx_try_call_native_msg),
+	AMX_DECLARE_NATIVE(amx_try_call_native_msg_s),
 	AMX_DECLARE_NATIVE(amx_try_call_public),
 	AMX_DECLARE_NATIVE(amx_name_length),
 	AMX_DECLARE_NATIVE(amx_num_publics),

@@ -34,3 +34,5 @@ cell impl::handle_error(AMX *amx, const cell *params, const char *native, const 
 	}
 	return 0;
 }
+
+std::unordered_map<AMX_NATIVE, impl::runtime_native_info> impl::runtime_native_map;

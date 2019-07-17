@@ -6,6 +6,7 @@
 #include "amxinfo.h"
 #include "modules/tags.h"
 #include "sdk/amx/amx.h"
+#include <unordered_map>
 
 #define optparam(idx, optvalue) (params[0] / sizeof(cell) < (idx) ? (optvalue) : params[idx])
 #define optparamref(idx, optvalue) (params[0] / sizeof(cell) < (idx) ? &(*reinterpret_cast<cell*>(alloca(sizeof(cell))) = (optvalue)) : amx_GetAddrSafe(amx, params[idx]))
@@ -39,6 +40,20 @@ extern tag_ptr native_return_tag;
 
 namespace impl
 {
+	struct runtime_native_info
+	{
+		const char *name;
+		cell arg_count;
+		AMX_NATIVE inner;
+
+		runtime_native_info(const char *name, cell arg_count, AMX_NATIVE inner) : name(name), arg_count(arg_count), inner(inner)
+		{
+
+		}
+	};
+
+	extern std::unordered_map<AMX_NATIVE, runtime_native_info> runtime_native_map;
+
 	cell handle_error(AMX *amx, const cell *params, const char *native, const errors::native_error &error);
 
 	template <AMX_NATIVE Native>
@@ -72,6 +87,12 @@ namespace impl
 		}
 #endif
 	}
+
+	template <AMX_NATIVE Native>
+	static AMX_NATIVE init_native() noexcept
+	{
+		return runtime_native_map.emplace(std::piecewise_construct, std::forward_as_tuple(adapt_native<Native>), std::forward_as_tuple(native_info<Native>::name(), native_info<Native>::arg_count(), Native)).first->first;
+	}
 }
 
 struct native_error_level : public amx::extra
@@ -100,7 +121,7 @@ namespace Natives \
 { \
 	cell AMX_NATIVE_CALL Name(AMX *amx, cell *params)
 
-#define AMX_DECLARE_NATIVE(Name) {#Name, impl::adapt_native<&Natives::Name>}
+#define AMX_DECLARE_NATIVE(Name) {#Name, impl::init_native<&Natives::Name>()}
 
 int RegisterConfigNatives(AMX *amx);
 int RegisterPawnNatives(AMX *amx);

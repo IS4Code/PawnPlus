@@ -4,24 +4,6 @@
 #include "modules/parser.h"
 #include "modules/variants.h"
 
-class amx_heap_guard
-{
-	AMX *amx;
-	cell reset_hea;
-
-public:
-	amx_heap_guard(AMX *amx) : amx(amx)
-	{
-		cell *tmp;
-		amx_Allot(amx, 0, &reset_hea, &tmp);
-	}
-
-	~amx_heap_guard()
-	{
-		amx_Release(amx, reset_hea);
-	}
-};
-
 template <size_t... Indices>
 class value_at
 {
@@ -43,7 +25,7 @@ public:
 	{
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
-		amx_heap_guard guard(amx);
+		amx::guard guard(amx);
 		static map_t env;
 		return Factory(amx, ptr->execute({}, expression::exec_info(amx, env, true)), params[Indices]...);
 	}
@@ -54,7 +36,7 @@ public:
 	{
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
-		amx_heap_guard guard(amx);
+		amx::guard guard(amx);
 		static map_t env;
 		ptr->assign({}, expression::exec_info(amx, env, true), Factory(amx, params[Indices]...));
 		return 1;

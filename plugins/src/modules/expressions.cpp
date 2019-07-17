@@ -2141,8 +2141,7 @@ dyn_object native_expression::call(const args_type &args, const exec_info &info,
 	auto data = amx_GetData(amx);
 	auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
-	cell reset_hea, *tmp;
-	amx_Allot(amx, 0, &reset_hea, &tmp);
+	amx::guard guard(amx);
 
 	cell num = call_args.size() * sizeof(cell);
 	amx->stk -= num + 1 * sizeof(cell);
@@ -2152,17 +2151,21 @@ dyn_object native_expression::call(const args_type &args, const exec_info &info,
 		*--stk = val;
 	}
 	*--stk = num;
-	int old_error = amx->error;
-	cell ret = native(amx, stk);
-	amx->stk += num + 1 * sizeof(cell);
-	int err = amx->error;
-	amx->error = old_error;
-	amx_Release(amx, reset_hea);
-	if(err == AMX_ERR_NONE)
+	try{
+		tag_ptr out_tag;
+		cell ret = amx::dynamic_call(amx, native, stk, out_tag);
+		if(!out_tag)
+		{
+			out_tag = tags::find_tag(tags::tag_cell);
+		}
+		return dyn_object(ret, out_tag);
+	}catch(const errors::native_error &err)
 	{
-		return dyn_object(ret, tags::find_tag(tags::tag_cell));
+		amx_ExpressionError(errors::inner_error_msg, "native", name.c_str(), err.message.c_str());
+	}catch(const errors::amx_error &err)
+	{
+		amx_ExpressionError(errors::inner_error, "native", name.c_str(), err.code, amx::StrError(err.code));
 	}
-	amx_ExpressionError(errors::inner_error, "native", name.c_str(), err, amx::StrError(err));
 	return {};
 }
 

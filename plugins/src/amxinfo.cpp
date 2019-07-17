@@ -1,7 +1,16 @@
 #include "amxinfo.h"
+#include "natives.h"
 #include "modules/tags.h"
 #include "modules/amxutils.h"
 #include <unordered_map>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <signal.h>
+#include <setjmp.h>
+#endif
 
 struct natives_extra : public amx::extra
 {
@@ -147,4 +156,91 @@ size_t amx::num_natives(AMX *amx)
 	const auto &obj = load_lock(amx);
 	auto &natives = obj->get_extra<natives_extra>().natives;
 	return natives.size();
+}
+
+#ifdef _WIN32
+bool filter_exception(DWORD code)
+{
+	switch(code)
+	{
+		case EXCEPTION_ACCESS_VIOLATION:
+		case EXCEPTION_INT_DIVIDE_BY_ZERO:
+			return true;
+		default:
+			return false;
+	}
+}
+#else
+sigjmp_buf jmp;
+
+void signal_handler(int signal)
+{
+	siglongjmp(jmp, signal);
+}
+#endif
+
+cell call_external_native(AMX *amx, AMX_NATIVE native, cell *params)
+{
+#ifdef _DEBUG
+	return native(amx, params);
+#elif defined _WIN32
+	DWORD error;
+	__try{
+		return native(amx, params);
+	}__except(filter_exception(error = GetExceptionCode()) ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
+	{
+		amx_LogicError(errors::unhandled_system_exception, error);
+	}
+#else
+	int error = sigsetjmp(jmp, true);
+	if(error)
+	{
+		amx_LogicError(errors::unhandled_system_exception, error);
+	}
+	struct sigaction act, oldact;
+	memset(&act, 0, sizeof(act));
+	act.sa_handler = signal_handler;
+	act.sa_flags = SA_RESETHAND;
+	sigaction(SIGSEGV, &act, &oldact);
+	cell result = native(amx, params);
+	sigaction(SIGSEGV, &oldact, nullptr);
+	return result;
+#endif
+}
+
+cell amx::dynamic_call(AMX *amx, AMX_NATIVE native, cell *params, tag_ptr &out_tag)
+{
+	cell result;
+	amx->error = AMX_ERR_NONE;
+	native_return_tag = nullptr;
+	auto it = impl::runtime_native_map.find(native);
+	if(it != impl::runtime_native_map.end())
+	{
+		try{
+			if(params[0] < it->second.arg_count * static_cast<cell>(sizeof(cell)))
+			{
+				amx_FormalError(errors::not_enough_args, it->second.arg_count, params[0] / static_cast<cell>(sizeof(cell)));
+			}
+			result = it->second.inner(amx, params);
+		}catch(const errors::end_of_arguments_error &err)
+		{
+			amx_FormalError(errors::not_enough_args, err.argbase - params - 1 + err.required, params[0] / static_cast<cell>(sizeof(cell)));
+		}
+#ifndef _DEBUG
+		catch(const std::exception &err)
+		{
+			amx_LogicError(errors::unhandled_exception, err.what());
+		}
+#endif
+	}else{
+		result = call_external_native(amx, native, params);
+	}
+	out_tag = native_return_tag;
+	if(amx->error != AMX_ERR_NONE)
+	{
+		int code = amx->error;
+		amx->error = AMX_ERR_NONE;
+		throw errors::amx_error(code);
+	}
+	return result;
 }

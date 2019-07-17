@@ -157,7 +157,7 @@ enum error_level
 
 native error_level:pp_error_level(error_level:level);
 native pp_raise_error(const message[], error_level:level=error_logic);
-forward pp_on_error(const source[], const message[], error_level:level, &retval);
+forward pp_on_error(source[], message[], error_level:level, &retval);
 
 enum locale_category (<<= 1)
 {
@@ -208,6 +208,8 @@ native bool:pawn_public_exists(const function[]);
 native pawn_call_native(const function[], const format[], AnyTag:...);
 native pawn_call_public(const function[], const format[], AnyTag:...);
 native amx_err:pawn_try_call_native(const function[], &result, const format[], AnyTag:...);
+native amx_err:pawn_try_call_native_msg(const function[], &result, msg[], msg_size=sizeof(msg), const format[]="", AnyTag:...);
+native amx_err:pawn_try_call_native_msg_s(const function[], &result, &StringTag:msg, const format[], AnyTag:...);
 native amx_err:pawn_try_call_public(const function[], &result, const format[], AnyTag:...);
 native CallbackHandler:pawn_register_callback(const callback[], const handler[], handler_flags:flags=handler_default, const additional_format[]="", AnyTag:...);
 native pawn_unregister_callback(CallbackHandler:id);
@@ -339,6 +341,8 @@ native String:amx_name_s();
 native amx_call_native(Amx:amx, const function[], const format[], AnyTag:...);
 native amx_call_public(Amx:amx, const function[], const format[], AnyTag:...);
 native amx_err:amx_try_call_native(Amx:amx, const function[], &result, const format[], AnyTag:...);
+native amx_err:amx_try_call_native_msg(Amx:amx, const function[], &result, msg[], msg_size=sizeof(msg), const format[]="", AnyTag:...);
+native amx_err:amx_try_call_native_msg_s(Amx:amx, const function[], &result, &StringTag:msg, const format[], AnyTag:...);
 native amx_err:amx_try_call_public(Amx:amx, const function[], &result, const format[], AnyTag:...);
 native amx_name_length();
 native amx_num_publics();

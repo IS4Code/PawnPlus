@@ -64,6 +64,8 @@ namespace errors
 	extern error unhandled_exception;
 	extern error invalid_format;
 	extern error invalid_expression;
+	extern error inner_error_msg;
+	extern error unhandled_system_exception;
 }
 
 namespace amx
