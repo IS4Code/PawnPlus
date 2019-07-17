@@ -331,16 +331,16 @@ protected:
 
 class env_set_expression : public info_set_expression
 {
-	std::shared_ptr<map_t> new_env;
+	std::weak_ptr<map_t> new_env;
 	bool readonly;
 
 public:
-	env_set_expression(expression_ptr &&expr, std::shared_ptr<map_t> &&env, bool readonly) : info_set_expression(std::move(expr)), new_env(std::move(env)), readonly(readonly)
+	env_set_expression(expression_ptr &&expr, std::weak_ptr<map_t> &&env, bool readonly) : info_set_expression(std::move(expr)), new_env(std::move(env)), readonly(readonly)
 	{
 
 	}
 
-	env_set_expression(const expression_ptr &expr, const std::shared_ptr<map_t> &env, bool readonly) : info_set_expression(expr), new_env(env), readonly(readonly)
+	env_set_expression(const expression_ptr &expr, const std::weak_ptr<map_t> &env, bool readonly) : info_set_expression(expr), new_env(env), readonly(readonly)
 	{
 
 	}

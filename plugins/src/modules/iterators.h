@@ -282,10 +282,10 @@ class filter_iterator : public dyn_iterator, public object_pool<dyn_iterator>::r
 	amx::handle amx;
 	std::shared_ptr<dyn_iterator> source;
 	expression_ptr expr;
-	std::shared_ptr<map_t> env;
+	std::weak_ptr<map_t> env;
 	bool env_readonly;
 
-	bool is_valid(AMX *amx, expression::args_type args) const;
+	bool is_valid(AMX *amx, expression::args_type args, map_t &env) const;
 	void find_valid();
 
 public:
@@ -294,7 +294,7 @@ public:
 		find_valid();
 	}
 
-	filter_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr, std::shared_ptr<map_t> &&env, bool env_readonly) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::move(env)), env_readonly(env_readonly)
+	filter_iterator(AMX *amx, std::shared_ptr<dyn_iterator> &&source, expression_ptr &&expr, std::weak_ptr<map_t> &&env, bool env_readonly) : amx(amx::load(amx)), source(std::move(source)), expr(std::move(expr)), env(std::move(env)), env_readonly(env_readonly)
 	{
 		find_valid();
 	}
@@ -326,7 +326,7 @@ class project_iterator : public dyn_iterator, public object_pool<dyn_iterator>::
 	amx::handle amx;
 	std::shared_ptr<dyn_iterator> source;
 	expression_ptr expr;
-	std::shared_ptr<map_t> env;
+	std::weak_ptr<map_t> env;
 	bool env_readonly;
 
 public:

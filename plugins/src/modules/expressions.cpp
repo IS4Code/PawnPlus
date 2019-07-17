@@ -903,14 +903,26 @@ void env_set_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('[');
 	expr->to_string(str);
-	str.append(strings::convert("]{env}"));
+	if((new_env.owner_before(std::weak_ptr<map_t>{}) || std::weak_ptr<map_t>{}.owner_before(new_env)) && readonly)
+	{
+		str.append(strings::convert("]{env, env_readonly}"));
+	}else if(readonly)
+	{
+		str.append(strings::convert("]{env_readonly}"));
+	}else{
+		str.append(strings::convert("]{env}"));
+	}
 }
 
 expression::exec_info env_set_expression::get_info(const exec_info &info) const
 {
-	if(new_env)
+	if(new_env.owner_before(std::weak_ptr<map_t>{}) || std::weak_ptr<map_t>{}.owner_before(new_env))
 	{
-		return exec_info(info, *new_env, readonly);
+		if(auto obj = new_env.lock())
+		{
+			return exec_info(info, *obj, readonly);
+		}
+		amx_ExpressionError("environment map was deleted");
 	}
 	if(readonly)
 	{
