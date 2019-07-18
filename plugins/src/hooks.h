@@ -5,6 +5,7 @@
 
 int AMXAPI amx_InitOrig(AMX *amx, void *program);
 int AMXAPI amx_ExecOrig(AMX *amx, cell *retval, int index);
+int AMXAPI amx_NumPublicsOrig(AMX *amx, int *number);
 
 namespace Hooks
 {

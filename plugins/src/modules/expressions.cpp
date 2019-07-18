@@ -3089,7 +3089,7 @@ dyn_object extract_expression::assign(const args_type &args, const exec_info &in
 			obj.clear();
 			obj.push_back(value.get_cell(0));
 		}else{
-			obj = strings::convert(value.data_begin());
+			obj = strings::convert(value.begin());
 		}
 		return value;
 	}else if(var_value.tag_assignable(tags::find_tag(tags::tag_string)->base))
@@ -3259,7 +3259,7 @@ cell string_expression::execute_inner(const args_type &args, const exec_info &in
 	{
 		return strings::pool.get_id(strings::pool.emplace(1, value.get_cell(0)));
 	}else{
-		return strings::pool.get_id(strings::pool.add(strings::convert(value.data_begin())));
+		return strings::pool.get_id(strings::pool.add(strings::convert(value.begin())));
 	}
 }
 

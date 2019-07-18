@@ -53,7 +53,7 @@ static void eval(const expression::exec_info &info, parser_options options, cons
 		cell c = value.get_cell(0);
 		expr = expression_parser<cell*>(options).parse_simple(info.amx, &c, &c + 1);
 	}else{
-		expr = strings::select_iterator<parse_base>(value.data_begin(), info.amx, options);
+		expr = strings::select_iterator<parse_base>(value.begin(), info.amx, options);
 	}
 	expression::args_type args;
 	for(auto it = std::next(input.begin()); it != input.end(); ++it)

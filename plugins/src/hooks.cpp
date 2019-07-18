@@ -221,21 +221,64 @@ namespace Hooks
 
 	int AMX_HOOK_FUNC(amx_FindPublic, AMX *amx, const char *funcname, int *index)
 	{
-		if(funcname[0] == 0x1B)
+		if(index)
 		{
-			int num;
-			if(amx_NumPublics(amx, &num) == AMX_ERR_NONE)
+			if(funcname[0] == 0x1B)
 			{
-				auto name = reinterpret_cast<const unsigned char *>(funcname + 1);
-				cell value;
-				if(amx_decode_value(name, reinterpret_cast<ucell&>(value)) && value < num && value >= 0)
+				int num;
+				if(amx_NumPublics(amx, &num) == AMX_ERR_NONE)
 				{
-					*index = value;
-					return AMX_ERR_NONE;
+					auto name = reinterpret_cast<const unsigned char *>(funcname + 1);
+					cell value;
+					if(amx_decode_value(name, reinterpret_cast<ucell&>(value)) && value < num && value >= 0)
+					{
+						*index = value;
+						return AMX_ERR_NONE;
+					}
 				}
+			}
+			int custom_index = events::find_callback(amx, funcname);
+			if(custom_index != -1)
+			{
+				*index = custom_index;
+				return AMX_ERR_NONE;
 			}
 		}
 		return base_func(amx, funcname, index);
+	}
+
+	int AMX_HOOK_FUNC(amx_NumPublics, AMX *amx, int *number)
+	{
+		int ret = base_func(amx, number);
+		if(ret == AMX_ERR_NONE && number)
+		{
+			*number += events::num_callbacks(amx);
+		}
+		return ret;
+	}
+
+	int AMX_HOOK_FUNC(amx_GetPublic, AMX *amx, int index, char *funcname)
+	{
+		if(funcname)
+		{
+			auto name = events::callback_name(amx, index);
+			if(name)
+			{
+				std::strcpy(funcname, name);
+				return AMX_ERR_NONE;
+			}
+		}
+		return base_func(amx, index, funcname);
+	}
+
+	int AMX_HOOK_FUNC(amx_NameLength, AMX *amx, int *length)
+	{
+		int ret = base_func(amx, length);
+		if(ret == AMX_ERR_NONE && length)
+		{
+			events::name_length(amx, *length);
+		}
+		return ret;
 	}
 }
 
@@ -249,6 +292,11 @@ int AMXAPI amx_ExecOrig(AMX *amx, cell *retval, int index)
 	return amx_Hook(Exec)::orig()(amx, retval, index);
 }
 
+int AMXAPI amx_NumPublicsOrig(AMX *amx, int *number)
+{
+	return amx_Hook(NumPublics)::orig()(amx, number);
+}
+
 void Hooks::Register()
 {
 	amx_Hook(Init)::load();
@@ -258,6 +306,9 @@ void Hooks::Register()
 	amx_Hook(Register)::load();
 	amx_Hook(Flags)::load();
 	amx_Hook(FindPublic)::load();
+	amx_Hook(GetPublic)::load();
+	amx_Hook(NumPublics)::load();
+	amx_Hook(NameLength)::load();
 }
 
 void Hooks::Unregister()
@@ -269,6 +320,9 @@ void Hooks::Unregister()
 	amx_Hook(Register)::unload();
 	amx_Hook(Flags)::unload();
 	amx_Hook(FindPublic)::unload();
+	amx_Hook(GetPublic)::unload();
+	amx_Hook(NumPublics)::unload();
+	amx_Hook(NameLength)::unload();
 }
 
 void Hooks::ToggleStrLen(bool toggle)

@@ -24,6 +24,20 @@ public:
 	bool invoke(AMX *amx, cell *retval, cell id);
 };
 
+class callback_info
+{
+	expression_ptr action;
+
+public:
+	std::string name;
+
+	callback_info(expression_ptr &&action, const std::string &name) : action(std::move(action)), name(name)
+	{
+
+	}
+
+	void invoke(AMX *amx, cell *retval);
+};
 
 class amx_info : public amx::extra
 {
@@ -31,6 +45,10 @@ public:
 	std::vector<std::vector<std::unique_ptr<event_info>>> callback_handlers;
 	std::unordered_map<int, std::vector<std::unique_ptr<event_info>>> callback_handlers_negative;
 	std::unordered_map<cell, int> handler_ids;
+
+	std::vector<callback_info> custom_callbacks;
+	std::unordered_map<std::string, int> custom_callbacks_map;
+	int name_length = 0;
 
 	amx_info(AMX *amx) : amx::extra(amx)
 	{
@@ -110,33 +128,44 @@ namespace events
 	{
 		amx::object obj;
 		auto &info = get_info(amx, obj);
-		std::vector<std::unique_ptr<event_info>> *list;
+		std::vector<std::unique_ptr<event_info>> *list = nullptr;;
 		if(index >= 0)
 		{
 			auto &callback_handlers = info.callback_handlers;
-			if(static_cast<size_t>(index) >= callback_handlers.size())
+			if(static_cast<size_t>(index) < callback_handlers.size())
 			{
-				return false;
+				list = &callback_handlers[index];
 			}
-			list = &callback_handlers[index];
 		}else{
 			auto &callback_handlers_negative = info.callback_handlers_negative;
 			auto it = callback_handlers_negative.find(index);
-			if(it == callback_handlers_negative.end())
+			if(it != callback_handlers_negative.end())
 			{
-				return false;
+				list = &it->second;
 			}
-			list = &it->second;
 		}
-		for(auto &handler : *list)
+		if(list)
 		{
-			if(handler)
+			for(auto &handler : *list)
 			{
-				if(handler->invoke(amx, retval, reinterpret_cast<cell>(handler.get())))
+				if(handler)
 				{
-					return true;
+					if(handler->invoke(amx, retval, reinterpret_cast<cell>(handler.get())))
+					{
+						return true;
+					}
 				}
 			}
+		}
+
+		int number;
+		amx_NumPublicsOrig(amx, &number);
+		index -= number;
+
+		if(index >= 0 && static_cast<size_t>(index) < info.custom_callbacks.size())
+		{
+			info.custom_callbacks[index].invoke(amx, retval);
+			return true;
 		}
 
 		return false;
@@ -254,4 +283,111 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 		return true;
 	}
 	return false;
+}
+
+int events::new_callback(const char *callback, AMX *amx, expression_ptr &&default_action)
+{
+	int index;
+	if(amx_FindPublicSafe(amx, callback, &index) == AMX_ERR_NONE)
+	{
+		return index;
+	}
+	amx::object obj;
+	auto &info = get_info(amx, obj);
+	std::string name(callback);
+	if(name.size() > static_cast<size_t>(info.name_length))
+	{
+		info.name_length = name.size();
+	}
+	info.custom_callbacks.emplace_back(std::move(default_action), name);
+	amx_NumPublics(amx, &index);
+	info.custom_callbacks_map[std::move(name)] = index - 1;
+	return index - 1;
+}
+
+int events::num_callbacks(AMX *amx)
+{
+	amx::object obj;
+	auto &info = get_info(amx, obj);
+	return info.custom_callbacks.size();
+}
+
+int events::find_callback(AMX *amx, const char *callback)
+{
+	amx::object obj;
+	auto &info = get_info(amx, obj);
+	auto it = info.custom_callbacks_map.find(callback);
+	if(it != info.custom_callbacks_map.end())
+	{
+		return it->second;
+	}
+	return -1;
+}
+
+const char *events::callback_name(AMX *amx, int index)
+{
+	int number;
+	amx_NumPublicsOrig(amx, &number);
+	index -= number;
+	if(index < 0)
+	{
+		return nullptr;
+	}
+	amx::object obj;
+	auto &info = get_info(amx, obj);
+	if(static_cast<size_t>(index) >= info.custom_callbacks.size())
+	{
+		return nullptr;
+	}
+	return info.custom_callbacks[index].name.c_str();
+}
+
+void events::name_length(AMX *amx, int &length)
+{
+	amx::object obj;
+	auto &info = get_info(amx, obj);
+	if(info.name_length > length)
+	{
+		length = info.name_length;
+	}
+}
+
+void callback_info::invoke(AMX *amx, cell *retval)
+{
+	int params = amx->paramcount;
+	amx->paramcount = 0;
+
+	cell *stk = reinterpret_cast<cell*>(amx_GetData(amx) + amx->stk);
+	amx->stk += params * sizeof(cell);
+
+	if(!action)
+	{
+		amx->error = AMX_ERR_NOTFOUND;
+		return;
+	}
+
+	expression::args_type args;
+	std::vector<dyn_object> args_cont;
+	for(int i = 0; i < params; i++)
+	{
+		args_cont.emplace_back(stk[i], tags::find_tag(tags::tag_cell));
+		args.push_back(std::cref(args_cont.back()));
+	}
+
+	amx::guard guard(amx);
+	try{
+		auto result = action->execute(args, expression::exec_info(amx));
+		if(!result.is_null() && result.array_size() > 0)
+		{
+			*retval = result.get_cell(0);
+		}else{
+			*retval = 0;
+		}
+	}catch(const errors::native_error &err)
+	{
+		logprintf("[PawnPlus] Unhandled error in custom callback %s: %s", name.c_str(), err.message.c_str());
+	}catch(const errors::amx_error &err)
+	{
+		amx->error = err.code;
+	}
 }

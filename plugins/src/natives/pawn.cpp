@@ -415,6 +415,23 @@ namespace Natives
 		return pawn_call(amx, params[0], params + 1, false, true, nullptr, amx);
 	}
 
+	// native pawn_create_callback(const callback[], Expression:action);
+	AMX_DEFINE_NATIVE(pawn_create_callback, 2)
+	{
+		std::shared_ptr<expression> expr;
+		if(params[2])
+		{
+			if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+		}
+		char *callback;
+		amx_StrParam(amx, params[1], callback);
+		if(callback == nullptr)
+		{
+			amx_FormalError(errors::arg_empty, "callback");
+		}
+		return events::new_callback(callback, amx, std::move(expr));
+	}
+
 	// native CallbackHandler:pawn_register_callback(const callback[], const function[], handler_flags:flags=handler_default, const additional_format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(pawn_register_callback, 2)
 	{
@@ -706,6 +723,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pawn_try_call_native_msg),
 	AMX_DECLARE_NATIVE(pawn_try_call_native_msg_s),
 	AMX_DECLARE_NATIVE(pawn_try_call_public),
+	AMX_DECLARE_NATIVE(pawn_create_callback),
 	AMX_DECLARE_NATIVE(pawn_register_callback),
 	AMX_DECLARE_NATIVE(pawn_unregister_callback),
 	AMX_DECLARE_NATIVE(pawn_add_hook),

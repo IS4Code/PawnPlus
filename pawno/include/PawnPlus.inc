@@ -211,6 +211,7 @@ native amx_err:pawn_try_call_native(const function[], &result, const format[], A
 native amx_err:pawn_try_call_native_msg(const function[], &result, msg[], msg_size=sizeof(msg), const format[]="", AnyTag:...);
 native amx_err:pawn_try_call_native_msg_s(const function[], &result, &StringTag:msg, const format[], AnyTag:...);
 native amx_err:pawn_try_call_public(const function[], &result, const format[], AnyTag:...);
+native pawn_create_callback(const callback[], Expression:action);
 native CallbackHandler:pawn_register_callback(const callback[], const handler[], handler_flags:flags=handler_default, const additional_format[]="", AnyTag:...);
 native pawn_unregister_callback(CallbackHandler:id);
 native NativeHook:pawn_add_hook(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
