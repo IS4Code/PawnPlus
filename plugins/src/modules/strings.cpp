@@ -620,7 +620,7 @@ struct format_base
 		this->args = args;
 
 		auto flen = format_end - format_begin;
-		buf.reserve(flen + 8 * argc);
+		buf.reserve(buf.size() + flen + 8 * argc);
 
 		auto last = format_begin;
 		while(format_begin != format_end)

@@ -640,6 +640,33 @@ namespace Natives
 		return params[1];
 	}
 
+	// native String:str_append_format(StringTag:target, const format[], AnyTag:...);
+	AMX_DEFINE_NATIVE(str_append_format, 2)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		
+		cell *format = amx_GetAddrSafe(amx, params[2]);
+
+		strings::format(amx, *str, format, params[0] / sizeof(cell) - 2, params + 3);
+		return params[1];
+	}
+
+	// native String:str_append_format_s(StringTag:target, StringTag:format, AnyTag:...);
+	AMX_DEFINE_NATIVE(str_append_format_s, 2)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		
+		cell_string *strformat;
+		if(!strings::pool.get_by_id(params[2], strformat) && strformat != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+		if(strformat != nullptr)
+		{
+			strings::format(amx, *str, *strformat, params[0] / sizeof(cell) - 2, params + 3);
+		}
+		return params[1];
+	}
+
 	// native String:str_to_lower(StringTag:str);
 	AMX_DEFINE_NATIVE(str_to_lower, 1)
 	{
@@ -1192,6 +1219,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_format_s),
 	AMX_DECLARE_NATIVE(str_set_format),
 	AMX_DECLARE_NATIVE(str_set_format_s),
+	AMX_DECLARE_NATIVE(str_append_format),
+	AMX_DECLARE_NATIVE(str_append_format_s),
 
 	AMX_DECLARE_NATIVE(str_match),
 	AMX_DECLARE_NATIVE(str_match_s),

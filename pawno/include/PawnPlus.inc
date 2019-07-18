@@ -519,6 +519,8 @@ native String:str_format(const format[], AnyTag:...);
 native String:str_format_s(ConstStringTag:format, AnyTag:...);
 native String:str_set_format(StringTag:target, const format[], AnyTag:...);
 native String:str_set_format_s(StringTag:target, ConstStringTag:format, AnyTag:...);
+native String:str_append_format(StringTag:target, const format[], AnyTag:...);
+native String:str_append_format_s(StringTag:target, ConstStringTag:format, AnyTag:...);
 
 enum regex_options (<<= 1)
 {
