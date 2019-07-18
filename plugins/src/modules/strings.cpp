@@ -717,14 +717,9 @@ struct format_base
 						}
 					}
 					auto expr = expression_parser<Iter>().parse_simple(amx, std::next(color_begin), color_end);
-					if(auto lock = format_env.size() > 0 ? format_env.top().lock() : std::shared_ptr<map_t>())
-					{
-						buf.append(expr->execute({}, expression::exec_info(amx, *lock, true)).to_string());
-					}else{
-						static map_t env;
-						buf.append(expr->execute({}, expression::exec_info(amx, env, true)).to_string());
-					}
-						
+					auto lock = format_env.size() > 0 ? format_env.top().lock() : std::shared_ptr<map_t>();
+					buf.append(expr->execute({}, expression::exec_info(amx, lock.get(), true)).to_string());
+					
 					++color_end;
 					format_begin = last = color_end;
 					continue;

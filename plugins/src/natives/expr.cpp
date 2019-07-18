@@ -26,8 +26,7 @@ public:
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx::guard guard(amx);
-		static map_t env;
-		return Factory(amx, ptr->execute({}, expression::exec_info(amx, env, true)), params[Indices]...);
+		return Factory(amx, ptr->execute({}, expression::exec_info(amx, nullptr, true)), params[Indices]...);
 	}
 
 	// native expr_set(Expression:expr, ...);
@@ -37,8 +36,7 @@ public:
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx::guard guard(amx);
-		static map_t env;
-		ptr->assign({}, expression::exec_info(amx, env, true), Factory(amx, params[Indices]...));
+		ptr->assign({}, expression::exec_info(amx, nullptr, true), Factory(amx, params[Indices]...));
 		return 1;
 	}
 };

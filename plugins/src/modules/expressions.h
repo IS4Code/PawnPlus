@@ -25,15 +25,30 @@ public:
 	struct exec_info
 	{
 		AMX *amx;
-		map_t &env;
+		map_t *env;
 		bool env_readonly;
 
-		exec_info(AMX *amx, map_t &env, bool env_readonly) : amx(amx), env(env), env_readonly(env_readonly)
+		exec_info() : amx(nullptr), env(nullptr), env_readonly(true)
 		{
 
 		}
 
-		exec_info(const exec_info &obj, map_t &env, bool env_readonly) : amx(obj.amx), env(env), env_readonly(env_readonly)
+		exec_info(AMX *amx) : amx(amx), env(nullptr), env_readonly(true)
+		{
+
+		}
+
+		exec_info(map_t *env, bool env_readonly) : amx(nullptr), env(env), env_readonly(env_readonly)
+		{
+
+		}
+
+		exec_info(AMX *amx, map_t *env, bool env_readonly) : amx(amx), env(env), env_readonly(env_readonly)
+		{
+
+		}
+
+		exec_info(const exec_info &obj, map_t *env, bool env_readonly) : amx(obj.amx), env(env), env_readonly(env_readonly)
 		{
 
 		}

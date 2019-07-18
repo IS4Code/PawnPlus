@@ -468,7 +468,7 @@ const dyn_iterator *variant_iterator::get() const
 	return this;
 }
 
-bool filter_iterator::is_valid(AMX *amx, expression::args_type args, map_t &env) const
+bool filter_iterator::is_valid(expression::args_type args) const
 {
 	return value_read(source.get(), [&](const dyn_object &val)
 	{
@@ -487,57 +487,45 @@ bool filter_iterator::is_valid(AMX *amx, expression::args_type args, map_t &env)
 				}else{
 					args[1] = std::ref(key);
 				}
-				return expr->execute_bool(args, expression::exec_info(amx, env, env_readonly));
+				return expr->execute_bool(args, expression::exec_info());
 			});
 		}catch(const errors::native_error&)
 		{
 			args.erase(std::next(args.begin()), args.end());
-			return expr->execute_bool(args, expression::exec_info(amx, env, env_readonly));
+			return expr->execute_bool(args, expression::exec_info());
 		}
 	});
 }
 
 void filter_iterator::find_valid()
 {
-	if(auto lock = amx.lock())
-	{
-		if(auto env_lock = env.lock())
+	expression::args_type args;
+	do{
+		if(is_valid(args))
 		{
-			expression::args_type args;
-			do{
-				if(is_valid(*lock, args, *env_lock))
-				{
-					return;
-				}
-			}while(source->move_next());
+			return;
 		}
-	}
+	}while(source->move_next());
 }
 
 bool filter_iterator::expired() const
 {
-	return amx.expired() || source->expired();
+	return source->expired();
 }
 
 bool filter_iterator::valid() const
 {
-	return !amx.expired() && source->valid();
+	return source->valid();
 }
 
 bool filter_iterator::move_next()
 {
-	if(auto lock = amx.lock())
+	expression::args_type args;
+	while(source->move_next())
 	{
-		if(auto env_lock = env.lock())
+		if(is_valid(args))
 		{
-			expression::args_type args;
-			while(source->move_next())
-			{
-				if(is_valid(*lock, args, *env_lock))
-				{
-					return true;
-				}
-			}
+			return true;
 		}
 	}
 	return false;
@@ -545,18 +533,12 @@ bool filter_iterator::move_next()
 
 bool filter_iterator::move_previous()
 {
-	if(auto lock = amx.lock())
+	expression::args_type args;
+	while(source->move_previous())
 	{
-		if(auto env_lock = env.lock())
+		if(is_valid(args))
 		{
-			expression::args_type args;
-			while(source->move_previous())
-			{
-				if(is_valid(*lock, args, *env_lock))
-				{
-					return true;
-				}
-			}
+			return true;
 		}
 	}
 	return false;
@@ -564,42 +546,30 @@ bool filter_iterator::move_previous()
 
 bool filter_iterator::set_to_first()
 {
-	if(auto lock = amx.lock())
+	if(source->set_to_first())
 	{
-		if(auto env_lock = env.lock())
-		{
-			if(source->set_to_first())
+		expression::args_type args;
+		do{
+			if(is_valid(args))
 			{
-				expression::args_type args;
-				do{
-					if(is_valid(*lock, args, *env_lock))
-					{
-						return true;
-					}
-				}while(source->move_next());
+				return true;
 			}
-		}
+		}while(source->move_next());
 	}
 	return false;
 }
 
 bool filter_iterator::set_to_last()
 {
-	if(auto lock = amx.lock())
+	if(source->set_to_last())
 	{
-		if(auto env_lock = env.lock())
-		{
-			if(source->set_to_last())
+		expression::args_type args;
+		do{
+			if(is_valid(args))
 			{
-				expression::args_type args;
-				do{
-					if(is_valid(*lock, args, *env_lock))
-					{
-						return true;
-					}
-				}while(source->move_previous());
+				return true;
 			}
-		}
+		}while(source->move_previous());
 	}
 	return false;
 }
@@ -651,7 +621,7 @@ bool filter_iterator::operator==(const dyn_iterator &obj) const
 	{
 		if(valid())
 		{
-			return other->valid() && !amx.owner_before(other->amx) && !other->amx.owner_before(amx) && source == other->source && expr == other->expr && !env.owner_before(other->env) && !other->env.owner_before(env);
+			return other->valid() && source == other->source && expr == other->expr;
 		}else{
 			return !other->valid();
 		}
@@ -668,29 +638,17 @@ bool filter_iterator::insert_dyn(const std::type_info &type, void *value)
 {
 	if(type == typeid(dyn_object))
 	{
-		if(auto lock = amx.lock())
+		auto &obj = *reinterpret_cast<dyn_object*>(value);
+		if(expr->execute_bool({std::cref(obj)}, expression::exec_info()))
 		{
-			if(auto env_lock = env.lock())
-			{
-				auto &obj = *reinterpret_cast<dyn_object*>(value);
-				if(expr->execute_bool({std::cref(obj)}, expression::exec_info(*lock, *env_lock, env_readonly)))
-				{
-					return source->insert_dyn(type, value);
-				}
-			}
+			return source->insert_dyn(type, value);
 		}
 	}else if(type == typeid(std::pair<const dyn_object, dyn_object>))
 	{
-		if(auto lock = amx.lock())
+		auto &obj = *reinterpret_cast<std::pair<const dyn_object, dyn_object>*>(value);
+		if(expr->execute_bool({std::cref(obj.second), std::cref(obj.first)}, expression::exec_info()))
 		{
-			if(auto env_lock = env.lock())
-			{
-				auto &obj = *reinterpret_cast<std::pair<const dyn_object, dyn_object>*>(value);
-				if(expr->execute_bool({std::cref(obj.second), std::cref(obj.first)}, expression::exec_info(*lock, *env_lock, env_readonly)))
-				{
-					return source->insert_dyn(type, value);
-				}
-			}
+			return source->insert_dyn(type, value);
 		}
 	}
 	return false;
@@ -700,29 +658,17 @@ bool filter_iterator::insert_dyn(const std::type_info &type, const void *value)
 {
 	if(type == typeid(dyn_object))
 	{
-		if(auto lock = amx.lock())
+		auto &obj = *reinterpret_cast<const dyn_object*>(value);
+		if(expr->execute_bool({std::ref(obj)}, expression::exec_info()))
 		{
-			if(auto env_lock = env.lock())
-			{
-				auto &obj = *reinterpret_cast<const dyn_object*>(value);
-				if(expr->execute_bool({std::ref(obj)}, expression::exec_info(*lock, *env_lock, env_readonly)))
-				{
-					return source->insert_dyn(type, value);
-				}
-			}
+			return source->insert_dyn(type, value);
 		}
 	}else if(type == typeid(std::pair<const dyn_object, dyn_object>))
 	{
-		if(auto lock = amx.lock())
+		auto &obj = *reinterpret_cast<const std::pair<const dyn_object, dyn_object>*>(value);
+		if(expr->execute_bool({std::ref(obj.second), std::ref(obj.first)}, expression::exec_info()))
 		{
-			if(auto env_lock = env.lock())
-			{
-				auto &obj = *reinterpret_cast<const std::pair<const dyn_object, dyn_object>*>(value);
-				if(expr->execute_bool({std::ref(obj.second), std::ref(obj.first)}, expression::exec_info(*lock, *env_lock, env_readonly)))
-				{
-					return source->insert_dyn(type, value);
-				}
-			}
+			return source->insert_dyn(type, value);
 		}
 	}
 	return false;
@@ -740,12 +686,12 @@ const dyn_iterator *filter_iterator::get() const
 
 bool project_iterator::expired() const
 {
-	return amx.expired() || source->expired();
+	return source->expired();
 }
 
 bool project_iterator::valid() const
 {
-	return !amx.expired() && source->valid();
+	return source->valid();
 }
 
 bool project_iterator::move_next()
@@ -815,7 +761,7 @@ bool project_iterator::operator==(const dyn_iterator &obj) const
 	{
 		if(valid())
 		{
-			return other->valid() && !amx.owner_before(other->amx) && !other->amx.owner_before(amx) && source == other->source && expr == other->expr && !env.owner_before(other->env) && !other->env.owner_before(env);
+			return other->valid() && source == other->source && expr == other->expr;
 		}else{
 			return !other->valid();
 		}
@@ -825,29 +771,23 @@ bool project_iterator::operator==(const dyn_iterator &obj) const
 
 bool project_iterator::extract_dyn(const std::type_info &type, void *value) const
 {
-	if(auto lock = amx.lock())
+	if(type == typeid(std::shared_ptr<const dyn_object>))
 	{
-		if(auto env_lock = env.lock())
+		return value_read(source.get(), [&](const dyn_object &obj)
 		{
-			if(type == typeid(std::shared_ptr<const dyn_object>))
+			*reinterpret_cast<std::shared_ptr<const dyn_object>*>(value) = std::make_shared<dyn_object>(expr->execute({std::ref(obj)}, expression::exec_info()));
+			return true;
+		});
+	}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
+	{
+		return value_read(source.get(), [&](const dyn_object &val)
+		{
+			return key_read(source.get(), [&](const dyn_object &key)
 			{
-				return value_read(source.get(), [&](const dyn_object &obj)
-				{
-					*reinterpret_cast<std::shared_ptr<const dyn_object>*>(value) = std::make_shared<dyn_object>(expr->execute({std::ref(obj)}, expression::exec_info(*lock, *env_lock, env_readonly)));
-					return true;
-				});
-			}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
-			{
-				return value_read(source.get(), [&](const dyn_object &val)
-				{
-					return key_read(source.get(), [&](const dyn_object &key)
-					{
-						*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(key, expr->execute({std::ref(val), std::ref(key)}, expression::exec_info(*lock, *env_lock, env_readonly)));
-						return true;
-					});
-				});
-			}
-		}
+				*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(key, expr->execute({std::ref(val), std::ref(key)}, expression::exec_info()));
+				return true;
+			});
+		});
 	}
 	return false;
 }

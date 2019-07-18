@@ -824,12 +824,16 @@ dyn_object env_expression::index(const args_type &args, const exec_info &info, c
 	{
 		amx_ExpressionError("exactly one index must be specified to access the environment (%d given)", indices.size());
 	}
-	auto it = info.env.find(indices[0]);
-	if(it == info.env.end())
+	if(info.env)
 	{
-		amx_ExpressionError("the element is not present in the environment");
+		auto it = info.env->find(indices[0]);
+		if(it != info.env->end())
+		{
+			return it->second;
+		}
 	}
-	return it->second;
+	amx_ExpressionError("the element is not present in the environment");
+	return {};
 }
 
 dyn_object env_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
@@ -838,11 +842,11 @@ dyn_object env_expression::index_assign(const args_type &args, const exec_info &
 	{
 		amx_ExpressionError("exactly one index must be specified to access the environment (%d given)", indices.size());
 	}
-	if(info.env_readonly)
+	if(info.env_readonly || !info.env)
 	{
 		amx_ExpressionError("the environment is read-only");
 	}
-	return info.env[indices[0]] = std::move(value);
+	return (*info.env)[indices[0]] = std::move(value);
 }
 
 void env_expression::to_string(strings::cell_string &str) const noexcept
@@ -946,7 +950,7 @@ expression::exec_info env_set_expression::get_info(const exec_info &info) const
 	{
 		if(auto obj = new_env.lock())
 		{
-			return exec_info(info, *obj, readonly);
+			return exec_info(info, obj.get(), readonly);
 		}
 		amx_ExpressionError("environment map was deleted");
 	}
@@ -954,7 +958,7 @@ expression::exec_info env_set_expression::get_info(const exec_info &info) const
 	{
 		return exec_info(info, readonly);
 	}
-	return info;
+	return exec_info(info, nullptr, false);
 }
 
 decltype(expression_pool)::object_ptr env_set_expression::clone() const
@@ -1659,63 +1663,71 @@ decltype(expression_pool)::object_ptr array_expression::clone() const
 
 dyn_object global_expression::execute(const args_type &args, const exec_info &info) const
 {
-	auto it = info.env.find(key);
-	if(it == info.env.end())
+	if(info.env)
 	{
-		amx_ExpressionError("symbol is not defined");
+		auto it = info.env->find(key);
+		if(it != info.env->end())
+		{
+			return it->second;
+		}
 	}
-	return it->second;
+	amx_ExpressionError("symbol is not defined");
+	return {};
 }
 
 dyn_object global_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
-	if(info.env_readonly)
+	if(info.env_readonly || !info.env)
 	{
 		amx_ExpressionError("the environment is read-only");
 	}
-	return info.env[key] = std::move(value);
+	return (*info.env)[key] = std::move(value);
 }
 
 dyn_object global_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
 {
-	auto it = info.env.find(key);
-	if(it == info.env.end())
+	if(info.env)
 	{
-		amx_ExpressionError("symbol is not defined");
-	}
-	if(info.env_readonly)
-	{
-		amx_ExpressionError("the environment is read-only");
-	}
-	auto &obj = it->second;
-	if(value.get_rank() != 0)
-	{
-		amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
-	}
-	if(!(value.tag_assignable(obj.get_tag())))
-	{
-		amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", obj.get_tag()->format_name(), value.get_tag()->format_name());
-	}
-	std::vector<cell> cell_indices;
-	for(const auto &index : indices)
-	{
-		if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
+		auto it = info.env->find(key);
+		if(it != info.env->end())
 		{
-			amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
+			if(info.env_readonly)
+			{
+				amx_ExpressionError("the environment is read-only");
+			}
+			auto &obj = it->second;
+			if(value.get_rank() != 0)
+			{
+				amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
+			}
+			if(!(value.tag_assignable(obj.get_tag())))
+			{
+				amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", obj.get_tag()->format_name(), value.get_tag()->format_name());
+			}
+			std::vector<cell> cell_indices;
+			for(const auto &index : indices)
+			{
+				if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
+				{
+					amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
+				}
+				if(index.get_rank() != 0)
+				{
+					amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
+				}
+				cell c = index.get_cell(0);
+				if(c < 0)
+				{
+					amx_ExpressionError("index out of bounds");
+				}
+				cell_indices.push_back(c);
+			}
+			obj.set_cell(cell_indices.data(), cell_indices.size(), value.get_cell(0));
+			return value;
 		}
-		if(index.get_rank() != 0)
-		{
-			amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
-		}
-		cell c = index.get_cell(0);
-		if(c < 0)
-		{
-			amx_ExpressionError("index out of bounds");
-		}
-		cell_indices.push_back(c);
 	}
-	obj.set_cell(cell_indices.data(), cell_indices.size(), value.get_cell(0));
-	return value;
+	amx_ExpressionError("symbol is not defined");
+	return {};
 }
 
 void global_expression::to_string(strings::cell_string &str) const noexcept

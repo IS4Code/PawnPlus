@@ -1273,8 +1273,8 @@ native Iter:iter_repeat_arr(const AnyTag:value[], count, size=sizeof(value), tag
 native Iter:iter_repeat_str(const value[], count);
 native Iter:iter_repeat_str_s(ConstStringTag:value, count);
 native Iter:iter_repeat_var(ConstVariantTag:value, count);
-native Iter:iter_filter(IterTag:iter, Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
-native Iter:iter_project(IterTag:iter, Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
+native Iter:iter_filter(IterTag:iter, Expression:expr);
+native Iter:iter_project(IterTag:iter, Expression:expr);
 
 native iter_get(IterTag:iter, offset=0);
 native iter_get_arr(IterTag:iter, AnyTag:value[], size=sizeof(value));
