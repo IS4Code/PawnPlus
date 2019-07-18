@@ -280,7 +280,7 @@ private:
 						}
 						return std::make_shared<constant_expression>(dyn_object(str[0], tags::find_tag(tags::tag_char)));
 					}
-					break;
+					return {};
 				}
 				continue;
 				case '"':
@@ -292,7 +292,7 @@ private:
 						++begin;
 						return std::make_shared<constant_expression>(dyn_object(str.data(), str.size() + 1, tags::find_tag(tags::tag_char)));
 					}
-					break;
+					return {};
 				}
 				continue;
 				case '-':
@@ -357,7 +357,7 @@ private:
 						}
 						return std::make_shared<variant_expression>(std::move(inner));
 					}
-					break;
+					return {};
 				}
 				case '^':
 				{
@@ -386,7 +386,7 @@ private:
 						++begin;
 						return std::make_shared<quote_expression>(std::move(inner));
 					}
-					break;
+					return {};
 				}
 				case '{':
 				{
@@ -397,7 +397,7 @@ private:
 						++begin;
 						return std::make_shared<array_expression>(std::move(args));
 					}
-					break;
+					return {};
 				}
 				case '[':
 				{
