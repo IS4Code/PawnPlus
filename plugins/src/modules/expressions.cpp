@@ -42,9 +42,21 @@ bool expression::execute_bool(const args_type &args, const exec_info &info) cons
 
 expression_ptr expression::execute_expression(const args_type &args, const exec_info &info) const
 {
-	auto result = execute(args, info);
+	cell value;
+	auto expr_exp = dynamic_cast<const simple_expression<cell, tags::tag_expression>*>(this);
+	if(expr_exp)
+	{
+		value = expr_exp->execute_inner(args, info);
+	}else{
+		auto result = execute(args, info);
+		if(!(result.tag_assignable(tags::find_tag(tags::tag_expression))) || !result.is_cell())
+		{
+			return {};
+		}
+		value = result.get_cell(0);
+	}
 	std::shared_ptr<expression> ptr;
-	if(!(result.tag_assignable(tags::find_tag(tags::tag_expression))) || !result.is_cell() || !expression_pool.get_by_id(result.get_cell(0), ptr))
+	if(!expression_pool.get_by_id(value, ptr))
 	{
 		return {};
 	}
@@ -162,6 +174,10 @@ dyn_object expression::index_assign(const args_type &args, const exec_info &info
 
 std::tuple<cell*, size_t, tag_ptr> expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
+	if(!info.amx)
+	{
+		amx_ExpressionError("AMX instance must be specified");
+	}
 	std::vector<cell> cell_indices;
 	for(const auto &index : indices)
 	{
@@ -844,6 +860,16 @@ dyn_object info_set_expression::execute(const args_type &args, const exec_info &
 	return expr->execute(args, get_info(info));
 }
 
+void info_set_expression::execute_discard(const args_type &args, const exec_info &info) const
+{
+	expr->execute_discard(args, get_info(info));
+}
+
+void info_set_expression::execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const
+{
+	expr->execute_discard(args, get_info(info));
+}
+
 dyn_object info_set_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
 	return expr->call(args, get_info(info), call_args);
@@ -938,9 +964,14 @@ decltype(expression_pool)::object_ptr env_set_expression::clone() const
 
 expression::exec_info amx_set_expression::get_info(const exec_info &info) const
 {
-	if(auto obj = target_amx.lock())
+	if(target_amx.owner_before(amx::handle()) && amx::handle().owner_before(target_amx))
 	{
-		return exec_info(info, *obj);
+		if(auto obj = target_amx.lock())
+		{
+			return exec_info(info, *obj);
+		}
+	}else{
+		return exec_info(info, nullptr);
 	}
 	amx_ExpressionError("target AMX was unloaded");
 	return info;
@@ -2149,6 +2180,10 @@ dyn_object native_expression::execute(const args_type &args, const exec_info &in
 
 dyn_object native_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
+	if(!info.amx)
+	{
+		amx_ExpressionError("AMX instance must be specified");
+	}
 	AMX *amx = info.amx;
 	auto data = amx_GetData(amx);
 	auto stk = reinterpret_cast<cell*>(data + amx->stk);
@@ -2247,6 +2282,10 @@ dyn_object public_expression::execute(const args_type &args, const exec_info &in
 
 dyn_object public_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
+	if(!info.amx)
+	{
+		amx_ExpressionError("AMX instance must be specified");
+	}
 	AMX *amx = info.amx;
 	load(amx);
 
@@ -2398,6 +2437,21 @@ dyn_object dequote_expression::index_assign(const args_type &args, const exec_in
 std::tuple<cell*, size_t, tag_ptr> dequote_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
 {
 	return get_expr(args, info)->address(args, info, indices);
+}
+
+tag_ptr dequote_expression::get_tag(const args_type &args) const noexcept
+{
+	return invalid_tag;
+}
+
+cell dequote_expression::get_size(const args_type &args) const noexcept
+{
+	return invalid_size;
+}
+
+cell dequote_expression::get_rank(const args_type &args) const noexcept
+{
+	return invalid_rank;
 }
 
 void dequote_expression::to_string(strings::cell_string &str) const noexcept
@@ -2706,6 +2760,10 @@ decltype(expression_pool)::object_ptr where_expression::clone() const
 
 cell tagof_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
+	if(!info.amx)
+	{
+		amx_ExpressionError("AMX instance must be specified");
+	}
 	tag_ptr static_tag = operand->get_tag(args);
 	return (static_tag != invalid_tag ? static_tag : operand->execute(args, info).get_tag())->get_id(info.amx);
 }
@@ -2803,6 +2861,10 @@ decltype(expression_pool)::object_ptr rankof_expression::clone() const
 
 dyn_object addressof_expression::execute(const args_type &args, const exec_info &info) const
 {
+	if(!info.amx)
+	{
+		amx_ExpressionError("AMX instance must be specified");
+	}
 	auto addr = operand->address(args, info, {});
 	auto ptr = reinterpret_cast<unsigned char*>(std::get<0>(addr));
 	AMX *amx = info.amx;

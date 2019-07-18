@@ -111,7 +111,27 @@ public:
 	}
 };
 
-class weak_expression : public expression_base
+class proxy_expression : public expression_base
+{
+public:
+	virtual dyn_object execute(const args_type &args, const exec_info &info) const override = 0;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override = 0;
+	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override = 0;
+	virtual dyn_object call(const args_type &args, const exec_info &info, const call_args_type &call_args) const override = 0;
+	virtual void call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const override = 0;
+	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override = 0;
+	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override = 0;
+	virtual dyn_object index(const args_type &args, const exec_info &info, const call_args_type &indices) const override = 0;
+	virtual dyn_object index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const override = 0;
+	virtual std::tuple<cell*, size_t, tag_ptr> address(const args_type &args, const exec_info &info, const call_args_type &indices) const override = 0;
+	virtual tag_ptr get_tag(const args_type &args) const noexcept override = 0;
+	virtual cell get_size(const args_type &args) const noexcept override = 0;
+	virtual cell get_rank(const args_type &args) const noexcept override = 0;
+	virtual void to_string(strings::cell_string &str) const noexcept override = 0;
+	virtual decltype(expression_pool)::object_ptr clone() const override = 0;
+};
+
+class weak_expression : public proxy_expression
 {
 public:
 	std::weak_ptr<const expression> ptr;
@@ -296,7 +316,7 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
-class info_set_expression : public expression_base, public unary_expression
+class info_set_expression : public proxy_expression, public unary_expression
 {
 protected:
 	expression_ptr expr;
@@ -313,6 +333,8 @@ public:
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
+	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override;
 	virtual dyn_object call(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override;
@@ -374,7 +396,7 @@ protected:
 	virtual exec_info get_info(const exec_info &info) const override;
 };
 
-class comma_expression : public expression_base, public binary_expression
+class comma_expression : public proxy_expression, public binary_expression
 {
 	expression_ptr left;
 	expression_ptr right;
@@ -435,7 +457,7 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
-class try_expression : public expression_base, public binary_expression
+class try_expression : public proxy_expression, public binary_expression
 {
 	expression_ptr main;
 	expression_ptr fallback;
@@ -525,7 +547,7 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
-class bind_expression : public expression_base, public unary_expression
+class bind_expression : public proxy_expression, public unary_expression
 {
 	expression_ptr operand;
 	std::vector<expression_ptr> base_args;
@@ -1004,7 +1026,7 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
-class dequote_expression : public expression_base, public unary_expression
+class dequote_expression : public proxy_expression, public unary_expression
 {
 	expression_ptr operand;
 
@@ -1025,12 +1047,15 @@ public:
 	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override;
 	virtual dyn_object call(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
-
 	virtual void call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
-	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override;	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override;
+	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override;
+	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override;
 	virtual dyn_object index(const args_type &args, const exec_info &info, const call_args_type &indices) const override;
 	virtual dyn_object index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const override;
 	virtual std::tuple<cell*, size_t, tag_ptr> address(const args_type &args, const exec_info &info, const call_args_type &indices) const override;
+	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
+	virtual cell get_size(const args_type &args) const noexcept override;
+	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -1274,7 +1299,7 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
-class conditional_expression : public expression_base, public unary_expression, public binary_expression
+class conditional_expression : public proxy_expression, public unary_expression, public binary_expression
 {
 	expression_ptr cond;
 	expression_ptr on_true;

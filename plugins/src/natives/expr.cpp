@@ -312,19 +312,17 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
-	// native Expression:expr_set_amx(Expression:expr, Amx:amx=INVALID_AMX);
-	AMX_DEFINE_NATIVE(expr_set_amx, 1)
+	// native Expression:expr_set_amx(Expression:expr, Amx:amx);
+	AMX_DEFINE_NATIVE(expr_set_amx, 2)
 	{
-		AMX *set_amx;
-		if(optparam(2, 0))
+		if(!params[2])
 		{
-			set_amx = reinterpret_cast<AMX*>(params[2]);
-			if(!amx::valid(set_amx))
-			{
-				amx_LogicError(errors::pointer_invalid, "AMX", params[2]);
-			}
-		}else{
-			set_amx = amx;
+			return expr_unary<amx_set_expression>(amx, params, amx::object());
+		}
+		AMX *set_amx = reinterpret_cast<AMX*>(params[2]);
+		if(!amx::valid(set_amx))
+		{
+			amx_LogicError(errors::pointer_invalid, "AMX", params[2]);
 		}
 		return expr_unary<amx_set_expression>(amx, params, amx::load_lock(set_amx));
 	}

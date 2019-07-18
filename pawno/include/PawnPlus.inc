@@ -1573,7 +1573,7 @@ native Expression:expr_nested(Expression:expr);
 native Expression:expr_env();
 native Expression:expr_set_env(Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
 native Expression:expr_global(const name[]);
-native Expression:expr_set_amx(Expression:expr, Amx:amx=INVALID_AMX);
+native Expression:expr_set_amx(Expression:expr, Amx:amx);
 
 native Expression:expr_comma(Expression:left, Expression:right);
 native Expression:expr_assign(Expression:left, Expression:right);
