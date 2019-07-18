@@ -106,25 +106,25 @@ namespace Natives
 	template <class Iter>
 	struct parse_base
 	{
-		cell operator()(Iter begin, Iter end, AMX *amx)
+		cell operator()(Iter begin, Iter end, AMX *amx, cell options)
 		{
-			return expression_pool.get_id(expression_parser<Iter>().parse(amx, begin, end));
+			return expression_pool.get_id(expression_parser<Iter>(static_cast<parser_options>(options)).parse(amx, begin, end));
 		}
 	};
 
-	// native Expression:expr_parse(const string[]);
+	// native Expression:expr_parse(const string[], parser_options:options=parser_all);
 	AMX_DEFINE_NATIVE(expr_parse, 1)
 	{
 		cell *str = amx_GetAddrSafe(amx, params[1]);
-		return strings::select_iterator<parse_base>(str, amx);
+		return strings::select_iterator<parse_base>(str, amx, optparam(2, -1));
 	}
 
-	// native Expression:expr_parse_s(ConstString:string);
+	// native Expression:expr_parse_s(ConstString:string, parser_options:options=parser_all);
 	AMX_DEFINE_NATIVE(expr_parse_s, 1)
 	{
 		strings::cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		return strings::select_iterator<parse_base>(str, amx);
+		return strings::select_iterator<parse_base>(str, amx, optparam(2, -1));
 	}
 
 	// native Expression:expr_empty(Expression:...);
@@ -656,16 +656,22 @@ namespace Natives
 		return expr_unary<nameof_expression>(amx, params);
 	}
 
-	// native Expression:expr_value(Expression:var);
-	AMX_DEFINE_NATIVE(expr_value, 1)
+	// native Expression:expr_extract(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_extract, 1)
 	{
-		return expr_unary<variant_value_expression>(amx, params);
+		return expr_unary<extract_expression>(amx, params);
 	}
 
 	// native Expression:expr_variant(Expression:value);
 	AMX_DEFINE_NATIVE(expr_variant, 1)
 	{
 		return expr_unary<variant_expression>(amx, params);
+	}
+
+	// native Expression:expr_string(Expression:value);
+	AMX_DEFINE_NATIVE(expr_string, 1)
+	{
+		return expr_unary<string_expression>(amx, params);
 	}
 
 	// native expr_get(Expression:expr, offset=0);
@@ -833,8 +839,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_addressof),
 	AMX_DECLARE_NATIVE(expr_nameof),
 
-	AMX_DECLARE_NATIVE(expr_value),
+	AMX_DECLARE_NATIVE(expr_extract),
 	AMX_DECLARE_NATIVE(expr_variant),
+	AMX_DECLARE_NATIVE(expr_string),
 
 	AMX_DECLARE_NATIVE(expr_get),
 	AMX_DECLARE_NATIVE(expr_get_arr),

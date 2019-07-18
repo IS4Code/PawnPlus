@@ -716,7 +716,7 @@ struct format_base
 							continue;
 						}
 					}
-					auto expr = expression_parser<Iter>().parse_simple(amx, std::next(color_begin), color_end);
+					auto expr = expression_parser<Iter>(parser_options::all).parse_simple(amx, std::next(color_begin), color_end);
 					auto lock = format_env.size() > 0 ? format_env.top().lock() : std::shared_ptr<map_t>();
 					buf.append(expr->execute({}, expression::exec_info(amx, lock.get(), true)).to_string());
 					

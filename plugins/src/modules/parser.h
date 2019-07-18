@@ -10,12 +10,37 @@
 #include <cstring>
 #include <unordered_map>
 
+enum parser_options
+{
+	allow_unknown_symbols = 1,
+	allow_debug_symbols = 1 << 1,
+	allow_natives = 1 << 2,
+	allow_publics = 1 << 3,
+	allow_pubvars = 1 << 4,
+	allow_constructions = 1 << 5,
+	allow_ranges = 1 << 6,
+	allow_arrays = 1 << 7,
+	allow_queries = 1 << 8,
+	allow_arguments = 1 << 9,
+	allow_environment = 1 << 10,
+	allow_casts = 1 << 11,
+	allow_literals = 1 << 12,
+	allow_intrinsics = 1 << 13,
+	allow_strings = 1 << 14,
+
+	all = -1
+};
+
 const std::unordered_map<std::string, expression_ptr> &parser_symbols();
+typedef void intrinsic_function(const expression::exec_info &info, parser_options options, const expression::call_args_type &input, expression::call_args_type &output);
+const std::unordered_map<std::string, intrinsic_function*> &parser_instrinsics();
 
 template <class Iter>
 class expression_parser
 {
+private:
 	Iter parse_start;
+	parser_options options;
 
 	void amx_ExpressionError(const char *format, ...)
 	{
@@ -244,22 +269,30 @@ class expression_parser
 				continue;
 				case '\'':
 				{
-					++begin;
-					auto str = parse_string(begin, end, c);
-					++begin;
-					if(str.size() != 1)
+					if(options & parser_options::allow_strings)
 					{
-						amx_ParserError("character constant must be a single character", begin, end);
+						++begin;
+						auto str = parse_string(begin, end, c);
+						++begin;
+						if(str.size() != 1)
+						{
+							amx_ParserError("character constant must be a single character", begin, end);
+						}
+						return std::make_shared<constant_expression>(dyn_object(str[0], tags::find_tag(tags::tag_char)));
 					}
-					return std::make_shared<constant_expression>(dyn_object(str[0], tags::find_tag(tags::tag_char)));
+					break;
 				}
 				continue;
 				case '"':
 				{
-					++begin;
-					auto str = parse_string(begin, end, c);
-					++begin;
-					return std::make_shared<constant_expression>(dyn_object(str.data(), str.size() + 1, tags::find_tag(tags::tag_char)));
+					if(options & parser_options::allow_strings)
+					{
+						++begin;
+						auto str = parse_string(begin, end, c);
+						++begin;
+						return std::make_shared<constant_expression>(dyn_object(str.data(), str.size() + 1, tags::find_tag(tags::tag_char)));
+					}
+					break;
 				}
 				continue;
 				case '-':
@@ -310,17 +343,21 @@ class expression_parser
 					{
 						amx_ParserError("missing expression", begin, end);
 					}
-					return std::make_shared<variant_value_expression>(std::move(inner));
+					return std::make_shared<extract_expression>(std::move(inner));
 				}
 				case '&':
 				{
-					++begin;
-					auto inner = parse_factor(amx, begin, end, endchar);
-					if(!inner)
+					if(options & parser_options::allow_constructions)
 					{
-						amx_ParserError("missing expression", begin, end);
+						++begin;
+						auto inner = parse_factor(amx, begin, end, endchar);
+						if(!inner)
+						{
+							amx_ParserError("missing expression", begin, end);
+						}
+						return std::make_shared<variant_expression>(std::move(inner));
 					}
-					return std::make_shared<variant_expression>(std::move(inner));
+					break;
 				}
 				case '^':
 				{
@@ -342,17 +379,25 @@ class expression_parser
 				}
 				case '<':
 				{
-					++begin;
-					auto inner = parse_outer_expression(amx, begin, end, '>');
-					++begin;
-					return std::make_shared<quote_expression>(std::move(inner));
+					if(options & parser_options::allow_constructions)
+					{
+						++begin;
+						auto inner = parse_outer_expression(amx, begin, end, '>');
+						++begin;
+						return std::make_shared<quote_expression>(std::move(inner));
+					}
+					break;
 				}
 				case '{':
 				{
-					++begin;
-					auto args = parse_expressions(amx, begin, end, '}');
-					++begin;
-					return std::make_shared<array_expression>(std::move(args));
+					if(options & parser_options::allow_arrays)
+					{
+						++begin;
+						auto args = parse_expressions(amx, begin, end, '}');
+						++begin;
+						return std::make_shared<array_expression>(std::move(args));
+					}
+					break;
 				}
 				case '[':
 				{
@@ -381,7 +426,7 @@ class expression_parser
 					{
 						if(++begin != end)
 						{
-							if(*begin == 'a' && ++begin != end && *begin == 'r' && ++begin != end && *begin == 'g')
+							if((options & parser_options::allow_arguments) && *begin == 'a' && ++begin != end && *begin == 'r' && ++begin != end && *begin == 'g')
 							{
 								if(++begin != end && *begin == 's')
 								{
@@ -413,7 +458,7 @@ class expression_parser
 									}
 									return std::make_shared<arg_expression>(index);
 								}
-							}else if(*begin == 'e' && ++begin != end && *begin == 'n' && ++begin != end && *begin == 'v')
+							}else if((options & parser_options::allow_environment) && *begin == 'e' && ++begin != end && *begin == 'n' && ++begin != end && *begin == 'v')
 							{
 								++begin;
 								return std::make_shared<env_expression>();
@@ -426,7 +471,7 @@ class expression_parser
 						auto symbol = parse_symbol(begin, end);
 						if(begin != end)
 						{
-							if(*begin == ':')
+							if(*begin == ':' && (options & parser_options::allow_casts))
 							{
 								++begin;
 								auto inner = parse_factor(amx, begin, end, endchar);
@@ -441,7 +486,15 @@ class expression_parser
 								return std::make_shared<cast_expression>(std::move(inner), tags::find_tag(symbol.c_str()));
 							}
 						}
-						if(symbol == "tagof")
+						if(symbol == "@" && (options & parser_options::allow_constructions))
+						{
+							auto inner = parse_element(amx, begin, end, endchar);
+							if(!inner)
+							{
+								amx_ParserError("missing expression", begin, end);
+							}
+							return std::make_shared<string_expression>(std::move(inner));
+						}else if(symbol == "tagof")
 						{
 							auto inner = parse_element(amx, begin, end, endchar);
 							if(!inner)
@@ -510,50 +563,76 @@ class expression_parser
 								begin = old;
 							}
 						}else{
-							auto it = parser_symbols().find(symbol);
-							if(it != parser_symbols().end())
+							if(options & parser_options::allow_literals)
 							{
-								return it->second;
-							}
-						}
-
-						AMX_DBG_SYMBOL *minsym = nullptr;
-						auto obj = amx::load_lock(amx);
-						auto dbg = obj->dbg.get();
-						if(dbg)
-						{
-							ucell cip = amx->cip - 2 * sizeof(cell);;
-
-							ucell mindist;
-							for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
-							{
-								auto sym = dbg->symboltbl[i];
-								if((sym->ident == iFUNCTN || (sym->codestart <= cip && sym->codeend > cip)) && !std::strcmp(sym->name, symbol.c_str()))
+								auto it = parser_symbols().find(symbol);
+								if(it != parser_symbols().end())
 								{
-									if(minsym == nullptr || sym->codeend - sym->codestart < mindist)
-									{
-										minsym = sym;
-										mindist = sym->codeend - sym->codestart;
-									}
+									return it->second;
+								}
+							}
+							if(options & parser_options::allow_intrinsics)
+							{
+								auto it = parser_instrinsics().find(symbol);
+								if(it != parser_instrinsics().end())
+								{
+									return std::make_shared<intrinsic_expression>(it->second, static_cast<cell>(options), std::move(symbol));
 								}
 							}
 						}
-						if(minsym)
+
+						if(amx)
 						{
-							return std::make_shared<symbol_expression>(obj, dbg, minsym);
-						}else{
-							auto native = amx::find_native(amx, symbol);
-							if(native)
+							if(options & parser_options::allow_debug_symbols)
 							{
-								return std::make_shared<native_expression>(native, std::move(symbol));
+								AMX_DBG_SYMBOL *minsym = nullptr;
+								auto obj = amx::load_lock(amx);
+								auto dbg = obj->dbg.get();
+								if(dbg)
+								{
+									ucell cip = amx->cip - 2 * sizeof(cell);;
+
+									ucell mindist;
+									for(uint16_t i = 0; i < dbg->hdr->symbols; i++)
+									{
+										auto sym = dbg->symboltbl[i];
+										if((sym->ident == iFUNCTN || (sym->codestart <= cip && sym->codeend > cip)) && !std::strcmp(sym->name, symbol.c_str()))
+										{
+											if(minsym == nullptr || sym->codeend - sym->codestart < mindist)
+											{
+												minsym = sym;
+												mindist = sym->codeend - sym->codestart;
+											}
+										}
+									}
+								}
+								if(minsym)
+								{
+									return std::make_shared<symbol_expression>(obj, dbg, minsym);
+								}
 							}
-							int index;
-							if(amx_FindPublicSafe(amx, symbol.c_str(), &index) == AMX_ERR_NONE)
+							if(options & parser_options::allow_natives)
 							{
-								return std::make_shared<public_expression>(std::move(symbol), index);
+								auto native = amx::find_native(amx, symbol);
+								if(native)
+								{
+									return std::make_shared<native_expression>(native, std::move(symbol));
+								}
 							}
+							if(options & parser_options::allow_publics)
+							{
+								int index;
+								if(amx_FindPublicSafe(amx, symbol.c_str(), &index) == AMX_ERR_NONE)
+								{
+									return std::make_shared<public_expression>(std::move(symbol), index);
+								}
+							}
+						}
+						if(options & parser_options::allow_unknown_symbols)
+						{
 							return std::make_shared<global_expression>(std::move(symbol));
 						}
+						amx_ParserError("unknown symbol", begin, end);
 					}else if(c >= '0' && c <= '9')
 					{
 						return parse_num(begin, end);
@@ -629,7 +708,7 @@ class expression_parser
 					}
 					auto old = begin;
 					auto symbol = parse_symbol(begin, end);
-					if(symbol == "select")
+					if((options & parser_options::allow_queries) && symbol == "select")
 					{
 						skip_whitespace(begin, end);
 						if(begin != end && *begin == '[')
@@ -642,7 +721,7 @@ class expression_parser
 							begin = old;
 							break;
 						}
-					}else if(symbol == "where")
+					}else if((options & parser_options::allow_queries) && symbol == "where")
 					{
 						skip_whitespace(begin, end);
 						if(begin != end && *begin == '[')
@@ -1123,7 +1202,7 @@ class expression_parser
 					}
 					auto old = begin;
 					++begin;
-					if(begin == end || *begin != '.')
+					if(begin == end || *begin != '.' || !(options & parser_options::allow_ranges))
 					{
 						begin = old;
 						break;
@@ -1231,6 +1310,11 @@ class expression_parser
 	}
 
 public:
+	expression_parser(parser_options options) : options(options)
+	{
+
+	}
+
 	expression_ptr parse_simple(AMX *amx, Iter begin, Iter end)
 	{
 		parse_start = begin;

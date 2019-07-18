@@ -743,6 +743,26 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
+class intrinsic_expression : public expression_base
+{
+	void *func;
+	cell options;
+	std::string name;
+
+public:
+	intrinsic_expression(void *func, cell options, std::string &&name) : func(func), options(options), name(std::move(name))
+	{
+
+	}
+
+	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual dyn_object call(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
+	virtual void call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
+	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override;
+	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
 namespace expr_impl
 {
 	template <dyn_object(dyn_object::*Func)() const>
@@ -1525,22 +1545,23 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
-class variant_value_expression : public expression_base, public unary_expression
+class extract_expression : public expression_base, public unary_expression
 {
 	expression_ptr var;
 
 public:
-	variant_value_expression(expression_ptr &&var) : var(std::move(var))
+	extract_expression(expression_ptr &&var) : var(std::move(var))
 	{
 
 	}
 
-	variant_value_expression(const expression_ptr &var) : var(var)
+	extract_expression(const expression_ptr &var) : var(var)
 	{
 
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override;
 	virtual dyn_object index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
@@ -1558,6 +1579,27 @@ public:
 	}
 
 	variant_expression(const expression_ptr &value) : value(value)
+	{
+
+	}
+
+	virtual cell execute_inner(const args_type &args, const exec_info &info) const override;
+	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual const expression_ptr &get_operand() const noexcept override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
+class string_expression : public simple_expression<cell, tags::tag_string>, public unary_expression
+{
+	expression_ptr value;
+
+public:
+	string_expression(expression_ptr &&value) : value(std::move(value))
+	{
+
+	}
+
+	string_expression(const expression_ptr &value) : value(value)
 	{
 
 	}

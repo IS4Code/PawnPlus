@@ -2,6 +2,7 @@
 #include "tags.h"
 #include "errors.h"
 #include "modules/variants.h"
+#include "modules/parser.h"
 #include "utils/systools.h"
 
 #include <string>
@@ -2358,6 +2359,48 @@ decltype(expression_pool)::object_ptr public_expression::clone() const
 	return expression_pool.emplace_derived<public_expression>(*this);
 }
 
+dyn_object intrinsic_expression::execute(const args_type &args, const exec_info &info) const
+{
+	amx_ExpressionError("attempt to obtain the value of function '%s'", name.c_str());
+	return {};
+}
+
+dyn_object intrinsic_expression::call(const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	call_args_type output;
+	call_multi(args, info, call_args, output);
+	if(output.size() == 0)
+	{
+		amx_ExpressionError("expression has no value");
+	}
+	return output.back();
+}
+
+void intrinsic_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
+{
+	call_multi(args, info, call_args, call_args_type());
+}
+
+void intrinsic_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
+{
+	try{
+		static_cast<intrinsic_function*>(func)(info, static_cast<parser_options>(options), call_args, output);
+	}catch(const errors::native_error &err)
+	{
+		amx_ExpressionError(errors::inner_error_msg, "intrinsic", name.c_str(), err.message.c_str());
+	}
+}
+
+void intrinsic_expression::to_string(strings::cell_string &str) const noexcept
+{
+	str.append(strings::convert(name));
+}
+
+decltype(expression_pool)::object_ptr intrinsic_expression::clone() const
+{
+	return expression_pool.emplace_derived<intrinsic_expression>(*this);
+}
+
 cell quote_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
 	return expression_pool.get_id(static_cast<const expression_base*>(operand.get())->clone());
@@ -2972,63 +3015,167 @@ decltype(expression_pool)::object_ptr nameof_expression::clone() const
 {
 	return expression_pool.emplace_derived<nameof_expression>(*this);
 }
-dyn_object variant_value_expression::execute(const args_type &args, const exec_info &info) const
+
+dyn_object extract_expression::execute(const args_type &args, const exec_info &info) const
 {
 	auto var_value = var->execute(args, info);
-	if(!(var_value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
-	{
-		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), var_value.get_tag()->format_name());
-	}
 	if(var_value.get_rank() != 0)
 	{
 		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", var_value.get_rank());
 	}
-	cell c = var_value.get_cell(0);
-	if(c == 0)
+	if(var_value.tag_assignable(tags::find_tag(tags::tag_variant)->base))
 	{
-		return {};
-	}
-	dyn_object *var;
-	if(!variants::pool.get_by_id(c, var))
+		cell c = var_value.get_cell(0);
+		if(c == 0)
+		{
+			return {};
+		}
+		dyn_object *var;
+		if(!variants::pool.get_by_id(c, var))
+		{
+			amx_ExpressionError(errors::pointer_invalid, "variant", c);
+		}
+		return *var;
+	}else if(var_value.tag_assignable(tags::find_tag(tags::tag_string)->base))
 	{
-		amx_ExpressionError(errors::pointer_invalid, "variant", c);
+		cell c = var_value.get_cell(0);
+		auto char_tag = tags::find_tag(tags::tag_char);
+		if(c == 0)
+		{
+			return dyn_object(nullptr, 0, char_tag);
+		}
+		strings::cell_string *str;
+		if(!strings::pool.get_by_id(c, str))
+		{
+			amx_ExpressionError(errors::pointer_invalid, "string", c);
+		}
+		return dyn_object(str->c_str(), str->size() + 1, char_tag);
 	}
-	return *var;
+	amx_ExpressionError("extract argument tag mismatch (%s: or %s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), tags::find_tag(tags::tag_string)->format_name(), var_value.get_tag()->format_name());
+	return {};
 }
 
-dyn_object variant_value_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+dyn_object extract_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
 {
 	auto var_value = var->execute(args, info);
-	if(!(var_value.tag_assignable(tags::find_tag(tags::tag_variant)->base)))
-	{
-		amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), var_value.get_tag()->format_name());
-	}
 	if(var_value.get_rank() != 0)
 	{
 		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", var_value.get_rank());
 	}
-	cell c = var_value.get_cell(0);
-	if(c == 0)
+	if(var_value.tag_assignable(tags::find_tag(tags::tag_string)))
 	{
-		return {};
+		cell c = var_value.get_cell(0);
+		auto char_tag = tags::find_tag(tags::tag_char);
+		if(c == 0)
+		{
+			amx_ExpressionError("string value is read-only");
+		}
+		strings::cell_string *str;
+		if(!strings::pool.get_by_id(c, str))
+		{
+			amx_ExpressionError(errors::pointer_invalid, "string", c);
+		}
+		auto &obj = *str;
+
+		if(!value.tag_assignable(tags::find_tag(tags::tag_char)))
+		{
+			amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_char)->format_name(), value.get_tag()->format_name());
+		}
+		if(value.is_null())
+		{
+			obj.clear();
+		}else if(value.is_cell())
+		{
+			obj.clear();
+			obj.push_back(value.get_cell(0));
+		}else{
+			obj = strings::convert(value.data_begin());
+		}
+		return value;
+	}else if(var_value.tag_assignable(tags::find_tag(tags::tag_string)->base))
+	{
+		amx_ExpressionError("string value is read-only");
 	}
-	dyn_object *var;
-	if(!variants::pool.get_by_id(c, var))
+	amx_ExpressionError("extract argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_string)->format_name(), var_value.get_tag()->format_name());
+	return {};
+}
+
+dyn_object extract_expression::index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const
+{
+	auto var_value = var->execute(args, info);
+	if(var_value.get_rank() != 0)
 	{
-		amx_ExpressionError(errors::pointer_invalid, "variant", c);
+		amx_ExpressionError("extract operation requires a single cell value (value of rank %d provided)", var_value.get_rank());
 	}
-	auto &obj = *var;
-	if(value.get_rank() != 0)
+	if(var_value.tag_assignable(tags::find_tag(tags::tag_variant)))
 	{
-		amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
-	}
-	if(!(value.tag_assignable(obj.get_tag())))
+		cell c = var_value.get_cell(0);
+		if(c == 0)
+		{
+			amx_ExpressionError("variant value is read-only");
+		}
+		dyn_object *var;
+		if(!variants::pool.get_by_id(c, var))
+		{
+			amx_ExpressionError(errors::pointer_invalid, "variant", c);
+		}
+		auto &obj = *var;
+		if(value.get_rank() != 0)
+		{
+			amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
+		}
+		if(!(value.tag_assignable(obj.get_tag())))
+		{
+			amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", obj.get_tag()->format_name(), value.get_tag()->format_name());
+		}
+		std::vector<cell> cell_indices;
+		for(const auto &index : indices)
+		{
+			if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
+			{
+				amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
+			}
+			if(index.get_rank() != 0)
+			{
+				amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
+			}
+			cell c = index.get_cell(0);
+			if(c < 0)
+			{
+				amx_ExpressionError("index out of bounds");
+			}
+			cell_indices.push_back(c);
+		}
+		obj.set_cell(cell_indices.data(), cell_indices.size(), value.get_cell(0));
+		return value;
+	}else if(var_value.tag_assignable(tags::find_tag(tags::tag_string)))
 	{
-		amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", obj.get_tag()->format_name(), value.get_tag()->format_name());
-	}
-	std::vector<cell> cell_indices;
-	for(const auto &index : indices)
-	{
+		cell c = var_value.get_cell(0);
+		auto char_tag = tags::find_tag(tags::tag_char);
+		if(c == 0)
+		{
+			amx_ExpressionError("string value is read-only");
+		}
+		strings::cell_string *str;
+		if(!strings::pool.get_by_id(c, str))
+		{
+			amx_ExpressionError(errors::pointer_invalid, "string", c);
+		}
+		auto &obj = *str;
+		if(value.get_rank() != 0)
+		{
+			amx_ExpressionError("indexed assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
+		}
+		if(!(value.tag_assignable(char_tag)))
+		{
+			amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", char_tag, value.get_tag()->format_name());
+		}
+		if(indices.size() != 1)
+		{
+			amx_ExpressionError("exactly one index must be provided (%d given)", indices.size());
+		}
+		
+		const auto &index = indices[0];
 		if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
 		{
 			amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
@@ -3037,31 +3184,38 @@ dyn_object variant_value_expression::index_assign(const args_type &args, const e
 		{
 			amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
 		}
-		cell c = index.get_cell(0);
-		if(c < 0)
+		cell cell_index = index.get_cell(0);
+		if(cell_index < 0 || static_cast<size_t>(cell_index) >= obj.size())
 		{
 			amx_ExpressionError("index out of bounds");
 		}
-		cell_indices.push_back(c);
+		obj[cell_index] = value.get_cell(0);
+		return value;
+	}else if(var_value.tag_assignable(tags::find_tag(tags::tag_variant)->base))
+	{
+		amx_ExpressionError("variant value is read-only");
+	}else if(var_value.tag_assignable(tags::find_tag(tags::tag_string)->base))
+	{
+		amx_ExpressionError("string value is read-only");
 	}
-	obj.set_cell(cell_indices.data(), cell_indices.size(), value.get_cell(0));
-	return value;
+	amx_ExpressionError("extract argument tag mismatch (%s: or %s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), tags::find_tag(tags::tag_string)->format_name(), var_value.get_tag()->format_name());
+	return {};
 }
 
-void variant_value_expression::to_string(strings::cell_string &str) const noexcept
+void extract_expression::to_string(strings::cell_string &str) const noexcept
 {
 	str.push_back('*');
 	var->to_string(str);
 }
 
-const expression_ptr &variant_value_expression::get_operand() const noexcept
+const expression_ptr &extract_expression::get_operand() const noexcept
 {
 	return var;
 }
 
-decltype(expression_pool)::object_ptr variant_value_expression::clone() const
+decltype(expression_pool)::object_ptr extract_expression::clone() const
 {
-	return expression_pool.emplace_derived<variant_value_expression>(*this);
+	return expression_pool.emplace_derived<extract_expression>(*this);
 }
 
 cell variant_expression::execute_inner(const args_type &args, const exec_info &info) const
@@ -3089,4 +3243,38 @@ const expression_ptr &variant_expression::get_operand() const noexcept
 decltype(expression_pool)::object_ptr variant_expression::clone() const
 {
 	return expression_pool.emplace_derived<variant_expression>(*this);
+}
+
+cell string_expression::execute_inner(const args_type &args, const exec_info &info) const
+{
+	auto value = this->value->execute(args, info);
+	if(!value.tag_assignable(tags::find_tag(tags::tag_char)))
+	{
+		amx_ExpressionError("string argument tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_char)->format_name(), value.get_tag()->format_name());
+	}
+	if(value.is_null())
+	{
+		return strings::pool.get_id(strings::pool.emplace());
+	}else if(value.is_cell())
+	{
+		return strings::pool.get_id(strings::pool.emplace(1, value.get_cell(0)));
+	}else{
+		return strings::pool.get_id(strings::pool.add(strings::convert(value.data_begin())));
+	}
+}
+
+void string_expression::to_string(strings::cell_string &str) const noexcept
+{
+	str.push_back('@');
+	value->to_string(str);
+}
+
+const expression_ptr &string_expression::get_operand() const noexcept
+{
+	return value;
+}
+
+decltype(expression_pool)::object_ptr string_expression::clone() const
+{
+	return expression_pool.emplace_derived<string_expression>(*this);
 }

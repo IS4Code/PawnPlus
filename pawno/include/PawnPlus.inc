@@ -1551,9 +1551,6 @@ native expr_type(Expression:expr);
 native expr_type_str(Expression:expr, type[], size=sizeof(type));
 native String:expr_type_str_s(Expression:expr);
 
-native Expression:expr_parse(const string[]);
-native Expression:expr_parse_s(ConstString:string);
-
 native Expression:expr_empty(Expression:...);
 
 native Expression:expr_weak(Expression:expr);
@@ -1591,8 +1588,9 @@ native Expression:expr_index(Expression:arr, Expression:...);
 native Expression:expr_quote(Expression:expr);
 native Expression:expr_dequote(Expression:expr);
 
-native Expression:expr_value(Expression:var);
+native Expression:expr_extract(Expression:expr);
 native Expression:expr_variant(Expression:value);
+native Expression:expr_string(Expression:value);
 
 native Expression:expr_add(Expression:left, Expression:right);
 native Expression:expr_sub(Expression:left, Expression:right);
@@ -1647,6 +1645,30 @@ native expr_set(Expression:expr, AnyTag:value, TagTag:tag_id=tagof(value));
 native expr_set_arr(Expression:expr, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native expr_set_str(Expression:expr, const value[]);
 native expr_set_var(Expression:expr, ConstVariantTag:value);
+
+enum parser_options (<<= 1)
+{
+    parser_bare = 0,
+	parser_allow_unknown_symbols = 1,
+	parser_allow_debug_symbols,
+	parser_allow_natives,
+	parser_allow_publics,
+	parser_allow_pubvars,
+	parser_allow_constructions,
+	parser_allow_ranges,
+	parser_allow_arrays,
+	parser_allow_queries,
+	parser_allow_arguments,
+	parser_allow_environment,
+	parser_allow_casts,
+    parser_allow_literals,
+    parser_allow_intrinsics,
+    parser_allow_strings,
+    parser_all = -1
+}
+
+native Expression:expr_parse(const string[], parser_options:options=parser_all);
+native Expression:expr_parse_s(ConstString:string, parser_options:options=parser_all);
 
 
 /*                 */
