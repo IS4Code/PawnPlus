@@ -177,3 +177,5 @@ int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index)
 		return ret;
 	}
 }
+
+int last_pubvar_index;

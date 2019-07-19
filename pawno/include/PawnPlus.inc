@@ -1583,6 +1583,7 @@ native Expression:expr_try(Expression:main, Expression:fallback);
 native Expression:expr_symbol(Symbol:symbol);
 native Expression:expr_native(const function[]);
 native Expression:expr_public(const function[]);
+native Expression:expr_pubvar(const name[]);
 native Expression:expr_call(Expression:func, Expression:...);
 native Expression:expr_index(Expression:arr, Expression:...);
 

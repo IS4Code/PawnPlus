@@ -611,20 +611,28 @@ private:
 									return std::make_shared<symbol_expression>(obj, dbg, minsym);
 								}
 							}
-							if(options & parser_options::allow_natives)
-							{
-								auto native = amx::find_native(amx, symbol);
-								if(native)
-								{
-									return std::make_shared<native_expression>(native, std::move(symbol));
-								}
-							}
 							if(options & parser_options::allow_publics)
 							{
 								int index;
 								if(amx_FindPublicSafe(amx, symbol.c_str(), &index) == AMX_ERR_NONE)
 								{
 									return std::make_shared<public_expression>(std::move(symbol), index);
+								}
+							}
+							if(options & parser_options::allow_pubvars)
+							{
+								cell amx_addr;
+								if(amx_FindPubVar(amx, symbol.c_str(), &amx_addr) == AMX_ERR_NONE)
+								{
+									return std::make_shared<pubvar_expression>(std::move(symbol), last_pubvar_index, amx_addr);
+								}
+							}
+							if(options & parser_options::allow_natives)
+							{
+								auto native = amx::find_native(amx, symbol);
+								if(native)
+								{
+									return std::make_shared<native_expression>(native, std::move(symbol));
 								}
 							}
 						}

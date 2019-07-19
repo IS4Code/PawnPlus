@@ -280,6 +280,16 @@ namespace Hooks
 		}
 		return ret;
 	}
+
+	int AMX_HOOK_FUNC(amx_GetPubVar, AMX *amx, int index, char *varname, cell *amx_addr)
+	{
+		int ret = base_func(amx, index, varname, amx_addr);
+		if(ret == AMX_ERR_NONE)
+		{
+			last_pubvar_index = index;
+		}
+		return ret;
+	}
 }
 
 int AMXAPI amx_InitOrig(AMX *amx, void *program)
@@ -309,6 +319,7 @@ void Hooks::Register()
 	amx_Hook(GetPublic)::load();
 	amx_Hook(NumPublics)::load();
 	amx_Hook(NameLength)::load();
+	amx_Hook(GetPubVar)::load();
 }
 
 void Hooks::Unregister()
@@ -323,6 +334,7 @@ void Hooks::Unregister()
 	amx_Hook(GetPublic)::unload();
 	amx_Hook(NumPublics)::unload();
 	amx_Hook(NameLength)::unload();
+	amx_Hook(GetPubVar)::unload();
 }
 
 void Hooks::ToggleStrLen(bool toggle)

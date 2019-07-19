@@ -16,6 +16,8 @@ extern int public_min_index;
 extern bool use_funcidx;
 extern bool disable_public_warning;
 
+extern int last_pubvar_index;
+
 template <class... Args>
 int logerror(AMX *amx, int error, const char *format, Args&&... args)
 {

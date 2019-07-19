@@ -2359,6 +2359,107 @@ decltype(expression_pool)::object_ptr public_expression::clone() const
 	return expression_pool.emplace_derived<public_expression>(*this);
 }
 
+void pubvar_expression::load(AMX *amx) const
+{
+	if(index != -1)
+	{
+		int len;
+		amx_NameLength(amx, &len);
+		char *funcname = static_cast<char*>(alloca(len + 1));
+
+		if(amx_GetPubVar(amx, index, funcname, &amx_addr) == AMX_ERR_NONE && !std::strcmp(name.c_str(), funcname))
+		{
+			return;
+		}else if(amx_FindPubVar(amx, name.c_str(), &amx_addr) == AMX_ERR_NONE)
+		{
+			index = last_pubvar_index;
+			return;
+		}
+	}else if(amx_FindPubVar(amx, name.c_str(), &amx_addr) == AMX_ERR_NONE)
+	{
+		index = last_pubvar_index;
+		return;
+	}
+	index = -1;
+	amx_ExpressionError(errors::var_not_found, "public", name.c_str());
+}
+
+dyn_object pubvar_expression::execute(const args_type &args, const exec_info &info) const
+{
+	if(!info.amx)
+	{
+		amx_ExpressionError("AMX instance must be specified");
+	}
+	AMX *amx = info.amx;
+	load(amx);
+
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
+	return dyn_object(*addr, tags::find_tag(tags::tag_cell));
+}
+
+dyn_object pubvar_expression::assign(const args_type &args, const exec_info &info, dyn_object &&value) const
+{
+	if(!info.amx)
+	{
+		amx_ExpressionError("AMX instance must be specified");
+	}
+	AMX *amx = info.amx;
+	load(amx);
+
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
+
+	if(value.get_rank() != 0)
+	{
+		amx_ExpressionError("assignment operation requires a single cell value (value of rank %d provided)", value.get_rank());
+	}
+	if(!(value.tag_assignable(tags::find_tag(tags::tag_cell))))
+	{
+		amx_ExpressionError("assigned value tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), value.get_tag()->format_name());
+	}
+
+	*addr = value.get_cell(0);
+
+	return value;
+}
+
+std::tuple<cell*, size_t, tag_ptr> pubvar_expression::address(const args_type &args, const exec_info &info, const call_args_type &indices) const
+{
+	if(!info.amx)
+	{
+		amx_ExpressionError("AMX instance must be specified");
+	}
+	AMX *amx = info.amx;
+	load(amx);
+
+	cell *addr = amx_GetAddrSafe(amx, amx_addr);
+	return std::tuple<cell*, size_t, tag_ptr>(addr, 1, tags::find_tag(tags::tag_cell));
+}
+
+tag_ptr pubvar_expression::get_tag(const args_type &args) const noexcept
+{
+	return tags::find_tag(tags::tag_cell);
+}
+
+cell pubvar_expression::get_size(const args_type &args) const noexcept
+{
+	return 1;
+}
+
+cell pubvar_expression::get_rank(const args_type &args) const noexcept
+{
+	return 0;
+}
+
+void pubvar_expression::to_string(strings::cell_string &str) const noexcept
+{
+	str.append(strings::convert(name));
+}
+
+decltype(expression_pool)::object_ptr pubvar_expression::clone() const
+{
+	return expression_pool.emplace_derived<pubvar_expression>(*this);
+}
+
 dyn_object intrinsic_expression::execute(const args_type &args, const exec_info &info) const
 {
 	amx_ExpressionError("attempt to obtain the value of function '%s'", name.c_str());

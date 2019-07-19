@@ -743,6 +743,30 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
+class pubvar_expression : public expression_base
+{
+	mutable int index;
+	std::string name;
+	mutable cell amx_addr;
+
+	void load(AMX *amx) const;
+
+public:
+	pubvar_expression(std::string &&name, int index, cell amx_addr) : name(std::move(name)), index(index), amx_addr(amx_addr)
+	{
+
+	}
+
+	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override;
+	virtual std::tuple<cell*, size_t, tag_ptr> address(const args_type &args, const exec_info &info, const call_args_type &indices) const override;
+	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
+	virtual cell get_size(const args_type &args) const noexcept override;
+	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
 class intrinsic_expression : public expression_base
 {
 	void *func;
