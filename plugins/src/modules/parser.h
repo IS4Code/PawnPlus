@@ -477,7 +477,7 @@ private:
 								auto inner = parse_factor(amx, begin, end, endchar);
 								if(!inner)
 								{
-									amx_ParserError("missing expression", begin, end);
+									inner = std::make_shared<empty_expression>();
 								}
 								if(symbol == "_")
 								{
