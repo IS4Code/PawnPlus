@@ -142,6 +142,7 @@ unsigned char *amx_GetData(AMX *amx)
 
 int public_min_index = -1;
 bool use_funcidx = false;
+bool disable_public_warning = false;
 
 int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index)
 {
@@ -161,10 +162,17 @@ int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index)
 		return AMX_ERR_NONE;
 	}else{
 		int ret = amx_FindPublic(amx, funcname, index);
-		if(public_min_index != -1 && ret == AMX_ERR_NONE && index && *index < public_min_index)
+		if(ret == AMX_ERR_NONE && index)
 		{
-			*index = std::numeric_limits<int>::max();
-			return AMX_ERR_NOTFOUND;
+			if(public_min_index != -1 && *index < public_min_index)
+			{
+				*index = std::numeric_limits<int>::max();
+				return AMX_ERR_NOTFOUND;
+			}
+			if(*index < 0 && !disable_public_warning)
+			{
+				logprintf("[PawnPlus] Warning: amx_FindPublic returned negative index %d for function '%s'. Possible collision with SAMPGDK detected. Use pp_public_min_index or pp_use_funcidx to remove this warning.", *index, funcname);
+			}
 		}
 		return ret;
 	}

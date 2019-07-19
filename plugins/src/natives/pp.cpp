@@ -63,6 +63,7 @@ namespace Natives
 		{
 			amx_LogicError(errors::out_of_range, "index");
 		}
+		disable_public_warning = true;
 		int orig = public_min_index;
 		public_min_index = index;
 		return orig;
@@ -72,6 +73,7 @@ namespace Natives
 	AMX_DEFINE_NATIVE(pp_use_funcidx, 1)
 	{
 		bool orig = use_funcidx;
+		disable_public_warning = true;
 		use_funcidx = params[1];
 		return orig;
 	}
