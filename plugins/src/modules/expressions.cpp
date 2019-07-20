@@ -1036,13 +1036,34 @@ decltype(expression_pool)::object_ptr assign_expression::clone() const
 	return expression_pool.emplace_derived<assign_expression>(*this);
 }
 
+dyn_object try_expression::get_error_obj(const errors::native_error &err) const
+{
+	return dyn_object(strings::convert(err.message).c_str());
+}
+
+dyn_object try_expression::get_error_obj(const errors::amx_error &err) const
+{
+	return dyn_object(err.code, tags::find_tag("amx_err"));
+}
+
+expression::args_type try_expression::create_args(const dyn_object &err_obj, const args_type &args) const
+{
+	args_type new_args;
+	new_args.push_back(std::cref(err_obj));
+	new_args.insert(new_args.end(), args.begin(), args.end());
+	return new_args;
+}
+
 dyn_object try_expression::execute(const args_type &args, const exec_info &info) const
 {
 	try{
 		return main->execute(args, info);
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
-		return fallback->execute(args, info);
+		return fallback->execute(create_args(get_error_obj(err), args), info);
+	}catch(const errors::amx_error &err)
+	{
+		return fallback->execute(create_args(get_error_obj(err), args), info);
 	}
 }
 
@@ -1050,9 +1071,12 @@ void try_expression::execute_discard(const args_type &args, const exec_info &inf
 {
 	try{
 		main->execute_discard(args, info);
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
-		fallback->execute_discard(args, info);
+		fallback->execute_discard(create_args(get_error_obj(err), args), info);
+	}catch(const errors::amx_error &err)
+	{
+		fallback->execute_discard(create_args(get_error_obj(err), args), info);
 	}
 }
 
@@ -1061,10 +1085,14 @@ void try_expression::execute_multi(const args_type &args, const exec_info &info,
 	size_t size = output.size();
 	try{
 		main->execute_multi(args, info, output);
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
 		output.resize(size);
-		fallback->execute_multi(args, info, output);
+		fallback->execute_multi(create_args(get_error_obj(err), args), info, output);
+	}catch(const errors::amx_error &err)
+	{
+		output.resize(size);
+		fallback->execute_multi(create_args(get_error_obj(err), args), info, output);
 	}
 }
 
@@ -1072,9 +1100,12 @@ dyn_object try_expression::call(const args_type &args, const exec_info &info, co
 {
 	try{
 		return main->call(args, info, call_args);
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
-		return fallback->call(args, info, call_args);
+		return fallback->call(create_args(get_error_obj(err), args), info, call_args);
+	}catch(const errors::amx_error &err)
+	{
+		return fallback->call(create_args(get_error_obj(err), args), info, call_args);
 	}
 }
 
@@ -1082,9 +1113,12 @@ void try_expression::call_discard(const args_type &args, const exec_info &info, 
 {
 	try{
 		main->call_discard(args, info, call_args);
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
-		fallback->call_discard(args, info, call_args);
+		fallback->call_discard(create_args(get_error_obj(err), args), info, call_args);
+	}catch(const errors::amx_error &err)
+	{
+		fallback->call_discard(create_args(get_error_obj(err), args), info, call_args);
 	}
 }
 
@@ -1093,10 +1127,14 @@ void try_expression::call_multi(const args_type &args, const exec_info &info, co
 	size_t size = output.size();
 	try{
 		main->call_multi(args, info, call_args, output);
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
 		output.resize(size);
-		fallback->call_multi(args, info, call_args, output);
+		fallback->call_multi(create_args(get_error_obj(err), args), info, call_args, output);
+	}catch(const errors::amx_error &err)
+	{
+		output.resize(size);
+		fallback->call_multi(create_args(get_error_obj(err), args), info, call_args, output);
 	}
 }
 
@@ -1104,9 +1142,12 @@ dyn_object try_expression::assign(const args_type &args, const exec_info &info, 
 {
 	try{
 		return main->assign(args, info, std::move(value));
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
-		return fallback->assign(args, info, std::move(value));
+		return fallback->assign(create_args(get_error_obj(err), args), info, std::move(value));
+	}catch(const errors::amx_error &err)
+	{
+		return fallback->assign(create_args(get_error_obj(err), args), info, std::move(value));
 	}
 }
 
@@ -1114,9 +1155,12 @@ dyn_object try_expression::index(const args_type &args, const exec_info &info, c
 {
 	try{
 		return main->index(args, info, indices);
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
-		return fallback->index(args, info, indices);
+		return fallback->index(create_args(get_error_obj(err), args), info, indices);
+	}catch(const errors::amx_error &err)
+	{
+		return fallback->index(create_args(get_error_obj(err), args), info, indices);
 	}
 }
 
@@ -1124,9 +1168,12 @@ dyn_object try_expression::index_assign(const args_type &args, const exec_info &
 {
 	try{
 		return main->index_assign(args, info, indices, std::move(value));
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
-		return fallback->index_assign(args, info, indices, std::move(value));
+		return fallback->index_assign(create_args(get_error_obj(err), args), info, indices, std::move(value));
+	}catch(const errors::amx_error &err)
+	{
+		return fallback->index_assign(create_args(get_error_obj(err), args), info, indices, std::move(value));
 	}
 }
 
@@ -1134,9 +1181,12 @@ std::tuple<cell*, size_t, tag_ptr> try_expression::address(const args_type &args
 {
 	try{
 		return main->address(args, info, indices);
-	}catch(const errors::native_error&)
+	}catch(const errors::native_error &err)
 	{
-		return fallback->address(args, info, indices);
+		return fallback->address(create_args(get_error_obj(err), args), info, indices);
+	}catch(const errors::amx_error &err)
+	{
+		return fallback->address(create_args(get_error_obj(err), args), info, indices);
 	}
 }
 
@@ -1606,6 +1656,40 @@ dyn_object array_expression::execute(const args_type &args, const exec_info &inf
 		}
 	}
 	return dyn_object(data.data(), data.size(), tag ? tag : tags::find_tag(tags::tag_cell));
+}
+
+dyn_object array_expression::index(const args_type &args, const exec_info &info, const call_args_type &indices) const
+{
+	if(indices.size() != 1)
+	{
+		amx_ExpressionError("incorrect number of indices (%d needed, %d given)", 1, indices.size());
+	}
+	const auto &index = indices[0];
+	if(!(index.tag_assignable(tags::find_tag(tags::tag_cell))))
+	{
+		amx_ExpressionError("index tag mismatch (%s: required, %s: provided)", tags::find_tag(tags::tag_cell)->format_name(), index.get_tag()->format_name());
+	}
+	if(index.get_rank() != 0)
+	{
+		amx_ExpressionError("index operation requires a single cell value (value of rank %d provided)", index.get_rank());
+	}
+	ucell cell_index = index.get_cell(0);
+
+	call_args_type values;
+	for(const auto &arg : this->args)
+	{
+		if(cell_index < values.size())
+		{
+			arg->execute_discard(args, info);
+		}else{
+			arg->execute_multi(args, info, values);
+		}
+	}
+	if(cell_index >= values.size())
+	{
+		amx_ExpressionError("index out of bounds");
+	}
+	return values[cell_index];
 }
 
 tag_ptr array_expression::get_tag(const args_type &args) const noexcept
@@ -2916,12 +3000,16 @@ decltype(expression_pool)::object_ptr where_expression::clone() const
 
 cell tagof_expression::execute_inner(const args_type &args, const exec_info &info) const
 {
-	if(!info.amx)
+	tag_ptr tag = operand->get_tag(args);
+	if(tag == invalid_tag)
 	{
-		amx_ExpressionError("AMX instance must be specified");
+		tag = operand->execute(args, info).get_tag();
 	}
-	tag_ptr static_tag = operand->get_tag(args);
-	return (static_tag != invalid_tag ? static_tag : operand->execute(args, info).get_tag())->get_id(info.amx);
+	if(info.amx)
+	{
+		return tag->get_id(info.amx);
+	}
+	return tag->uid;
 }
 
 void tagof_expression::to_string(strings::cell_string &str) const noexcept

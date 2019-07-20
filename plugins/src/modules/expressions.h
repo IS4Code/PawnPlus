@@ -1,6 +1,7 @@
 #ifndef EXPRESSIONS_H_INCLUDED
 #define EXPRESSIONS_H_INCLUDED
 
+#include "errors.h"
 #include "objects/dyn_object.h"
 #include "objects/object_pool.h"
 #include "amxinfo.h"
@@ -109,6 +110,12 @@ public:
 	}
 
 	constant_expression(const dyn_object &value) : value(value)
+	{
+
+	}
+
+	template <class... Args>
+	constant_expression(Args &&...args) : value(std::forward<Args>(args)...)
 	{
 
 	}
@@ -477,6 +484,10 @@ class try_expression : public proxy_expression, public binary_expression
 	expression_ptr main;
 	expression_ptr fallback;
 
+	dyn_object get_error_obj(const errors::native_error &err) const;
+	dyn_object get_error_obj(const errors::amx_error &err) const;
+	args_type create_args(const dyn_object &err_obj, const args_type &args) const;
+
 public:
 	try_expression(expression_ptr &&main, expression_ptr &&fallback) : main(std::move(main)), fallback(std::move(fallback))
 	{
@@ -645,6 +656,7 @@ public:
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual dyn_object index(const args_type &args, const exec_info &info, const call_args_type &indices) const override;
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;

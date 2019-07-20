@@ -1671,6 +1671,8 @@ enum parser_options (<<= 1)
 
 native Expression:expr_parse(const string[], parser_options:options=parser_all);
 native Expression:expr_parse_s(ConstString:string, parser_options:options=parser_all);
+native Expression:expr_literal(const name[]);
+native Expression:expr_intrinsic(const name[], parser_options:options=parser_all);
 
 
 /*                 */

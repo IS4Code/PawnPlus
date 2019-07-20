@@ -127,6 +127,37 @@ namespace Natives
 		return strings::select_iterator<parse_base>(str, amx, optparam(2, -1));
 	}
 
+	// native Expression:expr_literal(const name[]);
+	AMX_DEFINE_NATIVE(expr_literal, 1)
+	{
+		const char *name;
+		amx_StrParam(amx, params[1], name);
+		if(name == nullptr) amx_FormalError(errors::arg_empty, "name");
+		auto it = parser_symbols().find(name);
+		if(it == parser_symbols().end())
+		{
+			amx_LogicError(errors::var_not_found, "literal", name);
+		}
+		auto &expr = dynamic_cast<const expression_base*>(it->second.get())->clone();
+		return expression_pool.get_id(expr);
+	}
+
+	// native Expression:expr_intrinsic(const name[], parser_options:options=parser_all);
+	AMX_DEFINE_NATIVE(expr_intrinsic, 1)
+	{
+		const char *name;
+		amx_StrParam(amx, params[1], name);
+		if(name == nullptr) amx_FormalError(errors::arg_empty, "name");
+		std::string strname(name);
+		auto it = parser_instrinsics().find(strname);
+		if(it == parser_instrinsics().end())
+		{
+			amx_LogicError(errors::func_not_found, "intrinsic", name);
+		}
+		auto &expr = expression_pool.emplace_derived<intrinsic_expression>(it->second, optparam(2, -1), std::move(strname));
+		return expression_pool.get_id(expr);
+	}
+
 	// native Expression:expr_empty(Expression:...);
 	AMX_DEFINE_NATIVE(expr_empty, 0)
 	{
@@ -238,7 +269,7 @@ namespace Natives
 		cell begin = params[1];
 		if(begin < 0) amx_LogicError(errors::out_of_range, "begin");
 		cell end = optparam(2, -1);
-		if(end < -1) amx_LogicError(errors::out_of_range, "end");
+		if(end < -1 || (end != -1 && end < begin)) amx_LogicError(errors::out_of_range, "end");
 		auto &expr = expression_pool.emplace_derived<arg_pack_expression>(begin, end);
 		return expression_pool.get_id(expr);
 	}
@@ -772,9 +803,6 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_type_str),
 	AMX_DECLARE_NATIVE(expr_type_str_s),
 
-	AMX_DECLARE_NATIVE(expr_parse),
-	AMX_DECLARE_NATIVE(expr_parse_s),
-
 	AMX_DECLARE_NATIVE(expr_empty),
 
 	AMX_DECLARE_NATIVE(expr_weak),
@@ -872,6 +900,11 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_set_arr),
 	AMX_DECLARE_NATIVE(expr_set_str),
 	AMX_DECLARE_NATIVE(expr_set_var),
+
+	AMX_DECLARE_NATIVE(expr_parse),
+	AMX_DECLARE_NATIVE(expr_parse_s),
+	AMX_DECLARE_NATIVE(expr_literal),
+	AMX_DECLARE_NATIVE(expr_intrinsic),
 };
 
 int RegisterExprNatives(AMX *amx)

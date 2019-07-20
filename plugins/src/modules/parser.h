@@ -442,7 +442,7 @@ private:
 										++begin;
 										old = begin;
 										cell last = parse_int(begin, end);
-										if(old == begin)
+										if(old == begin || last < first)
 										{
 											amx_ParserError("invalid argument pack format", begin, end);
 										}
