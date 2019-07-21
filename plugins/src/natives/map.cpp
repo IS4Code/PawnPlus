@@ -2,7 +2,9 @@
 #include "errors.h"
 #include "modules/containers.h"
 #include "modules/variants.h"
+#include "modules/expressions.h"
 #include <iterator>
+#include <algorithm>
 
 template <size_t... KeyIndices>
 class key_at
@@ -103,7 +105,7 @@ public:
 	template <key_ftype KeyFactory, size_t TagIndex = 0>
 	static cell AMX_NATIVE_CALL map_set_cell(AMX *amx, cell *params)
 	{
-		if(params[3] < 0) amx_LogicError(errors::out_of_range, "array offset");
+		if(params[3] < 0) amx_LogicError(errors::out_of_range, "offset");
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		auto it = ptr->find(KeyFactory(amx, params[KeyIndices]...));
@@ -152,6 +154,7 @@ public:
 template <size_t... ValueIndices>
 class value_at
 {
+	using value_ftype = typename dyn_factory<ValueIndices...>::type;
 	using result_ftype = typename dyn_result<ValueIndices...>::type;
 
 public:
@@ -160,10 +163,10 @@ public:
 	static cell AMX_NATIVE_CALL map_key_at(AMX *amx, cell *params)
 	{
 		cell index = params[2];
-		if(index < 0) amx_LogicError(errors::out_of_range, "map index");
+		if(index < 0) amx_LogicError(errors::out_of_range, "index");
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
-		if(static_cast<size_t>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "map index");
+		if(static_cast<size_t>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "index");
 		auto it = ptr->begin();
 		std::advance(it, index);
 		if(it != ptr->end())
@@ -179,10 +182,10 @@ public:
 	static cell AMX_NATIVE_CALL map_value_at(AMX *amx, cell *params)
 	{
 		cell index = params[2];
-		if(index < 0) amx_LogicError(errors::out_of_range, "map index");
+		if(index < 0) amx_LogicError(errors::out_of_range, "index");
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
-		if(static_cast<size_t>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "map index");
+		if(static_cast<size_t>(index) >= ptr->size()) amx_LogicError(errors::out_of_range, "index");
 		auto it = ptr->begin();
 		std::advance(it, index);
 		if(it != ptr->end())
@@ -191,6 +194,19 @@ public:
 		}
 		amx_LogicError(errors::element_not_present);
 		return 0;
+	}
+
+	// native map_count(Map:map, value, ...);
+	template <value_ftype ValueFactory>
+	static cell AMX_NATIVE_CALL map_count(AMX *amx, cell *params)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		auto find = ValueFactory(amx, params[ValueIndices]...);
+		return std::count_if(ptr->begin(), ptr->end(), [&](const std::pair<const dyn_object, dyn_object> &pair)
+		{
+			return pair.second == find;
+		});
 	}
 };
 
@@ -1114,6 +1130,72 @@ namespace Natives
 		return key_at<2>::map_remove_deep<dyn_func_var>(amx, params);
 	}
 
+	// native map_remove_if(Map:map, Expression:pred);
+	AMX_DEFINE_NATIVE(map_remove_if, 2)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		expression *expr;
+		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+		
+		expression::args_type args;
+		expression::exec_info info(amx);
+
+		auto it = ptr->begin();
+		while(it != ptr->end())
+		{
+			if(args.size() == 0)
+			{
+				args.push_back(std::cref(it->second));
+				args.push_back(std::cref(it->first));
+			}else{
+				args[0] = std::cref(it->second);
+				args[1] = std::cref(it->first);
+			}
+			if(expr->execute_bool(args, info))
+			{
+				it = ptr->erase(it);
+			}else{
+				++it;
+			}
+		}
+		return 1;
+	}
+
+	// native map_remove_if_deep(Map:map, Expression:pred);
+	AMX_DEFINE_NATIVE(map_remove_if_deep, 2)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		expression *expr;
+		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+		
+		expression::args_type args;
+		expression::exec_info info(amx);
+
+		auto it = ptr->begin();
+		while(it != ptr->end())
+		{
+			if(args.size() == 0)
+			{
+				args.push_back(std::cref(it->second));
+				args.push_back(std::cref(it->first));
+			}else{
+				args[0] = std::cref(it->second);
+				args[1] = std::cref(it->first);
+			}
+			if(expr->execute_bool(args, info))
+			{
+				it->first.release();
+				it->second.release();
+				it = ptr->erase(it);
+			}else{
+				++it;
+			}
+		}
+		return 1;
+	}
+
 	// native bool:map_has_key(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 	AMX_DEFINE_NATIVE(map_has_key, 3)
 	{
@@ -1534,6 +1616,60 @@ namespace Natives
 		return value_at<3, 4, 5>::map_value_at<dyn_func_arr>(amx, params);
 	}
 
+	// native map_count(Map:map, AnyTag:value, TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(map_count, 3)
+	{
+		return value_at<2, 3>::map_count<dyn_func>(amx, params);
+	}
+
+	// native map_count_arr(Map:map, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(map_count_arr, 4)
+	{
+		return value_at<2, 3, 4>::map_count<dyn_func_arr>(amx, params);
+	}
+
+	// native map_count_str(Map:map, const value[]);
+	AMX_DEFINE_NATIVE(map_count_str, 2)
+	{
+		return value_at<2>::map_count<dyn_func_str>(amx, params);
+	}
+
+	// native map_count_var(Map:map, VariantTag:value);
+	AMX_DEFINE_NATIVE(map_count_var, 2)
+	{
+		return value_at<2>::map_count<dyn_func_var>(amx, params);
+	}
+
+	// native map_count_if(Map:map, Expression:pred);
+	AMX_DEFINE_NATIVE(map_count_if, 2)
+	{
+		map_t *ptr;
+		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
+		expression *expr;
+		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+		
+		expression::args_type args;
+		expression::exec_info info(amx);
+
+		cell count = 0;
+		for(auto it = ptr->begin(); it != ptr->end(); ++it)
+		{
+			if(args.size() == 0)
+			{
+				args.push_back(std::cref(it->second));
+				args.push_back(std::cref(it->first));
+			}else{
+				args[0] = std::cref(it->second);
+				args[1] = std::cref(it->first);
+			}
+			if(expr->execute_bool(args, info))
+			{
+				count++;
+			}
+		}
+		return count;
+	}
+
 	// native map_tagof(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 	AMX_DEFINE_NATIVE(map_tagof, 3)
 	{
@@ -1651,6 +1787,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_arr_remove_deep),
 	AMX_DECLARE_NATIVE(map_str_remove_deep),
 	AMX_DECLARE_NATIVE(map_var_remove_deep),
+	AMX_DECLARE_NATIVE(map_remove_if),
+	AMX_DECLARE_NATIVE(map_remove_if_deep),
 
 	AMX_DECLARE_NATIVE(map_has_key),
 	AMX_DECLARE_NATIVE(map_has_arr_key),
@@ -1724,6 +1862,12 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_var_value_at),
 	AMX_DECLARE_NATIVE(map_value_at_safe),
 	AMX_DECLARE_NATIVE(map_arr_value_at_safe),
+
+	AMX_DECLARE_NATIVE(map_count),
+	AMX_DECLARE_NATIVE(map_count_arr),
+	AMX_DECLARE_NATIVE(map_count_str),
+	AMX_DECLARE_NATIVE(map_count_var),
+	AMX_DECLARE_NATIVE(map_count_if),
 
 	AMX_DECLARE_NATIVE(map_tagof),
 	AMX_DECLARE_NATIVE(map_sizeof),

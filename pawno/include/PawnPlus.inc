@@ -1,4 +1,4 @@
-/** PawnPlus v1.1-pre by IllidanS4 **/
+/** PawnPlus v1.1-pre2 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 #if defined _inc_PawnPlus
@@ -67,7 +67,7 @@ const PP_VERSION = 0x110;
 #define TagTag {TagTags}
 
 #if !defined PP_ALL_TAGS
-#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map,IterTags,HandleTags,Task
+#define PP_ALL_TAGS _,bool,Float,VariantTags,StringTags,List,Map,IterTags,HandleTags,Task,Expression
 #if defined PP_ADDITIONAL_TAGS
 #define AnyTag {PP_ALL_TAGS,PP_ADDITIONAL_TAGS}
 #else
@@ -699,6 +699,10 @@ native list_add_args_var(List:list, ConstVariantTag:arg0, ConstVariantTag:...);
 
 native list_remove(List:list, index);
 native list_remove_deep(List:list, index);
+native list_remove_range(List:list, begin, end);
+native list_remove_range_deep(List:list, begin, end);
+native list_remove_if(List:list, Expression:pred);
+native list_remove_if_deep(List:list, Expression:pred);
 
 native list_get(List:list, index, offset=0);
 native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
@@ -730,6 +734,14 @@ native list_find_last(List:list, AnyTag:value, index=-1, TagTag:tag_id=tagof(val
 native list_find_last_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), TagTag:tag_id=tagof(value));
 native list_find_last_str(List:list, const value[], index=-1);
 native list_find_last_var(List:list, ConstVariantTag:value, index=-1);
+native list_find_if(List:list, Expression:pred, index=0);
+native list_find_last_if(List:list, Expression:pred, index=-1);
+
+native list_count(List:list, AnyTag:value, TagTag:tag_id=tagof(value));
+native list_count_arr(List:list, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native list_count_str(List:list, const value[]);
+native list_count_var(List:list, ConstVariantTag:value);
+native list_count_if(List:list, Expression:pred);
 
 native list_sort(List:list, offset=0, size=-1, bool:reverse=false, bool:stable=true);
 
@@ -760,6 +772,8 @@ native Iter:list_iter(List:list, index=0);
 
 #define list_remove<%0>(%1,%2) list_remove(List:_PP@CAST[List<%0>](%1),%2)
 #define list_remove_deep<%0>(%1,%2) list_remove_deep(List:_PP@CAST[List<%0>](%1),%2)
+#define list_remove_range<%0>(%1,%2) list_remove_range(List:_PP@CAST[List<%0>](%1),%2)
+#define list_remove_range_deep<%0>(%1,%2) list_remove_range_deep(List:_PP@CAST[List<%0>](%1),%2)
 
 #define list_get<%0>(%1,%2) (%0:list_get(List:_PP@CAST[List<%0>](%1),%2))
 #define list_get_arr<%0>(%1,%2,%3) list_get_arr(List:_PP@CAST[List<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
@@ -773,6 +787,9 @@ native Iter:list_iter(List:list, index=0);
 
 #define list_find<%0>(%1,%2) list_find(List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
 #define list_find_arr<%0>(%1,%2) list_find_arr(List:_PP@CAST[List<%0>](%1),_PP@CAST_ARR[%0](%2))
+
+#define list_count<%0>(%1,%2) list_find(List:_PP@CAST[List<%0>](%1),_PP@CAST[%0](%2))
+#define list_count_arr<%0>(%1,%2) list_find_arr(List:_PP@CAST[List<%0>](%1),_PP@CAST_ARR[%0](%2))
 
 #define list_sort<%0>(%1) list_sort(List:_PP@CAST[List<%0>](%1))
 
@@ -896,6 +913,8 @@ native bool:map_remove_deep(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native bool:map_arr_remove_deep(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native bool:map_str_remove_deep(Map:map, const key[]);
 native bool:map_var_remove_deep(Map:map, ConstVariantTag:key);
+native map_remove_if(Map:map, Expression:pred);
+native map_remove_if_deep(Map:map, Expression:pred);
 
 native bool:map_has_key(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native bool:map_has_arr_key(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
@@ -976,6 +995,12 @@ native Variant:map_var_value_at(Map:map, index);
 native bool:map_value_at_safe(Map:map, index, &AnyTag:value, offset=0, TagTag:value_tag_id=tagof(value));
 native map_arr_value_at_safe(Map:map, index, AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(value));
 
+native map_count(Map:map, AnyTag:value, TagTag:tag_id=tagof(value));
+native map_count_arr(Map:map, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native map_count_str(Map:map, const value[]);
+native map_count_var(Map:map, ConstVariantTag:value);
+native map_count_if(Map:map, Expression:pred);
+
 native map_tagof(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native map_sizeof(Map:map, AnyTag:key, TagTag:key_tag_id=tagof(key));
 native map_arr_tagof(Map:map, const AnyTag:key[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
@@ -1038,6 +1063,9 @@ native Iter:map_iter_at_var(Map:map, ConstVariantTag:key);
 #define map_value_at<%0,%1>(%2,%3) (%1:map_value_at(Map:_PP@CAST[Map<%0,%1>](%2),%3))
 #define map_arr_value_at<%0,%1>(%2,%3,%4) map_arr_value_at(Map:_PP@CAST[Map<%0,%1>](%2),%3,_PP@CAST_ARR[%1](%4))
 
+#define map_count<%0,%1>(%2,%3) map_count(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%1](%3))
+#define map_count_arr<%0,%1>(%2,%3) map_count_arr(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%1](%3))
+
 #define map_sizeof<%0,%1>(%2,%3) map_sizeof(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST[%0](%3))
 #define map_arr_sizeof<%0,%1>(%2,%3) map_arr_sizeof(Map:_PP@CAST[Map<%0,%1>](%2),_PP@CAST_ARR[%0](%3))
 
@@ -1089,6 +1117,8 @@ native linked_list_add_args_var(LinkedList:linked_list, ConstVariantTag:arg0, Co
 
 native linked_list_remove(LinkedList:linked_list, index);
 native linked_list_remove_deep(LinkedList:linked_list, index);
+native linked_list_remove_if(LinkedList:linked_list, Expression:pred);
+native linked_list_remove_if_deep(LinkedList:linked_list, Expression:pred);
 
 native linked_list_get(LinkedList:linked_list, index, offset=0);
 native linked_list_get_arr(LinkedList:linked_list, index, AnyTag:value[], size=sizeof(value));
@@ -1106,6 +1136,12 @@ native linked_list_set_str(LinkedList:linked_list, index, const value[]);
 native linked_list_set_var(LinkedList:linked_list, index, ConstVariantTag:value);
 native linked_list_set_cell(LinkedList:linked_list, index, offset, AnyTag:value);
 native bool:linked_list_set_cell_safe(LinkedList:linked_list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
+
+native linked_list_count(LinkedList:linked_list, AnyTag:value, TagTag:tag_id=tagof(value));
+native linked_list_count_arr(LinkedList:linked_list, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native linked_list_count_str(LinkedList:linked_list, const value[]);
+native linked_list_count_var(LinkedList:linked_list, ConstVariantTag:value);
+native linked_list_count_if(LinkedList:linked_list, Expression:pred);
 
 native linked_list_tagof(LinkedList:linked_list, index);
 native linked_list_sizeof(LinkedList:linked_list, index);
@@ -1138,6 +1174,9 @@ native Iter:linked_list_iter(LinkedList:linked_list, index=0);
 #define linked_list_set<%0>(%1,%2,%3) linked_list_set(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2,_PP@CAST[%0](%3))
 #define linked_list_set_arr<%0>(%1,%2,%3) linked_list_set_arr(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 #define linked_list_set_cell<%0>(%1,%2,%3,%4) linked_list_set_cell(LinkedList:_PP@CAST[LinkedList<%0>](%1),%2,%3,_PP@CAST[%0](%4))
+
+#define linked_list_count<%0>(%1,%2) linked_list_count(LinkedList:_PP@CAST[LinkedList<%0>](%1),_PP@CAST[%0](%2))
+#define linked_list_count_arr<%0>(%1,%2) linked_list_count_arr(LinkedList:_PP@CAST[LinkedList<%0>](%1),_PP@CAST_ARR[%0](%2))
 
 #define linked_list_sizeof<%0>(%1) linked_list_sizeof(LinkedList:_PP@CAST[LinkedList<%0>](%1))
 
@@ -1173,6 +1212,10 @@ native pool_add_var(Pool:pool, ConstVariantTag:value);
 
 native bool:pool_remove(Pool:pool, index);
 native bool:pool_remove_deep(Pool:pool, index);
+native pool_remove_range(Pool:pool, begin, end);
+native pool_remove_range_deep(Pool:pool, begin, end);
+native pool_remove_if(Pool:pool, Expression:pred);
+native pool_remove_if_deep(Pool:pool, Expression:pred);
 
 native bool:pool_has(Pool:pool, index);
 
@@ -1192,6 +1235,18 @@ native pool_set_str(Pool:pool, index, const value[]);
 native pool_set_var(Pool:pool, index, ConstVariantTag:value);
 native pool_set_cell(Pool:pool, index, offset, AnyTag:value);
 native bool:pool_set_cell_safe(Pool:pool, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
+
+native pool_find(Pool:pool, AnyTag:value, TagTag:tag_id=tagof(value));
+native pool_find_arr(Pool:pool, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native pool_find_str(Pool:pool, const value[]);
+native pool_find_var(Pool:pool, ConstVariantTag:value);
+native pool_find_if(Pool:pool, Expression:pred);
+
+native pool_count(Pool:pool, AnyTag:value, TagTag:tag_id=tagof(value));
+native pool_count_arr(Pool:pool, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native pool_count_str(Pool:pool, const value[]);
+native pool_count_var(Pool:pool, ConstVariantTag:value);
+native pool_count_if(Pool:pool, Expression:pred);
 
 native pool_tagof(Pool:pool, index);
 native pool_sizeof(Pool:pool, index);
@@ -1220,6 +1275,8 @@ native Iter:pool_iter_at(Pool:pool, index);
 
 #define pool_remove<%0>(%1,%2) pool_remove(Pool:_PP@CAST[Pool<%0>](%1),%2)
 #define pool_remove_deep<%0>(%1,%2) pool_remove_deep(Pool:_PP@CAST[Pool<%0>](%1),%2)
+#define pool_remove_range<%0>(%1,%2) pool_remove(Pool:_PP@CAST[Pool<%0>](%1),%2)
+#define pool_remove_range_deep<%0>(%1,%2) pool_remove_deep(Pool:_PP@CAST[Pool<%0>](%1),%2)
 
 #define pool_get<%0>(%1,%2) (%0:pool_get(Pool:_PP@CAST[Pool<%0>](%1),%2))
 #define pool_get_arr<%0>(%1,%2,%3) pool_get_arr(Pool:_PP@CAST[Pool<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
@@ -1227,6 +1284,12 @@ native Iter:pool_iter_at(Pool:pool, index);
 #define pool_set<%0>(%1,%2,%3) pool_set(Pool:_PP@CAST[Pool<%0>](%1),%2,_PP@CAST[%0](%3))
 #define pool_set_arr<%0>(%1,%2,%3) pool_set_arr(Pool:_PP@CAST[Pool<%0>](%1),%2,_PP@CAST_ARR[%0](%3))
 #define pool_set_cell<%0>(%1,%2,%3,%4) pool_set_cell(Pool:_PP@CAST[Pool<%0>](%1),%2,%3,_PP@CAST[%0](%4))
+
+#define pool_find<%0>(%1,%2) pool_find(Pool:_PP@CAST[Pool<%0>](%1),_PP@CAST[%0](%2))
+#define pool_find_arr<%0>(%1,%2) pool_find_arr(Pool:_PP@CAST[Pool<%0>](%1),_PP@CAST_ARR[%0](%2))
+
+#define pool_count<%0>(%1,%2) pool_count(Pool:_PP@CAST[Pool<%0>](%1),_PP@CAST[%0](%2))
+#define pool_count_arr<%0>(%1,%2) pool_count_arr(Pool:_PP@CAST[Pool<%0>](%1),_PP@CAST_ARR[%0](%2))
 
 #define pool_sizeof<%0>(%1) pool_sizeof(Pool:_PP@CAST[Pool<%0>](%1))
 

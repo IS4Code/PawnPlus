@@ -2,7 +2,9 @@
 #include "errors.h"
 #include "modules/containers.h"
 #include "modules/variants.h"
+#include "modules/expressions.h"
 #include <vector>
+#include <algorithm>
 
 template <size_t... Indices>
 class value_at
@@ -16,7 +18,7 @@ public:
 	static cell AMX_NATIVE_CALL linked_list_add(AMX *amx, cell *params)
 	{
 		cell index = optparam(3, -1);
-		if(index < -1) amx_LogicError(errors::out_of_range, "linked list index");
+		if(index < -1) amx_LogicError(errors::out_of_range, "index");
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
 		if(index == -1)
@@ -25,7 +27,7 @@ public:
 			return static_cast<cell>(ptr->size() - 1);
 		}else if(static_cast<ucell>(index) > ptr->size())
 		{
-			amx_LogicError(errors::out_of_range, "linked list index");
+			amx_LogicError(errors::out_of_range, "index");
 			return 0;
 		}else{
 			auto it = ptr->begin();
@@ -39,10 +41,10 @@ public:
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL linked_list_set(AMX *amx, cell *params)
 	{
-		if(params[2] < 0) amx_LogicError(errors::out_of_range, "linked list index");
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
-		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "linked list index");
+		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "index");
 		(*ptr)[params[2]] = Factory(amx, params[Indices]...);
 		return 1;
 	}
@@ -51,11 +53,24 @@ public:
 	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL linked_list_get(AMX *amx, cell *params)
 	{
-		if(params[2] < 0) amx_LogicError(errors::out_of_range, "linked list index");
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
-		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "linked list index");
+		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "index");
 		return Factory(amx, (*ptr)[params[2]], params[Indices]...);
+	}
+
+	// native linked_list_count(LinkedList:linked_list, value, ...);
+	template <value_ftype Factory>
+	static cell AMX_NATIVE_CALL linked_list_count(AMX *amx, cell *params)
+	{
+		linked_list_t *ptr;
+		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
+		auto find = Factory(amx, params[Indices]...);
+		return std::count_if(ptr->begin(), ptr->end(), [&](const std::shared_ptr<dyn_object> &obj)
+		{
+			return *obj == find;
+		});
 	}
 };
 
@@ -63,11 +78,11 @@ public:
 template <size_t TagIndex = 0>
 static cell AMX_NATIVE_CALL linked_list_set_cell(AMX *amx, cell *params)
 {
-	if(params[2] < 0) amx_LogicError(errors::out_of_range, "linked list index");
-	if(params[3] < 0) amx_LogicError(errors::out_of_range, "array offset");
+	if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
+	if(params[3] < 0) amx_LogicError(errors::out_of_range, "offset");
 	linked_list_t *ptr;
 	if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
-	if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "linked list index");
+	if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "index");
 	auto &obj = (*ptr)[params[2]];
 	if(TagIndex && !obj.tag_assignable(amx, params[TagIndex])) return 0;
 	obj.set_cell({params[3]}, params[4]);
@@ -262,7 +277,7 @@ namespace Natives
 	// native linked_list_add_linked_list(LinkedList:linked_list, LinkedList:range, index=-1);
 	AMX_DEFINE_NATIVE(linked_list_add_linked_list, 2)
 	{
-		if(params[3] < -1) amx_LogicError(errors::out_of_range, "linked list index");
+		if(params[3] < -1) amx_LogicError(errors::out_of_range, "index");
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
 		linked_list_t *ptr2;
@@ -274,7 +289,7 @@ namespace Natives
 			return static_cast<cell>(index);
 		}else if(static_cast<ucell>(params[3]) > ptr->size())
 		{
-			amx_LogicError(errors::out_of_range, "linked list index");
+			amx_LogicError(errors::out_of_range, "index");
 			return 0;
 		}else{
 			auto it = ptr->begin();
@@ -356,10 +371,10 @@ namespace Natives
 	// native linked_list_remove(LinkedList:linked_list, index);
 	AMX_DEFINE_NATIVE(linked_list_remove, 2)
 	{
-		if(params[2] < 0) amx_LogicError(errors::out_of_range, "linked list index");
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
-		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "linked list index");
+		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "index");
 		auto it = ptr->begin();
 		std::advance(it, params[2]);
 		ptr->erase(it);
@@ -369,10 +384,10 @@ namespace Natives
 	// native linked_list_remove_deep(LinkedList:linked_list, index);
 	AMX_DEFINE_NATIVE(linked_list_remove_deep, 2)
 	{
-		if(params[2] < 0) amx_LogicError(errors::out_of_range, "linked list index");
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
-		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "linked list index");
+		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "index");
 		auto it = ptr->begin();
 		std::advance(it, params[2]);
 		(*it)->release();
@@ -467,10 +482,10 @@ namespace Natives
 	// native linked_list_tagof(LinkedList:linked_list, index);
 	AMX_DEFINE_NATIVE(linked_list_tagof, 2)
 	{
-		if(params[2] < 0) amx_LogicError(errors::out_of_range, "linked list index");
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
-		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "linked list index");
+		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "index");
 		auto &obj = (*ptr)[params[2]];
 		return obj.get_tag(amx);
 	}
@@ -478,12 +493,120 @@ namespace Natives
 	// native linked_list_sizeof(LinkedList:linked_list, index);
 	AMX_DEFINE_NATIVE(linked_list_sizeof, 2)
 	{
-		if(params[2] < 0) amx_LogicError(errors::out_of_range, "linked list index");
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		linked_list_t *ptr;
 		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
-		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "linked list index");
+		if(static_cast<ucell>(params[2]) >= ptr->size()) amx_LogicError(errors::out_of_range, "index");
 		auto &obj = (*ptr)[params[2]];
 		return obj.get_size();
+	}
+
+	// native linked_list_remove_if(LinkedList:linked_list, Expression:pred);
+	AMX_DEFINE_NATIVE(linked_list_remove_if, 2)
+	{
+		linked_list_t *ptr;
+		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
+		expression *expr;
+		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+
+		expression::args_type args;
+		expression::exec_info info(amx);
+
+		auto it = ptr->begin();
+		while(it != ptr->end())
+		{
+			if(args.size() == 0)
+			{
+				args.push_back(std::cref(**it));
+			}else{
+				args[0] = std::cref(**it);
+			}
+			if(expr->execute_bool(args, info))
+			{
+				it = ptr->erase(it);
+			}else{
+				++it;
+			}
+		}
+		return 1;
+	}
+
+	// native linked_list_remove_if_deep(LinkedList:linked_list, Expression:pred);
+	AMX_DEFINE_NATIVE(linked_list_remove_if_deep, 2)
+	{
+		linked_list_t *ptr;
+		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
+		expression *expr;
+		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+		
+		expression::args_type args;
+		expression::exec_info info(amx);
+		
+		auto it = ptr->begin();
+		while(it != ptr->end())
+		{
+			if(args.size() == 0)
+			{
+				args.push_back(std::cref(**it));
+			}else{
+				args[0] = std::cref(**it);
+			}
+			if(expr->execute_bool(args, info))
+			{
+				(*it)->release();
+				it = ptr->erase(it);
+			}else{
+				++it;
+			}
+		}
+		return 1;
+	}
+
+	// native linked_list_count(LinkedList:linked_list, AnyTag:value, TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(linked_list_count, 3)
+	{
+		return value_at<2, 3>::linked_list_count<dyn_func>(amx, params);
+	}
+
+	// native linked_list_count_arr(LinkedList:linked_list, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(linked_list_count_arr, 4)
+	{
+		return value_at<2, 3, 4>::linked_list_count<dyn_func_arr>(amx, params);
+	}
+
+	// native linked_list_count_str(LinkedList:linked_list, const value[]);
+	AMX_DEFINE_NATIVE(linked_list_count_str, 2)
+	{
+		return value_at<2>::linked_list_count<dyn_func_str>(amx, params);
+	}
+
+	// native linked_list_count_var(LinkedList:linked_list, VariantTag:value);
+	AMX_DEFINE_NATIVE(linked_list_count_var, 2)
+	{
+		return value_at<2>::linked_list_count<dyn_func_var>(amx, params);
+	}
+
+	// native linked_list_count_if(LinkedList:linked_list, Expression:pred);
+	AMX_DEFINE_NATIVE(linked_list_count_if, 2)
+	{
+		linked_list_t *ptr;
+		if(!linked_list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "linked list", params[1]);
+		expression *expr;
+		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+		
+		expression::args_type args;
+		expression::exec_info info(amx);
+
+		return std::count_if(ptr->begin(), ptr->end(), [&](const std::shared_ptr<dyn_object> &obj)
+		{
+			if(args.size() == 0)
+			{
+				args.push_back(std::cref(*obj));
+			}else{
+				args[0] = std::cref(*obj);
+			}
+			return expr->execute_bool(args, info);
+		});
 	}
 }
 
@@ -516,6 +639,8 @@ static AMX_NATIVE_INFO native_list[] =
 
 	AMX_DECLARE_NATIVE(linked_list_remove),
 	AMX_DECLARE_NATIVE(linked_list_remove_deep),
+	AMX_DECLARE_NATIVE(linked_list_remove_if),
+	AMX_DECLARE_NATIVE(linked_list_remove_if_deep),
 
 	AMX_DECLARE_NATIVE(linked_list_get),
 	AMX_DECLARE_NATIVE(linked_list_get_arr),
@@ -532,6 +657,12 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(linked_list_set_var),
 	AMX_DECLARE_NATIVE(linked_list_set_cell),
 	AMX_DECLARE_NATIVE(linked_list_set_cell_safe),
+
+	AMX_DECLARE_NATIVE(linked_list_count),
+	AMX_DECLARE_NATIVE(linked_list_count_arr),
+	AMX_DECLARE_NATIVE(linked_list_count_str),
+	AMX_DECLARE_NATIVE(linked_list_count_var),
+	AMX_DECLARE_NATIVE(linked_list_count_if),
 
 	AMX_DECLARE_NATIVE(linked_list_tagof),
 	AMX_DECLARE_NATIVE(linked_list_sizeof),

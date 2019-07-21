@@ -426,7 +426,15 @@ private:
 					{
 						if(++begin != end)
 						{
-							if((options & parser_options::allow_arguments) && *begin == 'a' && ++begin != end && *begin == 'r' && ++begin != end && *begin == 'g')
+							if((options & parser_options::allow_arguments) && *begin == 'k' && ++begin != end && *begin == 'e' && ++begin != end && *begin == 'y')
+							{
+								++begin;
+								return std::make_shared<arg_expression>(1);
+							}else if((options & parser_options::allow_arguments) && *begin == 'v' && ++begin != end && *begin == 'a' && ++begin != end && *begin == 'l' && ++begin != end && *begin == 'u' && ++begin != end && *begin == 'e')
+							{
+								++begin;
+								return std::make_shared<arg_expression>(0);
+							}else if((options & parser_options::allow_arguments) && *begin == 'a' && ++begin != end && *begin == 'r' && ++begin != end && *begin == 'g')
 							{
 								if(++begin != end && *begin == 's')
 								{

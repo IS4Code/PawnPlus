@@ -324,7 +324,7 @@ namespace aux
 			if(ordered)
 			{
 				return bpool.index_of(it);
-			} else {
+			}else{
 				return lpool.index_of(it);
 			}
 		}
