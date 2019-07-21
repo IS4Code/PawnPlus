@@ -533,10 +533,6 @@ namespace Natives
 	AMX_DEFINE_NATIVE(pawn_guard, 2)
 	{
 		auto obj = dyn_object(amx, params[1], params[2]);
-		if(obj.get_tag()->inherits_from(tags::tag_cell))
-		{
-			return 0;
-		}
 		return guards::get_id(amx, guards::add(amx, std::move(obj)));
 	}
 
@@ -545,10 +541,6 @@ namespace Natives
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		auto obj = dyn_object(amx, addr, params[2], params[3]);
-		if(obj.get_tag()->inherits_from(tags::tag_cell))
-		{
-			return 0;
-		}
 		return guards::get_id(amx, guards::add(amx, std::move(obj)));
 	}
 
@@ -559,7 +551,7 @@ namespace Natives
 		return guards::get_by_id(amx, params[1], obj);
 	}
 
-	// native bool:pawn_guard_free(Guard:guard);
+	// native pawn_guard_free(Guard:guard);
 	AMX_DEFINE_NATIVE(pawn_guard_free, 1)
 	{
 		handle_t *obj;

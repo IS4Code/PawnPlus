@@ -131,14 +131,19 @@ native pp_num_global_strings();
 native pp_num_local_variants();
 native pp_num_global_variants();
 native pp_num_lists();
+native pp_num_linked_lists();
 native pp_num_maps();
+native pp_num_pools();
 native pp_num_guards();
+native pp_num_amx_guards();
 native pp_entry(name[], size=sizeof(name));
 native String:pp_entry_s();
 native pp_num_local_iters();
 native pp_num_global_iters();
 native pp_num_local_handles();
 native pp_num_global_handles();
+native pp_num_local_expressions();
+native pp_num_global_expressions();
 native pp_max_hooked_natives();
 native pp_num_hooked_natives();
 native pp_collect();
@@ -220,7 +225,7 @@ native pawn_remove_hook(NativeHook:id);
 native Guard:pawn_guard(AnyTag:value, TagTag:tag_id=tagof(value));
 native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native bool:pawn_guard_valid(Guard:guard);
-native bool:pawn_guard_free(Guard:guard);
+native pawn_guard_free(Guard:guard);
 native List:pawn_get_args(const format[], bool:byref=false, level=0);
 #define pawn_nameof(%0) ((tagof(%0)),_:_PP@REMOVE_COLON:(#%0))
 native ArgTag:[2]pawn_arg_pack(AnyTag:value, tag_id=tagof(value));
@@ -329,6 +334,7 @@ enum fork_level
 
 const Amx:INVALID_AMX = Amx:0;
 const Var:INVALID_AMX_VAR = Var:0;
+const AmxGuard:INVALID_AMX_GUARD = AmxGuard:0;
 
 const Amx:AMX_ALL = Amx:-1;
 const Amx:AMX_OTHERS = Amx:-2;
@@ -337,14 +343,22 @@ native Amx:amx_this();
 native Handle:amx_handle();
 native Amx:amx_source();
 native Handle:amx_source_handle();
+
 native amx_name(name[], size=sizeof(name));
 native String:amx_name_s();
+
 native amx_call_native(Amx:amx, const function[], const format[], AnyTag:...);
 native amx_call_public(Amx:amx, const function[], const format[], AnyTag:...);
 native amx_err:amx_try_call_native(Amx:amx, const function[], &result, const format[], AnyTag:...);
 native amx_err:amx_try_call_native_msg(Amx:amx, const function[], &result, msg[], msg_size=sizeof(msg), const format[]="", AnyTag:...);
 native amx_err:amx_try_call_native_msg_s(Amx:amx, const function[], &result, &StringTag:msg, const format[], AnyTag:...);
 native amx_err:amx_try_call_public(Amx:amx, const function[], &result, const format[], AnyTag:...);
+
+native AmxGuard:amx_guard(AnyTag:value, TagTag:tag_id=tagof(value));
+native AmxGuard:amx_guard_arr(AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native bool:amx_guard_valid(AmxGuard:guard);
+native amx_guard_free(AmxGuard:guard);
+
 native amx_name_length();
 native amx_num_publics();
 native amx_public_index(const function[]);
@@ -366,6 +380,7 @@ native [3]amx_encode_value_native(index, AnyTag:value);
 native [3]amx_encode_value_native_name(const function[], AnyTag:value);
 native amx_encoded_length();
 native bool:amx_try_decode_value(const encoded[], &AnyTag:value);
+
 native Var:amx_var(&AnyTag:var);
 native Var:amx_var_arr(AnyTag:arr[], size=sizeof(arr));
 native Var:amx_public_var(const name[]);
@@ -380,6 +395,7 @@ native amx_get(Var:var, index=0);
 native amx_sizeof(Var:var);
 native bool:amx_my(Var:var);
 native bool:amx_to_ref(Var:var, ref[1][]);
+
 native bool:amx_fork(fork_level:level=fork_machine, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
 native amx_commit(bool:context=true);
 native amx_fork_end();
@@ -2297,12 +2313,3 @@ stock Ref:operator=(Ref<LinkedList>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Iter>:arg) return Ref:arg;
 
 #endif
-
-stock operator~(Guard:arr[], size)
-{
-    for(new i = 0; i < size; i++)
-    {
-        pawn_guard_free(arr[i]);
-        arr[i] = Guard:0;
-    }
-}

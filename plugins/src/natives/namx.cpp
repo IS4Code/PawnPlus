@@ -5,6 +5,7 @@
 #include "modules/amxutils.h"
 #include "modules/strings.h"
 #include "modules/containers.h"
+#include "modules/guards.h"
 #include "utils/shared_id_set_pool.h"
 #include <limits>
 
@@ -642,6 +643,37 @@ namespace Natives
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnTailCall;
 	}
+
+	// native AmxGuard:amx_guard(AnyTag:value, tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(amx_guard, 2)
+	{
+		auto obj = dyn_object(amx, params[1], params[2]);
+		return amx_guards::get_id(amx, amx_guards::add(amx, std::move(obj)));
+	}
+
+	// native AmxGuard:amx_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
+	AMX_DEFINE_NATIVE(amx_guard_arr, 3)
+	{
+		cell *addr = amx_GetAddrSafe(amx, params[1]);
+		auto obj = dyn_object(amx, addr, params[2], params[3]);
+		return amx_guards::get_id(amx, amx_guards::add(amx, std::move(obj)));
+	}
+
+	// native bool:amx_guard_valid(AmxGuard:guard);
+	AMX_DEFINE_NATIVE(amx_guard_valid, 1)
+	{
+		handle_t *obj;
+		return amx_guards::get_by_id(amx, params[1], obj);
+	}
+
+	// native amx_guard_free(AmxGuard:guard);
+	AMX_DEFINE_NATIVE(amx_guard_free, 1)
+	{
+		handle_t *obj;
+		if(!amx_guards::get_by_id(amx, params[1], obj)) amx_LogicError(errors::pointer_invalid, "guard", params[1]);
+
+		return amx_guards::free(amx, obj);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -700,6 +732,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(amx_parallel_begin),
 	AMX_DECLARE_NATIVE(amx_parallel_end),
 	AMX_DECLARE_NATIVE(amx_tailcall),
+	AMX_DECLARE_NATIVE(amx_guard),
+	AMX_DECLARE_NATIVE(amx_guard_arr),
+	AMX_DECLARE_NATIVE(amx_guard_valid),
+	AMX_DECLARE_NATIVE(amx_guard_free),
 };
 
 int RegisterAmxNatives(AMX *amx)

@@ -15,4 +15,14 @@ namespace guards
 	bool free(AMX *amx, handle_t *obj);
 }
 
+namespace amx_guards
+{
+	size_t count(AMX *amx);
+	handle_t *add(AMX *amx, dyn_object &&obj);
+	cell get_id(AMX *amx, const handle_t *obj);
+	bool get_by_id(AMX *amx, cell id, handle_t *&obj);
+	bool contains(AMX *amx, const handle_t *obj);
+	bool free(AMX *amx, handle_t *obj);
+}
+
 #endif

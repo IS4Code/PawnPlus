@@ -9,6 +9,7 @@
 #include "modules/guards.h"
 #include "modules/containers.h"
 #include "modules/amxhook.h"
+#include "modules/expressions.h"
 #include "utils/systools.h"
 
 #include <cstring>
@@ -121,16 +122,34 @@ namespace Natives
 		return list_pool.size();
 	}
 
+	// native pp_num_linked_lists();
+	AMX_DEFINE_NATIVE(pp_num_linked_lists, 0)
+	{
+		return linked_list_pool.size();
+	}
+
 	// native pp_num_maps();
 	AMX_DEFINE_NATIVE(pp_num_maps, 0)
 	{
 		return map_pool.size();
 	}
 
+	// native pp_num_pools();
+	AMX_DEFINE_NATIVE(pp_num_pools, 0)
+	{
+		return pool_pool.size();
+	}
+
 	// native pp_num_guards();
 	AMX_DEFINE_NATIVE(pp_num_guards, 0)
 	{
 		return guards::count(amx);
+	}
+
+	// native pp_num_amx_guards();
+	AMX_DEFINE_NATIVE(pp_num_amx_guards, 0)
+	{
+		return amx_guards::count(amx);
 	}
 
 	template <class Func>
@@ -207,6 +226,18 @@ namespace Natives
 	AMX_DEFINE_NATIVE(pp_num_global_handles, 0)
 	{
 		return handle_pool.global_size();
+	}
+
+	// native pp_num_local_expressions();
+	AMX_DEFINE_NATIVE(pp_num_local_expressions, 0)
+	{
+		return expression_pool.local_size();
+	}
+
+	// native pp_num_global_expressions();
+	AMX_DEFINE_NATIVE(pp_num_global_expressions, 0)
+	{
+		return expression_pool.global_size();
 	}
 
 	// native pp_max_hooked_natives();
@@ -529,12 +560,17 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_num_local_variants),
 	AMX_DECLARE_NATIVE(pp_num_global_variants),
 	AMX_DECLARE_NATIVE(pp_num_lists),
+	AMX_DECLARE_NATIVE(pp_num_linked_lists),
 	AMX_DECLARE_NATIVE(pp_num_maps),
+	AMX_DECLARE_NATIVE(pp_num_pools),
 	AMX_DECLARE_NATIVE(pp_num_guards),
+	AMX_DECLARE_NATIVE(pp_num_amx_guards),
 	AMX_DECLARE_NATIVE(pp_num_local_iters),
 	AMX_DECLARE_NATIVE(pp_num_global_iters),
 	AMX_DECLARE_NATIVE(pp_num_local_handles),
 	AMX_DECLARE_NATIVE(pp_num_global_handles),
+	AMX_DECLARE_NATIVE(pp_num_local_expressions),
+	AMX_DECLARE_NATIVE(pp_num_global_expressions),
 	AMX_DECLARE_NATIVE(pp_max_hooked_natives),
 	AMX_DECLARE_NATIVE(pp_num_hooked_natives),
 	AMX_DECLARE_NATIVE(pp_entry),
