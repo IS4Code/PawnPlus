@@ -213,8 +213,8 @@ cell amx::dynamic_call(AMX *amx, AMX_NATIVE native, cell *params, tag_ptr &out_t
 	cell result;
 	amx->error = AMX_ERR_NONE;
 	native_return_tag = nullptr;
-	auto it = impl::runtime_native_map.find(native);
-	if(it != impl::runtime_native_map.end())
+	auto it = impl::runtime_native_map().find(native);
+	if(it != impl::runtime_native_map().end())
 	{
 		try{
 			if(params[0] < it->second.arg_count * static_cast<cell>(sizeof(cell)))

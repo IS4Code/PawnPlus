@@ -52,7 +52,7 @@ namespace impl
 		}
 	};
 
-	extern std::unordered_map<AMX_NATIVE, runtime_native_info> runtime_native_map;
+	std::unordered_map<AMX_NATIVE, runtime_native_info> &runtime_native_map();
 
 	cell handle_error(AMX *amx, const cell *params, const char *native, const errors::native_error &error);
 
@@ -91,7 +91,7 @@ namespace impl
 	template <AMX_NATIVE Native>
 	static AMX_NATIVE init_native() noexcept
 	{
-		return runtime_native_map.emplace(std::piecewise_construct, std::forward_as_tuple(adapt_native<Native>), std::forward_as_tuple(native_info<Native>::name(), native_info<Native>::arg_count(), Native)).first->first;
+		return runtime_native_map().emplace(std::piecewise_construct, std::forward_as_tuple(adapt_native<Native>), std::forward_as_tuple(native_info<Native>::name(), native_info<Native>::arg_count(), Native)).first->first;
 	}
 }
 
