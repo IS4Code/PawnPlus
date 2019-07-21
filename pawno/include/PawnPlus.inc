@@ -1753,6 +1753,41 @@ native Expression:expr_parse_s(ConstString:string, parser_options:options=parser
 native Expression:expr_literal(const name[]);
 native Expression:expr_intrinsic(const name[], parser_options:options=parser_all);
 
+#if defined _INC_y_functional && defined _INC_y_va
+forward _pp@indirect_call(f, ...);
+public _pp@indirect_call(f, ...)
+{
+    return @.f(___(1));
+}
+
+forward _pp@indirect_release(f);
+public _pp@indirect_release(f)
+{
+    Indirect_Release(f);
+}
+
+stock expr_func_inner({F@_@, F@_@i, F@_@ii, F@_@iii, F@_@iiii, F@_@iiiii, F@_@iiiiii, F@_@iiiiiii, F@_@iiiiiiii, F@_@iiiiiiiii}:func, tag_id=tagof(func))
+{
+    static tag_uid:func_tag;
+    if(!func_tag)
+    {
+        func_tag = tag_new("Indirect_Release");
+        tag_set_op(func_tag, tag_op_collect, #_pp@indirect_release);
+        tag_lock(func_tag);
+    }
+    new args = str_len(tag_name_s(tag_uid(tag_id))) - 4;
+    Indirect_Claim(func);
+    return _:expr_quote(expr_set_amx(expr_call(expr_public(#_pp@indirect_call), expr_const(_:func, tag_id), expr_empty(expr_const(_:func, func_tag)), expr_select(expr_arg_pack(0, args - 1), expr_addressof(expr_arg(0))))));
+}
+
+stock Expression:expr_func({F@_@, F@_@i, F@_@ii, F@_@iii, F@_@iiii, F@_@iiiii, F@_@iiiiii, F@_@iiiiiii, F@_@iiiiiiii, F@_@iiiiiiiii}:func, tag_id=tagof(func))
+{
+    return Expression:expr_func_inner(func, tag_id);
+}
+
+#define expr_func<%0>({%1}) Expression:LAMBDA_%0<expr_func_inner>{%1}()
+#endif
+
 
 /*                 */
 /* Tasks and async */
