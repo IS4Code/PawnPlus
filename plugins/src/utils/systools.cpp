@@ -1,4 +1,5 @@
 #include "systools.h"
+#include <stdint.h>
 
 #ifdef _WIN32
 

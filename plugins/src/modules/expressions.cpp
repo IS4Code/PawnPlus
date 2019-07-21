@@ -2563,13 +2563,14 @@ dyn_object intrinsic_expression::call(const args_type &args, const exec_info &in
 
 void intrinsic_expression::call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const
 {
-	call_multi(args, info, call_args, call_args_type());
+	call_args_type output;
+	call_multi(args, info, call_args, output);
 }
 
 void intrinsic_expression::call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const
 {
 	try{
-		static_cast<intrinsic_function*>(func)(info, static_cast<parser_options>(options), call_args, output);
+		reinterpret_cast<intrinsic_function*>(func)(info, static_cast<parser_options>(options), call_args, output);
 	}catch(const errors::native_error &err)
 	{
 		amx_ExpressionError(errors::inner_error_msg, "intrinsic", name.c_str(), err.message.c_str());

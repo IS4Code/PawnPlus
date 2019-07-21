@@ -154,7 +154,7 @@ namespace Natives
 		{
 			amx_LogicError(errors::func_not_found, "intrinsic", name);
 		}
-		auto &expr = expression_pool.emplace_derived<intrinsic_expression>(it->second, optparam(2, -1), std::move(strname));
+		auto &expr = expression_pool.emplace_derived<intrinsic_expression>(reinterpret_cast<void*>(it->second), optparam(2, -1), std::move(strname));
 		return expression_pool.get_id(expr);
 	}
 

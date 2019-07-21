@@ -584,7 +584,7 @@ private:
 								auto it = parser_instrinsics().find(symbol);
 								if(it != parser_instrinsics().end())
 								{
-									return std::make_shared<intrinsic_expression>(it->second, static_cast<cell>(options), std::move(symbol));
+									return std::make_shared<intrinsic_expression>(reinterpret_cast<void*>(it->second), static_cast<cell>(options), std::move(symbol));
 								}
 							}
 						}
