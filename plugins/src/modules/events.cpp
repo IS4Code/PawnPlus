@@ -219,6 +219,19 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 	if(!handler_index(amx, index)) return false;
 
 	int params = amx->paramcount;
+
+	if(params < 0)
+	{
+		logprintf("[PawnPlus] Error: AMX parameter count is negative (%d).", params);
+		amx_RaiseError(amx, AMX_ERR_MEMACCESS);
+		return false;
+	}else if(params * sizeof(cell) > static_cast<ucell>(amx->stp - amx->stk))
+	{
+		logprintf("[PawnPlus] Error: AMX parameter count is out of range (%d).", params);
+		amx_RaiseError(amx, AMX_ERR_MEMACCESS);
+		return false;
+	}
+
 	cell stk = amx->stk;
 
 	cell flags = this->flags;
@@ -227,7 +240,7 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 	if(!(flags & 2))
 	{
 		cell *stk = reinterpret_cast<cell*>(amx_GetData(amx) + amx->stk);
-		oldargs = {stk, stk + amx->paramcount};
+		oldargs = {stk, stk + params};
 	}
 
 	cell heap, *heap_addr;
@@ -355,6 +368,19 @@ void events::name_length(AMX *amx, int &length)
 void callback_info::invoke(AMX *amx, cell *retval)
 {
 	int params = amx->paramcount;
+
+	if(params < 0)
+	{
+		logprintf("[PawnPlus] Error: AMX parameter count is negative (%d).", params);
+		amx_RaiseError(amx, AMX_ERR_MEMACCESS);
+		return;
+	}else if(params * sizeof(cell) > static_cast<ucell>(amx->stp - amx->stk))
+	{
+		logprintf("[PawnPlus] Error: AMX parameter count is out of range (%d).", params);
+		amx_RaiseError(amx, AMX_ERR_MEMACCESS);
+		return;
+	}
+
 	amx->paramcount = 0;
 
 	cell *stk = reinterpret_cast<cell*>(amx_GetData(amx) + amx->stk);
@@ -362,7 +388,7 @@ void callback_info::invoke(AMX *amx, cell *retval)
 
 	if(!action)
 	{
-		amx->error = AMX_ERR_NOTFOUND;
+		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
 		return;
 	}
 
@@ -388,6 +414,6 @@ void callback_info::invoke(AMX *amx, cell *retval)
 		logprintf("[PawnPlus] Unhandled error in custom callback %s: %s", name.c_str(), err.message.c_str());
 	}catch(const errors::amx_error &err)
 	{
-		amx->error = err.code;
+		amx_RaiseError(amx, err.code);
 	}
 }
