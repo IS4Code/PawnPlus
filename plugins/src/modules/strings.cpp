@@ -511,15 +511,48 @@ struct format_base
 				{
 					++begin;
 					cell precision = parse_num(begin, end);
-					if(begin == end && precision >= 0)
+					if(begin == end)
 					{
-						buf.append(convert(aux::to_string(val, std::setprecision(precision), std::fixed)));
+						if(precision >= 0)
+						{
+							buf.append(convert(aux::to_string(val, std::setprecision(precision), std::fixed)));
+						}else{
+							buf.append(convert(aux::to_string(val, std::setprecision(-precision), std::defaultfloat)));
+						}
 						return;
 					}
 				}else if(begin == end)
 				{
 					buf.append(convert(aux::to_string(val)));
 					return;
+				}else{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					cell width = parse_num(begin, end);
+					if(width < 0)
+					{
+						break;
+					}
+					if(begin == end)
+					{
+						buf.append(convert(aux::to_string(val, std::setw(width), std::setfill(padding))));
+						return;
+					}else if(*begin == '.')
+					{
+						++begin;
+						cell precision = parse_num(begin, end);
+						if(begin == end)
+						{
+							if(precision >= 0)
+							{
+								buf.append(convert(aux::to_string(val, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed)));
+							}else{
+								buf.append(convert(aux::to_string(val, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat)));
+							}
+							return;
+						}
+						return;
+					}
 				}
 			}
 			break;
