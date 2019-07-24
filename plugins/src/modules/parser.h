@@ -485,7 +485,7 @@ private:
 								auto inner = parse_factor(amx, begin, end, endchar);
 								if(!inner)
 								{
-									inner = std::make_shared<empty_expression>();
+									inner = empty_expression::instance;
 								}
 								if(symbol == "_")
 								{
@@ -542,6 +542,14 @@ private:
 								amx_ParserError("missing expression", begin, end);
 							}
 							return std::make_shared<nameof_expression>(std::move(inner));
+						}else if(symbol == "void")
+						{
+							auto inner = parse_element(amx, begin, end, endchar);
+							if(!inner)
+							{
+								return std::make_shared<void_expression>(empty_expression::instance);
+							}
+							return std::make_shared<void_expression>(std::move(inner));
 						}else if(symbol == "try")
 						{
 							auto old = begin;

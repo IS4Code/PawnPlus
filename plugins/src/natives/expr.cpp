@@ -174,13 +174,25 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
-	// native Expression:expr_weak(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_weak, 1)
+	template <class Expr, class... Args>
+	static cell AMX_NATIVE_CALL expr_unary(AMX *amx, cell *params, Args &&...args)
 	{
 		std::shared_ptr<expression> ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
-		auto &expr = expression_pool.emplace_derived<weak_expression>(std::move(ptr));
+		auto &expr = expression_pool.emplace_derived<Expr>(std::move(ptr), std::forward<Args>(args)...);
 		return expression_pool.get_id(expr);
+	}
+
+	// native Expression:expr_void(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_void, 1)
+	{
+		return expr_unary<void_expression>(amx, params);
+	}
+
+	// native Expression:expr_weak(Expression:expr);
+	AMX_DEFINE_NATIVE(expr_weak, 1)
+	{
+		return expr_unary<weak_expression>(amx, params);
 	}
 
 	// native Expression:expr_weak_set(Expression:weak, Expression:target);
@@ -271,15 +283,6 @@ namespace Natives
 		cell end = optparam(2, -1);
 		if(end < -1 || (end != -1 && end < begin)) amx_LogicError(errors::out_of_range, "end");
 		auto &expr = expression_pool.emplace_derived<arg_pack_expression>(begin, end);
-		return expression_pool.get_id(expr);
-	}
-
-	template <class Expr, class... Args>
-	static cell AMX_NATIVE_CALL expr_unary(AMX *amx, cell *params, Args &&...args)
-	{
-		std::shared_ptr<expression> ptr;
-		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
-		auto &expr = expression_pool.emplace_derived<Expr>(std::move(ptr), std::forward<Args>(args)...);
 		return expression_pool.get_id(expr);
 	}
 
@@ -804,6 +807,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_type_str_s),
 
 	AMX_DECLARE_NATIVE(expr_empty),
+	AMX_DECLARE_NATIVE(expr_void),
 
 	AMX_DECLARE_NATIVE(expr_weak),
 	AMX_DECLARE_NATIVE(expr_weak_set),

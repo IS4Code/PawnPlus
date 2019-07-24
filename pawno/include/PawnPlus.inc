@@ -1632,6 +1632,7 @@ native expr_type_str(Expression:expr, type[], size=sizeof(type));
 native String:expr_type_str_s(Expression:expr);
 
 native Expression:expr_empty(Expression:...);
+native Expression:expr_void(Expression:expr);
 
 native Expression:expr_weak(Expression:expr);
 native Expression:expr_weak_set(Expression:weak, Expression:target);

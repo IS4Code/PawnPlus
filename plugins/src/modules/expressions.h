@@ -80,6 +80,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept;
 	virtual cell get_size(const args_type &args) const noexcept;
 	virtual cell get_rank(const args_type &args) const noexcept;
+	virtual cell get_count(const args_type &args) const noexcept;
 	virtual void to_string(strings::cell_string &str) const noexcept = 0;
 
 	virtual ~expression() = default;
@@ -124,6 +125,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
@@ -149,6 +151,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override = 0;
 	virtual cell get_size(const args_type &args) const noexcept override = 0;
 	virtual cell get_rank(const args_type &args) const noexcept override = 0;
+	virtual cell get_count(const args_type &args) const noexcept override = 0;
 	virtual void to_string(strings::cell_string &str) const noexcept override = 0;
 	virtual decltype(expression_pool)::object_ptr clone() const override = 0;
 };
@@ -176,6 +179,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
@@ -197,6 +201,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
@@ -210,6 +215,7 @@ public:
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
 	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const = 0;
+	virtual cell get_count(const args_type &args) const noexcept override = 0;
 };
 
 class empty_expression : public sequence_expression
@@ -231,6 +237,29 @@ public:
 
 	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override;
+	virtual cell get_count(const args_type &args) const noexcept override;
+	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+};
+
+class void_expression : public sequence_expression
+{
+	expression_ptr expr;
+
+public:
+	void_expression(expression_ptr &&expr) : expr(std::move(expr))
+	{
+
+	}
+
+	void_expression(const expression_ptr &expr) : expr(expr)
+	{
+
+	}
+
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
+	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -256,6 +285,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -290,11 +320,13 @@ public:
 	}
 
 	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual const expression_ptr &get_left() const noexcept override;
 	virtual const expression_ptr &get_right() const noexcept override;
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -318,6 +350,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -332,6 +365,7 @@ public:
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual dyn_object index(const args_type &args, const exec_info &info, const call_args_type &indices) const override;
 	virtual dyn_object index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
@@ -367,6 +401,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 
 protected:
@@ -447,6 +482,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept override;
 	virtual const expression_ptr &get_right() const noexcept override;
@@ -473,6 +509,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept override;
 	virtual const expression_ptr &get_right() const noexcept override;
@@ -512,6 +549,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept override;
 	virtual const expression_ptr &get_right() const noexcept override;
@@ -568,6 +606,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -606,6 +645,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -635,6 +675,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -660,6 +701,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -676,8 +718,10 @@ public:
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override;
 	virtual dyn_object index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -696,6 +740,7 @@ public:
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual dyn_object call(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override;
@@ -705,6 +750,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -721,12 +767,14 @@ public:
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual dyn_object call(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override;
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -745,12 +793,14 @@ public:
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual dyn_object call(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override;
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -770,11 +820,13 @@ public:
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override;
 	virtual std::tuple<cell*, size_t, tag_ptr> address(const args_type &args, const exec_info &info, const call_args_type &indices) const override;
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -792,9 +844,11 @@ public:
 	}
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual dyn_object call(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -874,6 +928,16 @@ public:
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override
 	{
 		return (operand->execute(args, info).*Func)();
+	}
+
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override
+	{
+		operand->execute_discard(args, info);
+	}
+
+	virtual cell get_count(const args_type &args) const noexcept override
+	{
+		return 1;
 	}
 
 	virtual void to_string(strings::cell_string &str) const noexcept override
@@ -1018,7 +1082,19 @@ public:
 
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override
 	{
-		return (left->execute(args, info).*Func)(right->execute(args, info));
+		dyn_object left_op = left->execute(args, info);
+		return (left_op.*Func)(right->execute(args, info));
+	}
+
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override
+	{
+		left->execute_discard(args, info);
+		right->execute_discard(args, info);
+	}
+
+	virtual cell get_count(const args_type &args) const noexcept override
+	{
+		return 1;
 	}
 
 	virtual void to_string(strings::cell_string &str) const noexcept override
@@ -1057,6 +1133,11 @@ public:
 		return dyn_object(execute_inner(args, info), tags::find_tag(Tag));
 	}
 
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override
+	{
+		execute_inner(args, info);
+	}
+
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override
 	{
 		return tags::find_tag(Tag);
@@ -1070,6 +1151,11 @@ public:
 	virtual cell get_rank(const args_type &args) const noexcept override
 	{
 		return 0;
+	}
+
+	virtual cell get_count(const args_type &args) const noexcept override
+	{
+		return 1;
 	}
 };
 
@@ -1127,6 +1213,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -1400,6 +1487,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept;
 	virtual const expression_ptr &get_left() const noexcept;
@@ -1424,9 +1512,11 @@ public:
 	}
 
 	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept;
 	virtual const expression_ptr &get_right() const noexcept;
@@ -1450,9 +1540,11 @@ public:
 	}
 
 	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override;
+	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept;
 	virtual const expression_ptr &get_right() const noexcept;
@@ -1552,6 +1644,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -1576,6 +1669,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -1599,6 +1693,7 @@ public:
 	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
 	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override;
 	virtual dyn_object index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const override;
+	virtual cell get_count(const args_type &args) const noexcept override;
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
