@@ -45,8 +45,8 @@ namespace Natives
 	AMX_DEFINE_NATIVE(math_isub_ovf, 2)
 	{
 		cell a = params[1], b = params[2];
-		cell res = b - a;
-		if((b ^ a) < 0 && (res ^ b) < 0)
+		cell res = a - b;
+		if((a ^ b) < 0 && (res ^ a) < 0)
 		{
 			amx_RaiseError(amx, AMX_ERR_DOMAIN);
 			return 0;
@@ -159,8 +159,8 @@ namespace Natives
 	AMX_DEFINE_NATIVE(math_usub_ovf, 2)
 	{
 		ucell a = params[1], b = params[2];
-		ucell res = b - a;
-		if(res > b)
+		ucell res = a - b;
+		if(res > a)
 		{
 			amx_RaiseError(amx, AMX_ERR_DOMAIN);
 			return 0;

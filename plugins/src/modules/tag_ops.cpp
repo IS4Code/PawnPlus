@@ -278,13 +278,13 @@ struct cell_operations : public null_operations
 
 	virtual cell div(tag_ptr tag, cell a, cell b) const override
 	{
-		if(b == 0) return 0;
+		if(b == 0) throw errors::amx_error(AMX_ERR_DIVIDE);
 		return a / b;
 	}
 
 	virtual cell mod(tag_ptr tag, cell a, cell b) const override
 	{
-		if(b == 0) return 0;
+		if(b == 0) throw errors::amx_error(AMX_ERR_DIVIDE);
 		return a % b;
 	}
 
@@ -354,6 +354,109 @@ struct cell_operations : public null_operations
 	}
 };
 
+struct signed_operations : public cell_operations
+{
+	signed_operations() : cell_operations(tags::tag_signed)
+	{
+
+	}
+
+	virtual cell add(tag_ptr tag, cell a, cell b) const override
+	{
+		cell res = b + a;
+		if((b ^ a) >= 0 && (res ^ b) < 0)
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
+		return res;
+	}
+
+	virtual cell sub(tag_ptr tag, cell a, cell b) const override
+	{
+		ucell res = a - b;
+		if(res > static_cast<ucell>(a))
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
+		return res;
+	}
+
+	virtual cell mul(tag_ptr tag, cell a, cell b) const override
+	{
+		auto res = (int64_t)a * (int64_t)b;
+		if((cell)res != res)
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
+		return static_cast<cell>(res);
+	}
+
+	virtual cell div(tag_ptr tag, cell a, cell b) const override
+	{
+		if(b == 0) throw errors::amx_error(AMX_ERR_DIVIDE);
+		return a / b;
+	}
+
+	virtual cell mod(tag_ptr tag, cell a, cell b) const override
+	{
+		if(b == 0) throw errors::amx_error(AMX_ERR_DIVIDE);
+		return a % b;
+	}
+
+	virtual cell neg(tag_ptr tag, cell a) const override
+	{
+		return -a;
+	}
+
+	virtual cell inc(tag_ptr tag, cell a) const override
+	{
+		if(a == std::numeric_limits<cell>::max())
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
+		return a + 1;
+	}
+
+	virtual cell dec(tag_ptr tag, cell a) const override
+	{
+		if(a == std::numeric_limits<cell>::min())
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
+		return a - 1;
+	}
+
+	virtual bool eq(tag_ptr tag, cell a, cell b) const override
+	{
+		return a == b;
+	}
+
+	virtual bool lt(tag_ptr tag, cell a, cell b) const override
+	{
+		return a < b;
+	}
+
+	virtual bool gt(tag_ptr tag, cell a, cell b) const override
+	{
+		return a > b;
+	}
+
+	virtual bool lte(tag_ptr tag, cell a, cell b) const override
+	{
+		return a <= b;
+	}
+
+	virtual bool gte(tag_ptr tag, cell a, cell b) const override
+	{
+		return a >= b;
+	}
+
+	virtual bool not(tag_ptr tag, cell a) const override
+	{
+		return !a;
+	}
+};
+
 struct unsigned_operations : public cell_operations
 {
 	unsigned_operations() : cell_operations(tags::tag_unsigned)
@@ -363,28 +466,43 @@ struct unsigned_operations : public cell_operations
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
 	{
-		return static_cast<ucell>(a) + static_cast<ucell>(b);
+		ucell res = b + a;
+		if(res < static_cast<ucell>(b))
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
+		return res;
 	}
 
 	virtual cell sub(tag_ptr tag, cell a, cell b) const override
 	{
-		return static_cast<ucell>(a) - static_cast<ucell>(b);
+		ucell res = a - b;
+		if(res > static_cast<ucell>(a))
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
+		return res;
 	}
 
 	virtual cell mul(tag_ptr tag, cell a, cell b) const override
 	{
-		return static_cast<ucell>(a) * static_cast<ucell>(b);
+		auto res = (uint64_t)(ucell)a * (uint64_t)(ucell)b;
+		if(res > 0xFFFFFFFF)
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
+		return static_cast<ucell>(res);
 	}
 
 	virtual cell div(tag_ptr tag, cell a, cell b) const override
 	{
-		if(b == 0) return 0;
+		if(b == 0) throw errors::amx_error(AMX_ERR_DIVIDE);
 		return static_cast<ucell>(a) / static_cast<ucell>(b);
 	}
 
 	virtual cell mod(tag_ptr tag, cell a, cell b) const override
 	{
-		if(b == 0) return 0;
+		if(b == 0) throw errors::amx_error(AMX_ERR_DIVIDE);
 		return static_cast<ucell>(a) % static_cast<ucell>(b);
 	}
 
@@ -395,11 +513,19 @@ struct unsigned_operations : public cell_operations
 
 	virtual cell inc(tag_ptr tag, cell a) const override
 	{
+		if(static_cast<ucell>(a) == std::numeric_limits<ucell>::max())
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
 		return static_cast<ucell>(a) + 1;
 	}
 
 	virtual cell dec(tag_ptr tag, cell a) const override
 	{
+		if(static_cast<ucell>(a) == std::numeric_limits<ucell>::min())
+		{
+			throw errors::amx_error(AMX_ERR_DOMAIN);
+		}
 		return static_cast<ucell>(a) - 1;
 	}
 
@@ -1863,7 +1989,7 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::make_unique<tag_info>(16, "NativeHook", unknown_tag, std::make_unique<native_hook_operations>()));
 	v.push_back(std::make_unique<tag_info>(17, "Handle", unknown_tag, std::make_unique<handle_operations>()));
 	v.push_back(std::make_unique<tag_info>(18, "Symbol", unknown_tag, std::make_unique<symbol_operations>()));
-	v.push_back(std::make_unique<tag_info>(19, "signed", unknown_tag, std::make_unique<cell_operations>(tags::tag_signed)));
+	v.push_back(std::make_unique<tag_info>(19, "signed", unknown_tag, std::make_unique<signed_operations>()));
 	v.push_back(std::make_unique<tag_info>(20, "unsigned", unknown_tag, std::make_unique<unsigned_operations>()));
 	v.push_back(std::make_unique<tag_info>(21, "Pool", unknown_tag, std::make_unique<pool_operations>()));
 	v.push_back(std::make_unique<tag_info>(22, "Expression", unknown_tag, std::make_unique<expression_operations>()));
