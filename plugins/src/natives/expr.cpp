@@ -23,7 +23,7 @@ public:
 	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL expr_get(AMX *amx, cell *params)
 	{
-		expression *ptr;
+		std::shared_ptr<expression> ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx::guard guard(amx);
 		return Factory(amx, ptr->execute({}, expression::exec_info(amx, nullptr, true)), params[Indices]...);
@@ -33,7 +33,7 @@ public:
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL expr_set(AMX *amx, cell *params)
 	{
-		expression *ptr;
+		std::shared_ptr<expression> ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx::guard guard(amx);
 		ptr->assign({}, expression::exec_info(amx, nullptr, true), Factory(amx, params[Indices]...));
