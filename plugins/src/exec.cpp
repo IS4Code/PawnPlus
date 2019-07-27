@@ -163,7 +163,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 	int ret;
 	while(true)
 	{
-		cell old_hea = amx->hea, old_stk = amx->stk;
+		cell old_hea = amx->hea, old_stk = amx->stk + sizeof(cell) * amx->paramcount;
 		ret = amx_ExecOrig(amx, retval, index);
 		bool handled = false;
 		if(ret == AMX_ERR_SLEEP || amx->error == AMX_ERR_SLEEP)
