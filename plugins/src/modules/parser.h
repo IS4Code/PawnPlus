@@ -147,10 +147,13 @@ private:
 			}
 			if(c >= '0' && c <= '9')
 			{
-				if(first && c == '0')
+				if(first)
 				{
+					if(c == '0')
+					{
+						maybe_hex = true;
+					}
 					first = false;
-					maybe_hex = true;
 				}
 				value = value * 10 + (c - '0');
 				fvalue = fvalue * 10.0f + (c - '0');
