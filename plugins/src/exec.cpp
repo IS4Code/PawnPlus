@@ -172,6 +172,15 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 
 			handled = true;
 
+			if(old_hea != amx->reset_hea)
+			{
+				logwarn(amx, "[PawnPlus] HEA will be restored to 0x%X (originally 0x%X).", amx->reset_hea, old_hea);
+			}
+			if(old_stk != amx->reset_stk)
+			{
+				logwarn(amx, "[PawnPlus] STK will be restored to 0x%X (originally 0x%X).", amx->reset_stk, old_stk);
+			}
+
 			amx::object owner;
 			auto &ctx = amx::get_context(amx, owner);
 			tasks::extra &info = tasks::get_extra(amx, owner);
@@ -194,8 +203,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 					amx->error = ret = AMX_ERR_NONE;
 					tasks::register_tick(1, amx::reset(amx, true, info.restore_heap, info.restore_stack));
 
-					amx->stk = old_stk;
-					amx->hea = old_hea;
+					amx->stk = amx->reset_stk;
+					amx->hea = amx->reset_hea;
 					break;
 				}
 			}
@@ -662,8 +671,8 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 
 			if(handled)
 			{
-				amx->stk = old_stk;
-				amx->hea = old_hea;
+				amx->stk = amx->reset_stk;
+				amx->hea = amx->reset_hea;
 			}
 		}
 

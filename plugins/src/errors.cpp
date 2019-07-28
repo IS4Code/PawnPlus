@@ -3,7 +3,7 @@
 namespace errors
 {
 	error not_enough_args = "not enough arguments (%d expected, got %d)";
-	error pointer_invalid = "%s reference is invalid (value 0x%x)";
+	error pointer_invalid = "%s reference is invalid (value 0x%X)";
 	error cannot_acquire = "%s reference cannot be acquired (null or invalid)";
 	error cannot_release = "%s reference cannot be released (null, invalid, or local)";
 	error operation_not_supported = "this operation is not supported for the current state of the %s instance";
@@ -18,7 +18,7 @@ namespace errors
 	error invalid_format = "invalid format string: %s";
 	error invalid_expression = "invalid expression: %s";
 	error inner_error_msg = "%s function '%s' has raised an error: %s";
-	error unhandled_system_exception = "unhandled system exception 0x%x (possibly corrupted memory)";
+	error unhandled_system_exception = "unhandled system exception 0x%X (possibly corrupted memory)";
 }
 
 errors::native_error::native_error(const char *format, va_list args, int level) : message(vsnprintf(NULL, 0, format, args), '\0'), level(level)
