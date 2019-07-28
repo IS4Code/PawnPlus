@@ -43,9 +43,8 @@ public:
 
 namespace Natives
 {
-
 	// native Expression:expr_acquire(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_acquire, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_acquire, 1, expression)
 	{
 		decltype(expression_pool)::ref_container *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
@@ -54,7 +53,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_release(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_release, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_release, 1, expression)
 	{
 		decltype(expression_pool)::ref_container *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
@@ -63,21 +62,21 @@ namespace Natives
 	}
 
 	// native expr_delete(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_delete, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_delete, 1, cell)
 	{
 		if(!expression_pool.remove_by_id(params[1])) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		return 1;
 	}
 
 	// native bool:expr_valid(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_valid, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_valid, 1, bool)
 	{
 		expression *ptr;
 		return expression_pool.get_by_id(params[1], ptr);
 	}
 
 	// native expr_type(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_type, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_type, 1, cell)
 	{
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
@@ -85,7 +84,7 @@ namespace Natives
 	}
 
 	// native expr_type_str(Expression:expr, type[], size=sizeof(type));
-	AMX_DEFINE_NATIVE(expr_type_str, 3)
+	AMX_DEFINE_NATIVE_TAG(expr_type_str, 3, cell)
 	{
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
@@ -96,7 +95,7 @@ namespace Natives
 	}
 
 	// native String:expr_type_str_s(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_type_str_s, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_type_str_s, 1, string)
 	{
 		expression *ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
@@ -113,14 +112,14 @@ namespace Natives
 	};
 
 	// native Expression:expr_parse(const string[], parser_options:options=parser_all);
-	AMX_DEFINE_NATIVE(expr_parse, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_parse, 1, expression)
 	{
 		cell *str = amx_GetAddrSafe(amx, params[1]);
 		return strings::select_iterator<parse_base>(str, amx, optparam(2, -1));
 	}
 
 	// native Expression:expr_parse_s(ConstString:string, parser_options:options=parser_all);
-	AMX_DEFINE_NATIVE(expr_parse_s, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_parse_s, 1, expression)
 	{
 		strings::cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -128,7 +127,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_literal(const name[]);
-	AMX_DEFINE_NATIVE(expr_literal, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_literal, 1, expression)
 	{
 		const char *name;
 		amx_StrParam(amx, params[1], name);
@@ -143,7 +142,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_intrinsic(const name[], parser_options:options=parser_all);
-	AMX_DEFINE_NATIVE(expr_intrinsic, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_intrinsic, 1, expression)
 	{
 		const char *name;
 		amx_StrParam(amx, params[1], name);
@@ -159,7 +158,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_empty(Expression:...);
-	AMX_DEFINE_NATIVE(expr_empty, 0)
+	AMX_DEFINE_NATIVE_TAG(expr_empty, 0, expression)
 	{
 		cell numargs = params[0] / sizeof(cell);
 		std::vector<expression_ptr> args;
@@ -184,19 +183,19 @@ namespace Natives
 	}
 
 	// native Expression:expr_void(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_void, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_void, 1, expression)
 	{
 		return expr_unary<void_expression>(amx, params);
 	}
 
 	// native Expression:expr_weak(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_weak, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_weak, 1, expression)
 	{
 		return expr_unary<weak_expression>(amx, params);
 	}
 
 	// native Expression:expr_weak_set(Expression:weak, Expression:target);
-	AMX_DEFINE_NATIVE(expr_weak_set, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_weak_set, 2, expression)
 	{
 		std::shared_ptr<expression> ptr1;
 		if(!expression_pool.get_by_id(params[1], ptr1)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
@@ -212,45 +211,45 @@ namespace Natives
 	}
 
 	// native Expression:expr_const(AnyTag:value, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(expr_const, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_const, 2, expression)
 	{
 		return value_at<1, 2>::expr_const<dyn_func>(amx, params);
 	}
 
 	// native Expression:expr_const_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(expr_const_arr, 3)
+	AMX_DEFINE_NATIVE_TAG(expr_const_arr, 3, expression)
 	{
 		return value_at<1, 2, 3>::expr_const<dyn_func_arr>(amx, params);
 	}
 
 	// native Expression:expr_const_str(const value[]);
-	AMX_DEFINE_NATIVE(expr_const_str, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_const_str, 1, expression)
 	{
 		return value_at<1>::expr_const<dyn_func_str>(amx, params);
 	}
 
 	// native Expression:expr_const_var(VariantTag:value);
-	AMX_DEFINE_NATIVE(expr_const_var, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_const_var, 1, expression)
 	{
 		return value_at<1>::expr_const<dyn_func_var>(amx, params);
 	}
 
 	// native Expression:expr_true();
-	AMX_DEFINE_NATIVE(expr_true, 0)
+	AMX_DEFINE_NATIVE_TAG(expr_true, 0, expression)
 	{
 		auto &expr = expression_pool.emplace_derived<const_bool_expression<true>>();
 		return expression_pool.get_id(expr);
 	}
 
 	// native Expression:expr_false();
-	AMX_DEFINE_NATIVE(expr_false, 0)
+	AMX_DEFINE_NATIVE_TAG(expr_false, 0, expression)
 	{
 		auto &expr = expression_pool.emplace_derived<const_bool_expression<false>>();
 		return expression_pool.get_id(expr);
 	}
 
 	// native Expression:expr_arr(Expression:...);
-	AMX_DEFINE_NATIVE(expr_arr, 0)
+	AMX_DEFINE_NATIVE_TAG(expr_arr, 0, expression)
 	{
 		cell numargs = params[0] / sizeof(cell);
 		std::vector<expression_ptr> args;
@@ -267,7 +266,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_arg(index);
-	AMX_DEFINE_NATIVE(expr_arg, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_arg, 1, expression)
 	{
 		cell index = params[1];
 		if(index < 0) amx_LogicError(errors::out_of_range, "index");
@@ -276,7 +275,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_arg_pack(begin, end=-1);
-	AMX_DEFINE_NATIVE(expr_arg_pack, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_arg_pack, 1, expression)
 	{
 		cell begin = params[1];
 		if(begin < 0) amx_LogicError(errors::out_of_range, "begin");
@@ -287,7 +286,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_bind(Expression:expr, Expression:...);
-	AMX_DEFINE_NATIVE(expr_bind, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_bind, 1, expression)
 	{
 		cell numargs = (params[0] / sizeof(cell)) - 1;
 		std::vector<expression_ptr> args;
@@ -314,20 +313,20 @@ namespace Natives
 	}
 
 	// native Expression:expr_nested(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_nested, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_nested, 1, expression)
 	{
 		return expr_unary<nested_expression>(amx, params);
 	}
 
 	// native Expression:expr_env();
-	AMX_DEFINE_NATIVE(expr_env, 0)
+	AMX_DEFINE_NATIVE_TAG(expr_env, 0, expression)
 	{
 		auto &expr = expression_pool.emplace_derived<env_expression>();
 		return expression_pool.get_id(expr);
 	}
 
 	// native Expression:expr_set_env(Expression:expr, Map:env=INVALID_MAP, bool:env_readonly=false);
-	AMX_DEFINE_NATIVE(expr_set_env, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_set_env, 1, expression)
 	{
 		std::shared_ptr<map_t> map;
 		if(optparam(2, 0) && !map_pool.get_by_id(params[2], map)) amx_LogicError(errors::pointer_invalid, "map", params[2]);
@@ -335,7 +334,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_global(const name[]);
-	AMX_DEFINE_NATIVE(expr_global, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_global, 1, expression)
 	{
 		const char *name;
 		amx_StrParam(amx, params[1], name);
@@ -345,7 +344,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_set_amx(Expression:expr, Amx:amx);
-	AMX_DEFINE_NATIVE(expr_set_amx, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_set_amx, 2, expression)
 	{
 		if(!params[2])
 		{
@@ -360,25 +359,25 @@ namespace Natives
 	}
 
 	// native Expression:expr_comma(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_comma, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_comma, 2, expression)
 	{
 		return expr_binary<comma_expression>(amx, params);
 	}
 
 	// native Expression:expr_assign(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_assign, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_assign, 2, expression)
 	{
 		return expr_binary<assign_expression>(amx, params);
 	}
 
 	// native Expression:expr_try(Expression:main, Expression:fallback);
-	AMX_DEFINE_NATIVE(expr_try, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_try, 2, expression)
 	{
 		return expr_binary<try_expression>(amx, params);
 	}
 
 	// native Expression:expr_symbol(Symbol:symbol);
-	AMX_DEFINE_NATIVE(expr_symbol, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_symbol, 1, expression)
 	{
 		const auto &obj = amx::load_lock(amx);
 		if(!obj->dbg)
@@ -405,7 +404,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_native(const function[]);
-	AMX_DEFINE_NATIVE(expr_native, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_native, 1, expression)
 	{
 		const char *name;
 		amx_StrParam(amx, params[1], name);
@@ -417,7 +416,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_public(const function[]);
-	AMX_DEFINE_NATIVE(expr_public, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_public, 1, expression)
 	{
 		const char *name;
 		amx_StrParam(amx, params[1], name);
@@ -432,7 +431,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_pubvar(const name[]);
-	AMX_DEFINE_NATIVE(expr_pubvar, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_pubvar, 1, expression)
 	{
 		const char *name;
 		amx_StrParam(amx, params[1], name);
@@ -447,7 +446,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_call(Expression:func, Expression:...);
-	AMX_DEFINE_NATIVE(expr_call, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_call, 1, expression)
 	{
 		cell numargs = (params[0] / sizeof(cell)) - 1;
 		std::vector<expression_ptr> args;
@@ -463,7 +462,7 @@ namespace Natives
 	}
 
 	// native Expression:expr_index(Expression:arr, Expression:...);
-	AMX_DEFINE_NATIVE(expr_index, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_index, 1, expression)
 	{
 		cell numargs = (params[0] / sizeof(cell)) - 1;
 		std::vector<expression_ptr> args;
@@ -479,157 +478,157 @@ namespace Natives
 	}
 
 	// native Expression:expr_quote(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_quote, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_quote, 1, expression)
 	{
 		return expr_unary<quote_expression>(amx, params);
 	}
 
 	// native Expression:expr_dequote(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_dequote, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_dequote, 1, expression)
 	{
 		return expr_unary<dequote_expression>(amx, params);
 	}
 
 	// native Expression:expr_add(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_add, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_add, 2, expression)
 	{
 		return expr_binary<binary_object_expression<&dyn_object::operator+>>(amx, params);
 	}
 
 	// native Expression:expr_sub(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_sub, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_sub, 2, expression)
 	{
 		return expr_binary<binary_object_expression<&dyn_object::operator- >>(amx, params);
 	}
 
 	// native Expression:expr_mul(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_mul, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_mul, 2, expression)
 	{
 		return expr_binary<binary_object_expression<&dyn_object::operator*>>(amx, params);
 	}
 
 	// native Expression:expr_div(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_div, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_div, 2, expression)
 	{
 		return expr_binary<binary_object_expression<&dyn_object::operator/>>(amx, params);
 	}
 
 	// native Expression:expr_mod(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_mod, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_mod, 2, expression)
 	{
 		return expr_binary<binary_object_expression<&dyn_object::operator% >>(amx, params);
 	}
 
 	// native Expression:expr_bit_and(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_bit_and, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_bit_and, 2, expression)
 	{
 		return expr_binary<binary_object_expression<&dyn_object::operator&>>(amx, params);
 	}
 
 	// native Expression:expr_bit_or(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_bit_or, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_bit_or, 2, expression)
 	{
 		return expr_binary<binary_object_expression<&dyn_object::operator|>>(amx, params);
 	}
 
 	// native Expression:expr_bit_xor(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_bit_xor, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_bit_xor, 2, expression)
 	{
 		return expr_binary<binary_object_expression<&dyn_object::operator^>>(amx, params);
 	}
 
 	// native Expression:expr_rs(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_rs, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_rs, 2, expression)
 	{
 		return expr_binary<binary_object_expression<(&dyn_object::operator>>)>>(amx, params);
 	}
 
 	// native Expression:expr_ls(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_ls, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_ls, 2, expression)
 	{
 		return expr_binary<binary_object_expression<&dyn_object::operator<<>>(amx, params);
 	}
 
 	// native Expression:expr_neg(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_neg, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_neg, 1, expression)
 	{
 		return expr_unary<unary_object_expression<&dyn_object::operator- >>(amx, params);
 	}
 
 	// native Expression:expr_inc(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_inc, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_inc, 1, expression)
 	{
 		return expr_unary<unary_object_expression<&dyn_object::inc>>(amx, params);
 	}
 
 	// native Expression:expr_dec(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_dec, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_dec, 1, expression)
 	{
 		return expr_unary<unary_object_expression<&dyn_object::dec>>(amx, params);
 	}
 
 	// native Expression:expr_bit_not(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_bit_not, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_bit_not, 1, expression)
 	{
 		return expr_unary<unary_object_expression<&dyn_object::operator~>>(amx, params);
 	}
 
 	// native Expression:expr_eq(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_eq, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_eq, 2, expression)
 	{
 		return expr_binary<binary_logic_expression<&dyn_object::operator==>>(amx, params);
 	}
 
 	// native Expression:expr_neq(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_neq, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_neq, 2, expression)
 	{
 		return expr_binary<binary_logic_expression<&dyn_object::operator!=>>(amx, params);
 	}
 
 	// native Expression:expr_lt(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_lt, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_lt, 2, expression)
 	{
 		return expr_binary<binary_logic_expression<&dyn_object::operator<>>(amx, params);
 	}
 
 	// native Expression:expr_gt(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_gt, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_gt, 2, expression)
 	{
 		return expr_binary<binary_logic_expression<(&dyn_object::operator>)>>(amx, params);
 	}
 
 	// native Expression:expr_lte(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_lte, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_lte, 2, expression)
 	{
 		return expr_binary<binary_logic_expression<&dyn_object::operator<=>>(amx, params);
 	}
 
 	// native Expression:expr_gte(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_gte, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_gte, 2, expression)
 	{
 		return expr_binary<binary_logic_expression<&dyn_object::operator>=>>(amx, params);
 	}
 
 	// native Expression:expr_not(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_not, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_not, 1, expression)
 	{
 		return expr_unary<unary_logic_expression<&dyn_object::operator!>>(amx, params);
 	}
 
 	// native Expression:expr_and(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_and, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_and, 2, expression)
 	{
 		return expr_binary<logic_and_expression>(amx, params);
 	}
 
 	// native Expression:expr_or(Expression:left, Expression:right);
-	AMX_DEFINE_NATIVE(expr_or, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_or, 2, expression)
 	{
 		return expr_binary<logic_or_expression>(amx, params);
 	}
 
 	// native Expression:expr_cond(Expression:cond, Expression:on_true, Expression:on_false);
-	AMX_DEFINE_NATIVE(expr_cond, 3)
+	AMX_DEFINE_NATIVE_TAG(expr_cond, 3, expression)
 	{
 		std::shared_ptr<expression> ptr1;
 		if(!expression_pool.get_by_id(params[1], ptr1)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
@@ -642,37 +641,37 @@ namespace Natives
 	}
 
 	// native Expression:expr_range(Expression:begin, Expression:end);
-	AMX_DEFINE_NATIVE(expr_range, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_range, 2, expression)
 	{
 		return expr_binary<range_expression>(amx, params);
 	}
 
 	// native Expression:expr_select(Expression:list, Expression:func);
-	AMX_DEFINE_NATIVE(expr_select, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_select, 2, expression)
 	{
 		return expr_binary<select_expression>(amx, params);
 	}
 
 	// native Expression:expr_where(Expression:list, Expression:code);
-	AMX_DEFINE_NATIVE(expr_where, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_where, 2, expression)
 	{
 		return expr_binary<where_expression>(amx, params);
 	}
 
 	// native Expression:expr_cast(Expression:expr, TagTag:tag_id);
-	AMX_DEFINE_NATIVE(expr_cast, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_cast, 1, expression)
 	{
 		return expr_unary<cast_expression>(amx, params, tags::find_tag(amx, params[2]));
 	}
 
 	// native Expression:expr_tagof(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_tagof, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_tagof, 1, expression)
 	{
 		return expr_unary<tagof_expression>(amx, params);
 	}
 
 	// native Expression:expr_sizeof(Expression:expr, Expression:...);
-	AMX_DEFINE_NATIVE(expr_sizeof, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_sizeof, 1, expression)
 	{
 		cell numargs = (params[0] / sizeof(cell)) - 1;
 		std::vector<expression_ptr> indices;
@@ -688,37 +687,37 @@ namespace Natives
 	}
 
 	// native Expression:expr_rankof(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_rankof, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_rankof, 1, expression)
 	{
 		return expr_unary<rankof_expression>(amx, params);
 	}
 
 	// native Expression:expr_addressof(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_addressof, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_addressof, 1, expression)
 	{
 		return expr_unary<addressof_expression>(amx, params);
 	}
 
 	// native Expression:expr_nameof(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_nameof, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_nameof, 1, expression)
 	{
 		return expr_unary<nameof_expression>(amx, params);
 	}
 
 	// native Expression:expr_extract(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_extract, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_extract, 1, expression)
 	{
 		return expr_unary<extract_expression>(amx, params);
 	}
 
 	// native Expression:expr_variant(Expression:value);
-	AMX_DEFINE_NATIVE(expr_variant, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_variant, 1, expression)
 	{
 		return expr_unary<variant_expression>(amx, params);
 	}
 
 	// native Expression:expr_string(Expression:value);
-	AMX_DEFINE_NATIVE(expr_string, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_string, 1, expression)
 	{
 		return expr_unary<string_expression>(amx, params);
 	}
@@ -730,67 +729,67 @@ namespace Natives
 	}
 
 	// native expr_get_arr(Expression:expr, AnyTag:value[], size=sizeof(value));
-	AMX_DEFINE_NATIVE(expr_get_arr, 3)
+	AMX_DEFINE_NATIVE_TAG(expr_get_arr, 3, cell)
 	{
 		return value_at<2, 3>::expr_get<dyn_func_arr>(amx, params);
 	}
 
 	// native String:expr_get_str_s(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_get_str_s, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_get_str_s, 1, string)
 	{
 		return value_at<>::expr_get<dyn_func_str_s>(amx, params);
 	}
 
 	// native Variant:expr_get_var(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_get_var, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_get_var, 1, variant)
 	{
 		return value_at<>::expr_get<dyn_func_var>(amx, params);
 	}
 
 	// native bool:expr_get_safe(Expression:expr, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(expr_get_safe, 4)
+	AMX_DEFINE_NATIVE_TAG(expr_get_safe, 4, bool)
 	{
 		return value_at<2, 3, 4>::expr_get<dyn_func>(amx, params);
 	}
 
 	// native expr_get_arr_safe(Expression:expr, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(expr_get_arr_safe, 4)
+	AMX_DEFINE_NATIVE_TAG(expr_get_arr_safe, 4, cell)
 	{
 		return value_at<2, 3, 4>::expr_get<dyn_func_arr>(amx, params);
 	}
 
 	// native expr_get_str_safe(Expression:expr, value[], size=sizeof(value));
-	AMX_DEFINE_NATIVE(expr_get_str_safe, 3)
+	AMX_DEFINE_NATIVE_TAG(expr_get_str_safe, 3, cell)
 	{
 		return value_at<2, 3>::expr_get<dyn_func_str>(amx, params);
 	}
 
 	// native String:expr_get_str_safe_s(Expression:expr);
-	AMX_DEFINE_NATIVE(expr_get_str_safe_s, 1)
+	AMX_DEFINE_NATIVE_TAG(expr_get_str_safe_s, 1, string)
 	{
 		return value_at<0>::expr_get<dyn_func_str_s>(amx, params);
 	}
 
 	// native expr_set(Expression:expr, AnyTag:value, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(expr_set, 3)
+	AMX_DEFINE_NATIVE_TAG(expr_set, 3, cell)
 	{
 		return value_at<2, 3>::expr_set<dyn_func>(amx, params);
 	}
 
 	// native expr_set_arr(Expression:expr, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(expr_set_arr, 4)
+	AMX_DEFINE_NATIVE_TAG(expr_set_arr, 4, cell)
 	{
 		return value_at<2, 3, 4>::expr_set<dyn_func_arr>(amx, params);
 	}
 
 	// native expr_set_str(Expression:expr, const value[]);
-	AMX_DEFINE_NATIVE(expr_set_str, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_set_str, 2, cell)
 	{
 		return value_at<2>::expr_set<dyn_func_str>(amx, params);
 	}
 
 	// native expr_set_var(Expression:expr, VariantTag:value);
-	AMX_DEFINE_NATIVE(expr_set_var, 2)
+	AMX_DEFINE_NATIVE_TAG(expr_set_var, 2, cell)
 	{
 		return value_at<2>::expr_set<dyn_func_var>(amx, params);
 	}

@@ -69,6 +69,25 @@ cell *amx_GetAddrSafe(AMX *amx, cell amx_addr)
 	return addr;
 }
 
+void amx_AllotSafe(AMX *amx, int cells, cell *amx_addr, cell **phys_addr)
+{
+	if(static_cast<ucell>(amx->stk) <= static_cast<ucell>(amx->hea + cells * sizeof(cell)))
+	{
+		throw errors::amx_error(AMX_ERR_MEMORY);
+	}
+	int err = amx_Allot(amx, cells, amx_addr, phys_addr);
+	if(err == AMX_ERR_NONE)
+	{
+		if(static_cast<ucell>(amx->stk) < static_cast<ucell>(amx->hea + 8 * sizeof(cell)))
+		{
+			amx_Release(amx, *amx_addr);
+			throw errors::amx_error(AMX_ERR_MEMORY);
+		}
+	}else{
+		throw errors::amx_error(err);
+	}
+}
+
 const char *amx::StrError(int errnum)
 {
 	static const char *messages[] = {

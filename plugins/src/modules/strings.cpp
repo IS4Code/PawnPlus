@@ -1744,8 +1744,7 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 		const auto &group = result[0];
 		target.append(begin, group.first);
 
-		cell reset_hea, *addr;
-		amx_Allot(amx, 0, &reset_hea, &addr);
+		amx::guard guard(amx);
 
 		for(int i = result.size() - 1; i >= 0; i--)
 		{
@@ -1753,15 +1752,15 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 
 			amx_Push(amx, capture.length());
 
-			cell val;
+			cell val, *addr;
 			if(capture.matched)
 			{
 				auto len = capture.length();
-				amx_Allot(amx, len + 1, &val, &addr);
+				amx_AllotSafe(amx, len + 1, &val, &addr);
 				std::copy(capture.first, capture.second, addr);
 				addr[len] = 0;
 			}else{
-				amx_Allot(amx, 1, &val, &addr);
+				amx_AllotSafe(amx, 1, &val, &addr);
 				*addr = 0;
 			}
 			amx_Push(amx, val);

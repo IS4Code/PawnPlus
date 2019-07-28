@@ -14,7 +14,7 @@ typedef strings::cell_string cell_string;
 namespace Natives
 {
 	// native print_s(ConstStringTag:string);
-	AMX_DEFINE_NATIVE(print_s, 1)
+	AMX_DEFINE_NATIVE_TAG(print_s, 1, cell)
 	{
 		if(params[1] == 0)
 		{
@@ -39,7 +39,7 @@ namespace Natives
 	}
 
 	// native String:str_new(const str[], str_create_mode:mode=str_preserve);
-	AMX_DEFINE_NATIVE(str_new, 1)
+	AMX_DEFINE_NATIVE_TAG(str_new, 1, string)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		int flags = optparam(2, 0);
@@ -47,7 +47,7 @@ namespace Natives
 	}
 
 	// native String:str_new_arr(const arr[], size=sizeof(arr), str_create_mode:mode=str_preserve);
-	AMX_DEFINE_NATIVE(str_new_arr, 2)
+	AMX_DEFINE_NATIVE_TAG(str_new_arr, 2, string)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		cell size = params[2];
@@ -58,7 +58,7 @@ namespace Natives
 	}
 
 	// native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof(str));
-	AMX_DEFINE_NATIVE(str_new_static, 3)
+	AMX_DEFINE_NATIVE_TAG(str_new_static, 3, string)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		int flags = params[2];
@@ -84,7 +84,7 @@ namespace Natives
 	}
 
 	// native String:str_new_buf(size);
-	AMX_DEFINE_NATIVE(str_new_buf, 1)
+	AMX_DEFINE_NATIVE_TAG(str_new_buf, 1, string)
 	{
 		cell size = params[1];
 		if(size <= 0) amx_LogicError(errors::out_of_range, "size");
@@ -92,7 +92,7 @@ namespace Natives
 	}
 
 	// native AmxString:str_addr(StringTag:str);
-	AMX_DEFINE_NATIVE(str_addr, 1)
+	AMX_DEFINE_NATIVE_TAG(str_addr, 1, cell)
 	{
 		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -104,7 +104,7 @@ namespace Natives
 	}
 
 	// native ConstAmxString:str_addr_const(ConstStringTag:str);
-	AMX_DEFINE_NATIVE(str_addr_const, 1)
+	AMX_DEFINE_NATIVE_TAG(str_addr_const, 1, cell)
 	{
 		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -116,7 +116,7 @@ namespace Natives
 	}
 
 	// native AmxStringBuffer:str_buf_addr(StringTag:str);
-	AMX_DEFINE_NATIVE(str_buf_addr, 1)
+	AMX_DEFINE_NATIVE_TAG(str_buf_addr, 1, cell)
 	{
 		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -124,7 +124,7 @@ namespace Natives
 	}
 
 	// native String:str_acquire(StringTag:str);
-	AMX_DEFINE_NATIVE(str_acquire, 1)
+	AMX_DEFINE_NATIVE_TAG(str_acquire, 1, string)
 	{
 		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -133,7 +133,7 @@ namespace Natives
 	}
 
 	// native String:str_release(StringTag:str);
-	AMX_DEFINE_NATIVE(str_release, 1)
+	AMX_DEFINE_NATIVE_TAG(str_release, 1, string)
 	{
 		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -142,21 +142,21 @@ namespace Natives
 	}
 
 	// native str_delete(StringTag:str);
-	AMX_DEFINE_NATIVE(str_delete, 1)
+	AMX_DEFINE_NATIVE_TAG(str_delete, 1, cell)
 	{
 		if(!strings::pool.remove_by_id(params[1])) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 		return 1;
 	}
 
 	// native bool:str_valid(StringTag:str);
-	AMX_DEFINE_NATIVE(str_valid, 1)
+	AMX_DEFINE_NATIVE_TAG(str_valid, 1, bool)
 	{
 		cell_string *str;
 		return strings::pool.get_by_id(params[1], str);
 	}
 
 	// native String:str_clone(StringTag:str);
-	AMX_DEFINE_NATIVE(str_clone, 1)
+	AMX_DEFINE_NATIVE_TAG(str_clone, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -169,7 +169,7 @@ namespace Natives
 
 
 	// native String:str_cat(StringTag:str1, StringTag:str2);
-	AMX_DEFINE_NATIVE(str_cat, 2)
+	AMX_DEFINE_NATIVE_TAG(str_cat, 2, string)
 	{
 		cell_string *str1, *str2;
 		if((!strings::pool.get_by_id(params[1], str1) && str1 != nullptr)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -193,14 +193,14 @@ namespace Natives
 	}
 
 	// native String:str_val(AnyTag:val, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(str_val, 2)
+	AMX_DEFINE_NATIVE_TAG(str_val, 2, string)
 	{
 		dyn_object obj{amx, params[1], params[2]};
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
 
 	// native String:str_val_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(str_val_arr, 3)
+	AMX_DEFINE_NATIVE_TAG(str_val_arr, 3, string)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		dyn_object obj{amx, addr, params[2], params[3]};
@@ -208,7 +208,7 @@ namespace Natives
 	}
 
 	// native String:str_val_var(ConstVariantTag:value);
-	AMX_DEFINE_NATIVE(str_val_var, 1)
+	AMX_DEFINE_NATIVE_TAG(str_val_var, 1, string)
 	{
 		dyn_object *var;
 		if(!variants::pool.get_by_id(params[1], var) && var != nullptr) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
@@ -265,7 +265,7 @@ namespace Natives
 	};
 
 	// native List:str_split(StringTag:str, const delims[]);
-	AMX_DEFINE_NATIVE(str_split, 2)
+	AMX_DEFINE_NATIVE_TAG(str_split, 2, list)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -278,7 +278,7 @@ namespace Natives
 	}
 
 	// native List:str_split_s(StringTag:str, StringTag:delims);
-	AMX_DEFINE_NATIVE(str_split_s, 2)
+	AMX_DEFINE_NATIVE_TAG(str_split_s, 2, list)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -310,7 +310,7 @@ namespace Natives
 	};
 
 	// native String:str_join(List:list, const delim[]);
-	AMX_DEFINE_NATIVE(str_join, 2)
+	AMX_DEFINE_NATIVE_TAG(str_join, 2, string)
 	{
 		list_t *list;
 		if(!list_pool.get_by_id(params[1], list)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -319,7 +319,7 @@ namespace Natives
 	}
 
 	// native String:str_join_s(List:list, StringTag:delim);
-	AMX_DEFINE_NATIVE(str_join_s, 2)
+	AMX_DEFINE_NATIVE_TAG(str_join_s, 2, string)
 	{
 		list_t *list;
 		if(!list_pool.get_by_id(params[1], list)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -329,7 +329,7 @@ namespace Natives
 	}
 
 	// native str_len(StringTag:str);
-	AMX_DEFINE_NATIVE(str_len, 1)
+	AMX_DEFINE_NATIVE_TAG(str_len, 1, cell)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -338,7 +338,7 @@ namespace Natives
 	}
 
 	// native str_get(StringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
-	AMX_DEFINE_NATIVE(str_get, 3)
+	AMX_DEFINE_NATIVE_TAG(str_get, 3, cell)
 	{
 		if(params[3] == 0) return 0;
 
@@ -377,7 +377,7 @@ namespace Natives
 	}
 
 	// native str_getc(StringTag:str, pos);
-	AMX_DEFINE_NATIVE(str_getc, 2)
+	AMX_DEFINE_NATIVE_TAG(str_getc, 2, cell)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0xFFFFFF00;
@@ -390,7 +390,7 @@ namespace Natives
 	}
 
 	// native str_setc(StringTag:str, pos, value);
-	AMX_DEFINE_NATIVE(str_setc, 3)
+	AMX_DEFINE_NATIVE_TAG(str_setc, 3, cell)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) return 0xFFFFFF00;
@@ -405,7 +405,7 @@ namespace Natives
 	}
 
 	// native String:str_set(StringTag:target, StringTag:other);
-	AMX_DEFINE_NATIVE(str_set, 2)
+	AMX_DEFINE_NATIVE_TAG(str_set, 2, string)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -422,7 +422,7 @@ namespace Natives
 	}
 
 	// native String:str_append(StringTag:target, StringTag:other);
-	AMX_DEFINE_NATIVE(str_append, 2)
+	AMX_DEFINE_NATIVE_TAG(str_append, 2, string)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -436,7 +436,7 @@ namespace Natives
 	}
 
 	// native String:str_ins(StringTag:target, StringTag:other, pos);
-	AMX_DEFINE_NATIVE(str_ins, 3)
+	AMX_DEFINE_NATIVE_TAG(str_ins, 3, string)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -451,7 +451,7 @@ namespace Natives
 	}
 
 	// native String:str_del(StringTag:target, start=0, end=cellmax);
-	AMX_DEFINE_NATIVE(str_del, 1)
+	AMX_DEFINE_NATIVE_TAG(str_del, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -470,7 +470,7 @@ namespace Natives
 	}
 
 	// native String:str_sub(StringTag:str, start=0, end=cellmax);
-	AMX_DEFINE_NATIVE(str_sub, 1)
+	AMX_DEFINE_NATIVE_TAG(str_sub, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -488,7 +488,7 @@ namespace Natives
 	}
 
 	// native bool:str_cmp(StringTag:str1, StringTag:str2);
-	AMX_DEFINE_NATIVE(str_cmp, 2)
+	AMX_DEFINE_NATIVE_TAG(str_cmp, 2, bool)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -508,7 +508,7 @@ namespace Natives
 	}
 
 	// native bool:str_empty(StringTag:str);
-	AMX_DEFINE_NATIVE(str_empty, 1)
+	AMX_DEFINE_NATIVE_TAG(str_empty, 1, bool)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -517,7 +517,7 @@ namespace Natives
 	}
 
 	// native bool:str_eq(StringTag:str1, StringTag:str2);
-	AMX_DEFINE_NATIVE(str_eq, 2)
+	AMX_DEFINE_NATIVE_TAG(str_eq, 2, bool)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -537,7 +537,7 @@ namespace Natives
 	}
 
 	// native str_findc(StringTag:str, value, offset=0);
-	AMX_DEFINE_NATIVE(str_findc, 2)
+	AMX_DEFINE_NATIVE_TAG(str_findc, 2, cell)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -549,7 +549,7 @@ namespace Natives
 	}
 
 	// native str_find(StringTag:str, StringTag:value, offset=0);
-	AMX_DEFINE_NATIVE(str_find, 2)
+	AMX_DEFINE_NATIVE_TAG(str_find, 2, cell)
 	{
 		cell_string *str1;
 		if(!strings::pool.get_by_id(params[1], str1) && str1 != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -564,7 +564,7 @@ namespace Natives
 	}
 
 	// native String:str_clear(StringTag:str);
-	AMX_DEFINE_NATIVE(str_clear, 1)
+	AMX_DEFINE_NATIVE_TAG(str_clear, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -576,7 +576,7 @@ namespace Natives
 	}
 
 	// native String:str_resize(StringTag:str, size, padding=0);
-	AMX_DEFINE_NATIVE(str_resize, 2)
+	AMX_DEFINE_NATIVE_TAG(str_resize, 2, string)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "size");
 		cell_string *str;
@@ -589,7 +589,7 @@ namespace Natives
 	}
 
 	// native String:str_format(const format[], AnyTag:...);
-	AMX_DEFINE_NATIVE(str_format, 1)
+	AMX_DEFINE_NATIVE_TAG(str_format, 1, string)
 	{
 		cell *format = amx_GetAddrSafe(amx, params[1]);
 
@@ -599,7 +599,7 @@ namespace Natives
 	}
 
 	// native String:str_format_s(StringTag:format, AnyTag:...);
-	AMX_DEFINE_NATIVE(str_format_s, 1)
+	AMX_DEFINE_NATIVE_TAG(str_format_s, 1, string)
 	{
 		cell_string *strformat;
 		if(!strings::pool.get_by_id(params[1], strformat) && strformat != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -612,7 +612,7 @@ namespace Natives
 	}
 
 	// native String:str_set_format(StringTag:target, const format[], AnyTag:...);
-	AMX_DEFINE_NATIVE(str_set_format, 2)
+	AMX_DEFINE_NATIVE_TAG(str_set_format, 2, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -625,7 +625,7 @@ namespace Natives
 	}
 
 	// native String:str_set_format_s(StringTag:target, StringTag:format, AnyTag:...);
-	AMX_DEFINE_NATIVE(str_set_format_s, 2)
+	AMX_DEFINE_NATIVE_TAG(str_set_format_s, 2, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -641,7 +641,7 @@ namespace Natives
 	}
 
 	// native String:str_append_format(StringTag:target, const format[], AnyTag:...);
-	AMX_DEFINE_NATIVE(str_append_format, 2)
+	AMX_DEFINE_NATIVE_TAG(str_append_format, 2, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -653,7 +653,7 @@ namespace Natives
 	}
 
 	// native String:str_append_format_s(StringTag:target, StringTag:format, AnyTag:...);
-	AMX_DEFINE_NATIVE(str_append_format_s, 2)
+	AMX_DEFINE_NATIVE_TAG(str_append_format_s, 2, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -668,7 +668,7 @@ namespace Natives
 	}
 
 	// native String:str_to_lower(StringTag:str);
-	AMX_DEFINE_NATIVE(str_to_lower, 1)
+	AMX_DEFINE_NATIVE_TAG(str_to_lower, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -682,7 +682,7 @@ namespace Natives
 	}
 
 	// native String:str_to_upper(StringTag:str);
-	AMX_DEFINE_NATIVE(str_to_upper, 1)
+	AMX_DEFINE_NATIVE_TAG(str_to_upper, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -696,7 +696,7 @@ namespace Natives
 	}
 
 	// native String:str_set_to_lower(StringTag:str);
-	AMX_DEFINE_NATIVE(str_set_to_lower, 1)
+	AMX_DEFINE_NATIVE_TAG(str_set_to_lower, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -708,7 +708,7 @@ namespace Natives
 	}
 
 	// native String:str_set_to_upper(StringTag:str);
-	AMX_DEFINE_NATIVE(str_set_to_upper, 1)
+	AMX_DEFINE_NATIVE_TAG(str_set_to_upper, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -720,7 +720,7 @@ namespace Natives
 	}
 
 	// native bool:str_match(ConstStringTag:str, const pattern[], &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_match, 2)
+	AMX_DEFINE_NATIVE_TAG(str_match, 2, bool)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -739,7 +739,7 @@ namespace Natives
 	}
 
 	// native bool:str_match_s(ConstStringTag:str, ConstStringTag:pattern, &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_match_s, 2)
+	AMX_DEFINE_NATIVE_TAG(str_match_s, 2, bool)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -760,7 +760,7 @@ namespace Natives
 	}
 
 	// native List:str_extract(ConstStringTag:str, const pattern[], &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_extract, 2)
+	AMX_DEFINE_NATIVE_TAG(str_extract, 2, list)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -779,7 +779,7 @@ namespace Natives
 	}
 
 	// native List:str_extract_s(ConstStringTag:str, ConstStringTag:pattern, &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_extract_s, 2)
+	AMX_DEFINE_NATIVE_TAG(str_extract_s, 2, list)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -800,7 +800,7 @@ namespace Natives
 	}
 
 	// native String:str_replace(ConstStringTag:str, const pattern[], const replacement[], &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_replace, 3)
+	AMX_DEFINE_NATIVE_TAG(str_replace, 3, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -823,7 +823,7 @@ namespace Natives
 	}
 
 	// native String:str_replace_s(ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_replace_s, 3)
+	AMX_DEFINE_NATIVE_TAG(str_replace_s, 3, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -849,7 +849,7 @@ namespace Natives
 	}
 
 	// native String:str_replace_list(ConstStringTag:str, const pattern[], List:replacement, &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_replace_list, 3)
+	AMX_DEFINE_NATIVE_TAG(str_replace_list, 3, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -873,7 +873,7 @@ namespace Natives
 	}
 
 	// native String:str_replace_list_s(ConstStringTag:str, ConstStringTag:pattern, List:replacement, &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_replace_list_s, 3)
+	AMX_DEFINE_NATIVE_TAG(str_replace_list_s, 3, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -899,7 +899,7 @@ namespace Natives
 	}
 
 	// native String:str_replace_func(ConstStringTag:str, const pattern[], const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
-	AMX_DEFINE_NATIVE(str_replace_func, 3)
+	AMX_DEFINE_NATIVE_TAG(str_replace_func, 3, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -935,7 +935,7 @@ namespace Natives
 	}
 
 	// native String:str_replace_func_s(ConstStringTag:str, ConstStringTag:pattern, const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
-	AMX_DEFINE_NATIVE(str_replace_func_s, 3)
+	AMX_DEFINE_NATIVE_TAG(str_replace_func_s, 3, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -973,7 +973,7 @@ namespace Natives
 	}
 
 	// native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_set_replace, 4)
+	AMX_DEFINE_NATIVE_TAG(str_set_replace, 4, string)
 	{
 		cell_string *target;
 		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -999,7 +999,7 @@ namespace Natives
 	}
 
 	// native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_set_replace_s, 4)
+	AMX_DEFINE_NATIVE_TAG(str_set_replace_s, 4, string)
 	{
 		cell_string *target;
 		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -1029,7 +1029,7 @@ namespace Natives
 	}
 
 	// native String:str_set_replace_list(StringTag:target, ConstStringTag:str, const pattern[], List:replacement, &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_set_replace_list, 4)
+	AMX_DEFINE_NATIVE_TAG(str_set_replace_list, 4, string)
 	{
 		cell_string *target;
 		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -1056,7 +1056,7 @@ namespace Natives
 	}
 
 	// native String:str_set_replace_list_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, List:replacement, &pos=0, regex_options:options=regex_default);
-	AMX_DEFINE_NATIVE(str_set_replace_list_s, 4)
+	AMX_DEFINE_NATIVE_TAG(str_set_replace_list_s, 4, string)
 	{
 		cell_string *target;
 		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -1086,7 +1086,7 @@ namespace Natives
 	}
 
 	// native String:str_set_replace_func(StringTag:target, ConstStringTag:str, const pattern[], const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
-	AMX_DEFINE_NATIVE(str_set_replace_func, 4)
+	AMX_DEFINE_NATIVE_TAG(str_set_replace_func, 4, string)
 	{
 		cell_string *target;
 		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
@@ -1125,7 +1125,7 @@ namespace Natives
 	}
 
 	// native String:str_set_replace_func_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
-	AMX_DEFINE_NATIVE(str_set_replace_func_s, 4)
+	AMX_DEFINE_NATIVE_TAG(str_set_replace_func_s, 4, string)
 	{
 		cell_string *target;
 		if(!strings::pool.get_by_id(params[1], target)) amx_LogicError(errors::pointer_invalid, "string", params[1]);

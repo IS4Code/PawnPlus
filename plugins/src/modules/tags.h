@@ -156,6 +156,7 @@ namespace tags
 	constexpr const cell tag_pool = 21;
 	constexpr const cell tag_expression = 22;
 	constexpr const cell tag_address = 23;
+	constexpr const cell tag_amx_guard = 24;
 
 	tag_ptr find_tag(const char *name, size_t sublen=-1);
 	tag_ptr find_tag(AMX *amx, cell tag_id);

@@ -37,7 +37,9 @@ void stored_param::push(AMX *amx, int id) const
 			break;
 		case param_type::string_param:
 			cell addr, *phys_addr;
-			amx_PushArray(amx, &addr, &phys_addr, string_value.c_str(), string_value.size() + 1);
+			amx_AllotSafe(amx, string_value.size() + 1, &addr, &phys_addr);
+			std::memcpy(phys_addr, string_value.c_str(), (string_value.size() + 1) * sizeof(cell));
+			amx_Push(amx, addr);
 			break;
 	}
 }

@@ -128,7 +128,7 @@ namespace events
 	{
 		amx::object obj;
 		auto &info = get_info(amx, obj);
-		std::vector<std::unique_ptr<event_info>> *list = nullptr;;
+		std::vector<std::unique_ptr<event_info>> *list = nullptr;
 		if(index >= 0)
 		{
 			auto &callback_handlers = info.callback_handlers;
@@ -243,30 +243,35 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 		oldargs = {stk, stk + params};
 	}
 
-	cell heap, *heap_addr;
-	amx_Allot(amx, 0, &heap, &heap_addr);
+	cell handled, *retarg;
+	int err;
+	try{
+		amx::guard guard(amx);
 
-	cell *retarg = nullptr;
-	if(flags & 1)
-	{
-		cell retaddr;
-		amx_Allot(amx, 1, &retaddr, &retarg);
-		amx_Push(amx, retaddr);
-		if(retval)
+		retarg = nullptr;
+		if(flags & 1)
 		{
-			*retarg = *retval;
+			cell retaddr;
+			amx_AllotSafe(amx, 1, &retaddr, &retarg);
+			amx_Push(amx, retaddr);
+			if(retval)
+			{
+				*retarg = *retval;
+			}
 		}
-	}
 
-	for(auto it = arg_values.rbegin(); it != arg_values.rend(); it++)
+		for(auto it = arg_values.rbegin(); it != arg_values.rend(); it++)
+		{
+			it->push(amx, id);
+		}
+
+		handled = 0;
+		err = amx_Exec(amx, &handled, index);
+	}catch(const errors::amx_error &err)
 	{
-		it->push(amx, id);
+		amx_RaiseError(amx, err.code);
+		return false;
 	}
-
-	cell handled = 0;
-	int err = amx_Exec(amx, &handled, index);
-
-	amx_Release(amx, heap);
 
 	if(!handled)
 	{

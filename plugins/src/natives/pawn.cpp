@@ -28,7 +28,7 @@ struct amx_stack
 		{
 			cell *tmp2;
 			reset_stk = amx->stk;
-			amx_Allot(amx, 0, &reset_hea, &tmp2);
+			amx_AllotSafe(amx, 0, &reset_hea, &tmp2);
 		}
 	}
 
@@ -121,7 +121,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, s
 				}
 				length += 1;
 				cell *newaddr;
-				amx_Allot(target_amx, length, &param, &newaddr);
+				amx_AllotSafe(target_amx, length, &param, &newaddr);
 				std::memcpy(newaddr, addr, length * sizeof(cell));
 			}
 			stack.push(param);
@@ -155,7 +155,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, s
 						length += 1;
 					}
 					cell *newaddr;
-					amx_Allot(target_amx, length, &param, &newaddr);
+					amx_AllotSafe(target_amx, length, &param, &newaddr);
 					std::memcpy(newaddr, addr, length * sizeof(cell));
 				}
 				stack.push(param);
@@ -168,12 +168,12 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, s
 				if(strings::pool.get_by_id(*addr, ptr))
 				{
 					size_t size = ptr->size();
-					amx_Allot(target_amx, size + 1, &param, &addr);
+					amx_AllotSafe(target_amx, size + 1, &param, &addr);
 					std::memcpy(addr, ptr->c_str(), size * sizeof(cell));
 					addr[size] = 0;
 				}else if(ptr == nullptr)
 				{
-					amx_Allot(target_amx, 1, &param, &addr);
+					amx_AllotSafe(target_amx, 1, &param, &addr);
 					addr[0] = 0;
 				}else{
 					amx_LogicError(errors::pointer_invalid, "string", *addr);
@@ -194,7 +194,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, s
 						stack.push(addr);
 					}
 					cell fmt_value;
-					amx_Allot(target_amx, ptr->size() + 1, &fmt_value, &addr);
+					amx_AllotSafe(target_amx, ptr->size() + 1, &fmt_value, &addr);
 					for(auto it = ptr->begin(); it != ptr->end(); it++)
 					{
 						*(addr++) = it->get_specifier();
@@ -271,6 +271,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, s
 		try{
 			tag_ptr out_tag;
 			*resultptr = amx::dynamic_call(target_amx, func, reinterpret_cast<cell*>(stack.data + target_amx->stk), out_tag);
+			native_return_tag = out_tag;
 			ret = AMX_ERR_NONE;
 		}catch(errors::native_error &err)
 		{
@@ -318,7 +319,7 @@ cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, s
 namespace Natives
 {
 	// native bool:pawn_native_exists(const function[]);
-	AMX_DEFINE_NATIVE(pawn_native_exists, 1)
+	AMX_DEFINE_NATIVE_TAG(pawn_native_exists, 1, bool)
 	{
 		const char *name;
 		amx_StrParam(amx, params[1], name);
@@ -332,7 +333,7 @@ namespace Natives
 	}
 
 	// native bool:pawn_native_imported(const function[]);
-	AMX_DEFINE_NATIVE(pawn_native_imported, 1)
+	AMX_DEFINE_NATIVE_TAG(pawn_native_imported, 1, bool)
 	{
 		char *name;
 		amx_StrParam(amx, params[1], name);
@@ -347,7 +348,7 @@ namespace Natives
 	}
 
 	// native bool:pawn_public_exists(const function[]);
-	AMX_DEFINE_NATIVE(pawn_public_exists, 1)
+	AMX_DEFINE_NATIVE_TAG(pawn_public_exists, 1, bool)
 	{
 		char *name;
 		amx_StrParam(amx, params[1], name);
@@ -368,19 +369,19 @@ namespace Natives
 	}
 
 	// native pawn_call_public(const function[], const format[], AnyTag:...);
-	AMX_DEFINE_NATIVE(pawn_call_public, 2)
+	AMX_DEFINE_NATIVE_TAG(pawn_call_public, 2, cell)
 	{
 		return pawn_call(amx, params[0], params + 1, false, false, nullptr, amx);
 	}
 
 	// native amx_err:pawn_try_call_native(const function[], &result, const format[], AnyTag:...);
-	AMX_DEFINE_NATIVE(pawn_try_call_native, 3)
+	AMX_DEFINE_NATIVE_TAG(pawn_try_call_native, 3, cell)
 	{
 		return pawn_call(amx, params[0], params + 1, true, true, nullptr, amx);
 	}
 
 	// native amx_err:pawn_try_call_native_msg(const function[], &result, msg[], msg_size=sizeof(msg), const format[]="", AnyTag:...);
-	AMX_DEFINE_NATIVE(pawn_try_call_native_msg, 4)
+	AMX_DEFINE_NATIVE_TAG(pawn_try_call_native_msg, 4, cell)
 	{
 		std::string msg;
 		cell *msg_addr = amx_GetAddrSafe(amx, params[3]);
@@ -395,7 +396,7 @@ namespace Natives
 	}
 
 	// native amx_err:pawn_try_call_native_msg_s(const function[], &result, &StringTag:msg, const format[], AnyTag:...);
-	AMX_DEFINE_NATIVE(pawn_try_call_native_msg_s, 3)
+	AMX_DEFINE_NATIVE_TAG(pawn_try_call_native_msg_s, 3, cell)
 	{
 		std::string msg;
 		cell *msg_addr = amx_GetAddrSafe(amx, params[3]);
@@ -410,13 +411,13 @@ namespace Natives
 	}
 
 	// native amx_err:pawn_try_call_public(const function[], &result, const format[], AnyTag:...);
-	AMX_DEFINE_NATIVE(pawn_try_call_public, 3)
+	AMX_DEFINE_NATIVE_TAG(pawn_try_call_public, 3, cell)
 	{
 		return pawn_call(amx, params[0], params + 1, false, true, nullptr, amx);
 	}
 
 	// native pawn_create_callback(const callback[], Expression:action);
-	AMX_DEFINE_NATIVE(pawn_create_callback, 2)
+	AMX_DEFINE_NATIVE_TAG(pawn_create_callback, 2, cell)
 	{
 		std::shared_ptr<expression> expr;
 		if(params[2])
@@ -433,7 +434,7 @@ namespace Natives
 	}
 
 	// native CallbackHandler:pawn_register_callback(const callback[], const function[], handler_flags:flags=handler_default, const additional_format[], AnyTag:...);
-	AMX_DEFINE_NATIVE(pawn_register_callback, 2)
+	AMX_DEFINE_NATIVE_TAG(pawn_register_callback, 2, callback_handler)
 	{
 		char *callback;
 		amx_StrParam(amx, params[1], callback);
@@ -460,13 +461,13 @@ namespace Natives
 	}
 
 	// native pawn_unregister_callback(CallbackHandler:id);
-	AMX_DEFINE_NATIVE(pawn_unregister_callback, 1)
+	AMX_DEFINE_NATIVE_TAG(pawn_unregister_callback, 1, cell)
 	{
 		return static_cast<cell>(events::remove_callback(amx, params[1]));
 	}
 
 	// native NativeHook:pawn_add_hook(const function[], const format[], const handler[], const additional_format[]="", AnyTag:...);
-	AMX_DEFINE_NATIVE(pawn_add_hook, 3)
+	AMX_DEFINE_NATIVE_TAG(pawn_add_hook, 3, native_hook)
 	{
 		char *native;
 		amx_StrParam(amx, params[1], native);
@@ -494,7 +495,7 @@ namespace Natives
 	}
 
 	// native NativeHook:pawn_add_filter(const function[], const format[], const handler[], filter_type:type=filter_in, const additional_format[]="", AnyTag:...);
-	AMX_DEFINE_NATIVE(pawn_add_filter, 3)
+	AMX_DEFINE_NATIVE_TAG(pawn_add_filter, 3, native_hook)
 	{
 		char *native;
 		amx_StrParam(amx, params[1], native);
@@ -524,20 +525,20 @@ namespace Natives
 	}
 
 	// native pawn_remove_hook(NativeHook:id);
-	AMX_DEFINE_NATIVE(pawn_remove_hook, 1)
+	AMX_DEFINE_NATIVE_TAG(pawn_remove_hook, 1, cell)
 	{
 		return static_cast<cell>(amxhook::remove_hook(params[1]));
 	}
 
 	// native Guard:pawn_guard(AnyTag:value, tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(pawn_guard, 2)
+	AMX_DEFINE_NATIVE_TAG(pawn_guard, 2, guard)
 	{
 		auto obj = dyn_object(amx, params[1], params[2]);
 		return guards::get_id(amx, guards::add(amx, std::move(obj)));
 	}
 
 	// native Guard:pawn_guard_arr(AnyTag:value[], size=sizeof(value), tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(pawn_guard_arr, 3)
+	AMX_DEFINE_NATIVE_TAG(pawn_guard_arr, 3, guard)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		auto obj = dyn_object(amx, addr, params[2], params[3]);
@@ -545,14 +546,14 @@ namespace Natives
 	}
 
 	// native bool:pawn_guard_valid(Guard:guard);
-	AMX_DEFINE_NATIVE(pawn_guard_valid, 1)
+	AMX_DEFINE_NATIVE_TAG(pawn_guard_valid, 1, bool)
 	{
 		handle_t *obj;
 		return guards::get_by_id(amx, params[1], obj);
 	}
 
 	// native pawn_guard_free(Guard:guard);
-	AMX_DEFINE_NATIVE(pawn_guard_free, 1)
+	AMX_DEFINE_NATIVE_TAG(pawn_guard_free, 1, cell)
 	{
 		handle_t *obj;
 		if(!guards::get_by_id(amx, params[1], obj)) amx_LogicError(errors::pointer_invalid, "guard", params[1]);
@@ -561,7 +562,7 @@ namespace Natives
 	}
 	
 	// native List:pawn_get_args(const format[], bool:byref=false, level=0);
-	AMX_DEFINE_NATIVE(pawn_get_args, 1)
+	AMX_DEFINE_NATIVE_TAG(pawn_get_args, 1, list)
 	{
 		char *format;
 		amx_StrParam(amx, params[1], format);
@@ -695,7 +696,7 @@ namespace Natives
 	}
 
 	// native ArgTag:[2]pawn_arg_pack(AnyTag:value, tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(pawn_arg_pack, 2)
+	AMX_DEFINE_NATIVE_TAG(pawn_arg_pack, 2, cell)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[3]);
 		addr[0] = params[1];

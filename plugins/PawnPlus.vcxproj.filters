@@ -155,7 +155,7 @@
       <Filter>src\modules</Filter>
     </ClCompile>
     <ClCompile Include="src\utils\systools.cpp">
-      <Filter>src\natives</Filter>
+      <Filter>src\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -354,7 +354,7 @@
       <Filter>src\modules</Filter>
     </ClInclude>
     <ClInclude Include="src\utils\systools.h">
-      <Filter>src\natives</Filter>
+      <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

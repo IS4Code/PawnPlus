@@ -9,6 +9,7 @@
 [[noreturn]] void amx_FormalError(const char *format, ...);
 [[noreturn]] void amx_LogicError(const char *format, ...);
 cell *amx_GetAddrSafe(AMX *amx, cell amx_addr);
+void amx_AllotSafe(AMX *amx, int cells, cell *amx_addr, cell **phys_addr);
 
 namespace errors
 {

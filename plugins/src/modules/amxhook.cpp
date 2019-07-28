@@ -219,46 +219,52 @@ bool hooked_func::remove_handler(cell id)
 
 cell hooked_func::invoke(AMX *amx, cell *params)
 {
-	cell result = std::numeric_limits<cell>::min();
+	try{
+		cell result = std::numeric_limits<cell>::min();
 
-	size_t old = handler_level;
-	if(handler_level == -1)
-	{
-		handler_level = handlers.size();
-	}
-
-	bool ok = false;
-	while(!ok)
-	{
-		if(handler_level == 0)
+		size_t old = handler_level;
+		if(handler_level == -1)
 		{
-			result = reinterpret_cast<AMX_NATIVE>(subhook_get_trampoline(hook))(amx, params);
-			ok = true;
-		}else{
-			handler_level--;
-			ok = handlers[handler_level]->invoke(*this, amx, params, result);
+			handler_level = handlers.size();
 		}
-	}
 
-	handler_level = old;
-	if(old == -1)
-	{
-		for(auto it = handlers.begin(); it != handlers.end(); ++it)
+		bool ok = false;
+		while(!ok)
 		{
-			if(!(*it)->valid())
+			if(handler_level == 0)
 			{
-				it = handlers.erase(it);
+				result = reinterpret_cast<AMX_NATIVE>(subhook_get_trampoline(hook))(amx, params);
+				ok = true;
+			}else{
+				handler_level--;
+				ok = handlers[handler_level]->invoke(*this, amx, params, result);
 			}
 		}
-		if(empty())
+
+		handler_level = old;
+		if(old == -1)
 		{
-			hooks_map.erase(native);
-			size_t index = this->index;
-			native_hooks[index] = nullptr;
-			func_pool::remove(index);
+			for(auto it = handlers.begin(); it != handlers.end(); ++it)
+			{
+				if(!(*it)->valid())
+				{
+					it = handlers.erase(it);
+				}
+			}
+			if(empty())
+			{
+				hooks_map.erase(native);
+				size_t index = this->index;
+				native_hooks[index] = nullptr;
+				func_pool::remove(index);
+			}
 		}
+		return result;
+	}catch(const errors::amx_error &err)
+	{
+		amx_RaiseError(amx, err.code);
+		return 0;
 	}
-	return result;
 }
 
 hook_handler::hook_handler(AMX *amx, const char *func_format, const char *function, const char *format, const cell *args, size_t numargs) : amx(amx::load(amx)), handler(function)
@@ -341,8 +347,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 		return false;
 	}
 
-	cell reset_hea, *tmp;
-	amx_Allot(my_amx, 0, &reset_hea, &tmp);
+	amx::guard guard(my_amx);
 
 	std::vector<std::tuple<cell*, cell*, size_t>> storage;
 
@@ -364,7 +369,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 						length = 1 + ((length - 1) / sizeof(cell));
 					}
 
-					amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
+					amx_AllotSafe(my_amx, length + 1, &amx_addr, &target_addr);
 					std::memcpy(target_addr, src_addr, length * sizeof(cell));
 					target_addr[length] = 0;
 					storage.push_back(std::make_tuple(target_addr, src_addr, length + 1));
@@ -409,7 +414,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 					cell amx_addr, *src_addr, *target_addr;
 					if(amx_GetAddr(amx, param, &src_addr) == AMX_ERR_NONE)
 					{
-						amx_Allot(my_amx, 1, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, 1, &amx_addr, &target_addr);
 						*target_addr = *src_addr;
 						storage.push_back(std::make_tuple(target_addr, src_addr, 1));
 
@@ -435,7 +440,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 							return false;
 						}
 						int length = params[2 + argi];
-						amx_Allot(my_amx, length, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length, &amx_addr, &target_addr);
 						std::memcpy(target_addr, src_addr, length * sizeof(cell));
 
 						amx_Push(my_amx, amx_addr);
@@ -460,7 +465,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 							return false;
 						}
 						int length = params[2 + argi];
-						amx_Allot(my_amx, length, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length, &amx_addr, &target_addr);
 						std::memcpy(target_addr, src_addr, length * sizeof(cell));
 						storage.push_back(std::make_tuple(target_addr, src_addr, length));
 
@@ -486,7 +491,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 							return false;
 						}
 						int length = params[2 + argi];
-						amx_Allot(my_amx, length, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length, &amx_addr, &target_addr);
 						storage.push_back(std::make_tuple(target_addr, src_addr, length));
 
 						amx_Push(my_amx, amx_addr);
@@ -512,7 +517,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 							length = 1 + ((length - 1) / sizeof(cell));
 						}
 
-						amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length + 1, &amx_addr, &target_addr);
 						std::memcpy(target_addr, src_addr, length * sizeof(cell));
 						target_addr[length] = 0;
 
@@ -539,7 +544,7 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 							length = 1 + ((length - 1) / sizeof(cell));
 						}
 
-						amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length + 1, &amx_addr, &target_addr);
 						std::memcpy(target_addr, src_addr, length * sizeof(cell));
 						target_addr[length] = 0;
 						storage.push_back(std::make_tuple(target_addr, src_addr, length + 1));
@@ -576,8 +581,6 @@ bool hook_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &res
 		std::memcpy(std::get<1>(mem), std::get<0>(mem), std::get<2>(mem) * sizeof(cell));
 	}
 
-	amx_Release(my_amx, reset_hea);
-
 	return true;
 }
 
@@ -605,8 +608,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 		result = parent.invoke(amx, params);
 	}
 
-	cell reset_hea, *tmp;
-	amx_Allot(my_amx, 0, &reset_hea, &tmp);
+	amx::guard guard(my_amx);
 
 	std::vector<std::tuple<cell*, cell*, size_t>> storage;
 
@@ -628,7 +630,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 						length = 1 + ((length - 1) / sizeof(cell));
 					}
 
-					amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
+					amx_AllotSafe(my_amx, length + 1, &amx_addr, &target_addr);
 					std::memcpy(target_addr, src_addr, length * sizeof(cell));
 					target_addr[length] = 0;
 
@@ -646,7 +648,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 		{
 			cell &param = params[1 + argi];
 			cell amx_addr, *phys_addr;
-			amx_Allot(my_amx, 1, &amx_addr, &phys_addr);
+			amx_AllotSafe(my_amx, 1, &amx_addr, &phys_addr);
 
 			*phys_addr = param;
 			storage.push_back(std::make_tuple(phys_addr, &param, 1));
@@ -678,7 +680,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 					cell amx_addr, *src_addr, *target_addr;
 					if(amx_GetAddr(amx, param, &src_addr) == AMX_ERR_NONE)
 					{
-						amx_Allot(my_amx, 1, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, 1, &amx_addr, &target_addr);
 						*target_addr = *src_addr;
 						storage.push_back(std::make_tuple(target_addr, src_addr, 1));
 
@@ -704,7 +706,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 							return false;
 						}
 						int length = params[2 + argi];
-						amx_Allot(my_amx, length, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length, &amx_addr, &target_addr);
 						std::memcpy(target_addr, src_addr, length * sizeof(cell));
 
 						amx_Push(my_amx, amx_addr);
@@ -729,7 +731,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 							return false;
 						}
 						int length = params[2 + argi];
-						amx_Allot(my_amx, length, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length, &amx_addr, &target_addr);
 						std::memcpy(target_addr, src_addr, length * sizeof(cell));
 						storage.push_back(std::make_tuple(target_addr, src_addr, length));
 
@@ -755,7 +757,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 							return false;
 						}
 						int length = params[2 + argi];
-						amx_Allot(my_amx, length, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length, &amx_addr, &target_addr);
 						storage.push_back(std::make_tuple(target_addr, src_addr, length));
 
 						amx_Push(my_amx, amx_addr);
@@ -781,7 +783,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 							length = 1 + ((length - 1) / sizeof(cell));
 						}
 
-						amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length + 1, &amx_addr, &target_addr);
 						std::memcpy(target_addr, src_addr, length * sizeof(cell));
 						target_addr[length] = 0;
 
@@ -808,7 +810,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 							length = 1 + ((length - 1) / sizeof(cell));
 						}
 
-						amx_Allot(my_amx, length + 1, &amx_addr, &target_addr);
+						amx_AllotSafe(my_amx, length + 1, &amx_addr, &target_addr);
 						std::memcpy(target_addr, src_addr, length * sizeof(cell));
 						target_addr[length] = 0;
 						storage.push_back(std::make_tuple(target_addr, src_addr, length + 1));
@@ -825,7 +827,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 			default: //cell
 			{
 				cell amx_addr, *phys_addr;
-				amx_Allot(my_amx, 1, &amx_addr, &phys_addr);
+				amx_AllotSafe(my_amx, 1, &amx_addr, &phys_addr);
 
 				*phys_addr = param;
 				storage.push_back(std::make_tuple(phys_addr, &param, 1));
@@ -837,7 +839,7 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 	}
 
 	cell amx_addr, *phys_addr;
-	amx_Allot(my_amx, 1, &amx_addr, &phys_addr);
+	amx_AllotSafe(my_amx, 1, &amx_addr, &phys_addr);
 	*phys_addr = result;
 	amx_Push(my_amx, amx_addr);
 	storage.push_back(std::make_tuple(phys_addr, &result, 1));
@@ -857,8 +859,6 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 	{
 		std::memcpy(std::get<1>(mem), std::get<0>(mem), std::get<2>(mem) * sizeof(cell));
 	}
-
-	amx_Release(my_amx, reset_hea);
 
 	if(output)
 	{

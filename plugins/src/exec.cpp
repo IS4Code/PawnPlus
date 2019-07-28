@@ -163,7 +163,15 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 	int ret;
 	while(true)
 	{
-		cell old_hea = amx->hea, old_stk = amx->stk + sizeof(cell) * amx->paramcount;
+		cell old_hea, old_stk;
+		if(index == AMX_EXEC_CONT)
+		{
+			old_hea = amx->reset_hea;
+			old_stk = amx->reset_stk;
+		}else{
+			old_hea = amx->hea;
+			old_stk = amx->stk + sizeof(cell) * amx->paramcount;
+		}
 		ret = amx_ExecOrig(amx, retval, index);
 		bool handled = false;
 		if(ret == AMX_ERR_SLEEP || amx->error == AMX_ERR_SLEEP)
@@ -459,15 +467,16 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				{
 					cell size = SleepReturnValueMask & amx->pri;
 					cell amx_addr, *addr;
-					if(amx_Allot(amx, size, &amx_addr, &addr) == AMX_ERR_NONE)
-					{
+					try{
+						amx_AllotSafe(amx, size, &amx_addr, &addr);
 						auto var = amx_var_pool.add(amx_var_info(amx, amx_addr, size));
 						if((amx->pri & SleepReturnTypeMask) == SleepReturnAllocVarZero)
 						{
 							var->fill(0);
 						}
 						amx->pri = amx_var_pool.get_id(var);
-					}else{
+					}catch(const errors::amx_error &)
+					{
 						amx->pri = 0;
 					}
 					amx->error = ret = AMX_ERR_NONE;

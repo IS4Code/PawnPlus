@@ -308,14 +308,14 @@ public:
 namespace Natives
 {
 	// native bool:debug_loaded();
-	AMX_DEFINE_NATIVE(debug_loaded, 0)
+	AMX_DEFINE_NATIVE_TAG(debug_loaded, 0, bool)
 	{
 		const auto &obj = amx::load_lock(amx);
 		return static_cast<bool>(obj->dbg);
 	}
 
 	// native AmxDebug:debug_get_ptr();
-	AMX_DEFINE_NATIVE(debug_get_ptr, 0)
+	AMX_DEFINE_NATIVE_TAG(debug_get_ptr, 0, cell)
 	{
 		const auto &obj = amx::load_lock(amx);
 		if(!obj->dbg)
@@ -326,7 +326,7 @@ namespace Natives
 	}
 
 	// native debug_code(level=0);
-	AMX_DEFINE_NATIVE(debug_code, 0)
+	AMX_DEFINE_NATIVE_TAG(debug_code, 0, cell)
 	{
 		cell level = optparam(1, 0);
 		if(level < 0)
@@ -338,7 +338,7 @@ namespace Natives
 	}
 
 	// native debug_line(code=cellmin);
-	AMX_DEFINE_NATIVE(debug_line, 0)
+	AMX_DEFINE_NATIVE_TAG(debug_line, 0, cell)
 	{
 		auto dbg = get_debug(amx);
 		
@@ -382,7 +382,7 @@ namespace Natives
 	}
 
 	// native debug_file(file[], code=cellmin, size=sizeof(file));
-	AMX_DEFINE_NATIVE(debug_file, 3)
+	AMX_DEFINE_NATIVE_TAG(debug_file, 3, cell)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		return debug_file_string<2>(amx, params, [&](const char *str) -> cell
@@ -397,7 +397,7 @@ namespace Natives
 	}
 
 	// native String:debug_file_s(code=cellmin);
-	AMX_DEFINE_NATIVE(debug_file_s, 0)
+	AMX_DEFINE_NATIVE_TAG(debug_file_s, 0, string)
 	{
 		return debug_file_string<1>(amx, params, [&](const char *str)
 		{
@@ -410,14 +410,14 @@ namespace Natives
 	}
 
 	// native debug_num_symbols();
-	AMX_DEFINE_NATIVE(debug_num_symbols, 0)
+	AMX_DEFINE_NATIVE_TAG(debug_num_symbols, 0, cell)
 	{
 		auto dbg = get_debug(amx);
 		return dbg->hdr->symbols;
 	}
 
 	// native Symbol:debug_symbol(const name[], code=cellmin, symbol_kind:kind=symbol_kind:-1, symbol_class:class=symbol_class:-1);
-	AMX_DEFINE_NATIVE(debug_symbol, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol, 1, symbol)
 	{
 		auto dbg = get_debug(amx);
 
@@ -460,7 +460,7 @@ namespace Natives
 	}
 
 	// native Symbol:debug_func(code=cellmin);
-	AMX_DEFINE_NATIVE(debug_func, 0)
+	AMX_DEFINE_NATIVE_TAG(debug_func, 0, symbol)
 	{
 		auto dbg = get_debug(amx);
 		
@@ -492,7 +492,7 @@ namespace Natives
 	}
 
 	// native Symbol:debug_var(AnyTag:&var);
-	AMX_DEFINE_NATIVE(debug_var, 0)
+	AMX_DEFINE_NATIVE_TAG(debug_var, 0, symbol)
 	{
 		auto dbg = get_debug(amx);
 
@@ -561,7 +561,7 @@ namespace Natives
 	}
 	
 	// native symbol_kind:debug_symbol_kind(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_kind, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_kind, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -576,7 +576,7 @@ namespace Natives
 	}
 	
 	// native symbol_class:debug_symbol_class(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_class, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_class, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -591,7 +591,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_tag(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_tag, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_tag, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -627,7 +627,7 @@ namespace Natives
 	}
 
 	// native tag_uid:debug_symbol_tag_uid(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_tag_uid, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_tag_uid, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -653,7 +653,7 @@ namespace Natives
 	}
 
 	// native Symbol:debug_symbol_func(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_func, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_func, 1, symbol)
 	{
 		auto dbg = get_debug(amx);
 
@@ -688,7 +688,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_name(Symbol:symbol, name[], size=sizeof(name));
-	AMX_DEFINE_NATIVE(debug_symbol_name, 3)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_name, 3, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -705,7 +705,7 @@ namespace Natives
 	}
 	
 	// native String:debug_symbol_name_s(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_name_s, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_name_s, 1, string)
 	{
 		auto dbg = get_debug(amx);
 
@@ -720,7 +720,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_addr(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_addr, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_addr, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -735,7 +735,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_range(Symbol:symbol, &codestart, &codeend);
-	AMX_DEFINE_NATIVE(debug_symbol_range, 3)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_range, 3, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -762,7 +762,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_line(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_line, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_line, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -783,7 +783,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_file(Symbol:symbol, file[], size=sizeof(file));
-	AMX_DEFINE_NATIVE(debug_symbol_file, 3)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_file, 3, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -807,7 +807,7 @@ namespace Natives
 	}
 
 	// native String:debug_symbol_file_s(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_file_s, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_file_s, 1, string)
 	{
 		auto dbg = get_debug(amx);
 
@@ -828,7 +828,7 @@ namespace Natives
 	}
 
 	// native bool:debug_symbol_in_scope(Symbol:symbol, level=0);
-	AMX_DEFINE_NATIVE(debug_symbol_in_scope, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_in_scope, 1, bool)
 	{
 		auto dbg = get_debug(amx);
 
@@ -852,7 +852,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_rank(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_rank, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_rank, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -868,7 +868,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_size(Symbol:symbol, dimension=0);
-	AMX_DEFINE_NATIVE(debug_symbol_size, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_size, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -895,7 +895,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_size_tag(Symbol:symbol, dimension=0);
-	AMX_DEFINE_NATIVE(debug_symbol_size_tag, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_size_tag, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -943,7 +943,7 @@ namespace Natives
 	}
 
 	// native tag_uid:debug_symbol_size_tag_uid(Symbol:symbol, dimension=0);
-	AMX_DEFINE_NATIVE(debug_symbol_size_tag_uid, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_size_tag_uid, 1, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -981,7 +981,7 @@ namespace Natives
 	}
 
 	// native Var:debug_symbol_to_amx_var(Symbol:symbol, level=0);
-	AMX_DEFINE_NATIVE(debug_symbol_to_amx_var, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_to_amx_var, 1, var)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
@@ -1010,13 +1010,26 @@ namespace Natives
 	// native debug_symbol_get(Symbol:symbol, level=0, offset=0);
 	AMX_DEFINE_NATIVE(debug_symbol_get, 1)
 	{
+		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
-		const cell *ptr = find_symbol_addr(amx, params[1], optparam(2, 0), sym, optparam(3, 0));
+		const cell *ptr = find_symbol_addr(amx, params[1], optparam(2, 0), dbg, sym, optparam(3, 0));
+		cell tag = sym->tag;
+
+		if(tag == 0)
+		{
+			native_return_tag = tags::find_tag(tags::tag_cell);
+		}else{
+			const char *tagname;
+			if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+			{
+				native_return_tag = tags::find_existing_tag(tagname);
+			}
+		}
 		return *ptr;
 	}
 
 	// native debug_symbol_get_arr(Symbol:symbol, AnyTag:value[], level=0, offset=0, size=sizeof(value));
-	AMX_DEFINE_NATIVE(debug_symbol_get_arr, 5)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_get_arr, 5, cell)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
@@ -1072,7 +1085,7 @@ namespace Natives
 	}
 
 	// native Variant:debug_symbol_get_var(Symbol:symbol, level=0);
-	AMX_DEFINE_NATIVE(debug_symbol_get_var, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_get_var, 1, variant)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
@@ -1116,7 +1129,7 @@ namespace Natives
 	}
 
 	// native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, offset=0, tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(debug_symbol_get_safe, 4)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_get_safe, 4, bool)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
@@ -1143,7 +1156,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_get_arr_safe(Symbol:symbol, AnyTag:value[], level=0, offset=0, size=sizeof(value), tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(debug_symbol_get_arr_safe, 6)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_get_arr_safe, 6, cell)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
@@ -1214,7 +1227,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0, offset=0);
-	AMX_DEFINE_NATIVE(debug_symbol_set, 2)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_set, 2, cell)
 	{
 		AMX_DBG_SYMBOL *sym;
 		cell *ptr = find_symbol_addr(amx, params[1], optparam(3, 0), sym, optparam(4, 0));
@@ -1223,7 +1236,7 @@ namespace Natives
 	}
 
 	// native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, offset=0, tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(debug_symbol_set_safe, 4)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_set_safe, 4, cell)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
@@ -1248,7 +1261,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_set_arr(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values));
-	AMX_DEFINE_NATIVE(debug_symbol_set_arr, 5)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_set_arr, 5, cell)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
@@ -1304,7 +1317,7 @@ namespace Natives
 	}
 
 	// native debug_symbol_set_arr_safe(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values), tag_id=tagof(values));
-	AMX_DEFINE_NATIVE(debug_symbol_set_arr_safe, 6)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_set_arr_safe, 6, cell)
 	{
 		AMX_DBG *dbg;
 		AMX_DBG_SYMBOL *sym;
@@ -1417,6 +1430,19 @@ namespace Natives
 			return 0;
 		}
 
+		cell tag = sym->tag;
+
+		if(tag == 0)
+		{
+			native_return_tag = tags::find_tag(tags::tag_cell);
+		}else{
+			const char *tagname;
+			if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+			{
+				native_return_tag = tags::find_existing_tag(tagname);
+			}
+		}
+
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
 		return SleepReturnDebugCall | index;
 	}
@@ -1469,6 +1495,19 @@ namespace Natives
 		{
 			amx_FormalError(errors::not_enough_args, argsneeded / sizeof(cell), argslen / sizeof(cell));
 			return 0;
+		}
+
+		cell tag = sym->tag;
+
+		if(tag == 0)
+		{
+			native_return_tag = tags::find_tag(tags::tag_cell);
+		}else{
+			const char *tagname;
+			if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+			{
+				native_return_tag = tags::find_existing_tag(tagname);
+			}
 		}
 
 		amx_RaiseError(amx, AMX_ERR_SLEEP);
@@ -1542,6 +1581,20 @@ namespace Natives
 		amx->reset_stk = amx->stk;
 		cell ret;
 		amx->error = amx_Exec(amx, &ret, AMX_EXEC_CONT);
+
+		cell tag = sym->tag;
+
+		if(tag == 0)
+		{
+			native_return_tag = tags::find_tag(tags::tag_cell);
+		}else{
+			const char *tagname;
+			if(dbg_GetTagName(dbg, tag, &tagname) == AMX_ERR_NONE)
+			{
+				native_return_tag = tags::find_existing_tag(tagname);
+			}
+		}
+
 		return ret;
 	}
 
@@ -1616,7 +1669,7 @@ namespace Natives
 	}
 
 	// native amx_err:debug_symbol_try_call(Symbol:symbol, &result, AnyTag:...);
-	AMX_DEFINE_NATIVE(debug_symbol_try_call, 2)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_try_call, 2, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -1686,7 +1739,7 @@ namespace Natives
 	}
 
 	// native amx_err:debug_symbol_try_call_list(Symbol:symbol, &result, List:args);
-	AMX_DEFINE_NATIVE(debug_symbol_try_call_list, 3)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_try_call_list, 3, cell)
 	{
 		auto dbg = get_debug(amx);
 
@@ -1756,7 +1809,7 @@ namespace Natives
 	}
 
 	// native Iter:debug_symbol_variables(Symbol:symbol);
-	AMX_DEFINE_NATIVE(debug_symbol_variables, 1)
+	AMX_DEFINE_NATIVE_TAG(debug_symbol_variables, 1, iter)
 	{
 		auto dbg = get_debug(amx);
 

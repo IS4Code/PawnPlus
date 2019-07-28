@@ -44,9 +44,10 @@ namespace impl
 	{
 		const char *name;
 		cell arg_count;
+		cell tag_uid;
 		AMX_NATIVE inner;
 
-		runtime_native_info(const char *name, cell arg_count, AMX_NATIVE inner) : name(name), arg_count(arg_count), inner(inner)
+		runtime_native_info(const char *name, cell arg_count, cell tag_uid, AMX_NATIVE inner) : name(name), arg_count(arg_count), tag_uid(tag_uid), inner(inner)
 		{
 
 		}
@@ -54,7 +55,7 @@ namespace impl
 
 	std::unordered_map<AMX_NATIVE, runtime_native_info> &runtime_native_map();
 
-	cell handle_error(AMX *amx, const cell *params, const char *native, const errors::native_error &error);
+	cell handle_error(AMX *amx, const cell *params, const char *native, size_t native_size, const errors::native_error &error);
 
 	template <AMX_NATIVE Native>
 	struct native_info;
@@ -68,13 +69,20 @@ namespace impl
 				amx_FormalError(errors::not_enough_args, native_info<Native>::arg_count(), params[0] / static_cast<cell>(sizeof(cell)));
 			}
 			native_return_tag = nullptr;
-			return Native(amx, params);
+			if(native_info<Native>::tag_uid() == tags::tag_unknown)
+			{
+				return Native(amx, params);
+			}else{
+				cell result = Native(amx, params);
+				native_return_tag = tags::find_tag(native_info<Native>::tag_uid());
+				return result;
+			}
 		}catch(const errors::end_of_arguments_error &err)
 		{
-			return handle_error(amx, params, native_info<Native>::name(), errors::native_error(errors::not_enough_args, 3, err.argbase - params - 1 + err.required, params[0] / static_cast<cell>(sizeof(cell))));
+			return handle_error(amx, params, native_info<Native>::name(), native_info<Native>::name_size(), errors::native_error(errors::not_enough_args, 3, err.argbase - params - 1 + err.required, params[0] / static_cast<cell>(sizeof(cell))));
 		}catch(const errors::native_error &err)
 		{
-			return handle_error(amx, params, native_info<Native>::name(), err);
+			return handle_error(amx, params, native_info<Native>::name(), native_info<Native>::name_size(), err);
 		}catch(const errors::amx_error &err)
 		{
 			amx_RaiseError(amx, err.code);
@@ -83,7 +91,7 @@ namespace impl
 #ifndef _DEBUG
 		catch(const std::exception &err)
 		{
-			return handle_error(amx, params, native_info<Native>::name(), errors::native_error(errors::unhandled_exception, 2, err.what()));
+			return handle_error(amx, params, native_info<Native>::name(), native_info<Native>::name_size(), errors::native_error(errors::unhandled_exception, 2, err.what()));
 		}
 #endif
 	}
@@ -91,7 +99,7 @@ namespace impl
 	template <AMX_NATIVE Native>
 	static AMX_NATIVE init_native() noexcept
 	{
-		return runtime_native_map().emplace(std::piecewise_construct, std::forward_as_tuple(adapt_native<Native>), std::forward_as_tuple(native_info<Native>::name(), native_info<Native>::arg_count(), Native)).first->first;
+		return runtime_native_map().emplace(std::piecewise_construct, std::forward_as_tuple(adapt_native<Native>), std::forward_as_tuple(native_info<Native>::name(), native_info<Native>::arg_count(), native_info<Native>::tag_uid(), Native)).first->first;
 	}
 }
 
@@ -114,7 +122,27 @@ namespace impl \
 	struct native_info<&Natives::Name> \
 	{ \
 		static constexpr char *name() { return #Name; } \
+		static constexpr size_t name_size() { return sizeof(#Name) - 1; } \
 		static constexpr cell arg_count() { return ArgCount; } \
+		static constexpr cell tag_uid() { return tags::tag_unknown; } \
+	}; \
+} \
+namespace Natives \
+{ \
+	cell AMX_NATIVE_CALL Name(AMX *amx, cell *params)
+
+#define AMX_DEFINE_NATIVE_TAG(Name, ArgCount, Tag) \
+	cell AMX_NATIVE_CALL Name(AMX *amx, cell *params); \
+} \
+namespace impl \
+{ \
+	template <> \
+	struct native_info<&Natives::Name> \
+	{ \
+		static constexpr char *name() { return #Name; } \
+		static constexpr size_t name_size() { return sizeof(#Name) - 1; } \
+		static constexpr cell arg_count() { return ArgCount; } \
+		static constexpr cell tag_uid() { return tags::tag_##Tag; } \
 	}; \
 } \
 namespace Natives \

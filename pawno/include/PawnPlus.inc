@@ -1816,6 +1816,8 @@ native task_set_result_str(Task:task, const result[]);
 native task_set_result_var(Task:task, ConstVariantTag:result);
 native task_get_result(Task:task, offset=0);
 native task_get_result_arr(Task:task, AnyTag:result[], size=sizeof(result));
+native task_get_result_str(Task:task, result[], size=sizeof(result)) = task_get_result_arr;
+native String:task_get_result_str_s(Task:task);
 native Variant:task_get_result_var(Task:task);
 native bool:task_get_result_safe(Task:task, &AnyTag:result, offset=0, TagTag:tag_id=tagof(result));
 native task_get_result_arr_safe(Task:task, AnyTag:result[], size=sizeof(result), TagTag:tag_id=tagof(result));

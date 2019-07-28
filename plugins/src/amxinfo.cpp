@@ -216,12 +216,17 @@ cell amx::dynamic_call(AMX *amx, AMX_NATIVE native, cell *params, tag_ptr &out_t
 	auto it = impl::runtime_native_map().find(native);
 	if(it != impl::runtime_native_map().end())
 	{
+		const auto &info = it->second;
 		try{
-			if(params[0] < it->second.arg_count * static_cast<cell>(sizeof(cell)))
+			if(params[0] < info.arg_count * static_cast<cell>(sizeof(cell)))
 			{
-				amx_FormalError(errors::not_enough_args, it->second.arg_count, params[0] / static_cast<cell>(sizeof(cell)));
+				amx_FormalError(errors::not_enough_args, info.arg_count, params[0] / static_cast<cell>(sizeof(cell)));
 			}
-			result = it->second.inner(amx, params);
+			result = info.inner(amx, params);
+			if(info.tag_uid != tags::tag_unknown)
+			{
+				native_return_tag = tags::find_tag(info.tag_uid);
+			}
 		}catch(const errors::end_of_arguments_error &err)
 		{
 			amx_FormalError(errors::not_enough_args, err.argbase - params - 1 + err.required, params[0] / static_cast<cell>(sizeof(cell)));

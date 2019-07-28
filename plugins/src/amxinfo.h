@@ -237,7 +237,7 @@ namespace amx
 	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, cell &arg, Args&&... args)
 	{
 		cell amx_addr, *addr;
-		amx_Allot(amx, 1, &amx_addr, &addr);
+		amx_AllotSafe(amx, 1, &amx_addr, &addr);
 		*addr = arg;
 		arglist[0]++;
 		arglist.push_back(amx_addr);
@@ -250,7 +250,7 @@ namespace amx
 	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, float &arg, Args&&... args)
 	{
 		cell amx_addr, *addr;
-		amx_Allot(amx, 1, &amx_addr, &addr);
+		amx_AllotSafe(amx, 1, &amx_addr, &addr);
 		*addr = amx_ftoc(arg);
 		arglist[0]++;
 		arglist.push_back(amx_addr);
@@ -264,7 +264,7 @@ namespace amx
 	{
 		cell amx_addr, *addr;
 		size_t size = arg.size() + 1;
-		amx_Allot(amx, size, &amx_addr, &addr);
+		amx_AllotSafe(amx, size, &amx_addr, &addr);
 		amx_SetString(addr, arg.c_str(), 0, 0, size);
 		arglist[0]++;
 		arglist.push_back(amx_addr);
@@ -276,7 +276,7 @@ namespace amx
 	{
 		cell amx_addr, *addr;
 		size_t size = std::strlen(arg) + 1;
-		amx_Allot(amx, size, &amx_addr, &addr);
+		amx_AllotSafe(amx, size, &amx_addr, &addr);
 		amx_SetString(addr, arg, 0, 0, size);
 		arglist[0]++;
 		arglist.push_back(amx_addr);
@@ -287,7 +287,7 @@ namespace amx
 	cell call_args(AMX *amx, AMX_NATIVE native, std::vector<cell> &arglist, const cell (&arg)[Size], Args&&... args)
 	{
 		cell amx_addr, *addr;
-		amx_Allot(amx, Size, &amx_addr, &addr);
+		amx_AllotSafe(amx, Size, &amx_addr, &addr);
 		std::memcpy(addr, arg, Size * sizeof(cell));
 		arglist[0]++;
 		arglist.push_back(amx_addr);
@@ -297,31 +297,32 @@ namespace amx
 	template <class... Args>
 	cell call_native(AMX *amx, AMX_NATIVE native, Args&&... args)
 	{
-		cell reset_hea, *tmp;
-		amx_Allot(amx, 0, &reset_hea, &tmp);
+		amx::guard guard(amx);
 		std::vector<cell> arglist = {0};
 		cell result = call_args(amx, native, arglist, std::forward<Args>(args)...);
-		amx_Release(amx, reset_hea);
 		return result;
 	}
 
 	class guard
 	{
 		AMX *amx;
-		cell reset_hea;
-		cell reset_stk;
+		cell hea;
+		cell stk;
+		int paramcount;
 
 	public:
 		guard(AMX *amx) : amx(amx)
 		{
-			reset_hea = amx->hea;
-			reset_stk = amx->stk;
+			hea = amx->hea;
+			stk = amx->stk;
+			paramcount = amx->paramcount;
 		}
 
 		~guard()
 		{
-			amx->hea = reset_hea;
-			amx->stk = reset_stk;
+			amx->hea = hea;
+			amx->stk = stk;
+			amx->paramcount = paramcount;
 		}
 	};
 }

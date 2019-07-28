@@ -23,13 +23,13 @@
 namespace Natives
 {
 	// native pp_version();
-	AMX_DEFINE_NATIVE(pp_version, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_version, 0, cell)
 	{
 		return PP_VERSION_NUMBER;
 	}
 
 	// native pp_version_string(version[], size=sizeof(version));
-	AMX_DEFINE_NATIVE(pp_version_string, 2)
+	AMX_DEFINE_NATIVE_TAG(pp_version_string, 2, cell)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		amx_SetString(addr, PP_VERSION_STRING, false, false, params[2]);
@@ -37,27 +37,27 @@ namespace Natives
 	}
 
 	// native String:pp_version_string_s();
-	AMX_DEFINE_NATIVE(pp_version_string_s, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_version_string_s, 0, string)
 	{
 		return strings::create(PP_VERSION_STRING);
 	}
 
 	// native pp_hook_strlen(bool:hook);
-	AMX_DEFINE_NATIVE(pp_hook_strlen, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_hook_strlen, 1, cell)
 	{
 		Hooks::ToggleStrLen(static_cast<bool>(params[1]));
 		return 1;
 	}
 
 	// native pp_hook_check_ref_args(bool:hook);
-	AMX_DEFINE_NATIVE(pp_hook_check_ref_args, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_hook_check_ref_args, 1, cell)
 	{
 		Hooks::ToggleRefArgs(static_cast<bool>(params[1]));
 		return 1;
 	}
 
 	// native pp_public_min_index(index);
-	AMX_DEFINE_NATIVE(pp_public_min_index, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_public_min_index, 1, cell)
 	{
 		cell index = params[1];
 		if(index > 0)
@@ -71,7 +71,7 @@ namespace Natives
 	}
 
 	// native bool:pp_use_funcidx(bool:use);
-	AMX_DEFINE_NATIVE(pp_use_funcidx, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_use_funcidx, 1, bool)
 	{
 		bool orig = use_funcidx;
 		disable_public_warning = true;
@@ -80,74 +80,74 @@ namespace Natives
 	}
 
 	// native pp_tick();
-	AMX_DEFINE_NATIVE(pp_tick, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_tick, 0, cell)
 	{
 		::pp_tick();
 		return 1;
 	}
 
 	// native pp_num_tasks();
-	AMX_DEFINE_NATIVE(pp_num_tasks, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_tasks, 0, cell)
 	{
 		return tasks::size();
 	}
 
 	// native pp_num_local_strings();
-	AMX_DEFINE_NATIVE(pp_num_local_strings, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_local_strings, 0, cell)
 	{
 		return strings::pool.local_size();
 	}
 
 	// native pp_num_global_strings();
-	AMX_DEFINE_NATIVE(pp_num_global_strings, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_global_strings, 0, cell)
 	{
 		return strings::pool.global_size();
 	}
 
 	// native pp_num_local_variants();
-	AMX_DEFINE_NATIVE(pp_num_local_variants, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_local_variants, 0, cell)
 	{
 		return variants::pool.local_size();
 	}
 
 	// native pp_num_global_variants();
-	AMX_DEFINE_NATIVE(pp_num_global_variants, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_global_variants, 0, cell)
 	{
 		return variants::pool.global_size();
 	}
 
 	// native pp_num_lists();
-	AMX_DEFINE_NATIVE(pp_num_lists, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_lists, 0, cell)
 	{
 		return list_pool.size();
 	}
 
 	// native pp_num_linked_lists();
-	AMX_DEFINE_NATIVE(pp_num_linked_lists, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_linked_lists, 0, cell)
 	{
 		return linked_list_pool.size();
 	}
 
 	// native pp_num_maps();
-	AMX_DEFINE_NATIVE(pp_num_maps, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_maps, 0, cell)
 	{
 		return map_pool.size();
 	}
 
 	// native pp_num_pools();
-	AMX_DEFINE_NATIVE(pp_num_pools, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_pools, 0, cell)
 	{
 		return pool_pool.size();
 	}
 
 	// native pp_num_guards();
-	AMX_DEFINE_NATIVE(pp_num_guards, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_guards, 0, cell)
 	{
 		return guards::count(amx);
 	}
 
 	// native pp_num_amx_guards();
-	AMX_DEFINE_NATIVE(pp_num_amx_guards, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_amx_guards, 0, cell)
 	{
 		return amx_guards::count(amx);
 	}
@@ -181,7 +181,7 @@ namespace Natives
 	}
 
 	// native pp_entry(name[], size=sizeof(name));
-	AMX_DEFINE_NATIVE(pp_entry, 2)
+	AMX_DEFINE_NATIVE_TAG(pp_entry, 2, cell)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		return pp_entry_string(amx, params, [&](const char *str) -> cell
@@ -196,7 +196,7 @@ namespace Natives
 	}
 
 	// native String:pp_entry_s();
-	AMX_DEFINE_NATIVE(pp_entry_s, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_entry_s, 0, string)
 	{
 		return pp_entry_string(amx, params, [&](const char *str)
 		{
@@ -205,75 +205,75 @@ namespace Natives
 	}
 	
 	// native pp_num_local_iters();
-	AMX_DEFINE_NATIVE(pp_num_local_iters, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_local_iters, 0, cell)
 	{
 		return iter_pool.local_size();
 	}
 
 	// native pp_num_global_iters();
-	AMX_DEFINE_NATIVE(pp_num_global_iters, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_global_iters, 0, cell)
 	{
 		return iter_pool.global_size();
 	}
 
 	// native pp_num_local_handles();
-	AMX_DEFINE_NATIVE(pp_num_local_handles, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_local_handles, 0, cell)
 	{
 		return handle_pool.local_size();
 	}
 
 	// native pp_num_global_handles();
-	AMX_DEFINE_NATIVE(pp_num_global_handles, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_global_handles, 0, cell)
 	{
 		return handle_pool.global_size();
 	}
 
 	// native pp_num_local_expressions();
-	AMX_DEFINE_NATIVE(pp_num_local_expressions, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_local_expressions, 0, cell)
 	{
 		return expression_pool.local_size();
 	}
 
 	// native pp_num_global_expressions();
-	AMX_DEFINE_NATIVE(pp_num_global_expressions, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_global_expressions, 0, cell)
 	{
 		return expression_pool.global_size();
 	}
 
 	// native pp_max_hooked_natives();
-	AMX_DEFINE_NATIVE(pp_max_hooked_natives, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_max_hooked_natives, 0, cell)
 	{
 		return amxhook::hook_pool_size();
 	}
 
 	// native pp_num_hooked_natives();
-	AMX_DEFINE_NATIVE(pp_num_hooked_natives, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_hooked_natives, 0, cell)
 	{
 		return amxhook::hook_count();
 	}
 
 	// native pp_collect();
-	AMX_DEFINE_NATIVE(pp_collect, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_collect, 0, cell)
 	{
 		gc_collect();
 		return 1;
 	}
 
 	// native pp_num_natives();
-	AMX_DEFINE_NATIVE(pp_num_natives, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_num_natives, 0, cell)
 	{
 		return amx::num_natives(amx);
 	}
 
 	// native pp_max_recursion(level);
-	AMX_DEFINE_NATIVE(pp_max_recursion, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_max_recursion, 1, cell)
 	{
 		maxRecursionLevel = params[1];
 		return 1;
 	}
 
 	// native pp_error_level(error_level:level);
-	AMX_DEFINE_NATIVE(pp_error_level, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_error_level, 1, cell)
 	{
 		auto &extra = amx::load_lock(amx)->get_extra<native_error_level>();
 		auto old = extra.level;
@@ -282,7 +282,7 @@ namespace Natives
 	}
 
 	// native pp_raise_error(const message[], error_level:level=error_logic);
-	AMX_DEFINE_NATIVE(pp_raise_error, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_raise_error, 1, cell)
 	{
 		const char *message;
 		amx_StrParam(amx, params[1], message);
@@ -351,7 +351,7 @@ namespace Natives
 	}
 
 	// native pp_module_name(const function[], name[], size=sizeof(name));
-	AMX_DEFINE_NATIVE(pp_module_name, 3)
+	AMX_DEFINE_NATIVE_TAG(pp_module_name, 3, cell)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[2]);
 		return pp_module_name_string(amx, params, [&](const std::string &str)
@@ -362,7 +362,7 @@ namespace Natives
 	}
 
 	// native String:pp_module_name_s(const function[]);
-	AMX_DEFINE_NATIVE(pp_module_name_s, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_module_name_s, 1, string)
 	{
 		return pp_module_name_string(amx, params, [&](std::string &&str)
 		{
@@ -371,7 +371,7 @@ namespace Natives
 	}
 
 	// native pp_locale(const locale[], locale_category:category = locale_all);
-	AMX_DEFINE_NATIVE(pp_locale, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_locale, 1, cell)
 	{
 		char *locale;
 		amx_StrParam(amx, params[1], locale);
@@ -391,7 +391,7 @@ namespace Natives
 	}
 
 	// native pp_locale_name(locale[], size=sizeof(locale));
-	AMX_DEFINE_NATIVE(pp_locale_name, 2)
+	AMX_DEFINE_NATIVE_TAG(pp_locale_name, 2, cell)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		auto name = strings::locale_name();
@@ -400,13 +400,13 @@ namespace Natives
 	}
 
 	// native String:pp_locale_name_s();
-	AMX_DEFINE_NATIVE(pp_locale_name_s, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_locale_name_s, 0, string)
 	{
 		return strings::create(strings::locale_name());
 	}
 
 	// native pp_format_env_push(Map:env);
-	AMX_DEFINE_NATIVE(pp_format_env_push, 1)
+	AMX_DEFINE_NATIVE_TAG(pp_format_env_push, 1, cell)
 	{
 		std::shared_ptr<map_t> ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
@@ -415,7 +415,7 @@ namespace Natives
 	}
 
 	// native pp_format_env_pop();
-	AMX_DEFINE_NATIVE(pp_format_env_pop, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_format_env_pop, 0, cell)
 	{
 		if(strings::format_env.size() == 0)
 		{
@@ -426,7 +426,7 @@ namespace Natives
 	}
 
 	// native pp_stackspace();
-	AMX_DEFINE_NATIVE(pp_stackspace, 0)
+	AMX_DEFINE_NATIVE_TAG(pp_stackspace, 0, cell)
 	{
 		return stackspace();
 	}
@@ -434,113 +434,97 @@ namespace Natives
 	// native pp__reserved1();
 	AMX_DEFINE_NATIVE(pp__reserved1, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved2();
 	AMX_DEFINE_NATIVE(pp__reserved2, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved3();
 	AMX_DEFINE_NATIVE(pp__reserved3, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved4();
 	AMX_DEFINE_NATIVE(pp__reserved4, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved5();
 	AMX_DEFINE_NATIVE(pp__reserved5, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved6();
 	AMX_DEFINE_NATIVE(pp__reserved6, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved7();
 	AMX_DEFINE_NATIVE(pp__reserved7, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved8();
 	AMX_DEFINE_NATIVE(pp__reserved8, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved9();
 	AMX_DEFINE_NATIVE(pp__reserved9, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved10();
 	AMX_DEFINE_NATIVE(pp__reserved10, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved11();
 	AMX_DEFINE_NATIVE(pp__reserved11, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved12();
 	AMX_DEFINE_NATIVE(pp__reserved12, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved13();
 	AMX_DEFINE_NATIVE(pp__reserved13, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved14();
 	AMX_DEFINE_NATIVE(pp__reserved14, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved15();
 	AMX_DEFINE_NATIVE(pp__reserved15, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 
 	// native pp__reserved16();
 	AMX_DEFINE_NATIVE(pp__reserved16, 0)
 	{
-		amx_RaiseError(amx, AMX_ERR_NOTFOUND);
-		return 0;
+		throw errors::amx_error(AMX_ERR_NOTFOUND);
 	}
 }
 

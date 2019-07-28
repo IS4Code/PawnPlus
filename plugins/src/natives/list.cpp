@@ -157,13 +157,13 @@ static cell AMX_NATIVE_CALL list_set_cell(AMX *amx, cell *params)
 namespace Natives
 {
 	// native List:list_new();
-	AMX_DEFINE_NATIVE(list_new, 0)
+	AMX_DEFINE_NATIVE_TAG(list_new, 0, list)
 	{
 		return list_pool.get_id(list_pool.add());
 	}
 
 	// native List:list_new_arr(AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
-	AMX_DEFINE_NATIVE(list_new_arr, 3)
+	AMX_DEFINE_NATIVE_TAG(list_new_arr, 3, list)
 	{
 		auto ptr = list_pool.add();
 		cell *arr = amx_GetAddrSafe(amx, params[1]);
@@ -176,7 +176,7 @@ namespace Natives
 	}
 
 	// native List:list_new_args(tag_id=tagof(arg0), AnyTag:arg0, AnyTag:...);
-	AMX_DEFINE_NATIVE(list_new_args, 0)
+	AMX_DEFINE_NATIVE_TAG(list_new_args, 0, list)
 	{
 		auto ptr = list_pool.add();
 		cell numargs = (params[0] / sizeof(cell)) - 1;
@@ -195,7 +195,7 @@ namespace Natives
 	}
 
 	// native List:list_new_args_str(arg0[], ...);
-	AMX_DEFINE_NATIVE(list_new_args_str, 0)
+	AMX_DEFINE_NATIVE_TAG(list_new_args_str, 0, list)
 	{
 		auto ptr = list_pool.add();
 		cell numargs = params[0] / sizeof(cell);
@@ -209,7 +209,7 @@ namespace Natives
 	}
 
 	// native List:list_new_args_var(VariantTag:arg0, VariantTag:...);
-	AMX_DEFINE_NATIVE(list_new_args_var, 0)
+	AMX_DEFINE_NATIVE_TAG(list_new_args_var, 0, list)
 	{
 		auto ptr = list_pool.add();
 		cell numargs = params[0] / sizeof(cell);
@@ -228,7 +228,7 @@ namespace Natives
 	}
 
 	// native List:list_new_args_packed(ArgTag:...);
-	AMX_DEFINE_NATIVE(list_new_args_packed, 0)
+	AMX_DEFINE_NATIVE_TAG(list_new_args_packed, 0, list)
 	{
 		auto ptr = list_pool.add();
 		cell numargs = params[0] / sizeof(cell);
@@ -241,14 +241,14 @@ namespace Natives
 	}
 
 	// native bool:list_valid(List:list);
-	AMX_DEFINE_NATIVE(list_valid, 1)
+	AMX_DEFINE_NATIVE_TAG(list_valid, 1, bool)
 	{
 		list_t *ptr;
 		return list_pool.get_by_id(params[1], ptr);
 	}
 
 	// native list_delete(List:list);
-	AMX_DEFINE_NATIVE(list_delete, 1)
+	AMX_DEFINE_NATIVE_TAG(list_delete, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -256,7 +256,7 @@ namespace Natives
 	}
 
 	// native list_delete_deep(List:list);
-	AMX_DEFINE_NATIVE(list_delete_deep, 1)
+	AMX_DEFINE_NATIVE_TAG(list_delete_deep, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -271,7 +271,7 @@ namespace Natives
 	}
 
 	// native List:list_clone(List:list);
-	AMX_DEFINE_NATIVE(list_clone, 1)
+	AMX_DEFINE_NATIVE_TAG(list_clone, 1, list)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -284,7 +284,7 @@ namespace Natives
 	}
 
 	// native list_size(List:list);
-	AMX_DEFINE_NATIVE(list_size, 1)
+	AMX_DEFINE_NATIVE_TAG(list_size, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -292,7 +292,7 @@ namespace Natives
 	}
 
 	// native list_capacity(List:list);
-	AMX_DEFINE_NATIVE(list_capacity, 1)
+	AMX_DEFINE_NATIVE_TAG(list_capacity, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -300,7 +300,7 @@ namespace Natives
 	}
 
 	// native list_clear(List:list);
-	AMX_DEFINE_NATIVE(list_clear, 1)
+	AMX_DEFINE_NATIVE_TAG(list_clear, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -309,7 +309,7 @@ namespace Natives
 	}
 
 	// native list_clear_deep(List:list);
-	AMX_DEFINE_NATIVE(list_clear_deep, 1)
+	AMX_DEFINE_NATIVE_TAG(list_clear_deep, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -324,31 +324,31 @@ namespace Natives
 	}
 
 	// native list_add(List:list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_add, 4)
+	AMX_DEFINE_NATIVE_TAG(list_add, 4, cell)
 	{
 		return value_at<2, 4>::list_add<dyn_func>(amx, params);
 	}
 
 	// native list_add_arr(List:list, const AnyTag:value[], index=-1, size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_add_arr, 5)
+	AMX_DEFINE_NATIVE_TAG(list_add_arr, 5, cell)
 	{
 		return value_at<2, 4, 5>::list_add<dyn_func_arr>(amx, params);
 	}
 
 	// native list_add_str(List:list, const value[], index=-1);
-	AMX_DEFINE_NATIVE(list_add_str, 2)
+	AMX_DEFINE_NATIVE_TAG(list_add_str, 2, cell)
 	{
 		return value_at<2>::list_add<dyn_func_str>(amx, params);
 	}
 
 	// native list_add_var(List:list, VariantTag:value, index=-1);
-	AMX_DEFINE_NATIVE(list_add_var, 2)
+	AMX_DEFINE_NATIVE_TAG(list_add_var, 2, cell)
 	{
 		return value_at<2>::list_add<dyn_func_var>(amx, params);
 	}
 
 	// native list_add_list(List:list, List:range, index=-1);
-	AMX_DEFINE_NATIVE(list_add_list, 2)
+	AMX_DEFINE_NATIVE_TAG(list_add_list, 2, cell)
 	{
 		cell index = optparam(3, -1);
 		if(index < -1) amx_LogicError(errors::out_of_range, "index");
@@ -372,7 +372,7 @@ namespace Natives
 	}
 
 	// native list_add_args(tag_id=tagof(arg0), List:list, AnyTag:arg0, AnyTag:...);
-	AMX_DEFINE_NATIVE(list_add_args, 2)
+	AMX_DEFINE_NATIVE_TAG(list_add_args, 2, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[2], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -392,7 +392,7 @@ namespace Natives
 	}
 
 	// native list_add_args_str(List:list, arg0[], ...);
-	AMX_DEFINE_NATIVE(list_add_args_str, 1)
+	AMX_DEFINE_NATIVE_TAG(list_add_args_str, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -407,7 +407,7 @@ namespace Natives
 	}
 
 	// native list_add_args_var(List:list, VariantTag:arg0, VariantTag:...);
-	AMX_DEFINE_NATIVE(list_add_args_var, 1)
+	AMX_DEFINE_NATIVE_TAG(list_add_args_var, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -427,7 +427,7 @@ namespace Natives
 	}
 
 	// native list_add_args_packed(List:list, ArgTag:...);
-	AMX_DEFINE_NATIVE(list_add_args_packed, 1)
+	AMX_DEFINE_NATIVE_TAG(list_add_args_packed, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -441,7 +441,7 @@ namespace Natives
 	}
 
 	// native list_remove(List:list, index);
-	AMX_DEFINE_NATIVE(list_remove, 2)
+	AMX_DEFINE_NATIVE_TAG(list_remove, 2, cell)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		list_t *ptr;
@@ -452,7 +452,7 @@ namespace Natives
 	}
 
 	// native list_remove_deep(List:list, index);
-	AMX_DEFINE_NATIVE(list_remove_deep, 2)
+	AMX_DEFINE_NATIVE_TAG(list_remove_deep, 2, cell)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		list_t *ptr;
@@ -466,7 +466,7 @@ namespace Natives
 	}
 
 	// native list_remove_range(List:list, begin, end);
-	AMX_DEFINE_NATIVE(list_remove_range, 3)
+	AMX_DEFINE_NATIVE_TAG(list_remove_range, 3, cell)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "begin");
 		if(params[3] < 0) amx_LogicError(errors::out_of_range, "end");
@@ -481,7 +481,7 @@ namespace Natives
 	}
 
 	// native list_remove_range_deep(List:list, begin, end);
-	AMX_DEFINE_NATIVE(list_remove_range_deep, 3)
+	AMX_DEFINE_NATIVE_TAG(list_remove_range_deep, 3, cell)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		list_t *ptr;
@@ -506,109 +506,109 @@ namespace Natives
 	}
 
 	// native list_get_arr(List:list, index, AnyTag:value[], size=sizeof(value));
-	AMX_DEFINE_NATIVE(list_get_arr, 4)
+	AMX_DEFINE_NATIVE_TAG(list_get_arr, 4, cell)
 	{
 		return value_at<3, 4>::list_get<dyn_func_arr>(amx, params);
 	}
 
 	// native String:list_get_str_s(List:list, index);
-	AMX_DEFINE_NATIVE(list_get_str_s, 2)
+	AMX_DEFINE_NATIVE_TAG(list_get_str_s, 2, string)
 	{
 		return value_at<>::list_get<dyn_func_str_s>(amx, params);
 	}
 
 	// native Variant:list_get_var(List:list, index);
-	AMX_DEFINE_NATIVE(list_get_var, 2)
+	AMX_DEFINE_NATIVE_TAG(list_get_var, 2, variant)
 	{
 		return value_at<>::list_get<dyn_func_var>(amx, params);
 	}
 
 	// native bool:list_get_safe(List:list, index, &AnyTag:value, offset=0, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_get_safe, 5)
+	AMX_DEFINE_NATIVE_TAG(list_get_safe, 5, bool)
 	{
 		return value_at<3, 4, 5>::list_get<dyn_func>(amx, params);
 	}
 
 	// native list_get_arr_safe(List:list, index, AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_get_arr_safe, 5)
+	AMX_DEFINE_NATIVE_TAG(list_get_arr_safe, 5, cell)
 	{
 		return value_at<3, 4, 5>::list_get<dyn_func_arr>(amx, params);
 	}
 
 	// native list_get_str_safe(List:list, index, value[], size=sizeof(value));
-	AMX_DEFINE_NATIVE(list_get_str_safe, 4)
+	AMX_DEFINE_NATIVE_TAG(list_get_str_safe, 4, cell)
 	{
 		return value_at<3, 4>::list_get<dyn_func_str>(amx, params);
 	}
 
 	// native String:list_get_str_safe_s(List:list, index);
-	AMX_DEFINE_NATIVE(list_get_str_safe_s, 2)
+	AMX_DEFINE_NATIVE_TAG(list_get_str_safe_s, 2, string)
 	{
 		return value_at<0>::list_get<dyn_func_str_s>(amx, params);
 	}
 
 	// native list_set(List:list, index, AnyTag:value, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_set, 4)
+	AMX_DEFINE_NATIVE_TAG(list_set, 4, cell)
 	{
 		return value_at<3, 4>::list_set<dyn_func>(amx, params);
 	}
 
 	// native list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_set_arr, 5)
+	AMX_DEFINE_NATIVE_TAG(list_set_arr, 5, cell)
 	{
 		return value_at<3, 4, 5>::list_set<dyn_func_arr>(amx, params);
 	}
 
 	// native list_set_str(List:list, index, const value[]);
-	AMX_DEFINE_NATIVE(list_set_str, 3)
+	AMX_DEFINE_NATIVE_TAG(list_set_str, 3, cell)
 	{
 		return value_at<3>::list_set<dyn_func_str>(amx, params);
 	}
 
 	// native list_set_var(List:list, index, VariantTag:value);
-	AMX_DEFINE_NATIVE(list_set_var, 3)
+	AMX_DEFINE_NATIVE_TAG(list_set_var, 3, cell)
 	{
 		return value_at<3>::list_set<dyn_func_var>(amx, params);
 	}
 
 	// native list_set_cell(List:list, index, offset, AnyTag:value);
-	AMX_DEFINE_NATIVE(list_set_cell, 3)
+	AMX_DEFINE_NATIVE_TAG(list_set_cell, 3, cell)
 	{
 		return ::list_set_cell(amx, params);
 	}
 
 	// native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_set_cell_safe, 5)
+	AMX_DEFINE_NATIVE_TAG(list_set_cell_safe, 5, cell)
 	{
 		return ::list_set_cell<5>(amx, params);
 	}
 
 	// native list_resize(List:list, newsize, AnyTag:padding, TagTag:tag_id=tagof(padding));
-	AMX_DEFINE_NATIVE(list_resize, 4)
+	AMX_DEFINE_NATIVE_TAG(list_resize, 4, cell)
 	{
 		return value_at<3, 4>::list_resize<dyn_func>(amx, params);
 	}
 
 	// native list_resize_arr(List:list, newsize, const AnyTag:padding[], size=sizeof(padding), TagTag:tag_id=tagof(padding));
-	AMX_DEFINE_NATIVE(list_resize_arr, 5)
+	AMX_DEFINE_NATIVE_TAG(list_resize_arr, 5, cell)
 	{
 		return value_at<3, 4, 5>::list_resize<dyn_func_arr>(amx, params);
 	}
 
 	// native list_resize_str(List:list, newsize, const padding[]);
-	AMX_DEFINE_NATIVE(list_resize_str, 3)
+	AMX_DEFINE_NATIVE_TAG(list_resize_str, 3, cell)
 	{
 		return value_at<3>::list_resize<dyn_func_str>(amx, params);
 	}
 
 	// native list_resize_var(List:list, newsize, ConstVariantTag:padding);
-	AMX_DEFINE_NATIVE(list_resize_var, 3)
+	AMX_DEFINE_NATIVE_TAG(list_resize_var, 3, cell)
 	{
 		return value_at<3>::list_resize<dyn_func_var>(amx, params);
 	}
 
 	// native list_reserve(List:list, capacity);
-	AMX_DEFINE_NATIVE(list_reserve, 4)
+	AMX_DEFINE_NATIVE_TAG(list_reserve, 4, cell)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "capacity");
 		list_t *ptr;
@@ -619,7 +619,7 @@ namespace Natives
 	}
 
 	// native list_tagof(List:list, index);
-	AMX_DEFINE_NATIVE(list_tagof, 2)
+	AMX_DEFINE_NATIVE_TAG(list_tagof, 2, cell)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		list_t *ptr;
@@ -630,7 +630,7 @@ namespace Natives
 	}
 
 	// native list_sizeof(List:list, index);
-	AMX_DEFINE_NATIVE(list_sizeof, 2)
+	AMX_DEFINE_NATIVE_TAG(list_sizeof, 2, cell)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "index");
 		list_t *ptr;
@@ -641,55 +641,55 @@ namespace Natives
 	}
 
 	// native list_find(List:list, AnyTag:value, index=0, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_find, 4)
+	AMX_DEFINE_NATIVE_TAG(list_find, 4, cell)
 	{
 		return value_at<2, 4>::list_find<dyn_func>(amx, params);
 	}
 
 	// native list_find_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_find_arr, 5)
+	AMX_DEFINE_NATIVE_TAG(list_find_arr, 5, cell)
 	{
 		return value_at<2, 4, 5>::list_find<dyn_func_arr>(amx, params);
 	}
 
 	// native list_find_str(List:list, const value[], index=0);
-	AMX_DEFINE_NATIVE(list_find_str, 2)
+	AMX_DEFINE_NATIVE_TAG(list_find_str, 2, cell)
 	{
 		return value_at<2>::list_find<dyn_func_str>(amx, params);
 	}
 
 	// native list_find_var(List:list, VariantTag:value, index=0);
-	AMX_DEFINE_NATIVE(list_find_var, 2)
+	AMX_DEFINE_NATIVE_TAG(list_find_var, 2, cell)
 	{
 		return value_at<2>::list_find<dyn_func_var>(amx, params);
 	}
 
 	// native list_find_last(List:list, AnyTag:value, index=0, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_find_last, 4)
+	AMX_DEFINE_NATIVE_TAG(list_find_last, 4, cell)
 	{
 		return value_at<2, 4>::list_find_last<dyn_func>(amx, params);
 	}
 
 	// native list_find_last_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_find_last_arr, 5)
+	AMX_DEFINE_NATIVE_TAG(list_find_last_arr, 5, cell)
 	{
 		return value_at<2, 4, 5>::list_find_last<dyn_func_arr>(amx, params);
 	}
 
 	// native list_find_last_str(List:list, const value[], index=0);
-	AMX_DEFINE_NATIVE(list_find_last_str, 2)
+	AMX_DEFINE_NATIVE_TAG(list_find_last_str, 2, cell)
 	{
 		return value_at<2>::list_find_last<dyn_func_str>(amx, params);
 	}
 
 	// native list_find_last_var(List:list, VariantTag:value, index=0);
-	AMX_DEFINE_NATIVE(list_find_last_var, 2)
+	AMX_DEFINE_NATIVE_TAG(list_find_last_var, 2, cell)
 	{
 		return value_at<2>::list_find_last<dyn_func_var>(amx, params);
 	}
 
 	// native list_find_if(List:list, Expression:pred, index=0);
-	AMX_DEFINE_NATIVE(list_find_if, 2)
+	AMX_DEFINE_NATIVE_TAG(list_find_if, 2, cell)
 	{
 		cell index = optparam(3, 0);
 		list_t *ptr;
@@ -722,7 +722,7 @@ namespace Natives
 	}
 
 	// native list_find_last_if(List:list, Expression:pred, index=-1);
-	AMX_DEFINE_NATIVE(list_find_last_if, 2)
+	AMX_DEFINE_NATIVE_TAG(list_find_last_if, 2, cell)
 	{
 		cell index = optparam(3, -1);
 		list_t *ptr;
@@ -756,7 +756,7 @@ namespace Natives
 	}
 
 	// native list_remove_if(List:list, Expression:pred);
-	AMX_DEFINE_NATIVE(list_remove_if, 2)
+	AMX_DEFINE_NATIVE_TAG(list_remove_if, 2, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -768,17 +768,23 @@ namespace Natives
 		args.push_back(std::cref(key));
 		expression::exec_info info(amx);
 		
+		cell count = 0;
 		ptr->erase(std::remove_if(ptr->begin(), ptr->end(), [&](const dyn_object &obj)
 		{
 			args[0] = std::cref(obj);
 			key = dyn_object(&obj - &*ptr->cbegin(), tags::find_tag(tags::tag_cell));
-			return expr->execute_bool(args, info);
+			if(expr->execute_bool(args, info))
+			{
+				count++;
+				return true;
+			}
+			return false;
 		}), ptr->end());
-		return 1;
+		return count;
 	}
 
 	// native list_remove_if_deep(List:list, Expression:pred);
-	AMX_DEFINE_NATIVE(list_remove_if_deep, 2)
+	AMX_DEFINE_NATIVE_TAG(list_remove_if_deep, 2, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -789,6 +795,7 @@ namespace Natives
 		args.push_back(std::cref(key));
 		args.push_back(std::cref(key));
 		expression::exec_info info(amx);
+		cell count = 0;
 		ptr->erase(std::remove_if(ptr->begin(), ptr->end(), [&](const dyn_object &obj)
 		{
 			args[0] = std::cref(obj);
@@ -796,39 +803,40 @@ namespace Natives
 			if(expr->execute_bool(args, info))
 			{
 				obj.release();
+				count++;
 				return true;
 			}
 			return false;
 		}), ptr->end());
-		return 1;
+		return count;
 	}
 
 	// native list_count(List:list, AnyTag:value, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_count, 3)
+	AMX_DEFINE_NATIVE_TAG(list_count, 3, cell)
 	{
 		return value_at<2, 3>::list_count<dyn_func>(amx, params);
 	}
 
 	// native list_count_arr(List:list, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE(list_count_arr, 4)
+	AMX_DEFINE_NATIVE_TAG(list_count_arr, 4, cell)
 	{
 		return value_at<2, 3, 4>::list_count<dyn_func_arr>(amx, params);
 	}
 
 	// native list_count_str(List:list, const value[]);
-	AMX_DEFINE_NATIVE(list_count_str, 2)
+	AMX_DEFINE_NATIVE_TAG(list_count_str, 2, cell)
 	{
 		return value_at<2>::list_count<dyn_func_str>(amx, params);
 	}
 
 	// native list_count_var(List:list, VariantTag:value);
-	AMX_DEFINE_NATIVE(list_count_var, 2)
+	AMX_DEFINE_NATIVE_TAG(list_count_var, 2, cell)
 	{
 		return value_at<2>::list_count<dyn_func_var>(amx, params);
 	}
 
 	// native list_count_if(List:list, Expression:pred);
-	AMX_DEFINE_NATIVE(list_count_if, 2)
+	AMX_DEFINE_NATIVE_TAG(list_count_if, 2, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
@@ -888,7 +896,7 @@ namespace Natives
 	};
 
 	// native list_sort(List:list, offset=0, size=1, bool:reverse=false, bool:stable=true);
-	AMX_DEFINE_NATIVE(list_sort, 1)
+	AMX_DEFINE_NATIVE_TAG(list_sort, 1, cell)
 	{
 		list_t *ptr;
 		if(!list_pool.get_by_id(params[1], ptr))

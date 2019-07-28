@@ -498,7 +498,7 @@ cell dyn_object::store(AMX *amx) const
 	}else{
 		cell size = data_size() - 1;
 		cell amx_addr, *addr;
-		amx_Allot(amx, size, &amx_addr, &addr);
+		amx_AllotSafe(amx, size, &amx_addr, &addr);
 		std::memcpy(addr, array_data + 1, size * sizeof(cell));
 
 		cell begin = array_start() - 1;

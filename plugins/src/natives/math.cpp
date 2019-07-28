@@ -17,277 +17,263 @@
 namespace Natives
 {
 	// native math_iadd({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_iadd, 2)
+	AMX_DEFINE_NATIVE_TAG(math_iadd, 2, cell)
 	{
 		return params[1] + params[2];
 	}
 
 	// native math_iadd_ovf({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_iadd_ovf, 2)
+	AMX_DEFINE_NATIVE_TAG(math_iadd_ovf, 2, cell)
 	{
 		cell a = params[1], b = params[2];
 		cell res = b + a;
 		if((b ^ a) >= 0 && (res ^ b) < 0)
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return res;
 	}
 
 	// native math_isub({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_isub, 2)
+	AMX_DEFINE_NATIVE_TAG(math_isub, 2, cell)
 	{
 		return params[1] - params[2];
 	}
 
 	// native math_isub_ovf({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_isub_ovf, 2)
+	AMX_DEFINE_NATIVE_TAG(math_isub_ovf, 2, cell)
 	{
 		cell a = params[1], b = params[2];
 		cell res = a - b;
 		if((a ^ b) < 0 && (res ^ a) < 0)
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return res;
 	}
 
 	// native math_imul({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_imul, 2)
+	AMX_DEFINE_NATIVE_TAG(math_imul, 2, cell)
 	{
 		return params[1] * params[2];
 	}
 
 	// native math_imul_ovf({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_imul_ovf, 2)
+	AMX_DEFINE_NATIVE_TAG(math_imul_ovf, 2, cell)
 	{
 		auto res = (int64_t)params[1] * (int64_t)params[2];
 		if((cell)res != res)
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return (cell)res;
 	}
 
 	// native math_idiv({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_idiv, 2)
+	AMX_DEFINE_NATIVE_TAG(math_idiv, 2, cell)
 	{
 		if(params[2] == 0)
 		{
-			amx_RaiseError(amx, AMX_ERR_DIVIDE);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DIVIDE);
 		}
 		return params[1] / params[2];
 	}
 
 	// native math_idiv({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_imod, 2)
+	AMX_DEFINE_NATIVE_TAG(math_imod, 2, cell)
 	{
 		if(params[2] == 0)
 		{
-			amx_RaiseError(amx, AMX_ERR_DIVIDE);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DIVIDE);
 		}
 		return params[1] % params[2];
 	}
 
 	// native math_iinc({_,signed}:a);
-	AMX_DEFINE_NATIVE(math_iinc, 1)
+	AMX_DEFINE_NATIVE_TAG(math_iinc, 1, cell)
 	{
 		return params[1] + 1;
 	}
 
 	// native math_iinc_ovf({_,signed}:a);
-	AMX_DEFINE_NATIVE(math_iinc_ovf, 1)
+	AMX_DEFINE_NATIVE_TAG(math_iinc_ovf, 1, cell)
 	{
 		cell a = params[1];
 		if(a == std::numeric_limits<cell>::max())
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return a + 1;
 	}
 
 	// native math_idec({_,signed}:a);
-	AMX_DEFINE_NATIVE(math_idec, 1)
+	AMX_DEFINE_NATIVE_TAG(math_idec, 1, cell)
 	{
 		return params[1] - 1;
 	}
 
 	// native math_idec_ovf({_,signed}:a);
-	AMX_DEFINE_NATIVE(math_idec_ovf, 1)
+	AMX_DEFINE_NATIVE_TAG(math_idec_ovf, 1, cell)
 	{
 		cell a = params[1];
 		if(a == std::numeric_limits<cell>::min())
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return a - 1;
 	}
 
 	// native math_uadd({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_uadd, 2)
+	AMX_DEFINE_NATIVE_TAG(math_uadd, 2, cell)
 	{
 		return (ucell)params[1] + (ucell)params[2];
 	}
 
 	// native math_uadd_ovf({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_uadd_ovf, 2)
+	AMX_DEFINE_NATIVE_TAG(math_uadd_ovf, 2, cell)
 	{
 		ucell a = params[1], b = params[2];
 		ucell res = b + a;
 		if(res < b)
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return res;
 	}
 
 	// native math_usub({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_usub, 2)
+	AMX_DEFINE_NATIVE_TAG(math_usub, 2, cell)
 	{
 		return (ucell)params[1] - (ucell)params[2];
 	}
 
 	// native math_usub_ovf({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_usub_ovf, 2)
+	AMX_DEFINE_NATIVE_TAG(math_usub_ovf, 2, cell)
 	{
 		ucell a = params[1], b = params[2];
 		ucell res = a - b;
 		if(res > a)
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return res;
 	}
 
 	// native math_umul({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_umul, 2)
+	AMX_DEFINE_NATIVE_TAG(math_umul, 2, cell)
 	{
 		return (ucell)params[1] * (ucell)params[2];
 	}
 
 	// native math_umul_ovf({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_umul_ovf, 2)
+	AMX_DEFINE_NATIVE_TAG(math_umul_ovf, 2, cell)
 	{
 		auto res = (uint64_t)(ucell)params[1] * (uint64_t)(ucell)params[2];
 		if(res > 0xffffffff)
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return (cell)(ucell)res;
 	}
 
 	// native math_udiv({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_udiv, 2)
+	AMX_DEFINE_NATIVE_TAG(math_udiv, 2, cell)
 	{
 		if((ucell)params[2] == 0)
 		{
-			amx_RaiseError(amx, AMX_ERR_DIVIDE);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DIVIDE);
 		}
 		return (ucell)params[1] / (ucell)params[2];
 	}
 
 	// native math_umod({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_umod, 2)
+	AMX_DEFINE_NATIVE_TAG(math_umod, 2, cell)
 	{
 		if((ucell)params[2] == 0)
 		{
-			amx_RaiseError(amx, AMX_ERR_DIVIDE);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DIVIDE);
 		}
 		return (ucell)params[1] % (ucell)params[2];
 	}
 
 	// native math_uinc({_,unsigned}:a);
-	AMX_DEFINE_NATIVE(math_uinc, 1)
+	AMX_DEFINE_NATIVE_TAG(math_uinc, 1, cell)
 	{
 		return (ucell)params[1] + 1;
 	}
 
 	// native math_uinc_ovf({_,unsigned}:a);
-	AMX_DEFINE_NATIVE(math_uinc_ovf, 1)
+	AMX_DEFINE_NATIVE_TAG(math_uinc_ovf, 1, cell)
 	{
 		ucell a = params[1];
 		if(a == std::numeric_limits<ucell>::max())
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return a + 1;
 	}
 
 	// native math_udec({_,unsigned}:a);
-	AMX_DEFINE_NATIVE(math_udec, 1)
+	AMX_DEFINE_NATIVE_TAG(math_udec, 1, cell)
 	{
 		return (ucell)params[1] - 1;
 	}
 
 	// native math_udec_ovf({_,unsigned}:a);
-	AMX_DEFINE_NATIVE(math_udec_ovf, 1)
+	AMX_DEFINE_NATIVE_TAG(math_udec_ovf, 1, cell)
 	{
 		ucell a = params[1];
 		if(a == std::numeric_limits<ucell>::min())
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return a - 1;
 	}
 
 	// native bool:math_ilt({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_ilt, 2)
+	AMX_DEFINE_NATIVE_TAG(math_ilt, 2, bool)
 	{
 		return params[1] < params[2];
 	}
 
 	// native bool:math_ilte({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_ilte, 2)
+	AMX_DEFINE_NATIVE_TAG(math_ilte, 2, bool)
 	{
 		return params[1] <= params[2];
 	}
 
 	// native bool:math_igt({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_igt, 2)
+	AMX_DEFINE_NATIVE_TAG(math_igt, 2, bool)
 	{
 		return params[1] > params[2];
 	}
 
 	// native bool:math_igte({_,signed}:a, {_,signed}:b);
-	AMX_DEFINE_NATIVE(math_igte, 2)
+	AMX_DEFINE_NATIVE_TAG(math_igte, 2, bool)
 	{
 		return params[1] >= params[2];
 	}
 
 	// native bool:math_ult({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_ult, 2)
+	AMX_DEFINE_NATIVE_TAG(math_ult, 2, bool)
 	{
 		return (ucell)params[1] < (ucell)params[2];
 	}
 
 	// native bool:math_ulte({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_ulte, 2)
+	AMX_DEFINE_NATIVE_TAG(math_ulte, 2, bool)
 	{
 		return (ucell)params[1] <= (ucell)params[2];
 	}
 
 	// native bool:math_ugt({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_ugt, 2)
+	AMX_DEFINE_NATIVE_TAG(math_ugt, 2, bool)
 	{
 		return (ucell)params[1] >= (ucell)params[2];
 	}
 
 	// native bool:math_ugte({_,unsigned}:a, {_,unsigned}:b);
-	AMX_DEFINE_NATIVE(math_ugte, 2)
+	AMX_DEFINE_NATIVE_TAG(math_ugte, 2, bool)
 	{
 		return (ucell)params[1] >= (ucell)params[2];
 	}
@@ -295,7 +281,7 @@ namespace Natives
 	thread_local std::default_random_engine generator;
 
 	// native math_random(min=0, max=cellmax);
-	AMX_DEFINE_NATIVE(math_random, 0)
+	AMX_DEFINE_NATIVE_TAG(math_random, 0, cell)
 	{
 		cell min = optparam(1, 0);
 		cell max = optparam(2, std::numeric_limits<cell>::max());
@@ -307,7 +293,7 @@ namespace Natives
 	}
 
 	// native math_random_unsigned(min=0, max=-1);
-	AMX_DEFINE_NATIVE(math_random_unsigned, 0)
+	AMX_DEFINE_NATIVE_TAG(math_random_unsigned, 0, cell)
 	{
 		ucell min = optparam(1, 0);
 		ucell max = optparam(2, -1);
@@ -319,7 +305,7 @@ namespace Natives
 	}
 
 	// native Float:math_random_float(Float:min=0.0, Float:max=1.0);
-	AMX_DEFINE_NATIVE(math_random_float, 0)
+	AMX_DEFINE_NATIVE_TAG(math_random_float, 0, float)
 	{
 		cell cmin = optparam(1, 0);
 		cell cmax = optparam(2, 0x3F800000);
@@ -364,32 +350,31 @@ namespace Natives
 		val = Func(val);
 		if((double)val > (double)std::numeric_limits<cell>::max() || (double)val < (double)std::numeric_limits<cell>::min())
 		{
-			amx_RaiseError(amx, AMX_ERR_DOMAIN);
-			return 0;
+			throw errors::amx_error(AMX_ERR_DOMAIN);
 		}
 		return static_cast<cell>(val);
 	}
 
 	// native math_round(Float:val);
-	AMX_DEFINE_NATIVE(math_round, 1)
+	AMX_DEFINE_NATIVE_TAG(math_round, 1, cell)
 	{
 		return math_tointeger<roundf>(amx, params);
 	}
 
 	// native math_floor(Float:val);
-	AMX_DEFINE_NATIVE(math_floor, 1)
+	AMX_DEFINE_NATIVE_TAG(math_floor, 1, cell)
 	{
 		return math_tointeger<floorf>(amx, params);
 	}
 
 	// native math_ceiling(Float:val);
-	AMX_DEFINE_NATIVE(math_ceiling, 1)
+	AMX_DEFINE_NATIVE_TAG(math_ceiling, 1, cell)
 	{
 		return math_tointeger<ceilf>(amx, params);
 	}
 
 	// native math_truncate(Float:val);
-	AMX_DEFINE_NATIVE(math_truncate, 1)
+	AMX_DEFINE_NATIVE_TAG(math_truncate, 1, cell)
 	{
 		return math_tointeger<truncf>(amx, params);
 	}

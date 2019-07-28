@@ -196,7 +196,7 @@ std::tuple<cell*, size_t, tag_ptr> expression::address(const args_type &args, co
 	cell *arr, size;
 	arr = value.get_array(cell_indices.data(), cell_indices.size(), size);
 	cell amx_addr, *addr;
-	amx_Allot(info.amx, size ? size : 1, &amx_addr, &addr);
+	amx_AllotSafe(info.amx, size ? size : 1, &amx_addr, &addr);
 	std::memcpy(addr, arr, size * sizeof(cell));
 	return std::tuple<cell*, size_t, tag_ptr>(addr, size, value.get_tag());
 }
@@ -2239,8 +2239,7 @@ dyn_object symbol_expression::call(const args_type &args, const exec_info &info,
 			amx_ExpressionError("too few arguments provided to a function (%d needed, %d given)", argsneeded / sizeof(cell), argslen / sizeof(cell));
 		}
 
-		cell reset_hea, *tmp;
-		amx_Allot(amx, 0, &reset_hea, &tmp);
+		amx::guard guard(amx);
 
 		cell num = call_args.size() * sizeof(cell);
 		amx->stk -= num + 2 * sizeof(cell);
@@ -2258,7 +2257,6 @@ dyn_object symbol_expression::call(const args_type &args, const exec_info &info,
 		int old_error = amx->error;
 		int err = amx_Exec(amx, &ret, AMX_EXEC_CONT);
 		amx->error = old_error;
-		amx_Release(amx, reset_hea);
 		if(err == AMX_ERR_NONE)
 		{
 			return dyn_object(ret, get_tag(args));
@@ -2674,8 +2672,7 @@ dyn_object public_expression::call(const args_type &args, const exec_info &info,
 	auto data = amx_GetData(amx);
 	auto stk = reinterpret_cast<cell*>(data + amx->stk);
 
-	cell reset_hea, *tmp;
-	amx_Allot(amx, 0, &reset_hea, &tmp);
+	amx::guard guard(amx);
 
 	for(cell i = call_args.size() - 1; i >= 0; i--)
 	{
@@ -2684,7 +2681,6 @@ dyn_object public_expression::call(const args_type &args, const exec_info &info,
 	}
 	cell ret;
 	int err = amx_Exec(amx, &ret, index);
-	amx_Release(amx, reset_hea);
 	if(err == AMX_ERR_NONE)
 	{
 		return dyn_object(ret, tags::find_tag(tags::tag_cell));
@@ -3508,7 +3504,7 @@ dyn_object addressof_expression::execute(const args_type &args, const exec_info 
 		{
 			size = 1;
 		}
-		amx_Allot(amx, size, &amx_addr, &reinterpret_cast<cell*&>(ptr));
+		amx_AllotSafe(amx, size, &amx_addr, &reinterpret_cast<cell*&>(ptr));
 		std::memcpy(ptr, std::get<0>(addr), std::get<1>(addr) * sizeof(cell));
 	}
 	return dyn_object(ptr - data, tags::find_tag((tags::find_tag(tags::tag_address)->name + "@" + std::get<2>(addr)->name).c_str()));

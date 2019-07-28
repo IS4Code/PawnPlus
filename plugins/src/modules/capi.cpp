@@ -121,11 +121,11 @@ static func_ptr main_functions[] = {
 	},
 	+[]/*raise_error*/(AMX *amx, const cell *params, const char *native, cell level, const char *message) -> cell
 	{
-		return impl::handle_error(amx, params, native, errors::native_error(std::string(message), level));
+		return impl::handle_error(amx, params, native, std::strlen(native), errors::native_error(std::string(message), level));
 	},
 	+[]/*raise_end_of_args_error*/(AMX *amx, const cell *params, const char *native, const cell *argbase, cell required) -> cell
 	{
-		return impl::handle_error(amx, params, native, errors::native_error(errors::not_enough_args, 3, argbase - params - 1 + required, params[0] / static_cast<cell>(sizeof(cell))));
+		return impl::handle_error(amx, params, native, std::strlen(native), errors::native_error(errors::not_enough_args, 3, argbase - params - 1 + required, params[0] / static_cast<cell>(sizeof(cell))));
 	},
 	+[]/*get_debug*/(AMX *amx) -> void*
 	{

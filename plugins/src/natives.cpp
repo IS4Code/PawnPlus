@@ -3,27 +3,39 @@
 
 tag_ptr native_return_tag;
 
-cell impl::handle_error(AMX *amx, const cell *params, const char *native, const errors::native_error &error)
+cell impl::handle_error(AMX *amx, const cell *params, const char *native, size_t native_size, const errors::native_error &error)
 {
 	int handler;
 	if(amx_FindPublicSafe(amx, "pp_on_error", &handler) == AMX_ERR_NONE)
 	{
-		cell amx_addr, *addr;
-		cell reset_hea, *ret_addr;
-		amx_Allot(amx, 1, &reset_hea, &ret_addr);
-		*ret_addr = 0;
-		amx_Push(amx, reset_hea);
-		amx_Push(amx, error.level);
-		amx_PushString(amx, &amx_addr, &addr, error.message.c_str(), false, false);
-		amx_PushString(amx, &amx_addr, &addr, native, false, false);
-		cell ret = 0;
-		amx_Exec(amx, &ret, handler);
-		cell retval = *ret_addr;
-		amx_Release(amx, reset_hea);
+		try{
+			amx::guard guard(amx);
+			cell amx_addr, *addr;
+			cell ret, *ret_addr;
+			amx_AllotSafe(amx, 1, &ret, &ret_addr);
+			*ret_addr = 0;
+			amx_Push(amx, ret);
+			amx_Push(amx, error.level);
+			amx_AllotSafe(amx, error.message.size() + 1, &amx_addr, &addr);
+			amx_SetString(addr, error.message.c_str(), false, false, UNLIMITED);
+			amx_Push(amx, amx_addr);
+			amx_AllotSafe(amx, native_size + 1, &amx_addr, &addr);
+			amx_SetString(addr, native, false, false, UNLIMITED);
+			amx_Push(amx, amx_addr);
+			ret = 0;
+			amx_Exec(amx, &ret, handler);
+			cell retval = *ret_addr;
 
-		if(ret || amx->error != AMX_ERR_NONE)
+			if(ret || amx->error != AMX_ERR_NONE)
+			{
+				return retval;
+			}
+		}catch(const errors::amx_error &err)
 		{
-			return retval;
+			logprintf("[PawnPlus] Error handler could not be invoked due to an AMX error %d: %s", err.code, amx::StrError(err.code));
+			logprintf("[PawnPlus] %s: %s", native, error.message.c_str());
+			amx_RaiseError(amx, err.code);
+			return 0;
 		}
 	}
 
