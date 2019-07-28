@@ -578,12 +578,16 @@ native String:str_replace_list(ConstStringTag:str, const pattern[], List:replace
 native String:str_replace_list_s(ConstStringTag:str, ConstStringTag:pattern, List:replacement, &pos=0, regex_options:options=regex_default);
 native String:str_replace_func(ConstStringTag:str, const pattern[], const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
 native String:str_replace_func_s(ConstStringTag:str, ConstStringTag:pattern, const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+native String:str_replace_expr(ConstStringTag:str, const pattern[], Expression:expr, &pos=0, regex_options:options=regex_default);
+native String:str_replace_expr_s(ConstStringTag:str, ConstStringTag:pattern, Expression:expr, &pos=0, regex_options:options=regex_default);
 native String:str_set_replace(StringTag:target, ConstStringTag:str, const pattern[], const replacement[], &pos=0, regex_options:options=regex_default);
 native String:str_set_replace_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, ConstStringTag:replacement, &pos=0, regex_options:options=regex_default);
 native String:str_set_replace_list(StringTag:target, ConstStringTag:str, const pattern[], List:replacement, &pos=0, regex_options:options=regex_default);
 native String:str_set_replace_list_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, List:replacement, &pos=0, regex_options:options=regex_default);
 native String:str_set_replace_func(StringTag:target, ConstStringTag:str, const pattern[], const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
 native String:str_set_replace_func_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, const function[], &pos=0, regex_options:options=regex_default, const additional_format[]="", AnyTag:...);
+native String:str_set_replace_expr(StringTag:target, ConstStringTag:str, const pattern[], Expression:expr, &pos=0, regex_options:options=regex_default);
+native String:str_set_replace_expr_s(StringTag:target, ConstStringTag:str, ConstStringTag:pattern, Expression:expr, &pos=0, regex_options:options=regex_default);
 
 #if defined PP_SYNTAX_@
 #define @ str_new_static

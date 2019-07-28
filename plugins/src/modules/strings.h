@@ -12,6 +12,8 @@
 #include <memory>
 #include <stack>
 
+class expression;
+
 namespace strings
 {
 	typedef std::basic_string<cell> cell_string;
@@ -320,6 +322,8 @@ namespace strings
 	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const list_t &replacement, cell *pos, cell options);
 	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs);
 	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs);
+	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, const expression &expr, cell *pos, cell options);
+	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, const expression &expr, cell *pos, cell options);
 }
 
 namespace std
