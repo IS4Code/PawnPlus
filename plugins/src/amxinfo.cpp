@@ -4,6 +4,8 @@
 #include "modules/amxutils.h"
 #include <unordered_map>
 
+#include "subhook/subhook.h"
+
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -214,7 +216,7 @@ cell amx::dynamic_call(AMX *amx, AMX_NATIVE native, cell *params, tag_ptr &out_t
 	amx->error = AMX_ERR_NONE;
 	native_return_tag = nullptr;
 	auto it = impl::runtime_native_map().find(native);
-	if(it != impl::runtime_native_map().end())
+	if(it != impl::runtime_native_map().end() && subhook_read_dst(reinterpret_cast<void*>(native)) == nullptr)
 	{
 		const auto &info = it->second;
 		try{
