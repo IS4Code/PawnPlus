@@ -244,11 +244,14 @@ cell hooked_func::invoke(AMX *amx, cell *params)
 		handler_level = old;
 		if(old == -1)
 		{
-			for(auto it = handlers.begin(); it != handlers.end(); ++it)
+			auto it = handlers.begin();
+			while(it != handlers.end())
 			{
 				if(!(*it)->valid())
 				{
 					it = handlers.erase(it);
+				}else{
+					++it;
 				}
 			}
 			if(empty())
