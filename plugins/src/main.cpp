@@ -74,6 +74,27 @@ PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) noexcept
 {
 	amx::load(amx);
 	RegisterNatives(amx);
+
+	int num;
+	if(amx_NumPublics(amx, &num) == AMX_ERR_NONE)
+	{
+		int len;
+		amx_NameLength(amx, &len);
+		char *funcname = static_cast<char*>(alloca(len + 1));
+		for(int i = 0; i < num; i++)
+		{
+			if(amx_GetPublic(amx, i, funcname) == AMX_ERR_NONE)
+			{
+				funcname[12] = '\0';
+				if(!std::strcmp(funcname, "_pp@on_init@"))
+				{
+					cell ret;
+					amx_Exec(amx, &ret, i);
+				}
+			}
+		}
+	}
+
 	return AMX_ERR_NONE;
 }
 
