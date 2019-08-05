@@ -31,6 +31,8 @@ const PP_VERSION = 0x110;
 #define PP_SYNTAX_AMX_PARALLEL
 #define PP_SYNTAX_ASYNC
 #define PP_SYNTAX_FOR_POOL
+#define PP_SYNTAX_ON_INIT
+#define PP_SYNTAX_ON_EXIT
 #endif
 
 #define ConstString String@Const
@@ -242,6 +244,14 @@ stock _pp_fake_cast(val)
 #define pawn_ref<%0>(%1) (Ref<%0>:_pp_fake_cast(_:_PP@CAST[%0](%1)))
 #define pawn_unref<%0>(%1) (%0:_pp_fake_cast(_:_PP@CAST[Ref<%0>](%1)))
 
+#endif
+
+#if defined PP_SYNTAX_ON_INIT
+#define pawn_on_init[%0] forward _pp@on_init@%0();public _pp@on_init@%0()
+#endif
+
+#if defined PP_SYNTAX_ON_EXIT
+#define pawn_on_exit[%0] forward _pp@on_exit@%0();public _pp@on_exit@%0()
 #endif
 
 /*                 */

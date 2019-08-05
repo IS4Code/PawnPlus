@@ -287,7 +287,7 @@ void amx::instance::run_finalizers()
 		{
 			char *funcname = amx_NameBuffer(_amx);
 			cell ret;
-			for(int i = 0; i < num; i++)
+			for(int i = num - 1; i >= 0; i--)
 			{
 				if(amx_GetPublic(_amx, i, funcname) == AMX_ERR_NONE)
 				{
