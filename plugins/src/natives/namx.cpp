@@ -193,9 +193,7 @@ namespace Natives
 	// native String:amx_public_name_s(index);
 	AMX_DEFINE_NATIVE_TAG(amx_public_name_s, 1, string)
 	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *name = static_cast<char*>(alloca(len + 1));
+		char *name = amx_NameBuffer(amx);
 		if(amx_GetPublic(amx, params[1], name) != AMX_ERR_NONE)
 		{
 			amx_LogicError(errors::out_of_range, "index");
@@ -339,9 +337,7 @@ namespace Natives
 	// native amx_native_name(index, name[], size=sizeof(name));
 	AMX_DEFINE_NATIVE_TAG(amx_native_name, 3, cell)
 	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *name = static_cast<char*>(alloca(len + 1));
+		char *name = amx_NameBuffer(amx);
 		if(amx_GetNative(amx, params[1], name) != AMX_ERR_NONE)
 		{
 			amx_LogicError(errors::out_of_range, "index");
@@ -354,9 +350,7 @@ namespace Natives
 	// native String:amx_native_name_s(index);
 	AMX_DEFINE_NATIVE_TAG(amx_native_name_s, 1, string)
 	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *name = static_cast<char*>(alloca(len + 1));
+		char *name = amx_NameBuffer(amx);
 		if(amx_GetNative(amx, params[1], name) != AMX_ERR_NONE)
 		{
 			amx_LogicError(errors::out_of_range, "index");
@@ -367,9 +361,7 @@ namespace Natives
 	// native [2]amx_encode_native(index);
 	AMX_DEFINE_NATIVE_TAG(amx_encode_native, 1, cell)
 	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *name = static_cast<char*>(alloca(len + 1));
+		char *name = amx_NameBuffer(amx);
 		if(amx_GetNative(amx, params[1], name) != AMX_ERR_NONE)
 		{
 			amx_LogicError(errors::out_of_range, "index");
@@ -399,9 +391,7 @@ namespace Natives
 	// native [3]amx_encode_value_native(index, AnyTag:value);
 	AMX_DEFINE_NATIVE_TAG(amx_encode_value_native, 2, cell)
 	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *name = static_cast<char*>(alloca(len + 1));
+		char *name = amx_NameBuffer(amx);
 		if(amx_GetNative(amx, params[1], name) != AMX_ERR_NONE)
 		{
 			amx_LogicError(errors::out_of_range, "index");

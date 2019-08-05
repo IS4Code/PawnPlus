@@ -2063,9 +2063,7 @@ class dynamic_operations : public null_operations, public tag_control
 			{
 				index = this->_index.value();
 
-				int len;
-				amx_NameLength(amx, &len);
-				char *funcname = static_cast<char*>(alloca(len + 1));
+				char *funcname = amx_NameBuffer(amx);
 
 				if(amx_GetPublic(amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(_handler.c_str(), funcname))
 				{

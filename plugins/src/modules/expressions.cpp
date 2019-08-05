@@ -2630,9 +2630,7 @@ void public_expression::load(AMX *amx) const
 {
 	if(index != -1)
 	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *funcname = static_cast<char*>(alloca(len + 1));
+		char *funcname = amx_NameBuffer(amx);
 
 		if(amx_GetPublic(amx, index, funcname) == AMX_ERR_NONE && !std::strcmp(name.c_str(), funcname))
 		{
@@ -2733,9 +2731,7 @@ void pubvar_expression::load(AMX *amx) const
 {
 	if(index != -1)
 	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *funcname = static_cast<char*>(alloca(len + 1));
+		char *funcname = amx_NameBuffer(amx);
 
 		if(amx_GetPubVar(amx, index, funcname, &amx_addr) == AMX_ERR_NONE && !std::strcmp(name.c_str(), funcname))
 		{

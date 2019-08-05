@@ -46,5 +46,7 @@ void gc_unregister(void *id);
 
 unsigned char *amx_GetData(AMX *amx);
 int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index);
+int amx_NameLengthSafe(AMX *amx);
+#define amx_NameBuffer(amx) (static_cast<char*>(alloca(amx_NameLengthSafe(amx) + 1)))
 
 #endif

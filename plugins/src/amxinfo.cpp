@@ -100,6 +100,7 @@ void amx::register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int numb
 	{
 		natives.insert(std::make_pair(nativelist[i].name, nativelist[i].func));
 	}
+	obj->run_initializers();
 }
 
 AMX_NATIVE amx::try_decode_native(const char *str)
@@ -250,4 +251,53 @@ cell amx::dynamic_call(AMX *amx, AMX_NATIVE native, cell *params, tag_ptr &out_t
 		throw errors::amx_error(code);
 	}
 	return result;
+}
+
+void amx::instance::run_initializers()
+{
+	if(_amx && loaded && !initialized && (_amx->flags & AMX_FLAG_NTVREG))
+	{
+		int num;
+		if(amx_NumPublics(_amx, &num) == AMX_ERR_NONE)
+		{
+			char *funcname = amx_NameBuffer(_amx);
+			cell ret;
+			for(int i = 0; i < num; i++)
+			{
+				if(amx_GetPublic(_amx, i, funcname) == AMX_ERR_NONE)
+				{
+					funcname[12] = '\0';
+					if(!std::strcmp(funcname, "_pp@on_init@"))
+					{
+						amx_Exec(_amx, &ret, i);
+					}
+				}
+			}
+			initialized = true;
+		}
+	}
+}
+
+void amx::instance::run_finalizers()
+{
+	if(_amx && initialized && (_amx->flags & AMX_FLAG_NTVREG))
+	{
+		int num;
+		if(amx_NumPublics(_amx, &num) == AMX_ERR_NONE)
+		{
+			char *funcname = amx_NameBuffer(_amx);
+			cell ret;
+			for(int i = 0; i < num; i++)
+			{
+				if(amx_GetPublic(_amx, i, funcname) == AMX_ERR_NONE)
+				{
+					funcname[12] = '\0';
+					if(!std::strcmp(funcname, "_pp@on_exit@"))
+					{
+						amx_Exec(_amx, &ret, i);
+					}
+				}
+			}
+		}
+	}
 }

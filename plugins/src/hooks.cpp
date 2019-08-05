@@ -12,6 +12,7 @@
 #include "sdk/amx/amx.h"
 #include "sdk/plugincommon.h"
 #include "subhook/subhook.h"
+#include "subhook/subhook_private.h"
 
 extern void *pAMXFunctions;
 
@@ -34,7 +35,38 @@ public:
 	template <int Index, hook_ftype *Handler>
 	static Ret AMXAPI handler(Args... args)
 	{
-		return Handler(reinterpret_cast<Ret(*)(Args...)>(subhook_get_trampoline(amx_hook<Index>::hook())), args...);
+		auto trampoline = reinterpret_cast<handler_ftype*>(subhook_get_trampoline(amx_hook<Index>::hook()));
+		if(!trampoline)
+		{
+			trampoline = fallback<Index>;
+		}
+		return Handler(trampoline, args...);
+	}
+
+	template <int Index>
+	static Ret AMXAPI fallback(Args... args)
+	{
+		const auto &hook = amx_hook<Index>::hook();
+		auto dst = subhook_read_dst(subhook_get_src(hook));
+		auto olddst = subhook_get_dst(hook);
+		auto func = reinterpret_cast<handler_ftype*>(subhook_get_src(hook));
+		if(dst != olddst)
+		{
+			hook->dst = dst;
+			subhook_remove(hook);
+			auto ret = func(std::forward<Args>(args)...);
+			subhook_install(hook);
+			hook->dst = olddst;
+			return ret;
+		}else if(!dst)
+		{
+			return func(std::forward<Args>(args)...);
+		}else{
+			subhook_remove(hook);
+			auto ret = func(std::forward<Args>(args)...);
+			subhook_install(hook);
+			return ret;
+		}
 	}
 };
 
@@ -79,7 +111,12 @@ public:
 		{
 			if(subhook_is_installed(hook()))
 			{
-				return reinterpret_cast<FType>(subhook_get_trampoline(hook()));
+				auto trampoline = reinterpret_cast<FType>(subhook_get_trampoline(hook()));
+				if(!trampoline)
+				{
+					return amx_hook_func<FType>::fallback<Index>;
+				}
+				return trampoline;
 			}else{
 				return ((FType*)pAMXFunctions)[Index];
 			}
@@ -290,6 +327,17 @@ namespace Hooks
 		}
 		return ret;
 	}
+
+	// Just "return 0;" in SA-MP, making it identical to other equivalent functions.
+	int AMX_HOOK_FUNC(amx_Cleanup, AMX *amx)
+	{
+		if(amx && amx::valid(amx))
+		{
+			const auto &obj = amx::load_lock(amx);
+			obj->run_finalizers();
+		}
+		return base_func(amx);
+	}
 }
 
 int AMXAPI amx_InitOrig(AMX *amx, void *program)
@@ -320,6 +368,7 @@ void Hooks::Register()
 	amx_Hook(NumPublics)::load();
 	amx_Hook(NameLength)::load();
 	amx_Hook(GetPubVar)::load();
+	amx_Hook(Cleanup)::load();
 }
 
 void Hooks::Unregister()
@@ -335,6 +384,7 @@ void Hooks::Unregister()
 	amx_Hook(NumPublics)::unload();
 	amx_Hook(NameLength)::unload();
 	amx_Hook(GetPubVar)::unload();
+	amx_Hook(Cleanup)::unload();
 }
 
 void Hooks::ToggleStrLen(bool toggle)

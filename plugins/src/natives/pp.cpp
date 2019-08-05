@@ -168,9 +168,7 @@ namespace Natives
 		{
 			return f("#main");
 		}else{
-			int len;
-			amx_NameLength(amx, &len);
-			char *func_name = static_cast<char*>(alloca(len + 1));
+			char *func_name = amx_NameBuffer(amx);
 			if(amx_GetPublic(amx, index, func_name) == AMX_ERR_NONE)
 			{
 				return f(func_name);

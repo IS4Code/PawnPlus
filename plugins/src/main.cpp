@@ -72,28 +72,11 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload() noexcept
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) noexcept
 {
-	amx::load(amx);
+	auto &obj = amx::load_lock(amx);
 	RegisterNatives(amx);
 
-	int num;
-	if(amx_NumPublics(amx, &num) == AMX_ERR_NONE)
-	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *funcname = static_cast<char*>(alloca(len + 1));
-		for(int i = 0; i < num; i++)
-		{
-			if(amx_GetPublic(amx, i, funcname) == AMX_ERR_NONE)
-			{
-				funcname[12] = '\0';
-				if(!std::strcmp(funcname, "_pp@on_init@"))
-				{
-					cell ret;
-					amx_Exec(amx, &ret, i);
-				}
-			}
-		}
-	}
+	obj->loaded = true;
+	obj->run_initializers();
 
 	return AMX_ERR_NONE;
 }
@@ -200,3 +183,13 @@ int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index)
 }
 
 int last_pubvar_index;
+
+int amx_NameLengthSafe(AMX *amx)
+{
+	int len;
+	if(amx_NameLength(amx, &len) != AMX_ERR_NONE)
+	{
+		return sNAMEMAX;
+	}
+	return len;
+}

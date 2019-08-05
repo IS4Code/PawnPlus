@@ -45,6 +45,7 @@ namespace amx
 
 		AMX *_amx;
 		std::unordered_map<std::type_index, std::unique_ptr<extra>> extras;
+		bool initialized = false;
 
 		void invalidate()
 		{
@@ -152,6 +153,10 @@ namespace amx
 		{
 			return _amx;
 		}
+
+		bool loaded = false;
+		void run_initializers();
+		void run_finalizers();
 	};
 
 	bool valid(AMX *amx);

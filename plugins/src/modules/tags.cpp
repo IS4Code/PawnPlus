@@ -1,4 +1,5 @@
 #include "tags.h"
+#include "main.h"
 #include "amxinfo.h"
 #include "fixes/linux.h"
 #include <unordered_map>
@@ -14,9 +15,7 @@ struct tag_map_info : public amx::extra
 
 	tag_map_info(AMX *amx) : amx::extra(amx)
 	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *tagname = static_cast<char*>(alloca(len + 1));
+		char *tagname = amx_NameBuffer(amx);
 
 		int num;
 		amx_NumTags(amx, &num);
@@ -95,9 +94,7 @@ tag_ptr tags::find_tag(AMX *amx, cell tag_id)
 	{
 		return it->second;
 	}
-	int len;
-	amx_NameLength(amx, &len);
-	char *tagname = static_cast<char*>(alloca(len + 1));
+	char *tagname = amx_NameBuffer(amx);
 	if(amx_FindTagId(amx, tag_id, tagname) == AMX_ERR_NONE)
 	{
 		return tags::find_tag(tagname, -1);
