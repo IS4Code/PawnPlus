@@ -56,7 +56,7 @@ expression_ptr expression::execute_expression(const args_type &args, const exec_
 		}
 		value = result.get_cell(0);
 	}
-	std::shared_ptr<expression> ptr;
+	expression_ptr ptr;
 	if(!expression_pool.get_by_id(value, ptr))
 	{
 		return {};
@@ -126,7 +126,7 @@ dyn_object expression::index(const args_type &args, const exec_info &info, const
 	auto value = execute(args, info);
 	if(value.is_cell())
 	{
-		std::shared_ptr<expression> ptr;
+		expression_ptr ptr;
 		tag_ptr tag = tags::find_tag(tags::tag_expression);
 		if(!(value.tag_assignable(tag)) || !expression_pool.get_by_id(value.get_cell(0), ptr))
 		{
@@ -283,6 +283,41 @@ void constant_expression::to_string(strings::cell_string &str) const noexcept
 decltype(expression_pool)::object_ptr constant_expression::clone() const
 {
 	return expression_pool.emplace_derived<constant_expression>(*this);
+}
+
+dyn_object handle_expression::execute(const args_type &args, const exec_info &info) const
+{
+	return handle->get();
+}
+
+tag_ptr handle_expression::get_tag(const args_type &args) const noexcept
+{
+	return handle->get().get_tag();
+}
+
+cell handle_expression::get_size(const args_type &args) const noexcept
+{
+	return handle->get().get_size();
+}
+
+cell handle_expression::get_rank(const args_type &args) const noexcept
+{
+	return handle->get().get_rank();
+}
+
+cell handle_expression::get_count(const args_type &args) const noexcept
+{
+	return 1;
+}
+
+void handle_expression::to_string(strings::cell_string &str) const noexcept
+{
+	str.append(handle->get().to_string());
+}
+
+decltype(expression_pool)::object_ptr handle_expression::clone() const
+{
+	return expression_pool.emplace_derived<handle_expression>(*this);
 }
 
 expression_ptr weak_expression::lock() const
@@ -1646,7 +1681,7 @@ auto bind_expression::combine_args(const args_type &args) const -> args_type
 	new_args.reserve(base_args.size() + args.size());
 	for(const auto &arg : base_args)
 	{
-		if(auto const_expr = dynamic_cast<const constant_expression*>(arg.get()))
+		if(auto const_expr = dynamic_cast<const object_expression*>(arg.get()))
 		{
 			new_args.push_back(std::cref(const_expr->get_value()));
 		}else{
@@ -1667,7 +1702,7 @@ auto bind_expression::combine_args(const args_type &args, const exec_info &info,
 	new_args.reserve(base_args.size() + args.size());
 	for(const auto &arg : base_args)
 	{
-		if(auto const_expr = dynamic_cast<const constant_expression*>(arg.get()))
+		if(auto const_expr = dynamic_cast<const object_expression*>(arg.get()))
 		{
 			new_args.push_back(std::cref(const_expr->get_value()));
 		}else{
@@ -3628,8 +3663,21 @@ dyn_object extract_expression::execute(const args_type &args, const exec_info &i
 			amx_ExpressionError(errors::pointer_invalid, "string", c);
 		}
 		return dyn_object(str->c_str(), str->size() + 1, char_tag);
+	}else if(var_value.tag_assignable(tags::find_tag(tags::tag_handle)))
+	{
+		cell c = var_value.get_cell(0);
+		if(c == 0)
+		{
+			return {};
+		}
+		handle_t *handle;
+		if(!handle_pool.get_by_id(c, handle))
+		{
+			amx_ExpressionError(errors::pointer_invalid, "handle", c);
+		}
+		return handle->get();
 	}
-	amx_ExpressionError("extract argument tag mismatch (%s: or %s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), tags::find_tag(tags::tag_string)->format_name(), var_value.get_tag()->format_name());
+	amx_ExpressionError("extract argument tag mismatch (%s:, %s or %s: required, %s: provided)", tags::find_tag(tags::tag_variant)->format_name(), tags::find_tag(tags::tag_string)->format_name(), tags::find_tag(tags::tag_handle)->format_name(), var_value.get_tag()->format_name());
 	return {};
 }
 

@@ -82,7 +82,7 @@ public:
 	size_t get_hash() const;
 	void acquire() const;
 	void release() const;
-	std::weak_ptr<void> handle() const;
+	std::weak_ptr<const void> handle() const;
 	dyn_object clone() const;
 	dyn_object call_op(op_type type, cell *args, size_t numargs, bool wrap) const;
 

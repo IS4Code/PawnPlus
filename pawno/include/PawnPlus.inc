@@ -1657,6 +1657,7 @@ native Expression:expr_const_str(const value[]);
 native Expression:expr_const_var(VariantTag:value);
 native Expression:expr_true();
 native Expression:expr_false();
+native Expression:expr_handle(HandleTag:handle);
 
 native Expression:expr_arr(Expression:...);
 

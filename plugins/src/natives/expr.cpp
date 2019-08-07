@@ -248,6 +248,15 @@ namespace Natives
 		return expression_pool.get_id(expr);
 	}
 
+	// native Expression:expr_handle(HandleTag:handle);
+	AMX_DEFINE_NATIVE_TAG(expr_handle, 1, expression)
+	{
+		std::shared_ptr<handle_t> handle;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+		auto &expr = expression_pool.emplace_derived<handle_expression>(handle);
+		return expression_pool.get_id(expr);
+	}
+
 	// native Expression:expr_arr(Expression:...);
 	AMX_DEFINE_NATIVE_TAG(expr_arr, 0, expression)
 	{
@@ -817,6 +826,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_const_var),
 	AMX_DECLARE_NATIVE(expr_true),
 	AMX_DECLARE_NATIVE(expr_false),
+	AMX_DECLARE_NATIVE(expr_handle),
 
 	AMX_DECLARE_NATIVE(expr_arr),
 

@@ -419,7 +419,7 @@ namespace Natives
 	// native pawn_create_callback(const callback[], Expression:action);
 	AMX_DEFINE_NATIVE_TAG(pawn_create_callback, 2, cell)
 	{
-		std::shared_ptr<expression> expr;
+		expression_ptr expr;
 		if(params[2])
 		{
 			if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);

@@ -696,7 +696,7 @@ namespace Natives
 	{
 		std::shared_ptr<dyn_iterator> iter;
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-		std::shared_ptr<expression> expr;
+		expression_ptr expr;
 		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
 		return iter_pool.get_id(iter_pool.emplace_derived<filter_iterator>(std::move(iter), std::move(expr)));
 	}
@@ -706,7 +706,7 @@ namespace Natives
 	{
 		std::shared_ptr<dyn_iterator> iter;
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
-		std::shared_ptr<expression> expr;
+		expression_ptr expr;
 		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
 		return iter_pool.get_id(iter_pool.emplace_derived<project_iterator>(std::move(iter), std::move(expr)));
 	}

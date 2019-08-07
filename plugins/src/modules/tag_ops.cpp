@@ -191,7 +191,7 @@ struct null_operations : public tag_operations
 		return false;
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		return {};
 	}
@@ -228,6 +228,8 @@ struct null_operations : public tag_operations
 
 	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
+		str.append(strings::convert(tags::find_tag(tag_uid)->format_name()));
+		str.push_back(':');
 		str.append(strings::convert(std::to_string(arg)));
 	}
 
@@ -863,7 +865,7 @@ struct string_operations : public null_operations
 	}
 
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<cell_string> ptr;
 		if(strings::pool.get_by_id(arg, ptr))
@@ -1082,7 +1084,7 @@ struct variant_operations : public null_operations
 		return std::make_unique<variant_operations>();
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<dyn_object> ptr;
 		if(variants::pool.get_by_id(arg, ptr))
@@ -1164,7 +1166,7 @@ struct handle_operations : public null_operations
 		return std::make_unique<handle_operations>();
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<handle_t> ptr;
 		if(handle_pool.get_by_id(arg, ptr))
@@ -1245,7 +1247,7 @@ struct list_operations : public generic_operations<list_operations, tags::tag_li
 		return false;
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<list_t> l;
 		if(list_pool.get_by_id(arg, l))
@@ -1341,7 +1343,7 @@ struct linked_list_operations : public generic_operations<linked_list_operations
 		return false;
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<linked_list_t> l;
 		if(linked_list_pool.get_by_id(arg, l))
@@ -1437,7 +1439,7 @@ struct map_operations : public generic_operations<map_operations, tags::tag_map>
 		return false;
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<map_t> m;
 		if(map_pool.get_by_id(arg, m))
@@ -1602,7 +1604,7 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 		str.push_back(']');
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<dyn_iterator> ptr;
 		if(iter_pool.get_by_id(arg, ptr))
@@ -1676,7 +1678,7 @@ struct task_operations : public generic_operations<task_operations, tags::tag_ta
 		return del(tag, arg);
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<tasks::task> t;
 		if(tasks::get_by_id(arg, t))
@@ -1745,7 +1747,7 @@ struct var_operations : public null_operations
 		return copy(tag, arg);
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<amx_var_info> ptr;
 		if(amx_var_pool.get_by_id(arg, ptr))
@@ -1846,7 +1848,7 @@ struct pool_operations : public generic_operations<pool_operations, tags::tag_po
 		return false;
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		std::shared_ptr<pool_t> l;
 		if(pool_pool.get_by_id(arg, l))
@@ -1957,9 +1959,9 @@ struct expression_operations : public null_operations
 		return std::make_unique<expression_operations>();
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
-		std::shared_ptr<expression> ptr;
+		expression_ptr ptr;
 		if(expression_pool.get_by_id(arg, ptr))
 		{
 			return ptr;
@@ -2267,7 +2269,7 @@ public:
 		return false;
 	}
 
-	virtual std::weak_ptr<void> handle(tag_ptr tag, cell arg) const override
+	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
 		auto it = dyn_ops.find(op_type::handle);
 		if(it != dyn_ops.end() && it->second)

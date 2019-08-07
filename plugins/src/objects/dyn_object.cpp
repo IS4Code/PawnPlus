@@ -668,9 +668,9 @@ void dyn_object::acquire() const
 	}
 }
 
-std::weak_ptr<void> dyn_object::handle() const
+std::weak_ptr<const void> dyn_object::handle() const
 {
-	std::weak_ptr<void> handle;
+	std::weak_ptr<const void> handle;
 	if(!empty())
 	{
 		const auto &ops = tag->get_ops();

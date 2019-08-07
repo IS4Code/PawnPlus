@@ -872,7 +872,7 @@ public:
 class handle_t
 {
 	dyn_object object;
-	std::weak_ptr<void> bond;
+	std::weak_ptr<const void> bond;
 	bool weak;
 
 public:
@@ -883,7 +883,7 @@ public:
 
 	}
 
-	handle_t(dyn_object &&obj, std::weak_ptr<void> &&bond, bool weak = false) : object(std::move(obj)), bond(weak ? std::move(bond) : (object.acquire(), std::move(bond))), weak(weak)
+	handle_t(dyn_object &&obj, std::weak_ptr<const void> &&bond, bool weak = false) : object(std::move(obj)), bond(weak ? std::move(bond) : (object.acquire(), std::move(bond))), weak(weak)
 	{
 
 	}
@@ -905,7 +905,7 @@ public:
 		return object;
 	}
 
-	const std::weak_ptr<void> &get_bond() const
+	const std::weak_ptr<const void> &get_bond() const
 	{
 		return bond;
 	}
@@ -949,7 +949,7 @@ public:
 
 	bool alive() const
 	{
-		return !bond.expired() || (!bond.owner_before(std::weak_ptr<void>{}) && !std::weak_ptr<void>{}.owner_before(bond));
+		return !bond.expired() || (!bond.owner_before(std::weak_ptr<const void>{}) && !std::weak_ptr<const void>{}.owner_before(bond));
 	}
 
 	bool operator==(const handle_t &obj)

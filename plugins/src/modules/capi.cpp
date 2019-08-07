@@ -69,22 +69,22 @@ static func_ptr main_functions[] = {
 	{
 		if(handle)
 		{
-			delete static_cast<std::weak_ptr<void>*>(handle);
+			delete static_cast<std::weak_ptr<const void>*>(handle);
 		}
 	},
 	+[]/*handle_alive*/(const void *handle) -> cell
 	{
 		if(handle)
 		{
-			return !static_cast<const std::weak_ptr<void>*>(handle)->expired();
+			return !static_cast<const std::weak_ptr<const void>*>(handle)->expired();
 		}
 		return false;
 	},
-	+[]/*handle_get*/(const void *handle) -> void*
+	+[]/*handle_get*/(const void *handle) -> const void*
 	{
 		if(handle)
 		{
-			auto ptr = static_cast<const std::weak_ptr<void>*>(handle)->lock();
+			auto ptr = static_cast<const std::weak_ptr<const void>*>(handle)->lock();
 			if(ptr)
 			{
 				return ptr.get();
@@ -299,7 +299,7 @@ static func_ptr list_functions[] = {
 		auto ptr = list_pool.get(static_cast<list_t*>(list));
 		if(ptr)
 		{
-			return new std::weak_ptr<void>(ptr);
+			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
 	},
@@ -353,7 +353,7 @@ static func_ptr linked_list_functions[] = {
 		auto ptr = linked_list_pool.get(static_cast<linked_list_t*>(linked_list));
 		if(ptr)
 		{
-			return new std::weak_ptr<void>(ptr);
+			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
 	},
@@ -425,7 +425,7 @@ static func_ptr map_functions[] = {
 		auto ptr = map_pool.get(static_cast<map_t*>(map));
 		if(ptr)
 		{
-			return new std::weak_ptr<void>(ptr);
+			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
 	},
@@ -487,7 +487,7 @@ static func_ptr string_functions[] = {
 		auto ptr = strings::pool.get(*static_cast<string_ptr>(str));
 		if(ptr)
 		{
-			return new std::weak_ptr<void>(ptr);
+			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
 	},
@@ -540,7 +540,7 @@ static func_ptr variant_functions[] = {
 		auto ptr = variants::pool.get(*static_cast<variant_ptr>(var));
 		if(ptr)
 		{
-			return new std::weak_ptr<void>(ptr);
+			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
 	},
@@ -637,7 +637,7 @@ static func_ptr task_functions[] = {
 		auto ptr = tasks::get(static_cast<tasks::task*>(task));
 		if(ptr)
 		{
-			return new std::weak_ptr<void>(ptr);
+			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
 	},

@@ -85,9 +85,9 @@ namespace pp
 			return get<cell(const void *handle)>(8)(handle);
 		}
 
-		void *handle_get(const void *handle)
+		const void *handle_get(const void *handle)
 		{
-			return get<void*(const void *handle)>(9)(handle);
+			return get<const void*(const void *handle)>(9)(handle);
 		}
 
 		const char *get_error(int index)

@@ -100,7 +100,13 @@ public:
 	virtual decltype(expression_pool)::object_ptr clone() const = 0;
 };
 
-class constant_expression : public expression_base
+class object_expression
+{
+public:
+	virtual const dyn_object &get_value() const = 0;
+};
+
+class constant_expression : public expression_base, public object_expression
 {
 	dyn_object value;
 
@@ -129,9 +135,38 @@ public:
 	virtual void to_string(strings::cell_string &str) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
-	const dyn_object &get_value() const
+	virtual const dyn_object &get_value() const override
 	{
 		return value;
+	}
+};
+
+class handle_expression : public expression_base, public object_expression
+{
+	std::shared_ptr<handle_t> handle;
+
+public:
+	handle_expression(std::shared_ptr<handle_t> &&handle) : handle(std::move(handle))
+	{
+
+	}
+
+	handle_expression(const std::shared_ptr<handle_t> &handle) : handle(handle)
+	{
+
+	}
+
+	virtual dyn_object execute(const args_type &args, const exec_info &info) const override;
+	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
+	virtual cell get_size(const args_type &args) const noexcept override;
+	virtual cell get_rank(const args_type &args) const noexcept override;
+	virtual cell get_count(const args_type &args) const noexcept override;
+	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual decltype(expression_pool)::object_ptr clone() const override;
+
+	virtual const dyn_object &get_value() const override
+	{
+		return handle->get();
 	}
 };
 
