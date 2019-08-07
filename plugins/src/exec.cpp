@@ -182,11 +182,13 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 
 			if(old_hea != amx->reset_hea)
 			{
-				logwarn(amx, "[PawnPlus] HEA will be restored to 0x%X (originally 0x%X).", amx->reset_hea, old_hea);
+				cell new_hea = amx->reset_hea;
+				logwarn(amx, "[PawnPlus] HEA will be restored to 0x%X (originally 0x%X).", new_hea, old_hea);
 			}
 			if(old_stk != amx->reset_stk)
 			{
-				logwarn(amx, "[PawnPlus] STK will be restored to 0x%X (originally 0x%X).", amx->reset_stk, old_stk);
+				cell new_stk = amx->reset_stk;
+				logwarn(amx, "[PawnPlus] STK will be restored to 0x%X (originally 0x%X).", new_stk, old_stk);
 			}
 
 			amx::object owner;

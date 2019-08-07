@@ -23,7 +23,7 @@ public:
 	template <result_ftype Factory>
 	static cell AMX_NATIVE_CALL expr_get(AMX *amx, cell *params)
 	{
-		std::shared_ptr<expression> ptr;
+		expression_ptr ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx::guard guard(amx);
 		return Factory(amx, ptr->execute({}, expression::exec_info(amx, nullptr, true)), params[Indices]...);
@@ -33,7 +33,7 @@ public:
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL expr_set(AMX *amx, cell *params)
 	{
-		std::shared_ptr<expression> ptr;
+		expression_ptr ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		amx::guard guard(amx);
 		ptr->assign({}, expression::exec_info(amx, nullptr, true), Factory(amx, params[Indices]...));
@@ -165,7 +165,7 @@ namespace Natives
 		for(cell i = 0; i < numargs; i++)
 		{
 			cell *addr = amx_GetAddrSafe(amx, params[1 + i]);
-			std::shared_ptr<expression> ptr;
+			expression_ptr ptr;
 			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
 			args.emplace_back(std::move(ptr));
 		}
@@ -176,7 +176,7 @@ namespace Natives
 	template <class Expr, class... Args>
 	static cell AMX_NATIVE_CALL expr_unary(AMX *amx, cell *params, Args &&...args)
 	{
-		std::shared_ptr<expression> ptr;
+		expression_ptr ptr;
 		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
 		auto &expr = expression_pool.emplace_derived<Expr>(std::move(ptr), std::forward<Args>(args)...);
 		return expression_pool.get_id(expr);
@@ -199,7 +199,7 @@ namespace Natives
 	{
 		std::shared_ptr<expression> ptr1;
 		if(!expression_pool.get_by_id(params[1], ptr1)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
-		std::shared_ptr<expression> ptr2;
+		expression_ptr ptr2;
 		if(!expression_pool.get_by_id(params[2], ptr2)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
 		auto weak = dynamic_cast<weak_expression*>(ptr1.get());
 		if(!weak)
@@ -257,7 +257,7 @@ namespace Natives
 		{
 			cell amx_addr = params[1 + i];
 			cell *addr = amx_GetAddrSafe(amx, amx_addr);
-			std::shared_ptr<expression> ptr;
+			expression_ptr ptr;
 			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
 			args.emplace_back(std::move(ptr));
 		}
@@ -294,7 +294,7 @@ namespace Natives
 		{
 			cell amx_addr = params[2 + i];
 			cell *addr = amx_GetAddrSafe(amx, amx_addr);
-			std::shared_ptr<expression> ptr;
+			expression_ptr ptr;
 			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
 			args.emplace_back(std::move(ptr));
 		}
@@ -304,9 +304,9 @@ namespace Natives
 	template <class Expr, class... Args>
 	static cell AMX_NATIVE_CALL expr_binary(AMX *amx, cell *params, Args &&...args)
 	{
-		std::shared_ptr<expression> ptr1;
+		expression_ptr ptr1;
 		if(!expression_pool.get_by_id(params[1], ptr1)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
-		std::shared_ptr<expression> ptr2;
+		expression_ptr ptr2;
 		if(!expression_pool.get_by_id(params[2], ptr2)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
 		auto &expr = expression_pool.emplace_derived<Expr>(std::move(ptr1), std::move(ptr2), std::forward<Args>(args)...);
 		return expression_pool.get_id(expr);
@@ -454,7 +454,7 @@ namespace Natives
 		{
 			cell amx_addr = params[2 + i];
 			cell *addr = amx_GetAddrSafe(amx, amx_addr);
-			std::shared_ptr<expression> ptr;
+			expression_ptr ptr;
 			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
 			args.emplace_back(std::move(ptr));
 		}
@@ -470,7 +470,7 @@ namespace Natives
 		{
 			cell amx_addr = params[2 + i];
 			cell *addr = amx_GetAddrSafe(amx, amx_addr);
-			std::shared_ptr<expression> ptr;
+			expression_ptr ptr;
 			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
 			args.emplace_back(std::move(ptr));
 		}
@@ -630,11 +630,11 @@ namespace Natives
 	// native Expression:expr_cond(Expression:cond, Expression:on_true, Expression:on_false);
 	AMX_DEFINE_NATIVE_TAG(expr_cond, 3, expression)
 	{
-		std::shared_ptr<expression> ptr1;
+		expression_ptr ptr1;
 		if(!expression_pool.get_by_id(params[1], ptr1)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
-		std::shared_ptr<expression> ptr2;
+		expression_ptr ptr2;
 		if(!expression_pool.get_by_id(params[2], ptr2)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
-		std::shared_ptr<expression> ptr3;
+		expression_ptr ptr3;
 		if(!expression_pool.get_by_id(params[3], ptr3)) amx_LogicError(errors::pointer_invalid, "expression", params[3]);
 		auto &expr = expression_pool.emplace_derived<conditional_expression>(std::move(ptr1), std::move(ptr2), std::move(ptr3));
 		return expression_pool.get_id(expr);
@@ -679,7 +679,7 @@ namespace Natives
 		{
 			cell amx_addr = params[2 + i];
 			cell *addr = amx_GetAddrSafe(amx, amx_addr);
-			std::shared_ptr<expression> ptr;
+			expression_ptr ptr;
 			if(!expression_pool.get_by_id(*addr, ptr)) amx_LogicError(errors::pointer_invalid, "expression", *addr);
 			indices.emplace_back(std::move(ptr));
 		}

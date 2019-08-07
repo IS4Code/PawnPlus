@@ -1,6 +1,7 @@
 #ifndef AMXINFO_H_INCLUDED
 #define AMXINFO_H_INCLUDED
 
+#include "errors.h"
 #include "modules/tags.h"
 #include "sdk/amx/amx.h"
 #include "sdk/amx/amxdbg.h"
@@ -299,15 +300,6 @@ namespace amx
 		return call_args(amx, native, arglist, std::forward<Args>(args)...);
 	}
 
-	template <class... Args>
-	cell call_native(AMX *amx, AMX_NATIVE native, Args&&... args)
-	{
-		amx::guard guard(amx);
-		std::vector<cell> arglist = {0};
-		cell result = call_args(amx, native, arglist, std::forward<Args>(args)...);
-		return result;
-	}
-
 	class guard
 	{
 		AMX *amx;
@@ -330,6 +322,15 @@ namespace amx
 			amx->paramcount = paramcount;
 		}
 	};
+
+	template <class... Args>
+	cell call_native(AMX *amx, AMX_NATIVE native, Args&&... args)
+	{
+		amx::guard guard(amx);
+		std::vector<cell> arglist = {0};
+		cell result = call_args(amx, native, arglist, std::forward<Args>(args)...);
+		return result;
+	}
 }
 
 #endif

@@ -114,7 +114,7 @@ public:
 				auto trampoline = reinterpret_cast<FType>(subhook_get_trampoline(hook()));
 				if(!trampoline)
 				{
-					return amx_hook_func<FType>::fallback<Index>;
+					return &amx_hook_func<FType>::template fallback<Index>;
 				}
 				return trampoline;
 			}else{
