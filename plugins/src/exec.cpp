@@ -27,6 +27,7 @@ struct forked_amx_holder : public amx::extra
 
 	virtual ~forked_amx_holder() override
 	{
+		amx_Cleanup(_amx);
 		delete[] _amx->base;
 		delete _amx;
 	}
