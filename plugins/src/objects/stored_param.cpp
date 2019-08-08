@@ -177,7 +177,7 @@ stored_param &stored_param::operator=(const stored_param &obj) noexcept
 {
 	if(this != &obj)
 	{
-		stored_param::~stored_param();
+		this->~stored_param();
 		new (this) stored_param(obj);
 	}
 	return *this;
@@ -187,7 +187,7 @@ stored_param &stored_param::operator=(stored_param &&obj) noexcept
 {
 	if(this != &obj)
 	{
-		stored_param::~stored_param();
+		this->~stored_param();
 		new (this) stored_param(std::move(obj));
 	}
 	return *this;
