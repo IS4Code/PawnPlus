@@ -354,6 +354,11 @@ struct cell_operations : public null_operations
 	{
 		return arg;
 	}
+
+	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	{
+		str.append(strings::convert(std::to_string(arg)));
+	}
 };
 
 struct signed_operations : public cell_operations
@@ -457,6 +462,13 @@ struct signed_operations : public cell_operations
 	{
 		return !a;
 	}
+
+	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	{
+		str.append(strings::convert(tags::find_tag(tag_uid)->format_name()));
+		str.push_back(':');
+		str.append(strings::convert(std::to_string(arg)));
+	}
 };
 
 struct unsigned_operations : public cell_operations
@@ -559,6 +571,13 @@ struct unsigned_operations : public cell_operations
 	virtual bool not(tag_ptr tag, cell a) const override
 	{
 		return !static_cast<ucell>(a);
+	}
+
+	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	{
+		str.append(strings::convert(tags::find_tag(tag_uid)->format_name()));
+		str.push_back(':');
+		str.append(strings::convert(std::to_string(static_cast<ucell>(arg))));
 	}
 };
 

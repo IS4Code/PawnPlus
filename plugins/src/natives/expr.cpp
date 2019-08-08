@@ -802,6 +802,29 @@ namespace Natives
 	{
 		return value_at<2>::expr_set<dyn_func_var>(amx, params);
 	}
+
+	// native expr_exec(Expression:expr);
+	AMX_DEFINE_NATIVE_TAG(expr_exec, 1, cell)
+	{
+		expression_ptr ptr;
+		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
+		amx::guard guard(amx);
+		ptr->execute_discard({}, expression::exec_info(amx, nullptr, true));
+		return 1;
+	}
+
+	// native expr_exec_multi(Expression:expr, List:output);
+	AMX_DEFINE_NATIVE_TAG(expr_exec_multi, 2, cell)
+	{
+		expression_ptr ptr;
+		if(!expression_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[1]);
+		std::shared_ptr<list_t> list;
+		if(!list_pool.get_by_id(params[2], list)) amx_LogicError(errors::pointer_invalid, "list", params[2]);
+		amx::guard guard(amx);
+		size_t count = list->size();
+		ptr->execute_multi({}, expression::exec_info(amx, nullptr, true), list->get_data());
+		return list->size() - count;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -913,6 +936,9 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_set_arr),
 	AMX_DECLARE_NATIVE(expr_set_str),
 	AMX_DECLARE_NATIVE(expr_set_var),
+
+	AMX_DECLARE_NATIVE(expr_exec),
+	AMX_DECLARE_NATIVE(expr_exec_multi),
 
 	AMX_DECLARE_NATIVE(expr_parse),
 	AMX_DECLARE_NATIVE(expr_parse_s),

@@ -97,6 +97,17 @@ public:
 		std::swap(data, other.data);
 		std::swap(revision, other.revision);
 	}
+
+	Type &get_data()
+	{
+		++revision;
+		return data;
+	}
+
+	const Type &get_data() const
+	{
+		return data;
+	}
 };
 
 class list_t : public collection_base<std::vector<dyn_object>>

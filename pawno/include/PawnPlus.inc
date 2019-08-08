@@ -1743,6 +1743,9 @@ native expr_set_arr(Expression:expr, const AnyTag:value[], size=sizeof(value), T
 native expr_set_str(Expression:expr, const value[]);
 native expr_set_var(Expression:expr, ConstVariantTag:value);
 
+native expr_exec(Expression:expr);
+native expr_exec_multi(Expression:expr, List:output);
+
 enum parser_options (<<= 1)
 {
     parser_bare = 0,
