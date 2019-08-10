@@ -230,8 +230,6 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 		return false;
 	}
 
-	cell stk = amx->stk;
-
 	cell flags = this->flags;
 
 	std::vector<cell> oldargs;
@@ -265,19 +263,20 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 
 		handled = 0;
 		err = amx_Exec(amx, &handled, index);
+		if(handled || !(flags & 2))
+		{
+			guard.paramcount = amx->paramcount;
+			guard.stk = amx->stk;
+		}
 	}catch(const errors::amx_error &err)
 	{
 		amx_RaiseError(amx, err.code);
 		return false;
 	}
 
-	if(!handled)
+	if(!handled && !(flags & 2))
 	{
-		if(flags & 2)
-		{
-			amx->paramcount = params;
-			amx->stk = stk;
-		}else for(auto it = oldargs.rbegin(); it != oldargs.rend(); it++)
+		for(auto it = oldargs.rbegin(); it != oldargs.rend(); it++)
 		{
 			amx_Push(amx, *it);
 		}

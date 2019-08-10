@@ -300,14 +300,13 @@ namespace amx
 		return call_args(amx, native, arglist, std::forward<Args>(args)...);
 	}
 
-	class guard
+	struct guard
 	{
 		AMX *amx;
 		cell hea;
 		cell stk;
 		int paramcount;
 
-	public:
 		guard(AMX *amx) : amx(amx)
 		{
 			hea = amx->hea;
