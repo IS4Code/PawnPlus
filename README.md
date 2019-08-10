@@ -26,6 +26,7 @@ Use Visual Studio to build the project on Windows, or `make` or `make static` on
 ## Credits
 * [Zeex](//github.com/Zeex) for creating [subhook](//github.com/Zeex/subhook) without which this wouldn't be possible.
 * [Y_Less](//github.com/Y-Less/) for help with macros for generic functions.
+* [TommyB](//github.com/TommyB123) for thorough testing and bug-finding.
 * [Southclaws](//github.com/Southclaws/) and [AGraber](//github.com/AGraber) for minor contributions.
 
 Thanks to all _PawnPlus_ users for your support! 
