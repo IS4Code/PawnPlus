@@ -141,6 +141,7 @@ namespace Hooks
 		if(ret != AMX_ERR_NONE)
 		{
 			amx::unload(amx);
+			return ret;
 		}
 
 		std::unique_ptr<char[]> name;
