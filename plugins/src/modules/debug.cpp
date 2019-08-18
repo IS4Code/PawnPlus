@@ -53,6 +53,25 @@ static void set_script_name(const char *name)
 	}
 }
 
+struct amx_dbg_info
+{
+	AMX_DBG dbg;
+	int err;
+
+	amx_dbg_info(FILE *fp)
+	{
+		err = dbg_LoadInfo(&dbg, fp);
+	}
+
+	~amx_dbg_info()
+	{
+		if(err == AMX_ERR_NONE)
+		{
+			dbg_FreeInfo(&dbg);
+		}
+	}
+};
+
 #ifdef _WIN32
 static subhook_t CreateFileA_Hook;
 static decltype(&CreateFileA) CreateFileA_Trampoline;
@@ -108,23 +127,13 @@ std::shared_ptr<AMX_DBG> debug::create_last(std::unique_ptr<char[]> &name)
 
 	name = std::move(_last_name);
 
-	auto dbg = new AMX_DBG();
-	if(dbg_LoadInfo(dbg, f) != AMX_ERR_NONE)
+	auto dbg = std::make_shared<amx_dbg_info>(f);
+	fclose(f);
+	if(dbg->err != AMX_ERR_NONE)
 	{
-		delete dbg;
-		fclose(f);
 		return nullptr;
 	}
-	fclose(f);
-
-	return std::shared_ptr<AMX_DBG>(dbg, [](AMX_DBG *dbg)
-	{
-		if(dbg)
-		{
-			dbg_FreeInfo(dbg);
-			delete dbg;
-		}
-	});
+	return std::shared_ptr<AMX_DBG>(dbg, &dbg->dbg);
 }
 
 void debug::init()
@@ -189,24 +198,14 @@ std::shared_ptr<AMX_DBG> debug::create_last(std::unique_ptr<char[]> &name)
 	last_file.release();
 
 	name = std::move(_last_name);
-
-	auto dbg = new AMX_DBG();
-	if(dbg_LoadInfo(dbg, f) != AMX_ERR_NONE)
+	
+	auto dbg = std::make_shared<amx_dbg_info>(f);
+	fclose(f);
+	if(dbg->err != AMX_ERR_NONE)
 	{
-		delete dbg;
-		fclose(f);
 		return nullptr;
 	}
-	fclose(f);
-
-	return std::shared_ptr<AMX_DBG>(dbg, [](AMX_DBG *dbg)
-	{
-		if(dbg)
-		{
-			dbg_FreeInfo(dbg);
-			delete dbg;
-		}
-	});
+	return std::shared_ptr<AMX_DBG>(dbg, &dbg->dbg);
 }
 
 void debug::init()
