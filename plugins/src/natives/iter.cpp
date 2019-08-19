@@ -862,13 +862,13 @@ namespace Natives
 	}
 
 	// native iter_get_str_safe(IterTag:iter, value[], size=sizeof(value));
-	AMX_DEFINE_NATIVE_TAG(iter_get_str_safe, 5, cell)
+	AMX_DEFINE_NATIVE_TAG(iter_get_str_safe, 3, cell)
 	{
 		return value_at<2, 3>::iter_get<dyn_func_str>(amx, params);
 	}
 
 	// native String:iter_get_str_safe_s(IterTag:iter);
-	AMX_DEFINE_NATIVE_TAG(iter_get_str_safe_s, 3, string)
+	AMX_DEFINE_NATIVE_TAG(iter_get_str_safe_s, 1, string)
 	{
 		return value_at<0>::iter_get<dyn_func_str_s>(amx, params);
 	}
