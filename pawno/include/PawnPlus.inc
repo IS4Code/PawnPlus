@@ -2013,6 +2013,7 @@ stock operator~(PP@ts:arr[], count)
 /*       Math      */
 /*                 */
 
+native math_random_seed(seed);
 native math_random(min=0, max=cellmax);
 native math_random_unsigned(min=0, max=-1);
 native Float:math_random_float(Float:min=0.0, Float:max=1.0);

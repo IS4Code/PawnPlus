@@ -13,6 +13,7 @@
 #include <random>
 #include <math.h>
 #include <cmath>
+#include <ctime>
 
 namespace Natives
 {
@@ -278,7 +279,14 @@ namespace Natives
 		return (ucell)params[1] >= (ucell)params[2];
 	}
 
-	thread_local std::default_random_engine generator;
+	thread_local std::default_random_engine generator(static_cast<decltype(std::default_random_engine::default_seed)>(std::time(nullptr)));
+	
+	// native math_random_seed(seed);
+	AMX_DEFINE_NATIVE_TAG(math_random_seed, 1, cell)
+	{
+		generator.seed(params[1]);
+		return 1;
+	}
 
 	// native math_random(min=0, max=cellmax);
 	AMX_DEFINE_NATIVE_TAG(math_random, 0, cell)
@@ -416,6 +424,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(math_ugt),
 	AMX_DECLARE_NATIVE(math_ugte),
 
+	AMX_DECLARE_NATIVE(math_random_seed),
 	AMX_DECLARE_NATIVE(math_random),
 	AMX_DECLARE_NATIVE(math_random_unsigned),
 	AMX_DECLARE_NATIVE(math_random_float),
