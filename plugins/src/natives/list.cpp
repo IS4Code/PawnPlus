@@ -608,7 +608,7 @@ namespace Natives
 	}
 
 	// native list_reserve(List:list, capacity);
-	AMX_DEFINE_NATIVE_TAG(list_reserve, 4, cell)
+	AMX_DEFINE_NATIVE_TAG(list_reserve, 2, cell)
 	{
 		if(params[2] < 0) amx_LogicError(errors::out_of_range, "capacity");
 		list_t *ptr;
