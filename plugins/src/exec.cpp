@@ -687,6 +687,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 				amx->hea = amx->reset_hea;
 			}
 		}
+		logdebug("[PawnPlus] [debug] amx_Exec(0x%X, %d) == %d (%s)", reinterpret_cast<intptr_t>(amx), index, ret, amx::StrError(ret));
 
 		if(restore_debug)
 		{

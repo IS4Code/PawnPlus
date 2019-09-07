@@ -18,6 +18,53 @@ extern void *pAMXFunctions;
 
 extern int ExecLevel;
 
+const char *api_names[] = {
+	"Align16",
+	"Align32",
+	"Align64",
+	"Allot",
+	"Callback",
+	"Cleanup",
+	"Clone",
+	"Exec",
+	"FindNative",
+	"FindPublic",
+	"FindPubVar",
+	"FindTagId",
+	"Flags",
+	"GetAddr",
+	"GetNative",
+	"GetPublic",
+	"GetPubVar",
+	"GetString",
+	"GetTag",
+	"GetUserData",
+	"Init",
+	"InitJIT",
+	"MemInfo",
+	"NameLength",
+	"NativeInfo",
+	"NumNatives",
+	"NumPublics",
+	"NumPubVars",
+	"NumTags",
+	"Push",
+	"PushArray",
+	"PushString",
+	"RaiseError",
+	"Register",
+	"Release",
+	"SetCallback",
+	"SetDebugHook",
+	"SetString",
+	"SetUserData",
+	"StrLen",
+	"UTF8Check",
+	"UTF8Get",
+	"UTF8Len",
+	"UTF8Put"
+};
+
 template <int Index>
 class amx_hook;
 
@@ -35,6 +82,7 @@ public:
 	template <int Index, hook_ftype *Handler>
 	static Ret AMXAPI handler(Args... args)
 	{
+		//logdebug("[PawnPlus] [debug] amx_%s (%d)", api_names[Index], Index);
 		auto trampoline = reinterpret_cast<handler_ftype*>(subhook_get_trampoline(amx_hook<Index>::hook()));
 		if(!trampoline)
 		{
@@ -259,7 +307,7 @@ namespace Hooks
 
 	int AMX_HOOK_FUNC(amx_FindPublic, AMX *amx, const char *funcname, int *index)
 	{
-		if(index)
+		if(index && funcname)
 		{
 			if(funcname[0] == 0x1B)
 			{
