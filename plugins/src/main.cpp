@@ -150,6 +150,10 @@ bool disable_public_warning = false;
 
 int amx_FindPublicSafe(AMX *amx, const char *funcname, int *index)
 {
+	if(!funcname)
+	{
+		funcname = "";
+	}
 	if(use_funcidx && index)
 	{
 		auto native = amx::find_native(amx, "funcidx");
