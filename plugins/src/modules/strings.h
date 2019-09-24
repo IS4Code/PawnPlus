@@ -1,7 +1,6 @@
 #ifndef STRINGS_H_INCLUDED
 #define STRINGS_H_INCLUDED
 
-#include "modules/containers.h"
 #include "objects/object_pool.h"
 #include "sdk/amx/amx.h"
 #include <string>
@@ -10,7 +9,7 @@
 #include <type_traits>
 #include <locale>
 #include <memory>
-#include <stack>
+#include <algorithm>
 
 class expression;
 
@@ -295,11 +294,6 @@ namespace strings
 	cell create(const cell *addr, size_t length, bool packed, bool truncate, bool fixnulls);
 	cell create(const std::string &str);
 
-	extern std::stack<std::weak_ptr<map_t>> format_env;
-
-	void format(AMX *amx, strings::cell_string &str, const cell_string &format, cell argc, cell *args);
-	void format(AMX *amx, strings::cell_string &str, const cell *format, cell argc, cell *args);
-
 	cell_string convert(const cell *str);
 	cell_string convert(const cell *str, size_t length, bool packed);
 	cell_string convert(const std::string &str);
@@ -311,19 +305,6 @@ namespace strings
 
 	cell to_lower(cell c);
 	cell to_upper(cell c);
-
-	bool regex_search(const cell_string &str, const cell *pattern, cell *pos, cell options);
-	bool regex_search(const cell_string &str, const cell_string &pattern, cell *pos, cell options);
-	cell regex_extract(const cell_string &str, const cell *pattern, cell *pos, cell options);
-	cell regex_extract(const cell_string &str, const cell_string &pattern, cell *pos, cell options);
-	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const cell *replacement, cell *pos, cell options);
-	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell *pos, cell options);
-	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const list_t &replacement, cell *pos, cell options);
-	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const list_t &replacement, cell *pos, cell options);
-	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs);
-	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs);
-	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, const expression &expr, cell *pos, cell options);
-	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, const expression &expr, cell *pos, cell options);
 }
 
 namespace std
@@ -346,6 +327,89 @@ namespace std
 		typedef Elem value_type;
 		typedef std::ptrdiff_t difference_type;
 		typedef std::random_access_iterator_tag iterator_category;
+	};
+}
+
+namespace std
+{
+	template <>
+	class ctype<cell> : public locale::facet
+	{
+	public:
+		static const std::ctype<char> *base_facet;
+
+		typedef cell char_type;
+
+		enum
+		{
+			alnum = std::ctype_base::alnum,
+			alpha = std::ctype_base::alpha,
+			cntrl = std::ctype_base::cntrl,
+			digit = std::ctype_base::digit,
+			graph = std::ctype_base::graph,
+			lower = std::ctype_base::lower,
+			print = std::ctype_base::print,
+			punct = std::ctype_base::punct,
+			space = std::ctype_base::space,
+			upper = std::ctype_base::upper,
+			xdigit = std::ctype_base::xdigit
+		};
+		typedef std::ctype_base::mask mask;
+
+		static locale::id id;
+
+		bool is(mask mask, cell ch) const
+		{
+			if(ch < 0 || ch > std::numeric_limits<unsigned char>::max())
+			{
+				return false;
+			}
+			return base_facet->is(mask, static_cast<unsigned char>(ch));
+		}
+
+		char narrow(cell ch, char dflt = '\0') const
+		{
+			if(ch < 0 || ch > std::numeric_limits<unsigned char>::max())
+			{
+				return dflt;
+			}
+			return static_cast<unsigned char>(ch);
+		}
+
+		const char *narrow(const cell *first, const cell *last, char dflt, char *dest) const
+		{
+			return std::transform(first, last, dest, [&](cell c) {return narrow(c, dflt); });
+		}
+
+		cell widen(char c) const
+		{
+			return static_cast<unsigned char>(c);
+		}
+
+		const cell *widen(const char *first, const char *last, cell *dest) const
+		{
+			return std::transform(first, last, dest, [&](char c) {return widen(c); });
+		}
+
+		cell tolower(cell ch) const
+		{
+			return strings::to_lower(ch);
+		}
+
+		const cell *tolower(cell *first, const cell *last) const
+		{
+			return std::transform(first, const_cast<cell*>(last), first, strings::to_lower);
+		}
+
+		cell toupper(cell ch) const
+		{
+			return strings::to_upper(ch);
+		}
+
+		const cell *toupper(cell *first, const cell *last) const
+		{
+			return std::transform(first, const_cast<cell*>(last), first, strings::to_upper);
+		}
 	};
 }
 

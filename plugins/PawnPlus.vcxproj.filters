@@ -157,6 +157,12 @@
     <ClCompile Include="src\utils\systools.cpp">
       <Filter>src\utils</Filter>
     </ClCompile>
+    <ClCompile Include="src\modules\format.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
+    <ClCompile Include="src\modules\regex.cpp">
+      <Filter>src\modules</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -355,6 +361,12 @@
     </ClInclude>
     <ClInclude Include="src\utils\systools.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\format.h">
+      <Filter>src\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\regex.h">
+      <Filter>src\modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

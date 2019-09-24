@@ -2,6 +2,8 @@
 #include "errors.h"
 #include "modules/containers.h"
 #include "modules/strings.h"
+#include "modules/format.h"
+#include "modules/regex.h"
 #include "modules/variants.h"
 #include "modules/expressions.h"
 #include "objects/dyn_object.h"

@@ -5,6 +5,7 @@
 #include "context.h"
 #include "modules/tasks.h"
 #include "modules/strings.h"
+#include "modules/format.h"
 #include "modules/variants.h"
 #include "modules/guards.h"
 #include "modules/containers.h"
