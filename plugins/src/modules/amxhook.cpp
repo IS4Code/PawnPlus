@@ -827,6 +827,15 @@ bool filter_handler::invoke(hooked_func &parent, AMX *amx, cell *params, cell &r
 			}
 			default: //cell
 			{
+				if(amx == my_amx)
+				{
+					auto data = amx_GetData(amx);
+					if(reinterpret_cast<unsigned char*>(&param) >= data && reinterpret_cast<unsigned char*>(&param) < data + amx->stp)
+					{
+						amx_Push(my_amx, reinterpret_cast<unsigned char*>(&param) - data);
+						break;
+					}
+				}
 				cell amx_addr, *phys_addr;
 				amx_AllotSafe(my_amx, 1, &amx_addr, &phys_addr);
 
