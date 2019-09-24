@@ -41,7 +41,7 @@ void logwarn(AMX *amx, const char *format, Args&&... args)
 template <class... Args>
 void logdebug(const char *format, Args&&... args)
 {
-	logprintf(format, std::forward<Args>(args)...);
+	//logprintf(format, std::forward<Args>(args)...);
 }
 
 void pp_tick();
