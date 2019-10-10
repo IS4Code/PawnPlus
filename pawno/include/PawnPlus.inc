@@ -774,6 +774,7 @@ native list_count_var(List:list, ConstVariantTag:value);
 native list_count_if(List:list, Expression:pred);
 
 native list_sort(List:list, offset=0, size=-1, bool:reverse=false, bool:stable=true);
+native list_sort_expr(List:list, Expression:expr, bool:reverse=false, bool:stable=true);
 
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);

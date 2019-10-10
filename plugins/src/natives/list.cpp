@@ -962,6 +962,65 @@ namespace Natives
 		}
 		return 1;
 	}
+
+	struct expr_sorter
+	{
+		const expression *expr;
+		expression::exec_info &info;
+		mutable expression::args_type args;
+
+		expr_sorter(const expression *expr, expression::exec_info &info) : expr(expr), info(info)
+		{
+
+		}
+
+		bool operator()(const dyn_object &a, const dyn_object &b)
+		{
+			if(args.size() == 0)
+			{
+				args.push_back(std::cref(a));
+				args.push_back(std::cref(b));
+			}else{
+				args[0] = std::cref(a);
+				args[1] = std::cref(b);
+			}
+			return expr->execute_bool(args, info);
+		}
+	};
+
+	// native list_sort_expr(List:list, Expression:expr, bool:reverse=false, bool:stable=true);
+	AMX_DEFINE_NATIVE_TAG(list_sort_expr, 2, cell)
+	{
+		list_t *ptr;
+		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
+		expression *expr;
+		if(!expression_pool.get_by_id(params[2], expr)) amx_LogicError(errors::pointer_invalid, "expression", params[2]);
+
+		bool reverse = optparam(3, 0);
+		bool stable = optparam(4, 1);
+
+		expression::exec_info info(amx);
+		expr_sorter sorter(expr, info);
+		if(!reverse)
+		{
+			auto begin = ptr->begin(), end = ptr->end();
+			if(stable)
+			{
+				std::stable_sort(begin, end, sorter);
+			}else{
+				std::sort(begin, end, sorter);
+			}
+		}else{
+			auto begin = ptr->rbegin(), end = ptr->rend();
+			if(stable)
+			{
+				std::stable_sort(begin, end, sorter);
+			}else{
+				std::sort(begin, end, sorter);
+			}
+		}
+		return 1;
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -1039,6 +1098,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_count_if),
 
 	AMX_DECLARE_NATIVE(list_sort),
+	AMX_DECLARE_NATIVE(list_sort_expr),
 
 	AMX_DECLARE_NATIVE(list_tagof),
 	AMX_DECLARE_NATIVE(list_sizeof),
