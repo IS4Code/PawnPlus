@@ -1697,9 +1697,13 @@ auto bind_expression::combine_args(const args_type &args) const -> args_type
 
 auto bind_expression::combine_args(const args_type &args, const exec_info &info, call_args_type &storage) const -> args_type
 {
+	static const dyn_object placeholder;
+
+	size_t stindex = storage.size();
 	storage.reserve(base_args.size() + args.size());
 	args_type new_args;
 	new_args.reserve(base_args.size() + args.size());
+
 	for(const auto &arg : base_args)
 	{
 		if(auto const_expr = dynamic_cast<const object_expression*>(arg.get()))
@@ -1710,8 +1714,16 @@ auto bind_expression::combine_args(const args_type &args, const exec_info &info,
 			arg->execute_multi(args, info, storage);
 			while(index < storage.size())
 			{
-				new_args.push_back(std::cref(storage[index++]));
+				new_args.push_back(std::cref(placeholder));
+				index++;
 			}
+		}
+	}
+	for(auto &argref : new_args)
+	{
+		if(&argref.get() == &placeholder)
+		{
+			argref = std::cref(storage[stindex++]);
 		}
 	}
 	for(const auto &arg_ref : args)

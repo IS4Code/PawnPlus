@@ -395,7 +395,9 @@ void callback_info::invoke(AMX *amx, cell *retval)
 	}
 
 	expression::args_type args;
+	args.reserve(params);
 	std::vector<dyn_object> args_cont;
+	args_cont.reserve(params);
 	for(int i = 0; i < params; i++)
 	{
 		args_cont.emplace_back(stk[i], tags::find_tag(tags::tag_cell));
