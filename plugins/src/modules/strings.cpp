@@ -121,32 +121,7 @@ bool strings::clamp_pos(const cell_string &str, cell &pos)
 	return true;
 }
 
-
-template <class T>
-inline void hash_combine(size_t &seed, const T &v)
-{
-	std::hash<T> hasher;
-	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-}
-
 const std::ctype<char> *std::ctype<cell>::base_facet;
-
-namespace std
-{
-	template <class Type>
-	struct hash<std::basic_string<Type>>
-	{
-		size_t operator()(const std::basic_string<Type> &obj) const
-		{
-			size_t seed = 0;
-			for(const auto &c : obj)
-			{
-				hash_combine(seed, c);
-			}
-			return seed;
-		}
-	};
-}
 
 std::locale::id std::ctype<cell>::id;
 

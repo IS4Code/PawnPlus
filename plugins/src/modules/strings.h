@@ -309,6 +309,30 @@ namespace strings
 
 namespace std
 {
+	namespace
+	{
+		template <class T>
+		inline void hash_combine(size_t &seed, const T &v)
+		{
+			std::hash<T> hasher;
+			seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		}
+	}
+
+	template <class Type>
+	struct hash<std::basic_string<Type>>
+	{
+		size_t operator()(const std::basic_string<Type> &obj) const
+		{
+			size_t seed = 0;
+			for(const auto &c : obj)
+			{
+				hash_combine(seed, c);
+			}
+			return seed;
+		}
+	};
+
 	template <class Elem>
 	struct iterator_traits<strings::impl::aligned_char_iterator<Elem>>
 	{
@@ -328,10 +352,7 @@ namespace std
 		typedef std::ptrdiff_t difference_type;
 		typedef std::random_access_iterator_tag iterator_category;
 	};
-}
 
-namespace std
-{
 	template <>
 	class ctype<cell> : public locale::facet
 	{
