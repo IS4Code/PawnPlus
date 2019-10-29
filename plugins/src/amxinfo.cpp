@@ -96,7 +96,7 @@ void amx::register_natives(AMX *amx, const AMX_NATIVE_INFO *nativelist, int numb
 {
 	const auto &obj = load_lock(amx);
 	auto &natives = obj->get_extra<natives_extra>().natives;
-	for(int i = 0; nativelist[i].name != nullptr && (i < number || number == -1); i++)
+	for(int i = 0; (i < number || number == -1) && nativelist[i].name != nullptr; i++)
 	{
 		natives.insert(std::make_pair(nativelist[i].name, nativelist[i].func));
 	}
