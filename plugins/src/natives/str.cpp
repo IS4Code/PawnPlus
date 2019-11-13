@@ -372,7 +372,7 @@ namespace Natives
 
 		if(len >= 0)
 		{
-			std::memcpy(addr, &(*str)[0], len * sizeof(cell));
+			std::memcpy(addr, &(*str)[start], len * sizeof(cell));
 			addr[len] = 0;
 			return len;
 		}
