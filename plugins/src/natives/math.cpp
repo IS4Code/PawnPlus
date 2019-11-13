@@ -386,6 +386,48 @@ namespace Natives
 	{
 		return math_tointeger<truncf>(amx, params);
 	}
+
+	template <float (&Func)(float)>
+	cell AMX_NATIVE_CALL math_try_tointeger(AMX *amx, cell *params)
+	{
+		float val = amx_ctof(params[1]);
+		if(std::isnan(val))
+		{
+			return 0;
+		}
+		val = Func(val);
+		if((double)val > (double)std::numeric_limits<cell>::max() || (double)val < (double)std::numeric_limits<cell>::min())
+		{
+			return 0;
+		}
+		cell *addr = amx_GetAddrSafe(amx, params[2]);
+		*addr = static_cast<cell>(val);
+		return 1;
+	}
+
+	// native bool:math_try_round(Float:val, &result);
+	AMX_DEFINE_NATIVE_TAG(math_try_round, 1, cell)
+	{
+		return math_try_tointeger<roundf>(amx, params);
+	}
+
+	// native bool:math_try_floor(Float:val, &result);
+	AMX_DEFINE_NATIVE_TAG(math_try_floor, 1, cell)
+	{
+		return math_try_tointeger<floorf>(amx, params);
+	}
+
+	// native bool:math_try_ceiling(Float:val, &result);
+	AMX_DEFINE_NATIVE_TAG(math_try_ceiling, 1, cell)
+	{
+		return math_try_tointeger<ceilf>(amx, params);
+	}
+
+	// native bool:math_try_truncate(Float:val, &result);
+	AMX_DEFINE_NATIVE_TAG(math_try_truncate, 1, cell)
+	{
+		return math_try_tointeger<truncf>(amx, params);
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -432,6 +474,10 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(math_floor),
 	AMX_DECLARE_NATIVE(math_ceiling),
 	AMX_DECLARE_NATIVE(math_truncate),
+	AMX_DECLARE_NATIVE(math_try_round),
+	AMX_DECLARE_NATIVE(math_try_floor),
+	AMX_DECLARE_NATIVE(math_try_ceiling),
+	AMX_DECLARE_NATIVE(math_try_truncate),
 };
 
 int RegisterMathNatives(AMX *amx)

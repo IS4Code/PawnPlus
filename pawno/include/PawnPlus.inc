@@ -2022,6 +2022,10 @@ native math_round(Float:val);
 native math_floor(Float:val);
 native math_ceiling(Float:val);
 native math_truncate(Float:val);
+native bool:math_try_round(Float:val, &result);
+native bool:math_try_floor(Float:val, &result);
+native bool:math_try_ceiling(Float:val, &result);
+native bool:math_try_truncate(Float:val, &result);
 
 native math_iadd({_,signed}:a, {_,signed}:b);
 native math_iadd_ovf({_,signed}:a, {_,signed}:b);
