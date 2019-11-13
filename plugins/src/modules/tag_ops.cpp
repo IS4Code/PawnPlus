@@ -26,6 +26,7 @@ inline void hash_combine(size_t& seed, const T& v)
 	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
+template <class Self>
 struct null_operations : public tag_operations
 {
 	cell tag_uid;
@@ -254,9 +255,36 @@ struct null_operations : public tag_operations
 		}
 		return nullptr;
 	}
+
+	virtual void format_base(tag_ptr tag, const cell *arg, const char *fmt_begin, const char *fmt_end, std::basic_string<cell> &str) const override
+	{
+		return static_cast<const Self*>(this)->format(tag, arg, fmt_begin, fmt_end, str);
+	}
+
+	virtual void format_base(tag_ptr tag, const cell *arg, std::basic_string<cell>::const_iterator fmt_begin, std::basic_string<cell>::const_iterator fmt_end, std::basic_string<cell> &str) const override
+	{
+		return static_cast<const Self*>(this)->format(tag, arg, fmt_begin, fmt_end, str);
+	}
+
+	virtual void format_base(tag_ptr tag, const cell *arg, strings::aligned_const_char_iterator fmt_begin, strings::aligned_const_char_iterator fmt_end, std::basic_string<cell> &str) const override
+	{
+		return static_cast<const Self*>(this)->format(tag, arg, fmt_begin, fmt_end, str);
+	}
+
+	virtual void format_base(tag_ptr tag, const cell *arg, strings::unaligned_const_char_iterator fmt_begin, strings::unaligned_const_char_iterator fmt_end, std::basic_string<cell> &str) const override
+	{
+		return static_cast<const Self*>(this)->format(tag, arg, fmt_begin, fmt_end, str);
+	}
+
+	template <class Iter>
+	void format(tag_ptr tag, const cell *arg, Iter fmt_begin, Iter fmt_end, std::basic_string<cell> &str) const
+	{
+		
+	}
 };
 
-struct cell_operations : public null_operations
+template <class Self>
+struct cell_operations : public null_operations<Self>
 {
 	cell_operations(cell tag_uid) : null_operations(tag_uid)
 	{
@@ -361,7 +389,7 @@ struct cell_operations : public null_operations
 	}
 };
 
-struct signed_operations : public cell_operations
+struct signed_operations : public cell_operations<signed_operations>
 {
 	signed_operations() : cell_operations(tags::tag_signed)
 	{
@@ -471,7 +499,7 @@ struct signed_operations : public cell_operations
 	}
 };
 
-struct unsigned_operations : public cell_operations
+struct unsigned_operations : public cell_operations<unsigned_operations>
 {
 	unsigned_operations() : cell_operations(tags::tag_unsigned)
 	{
@@ -581,7 +609,7 @@ struct unsigned_operations : public cell_operations
 	}
 };
 
-struct bool_operations : public cell_operations
+struct bool_operations : public cell_operations<bool_operations>
 {
 	bool_operations() : cell_operations(tags::tag_bool)
 	{
@@ -610,7 +638,7 @@ struct bool_operations : public cell_operations
 	}
 };
 
-struct char_operations : public cell_operations
+struct char_operations : public cell_operations<char_operations>
 {
 	char_operations() : cell_operations(tags::tag_char)
 	{
@@ -646,7 +674,7 @@ struct char_operations : public cell_operations
 	}
 };
 
-struct float_operations : public cell_operations
+struct float_operations : public cell_operations<float_operations>
 {
 	float_operations() : cell_operations(tags::tag_float)
 	{
@@ -757,7 +785,7 @@ struct float_operations : public cell_operations
 	}
 };
 
-struct string_operations : public null_operations
+struct string_operations : public null_operations<string_operations>
 {
 	string_operations() : null_operations(tags::tag_string)
 	{
@@ -895,7 +923,7 @@ struct string_operations : public null_operations
 	}
 };
 
-struct variant_operations : public null_operations
+struct variant_operations : public null_operations<variant_operations>
 {
 	variant_operations() : null_operations(tags::tag_variant)
 	{
@@ -1115,7 +1143,7 @@ struct variant_operations : public null_operations
 };
 
 
-struct handle_operations : public null_operations
+struct handle_operations : public null_operations<handle_operations>
 {
 	handle_operations() : null_operations(tags::tag_handle)
 	{
@@ -1197,7 +1225,7 @@ struct handle_operations : public null_operations
 };
 
 template <class Self, cell Tag>
-struct generic_operations : public null_operations
+struct generic_operations : public null_operations<Self>
 {
 	tag_ptr element;
 
@@ -1723,7 +1751,7 @@ struct task_operations : public generic_operations<task_operations, tags::tag_ta
 	}
 };
 
-struct var_operations : public null_operations
+struct var_operations : public null_operations<var_operations>
 {
 	var_operations() : null_operations(tags::tag_var)
 	{
@@ -1777,7 +1805,7 @@ struct var_operations : public null_operations
 	}
 };
 
-struct guard_operations : public null_operations
+struct guard_operations : public null_operations<guard_operations>
 {
 	guard_operations() : null_operations(tags::tag_guard)
 	{
@@ -1785,7 +1813,7 @@ struct guard_operations : public null_operations
 	}
 };
 
-struct amx_guard_operations : public null_operations
+struct amx_guard_operations : public null_operations<amx_guard_operations>
 {
 	amx_guard_operations() : null_operations(tags::tag_amx_guard)
 	{
@@ -1793,7 +1821,7 @@ struct amx_guard_operations : public null_operations
 	}
 };
 
-struct callback_handler_operations : public null_operations
+struct callback_handler_operations : public null_operations<callback_handler_operations>
 {
 	callback_handler_operations() : null_operations(tags::tag_callback_handler)
 	{
@@ -1802,7 +1830,7 @@ struct callback_handler_operations : public null_operations
 };
 
 
-struct native_hook_operations : public null_operations
+struct native_hook_operations : public null_operations<native_hook_operations>
 {
 	native_hook_operations() : null_operations(tags::tag_native_hook)
 	{
@@ -1821,7 +1849,7 @@ struct native_hook_operations : public null_operations
 };
 
 
-struct symbol_operations : public null_operations
+struct symbol_operations : public null_operations<symbol_operations>
 {
 	symbol_operations() : null_operations(tags::tag_symbol)
 	{
@@ -1925,7 +1953,7 @@ struct pool_operations : public generic_operations<pool_operations, tags::tag_po
 	}
 };
 
-struct expression_operations : public null_operations
+struct expression_operations : public null_operations<expression_operations>
 {
 	expression_operations() : null_operations(tags::tag_expression)
 	{
@@ -1989,17 +2017,17 @@ struct expression_operations : public null_operations
 	}
 };
 
-static const null_operations unknown_ops(tags::tag_unknown);
+static const null_operations<signed_operations> unknown_ops(tags::tag_unknown);
 
 std::vector<std::unique_ptr<tag_info>> tag_list([]()
 {
 	std::vector<std::unique_ptr<tag_info>> v;
-	auto unknown = std::make_unique<tag_info>(0, "{...}", nullptr, std::make_unique<null_operations>(tags::tag_unknown));
+	auto unknown = std::make_unique<tag_info>(0, "{...}", nullptr, std::make_unique<null_operations<signed_operations>>(tags::tag_unknown));
 	auto unknown_tag = unknown.get();
 	auto string_const = std::make_unique<tag_info>(25, "String@Const", unknown_tag, std::make_unique<string_operations>());
 	auto variant_const = std::make_unique<tag_info>(26, "Variant@Const", unknown_tag, std::make_unique<variant_operations>());
 	v.push_back(std::move(unknown));
-	v.push_back(std::make_unique<tag_info>(1, "", unknown_tag, std::make_unique<cell_operations>(tags::tag_cell)));
+	v.push_back(std::make_unique<tag_info>(1, "", unknown_tag, std::make_unique<cell_operations<signed_operations>>(tags::tag_cell)));
 	v.push_back(std::make_unique<tag_info>(2, "bool", unknown_tag, std::make_unique<bool_operations>()));
 	v.push_back(std::make_unique<tag_info>(3, "char", unknown_tag, std::make_unique<char_operations>()));
 	v.push_back(std::make_unique<tag_info>(4, "Float", unknown_tag, std::make_unique<float_operations>()));
@@ -2021,7 +2049,7 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::make_unique<tag_info>(20, "unsigned", unknown_tag, std::make_unique<unsigned_operations>()));
 	v.push_back(std::make_unique<tag_info>(21, "Pool", unknown_tag, std::make_unique<pool_operations>()));
 	v.push_back(std::make_unique<tag_info>(22, "Expression", unknown_tag, std::make_unique<expression_operations>()));
-	v.push_back(std::make_unique<tag_info>(23, "address", unknown_tag, std::make_unique<cell_operations>(tags::tag_address)));
+	v.push_back(std::make_unique<tag_info>(23, "address", unknown_tag, std::make_unique<cell_operations<unsigned_operations>>(tags::tag_address)));
 	v.push_back(std::make_unique<tag_info>(24, "AmxGuard", unknown_tag, std::make_unique<amx_guard_operations>()));
 	v.push_back(std::move(string_const));
 	v.push_back(std::move(variant_const));
@@ -2042,7 +2070,7 @@ const tag_operations &tag_info::get_ops() const
 	return unknown_ops;
 }
 
-class dynamic_operations : public null_operations, public tag_control
+class dynamic_operations : public null_operations<dynamic_operations>, public tag_control
 {
 	class op_handler
 	{
@@ -2459,9 +2487,18 @@ public:
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
 		return base->call_op(tag, type, args, numargs);
 	}
+
+	template <class Iter>
+	void format(tag_ptr tag, const cell *arg, Iter fmt_begin, Iter fmt_end, std::basic_string<cell> &str) const
+	{
+		tag_ptr base = tags::find_tag(tag_uid)->base;
+		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
+		return base->get_ops().format_base(tag, arg, fmt_begin, fmt_end, str);
+	}
 };
 
-std::unique_ptr<tag_operations> null_operations::derive(tag_ptr tag, cell uid, const char *name) const
+template <class Self>
+std::unique_ptr<tag_operations> null_operations<Self>::derive(tag_ptr tag, cell uid, const char *name) const
 {
 	if(tag->base)
 	{
