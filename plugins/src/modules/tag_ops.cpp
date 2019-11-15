@@ -286,7 +286,7 @@ struct null_operations : public tag_operations
 template <class Self>
 struct cell_operations : public null_operations<Self>
 {
-	cell_operations(cell tag_uid) : null_operations(tag_uid)
+	cell_operations(cell tag_uid) : null_operations<Self>(tag_uid)
 	{
 
 	}
@@ -925,7 +925,7 @@ struct string_operations : public null_operations<string_operations>
 
 struct variant_operations : public null_operations<variant_operations>
 {
-	variant_operations() : null_operations(tags::tag_variant)
+	variant_operations() : null_operations<variant_operations>(tags::tag_variant)
 	{
 
 	}
@@ -1145,7 +1145,7 @@ struct variant_operations : public null_operations<variant_operations>
 
 struct handle_operations : public null_operations<handle_operations>
 {
-	handle_operations() : null_operations(tags::tag_handle)
+	handle_operations() : null_operations<handle_operations>(tags::tag_handle)
 	{
 
 	}
@@ -1229,12 +1229,12 @@ struct generic_operations : public null_operations<Self>
 {
 	tag_ptr element;
 
-	generic_operations() : null_operations(Tag), element(nullptr)
+	generic_operations() : null_operations<Self>(Tag), element(nullptr)
 	{
 
 	}
 
-	generic_operations(tag_ptr element) : null_operations(Tag), element(element)
+	generic_operations(tag_ptr element) : null_operations<Self>(Tag), element(element)
 	{
 
 	}
@@ -1246,7 +1246,7 @@ struct generic_operations : public null_operations<Self>
 
 	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
 	{
-		auto subname = get_subname(tags::find_tag(tag_uid), name);
+		auto subname = this->get_subname(tags::find_tag(this->tag_uid), name);
 		if(subname)
 		{
 			return std::make_unique<Self>(tags::find_tag(subname));
@@ -1753,7 +1753,7 @@ struct task_operations : public generic_operations<task_operations, tags::tag_ta
 
 struct var_operations : public null_operations<var_operations>
 {
-	var_operations() : null_operations(tags::tag_var)
+	var_operations() : null_operations<var_operations>(tags::tag_var)
 	{
 
 	}
@@ -1807,7 +1807,7 @@ struct var_operations : public null_operations<var_operations>
 
 struct guard_operations : public null_operations<guard_operations>
 {
-	guard_operations() : null_operations(tags::tag_guard)
+	guard_operations() : null_operations<guard_operations>(tags::tag_guard)
 	{
 
 	}
@@ -1815,7 +1815,7 @@ struct guard_operations : public null_operations<guard_operations>
 
 struct amx_guard_operations : public null_operations<amx_guard_operations>
 {
-	amx_guard_operations() : null_operations(tags::tag_amx_guard)
+	amx_guard_operations() : null_operations<amx_guard_operations>(tags::tag_amx_guard)
 	{
 
 	}
@@ -1823,7 +1823,7 @@ struct amx_guard_operations : public null_operations<amx_guard_operations>
 
 struct callback_handler_operations : public null_operations<callback_handler_operations>
 {
-	callback_handler_operations() : null_operations(tags::tag_callback_handler)
+	callback_handler_operations() : null_operations<callback_handler_operations>(tags::tag_callback_handler)
 	{
 
 	}
@@ -1832,7 +1832,7 @@ struct callback_handler_operations : public null_operations<callback_handler_ope
 
 struct native_hook_operations : public null_operations<native_hook_operations>
 {
-	native_hook_operations() : null_operations(tags::tag_native_hook)
+	native_hook_operations() : null_operations<native_hook_operations>(tags::tag_native_hook)
 	{
 
 	}
@@ -1851,7 +1851,7 @@ struct native_hook_operations : public null_operations<native_hook_operations>
 
 struct symbol_operations : public null_operations<symbol_operations>
 {
-	symbol_operations() : null_operations(tags::tag_symbol)
+	symbol_operations() : null_operations<symbol_operations>(tags::tag_symbol)
 	{
 
 	}
@@ -1859,7 +1859,7 @@ struct symbol_operations : public null_operations<symbol_operations>
 
 struct pool_operations : public generic_operations<pool_operations, tags::tag_pool>
 {
-	pool_operations() : generic_operations()
+	pool_operations() : generic_operations<pool_operations, tags::tag_pool>()
 	{
 
 	}
@@ -1955,7 +1955,7 @@ struct pool_operations : public generic_operations<pool_operations, tags::tag_po
 
 struct expression_operations : public null_operations<expression_operations>
 {
-	expression_operations() : null_operations(tags::tag_expression)
+	expression_operations() : null_operations<expression_operations>(tags::tag_expression)
 	{
 
 	}
