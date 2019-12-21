@@ -523,12 +523,12 @@ namespace aux
 
 		}
 
-		block_pool(const block_pool &obj) : data(obj.data), block(std::make_unique<block_info>(*obj.block))
+		block_pool(const block_pool &obj) : data(obj.data), block(std::make_unique<block_info>(*obj.block)), level(obj.level), last_set(obj.last_set)
 		{
 
 		}
 
-		block_pool(block_pool &&obj) : data(std::move(obj.data)), block(std::move(obj.block))
+		block_pool(block_pool &&obj) : data(std::move(obj.data)), block(std::move(obj.block)), level(obj.level), last_set(obj.last_set)
 		{
 			obj.data.clear();
 		}
@@ -539,6 +539,8 @@ namespace aux
 			{
 				data = obj.data;
 				block = std::make_unique<block_info>(*obj.block);
+				level = obj.level;
+				last_set = obj.last_set;
 			}
 			return *this;
 		}
@@ -550,6 +552,8 @@ namespace aux
 				data = std::move(obj.data);
 				block = std::move(obj.block);
 				obj.data.clear();
+				level = obj.level;
+				last_set = obj.last_set;
 			}
 			return *this;
 		}
