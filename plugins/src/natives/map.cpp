@@ -567,6 +567,7 @@ namespace Natives
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		auto m = map_pool.add();
+		m->set_ordered(ptr->ordered());
 		for(auto &&pair : *ptr)
 		{
 			m->insert(pair.first.clone(), pair.second.clone());

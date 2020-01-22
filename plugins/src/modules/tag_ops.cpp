@@ -1310,7 +1310,7 @@ struct list_operations : public generic_operations<list_operations, tags::tag_li
 		if(list_pool.get_by_id(arg, l))
 		{
 			list_t old;
-			l->swap(old);
+			std::swap(*l, old);
 			list_pool.remove(l);
 			for(auto &obj : old)
 			{
@@ -1406,7 +1406,7 @@ struct linked_list_operations : public generic_operations<linked_list_operations
 		if(linked_list_pool.get_by_id(arg, l))
 		{
 			linked_list_t old;
-			l->swap(old);
+			std::swap(*l, old);
 			linked_list_pool.remove(l);
 			for(auto &obj : old)
 			{
@@ -1502,7 +1502,7 @@ struct map_operations : public generic_operations<map_operations, tags::tag_map>
 		if(map_pool.get_by_id(arg, m))
 		{
 			map_t old;
-			m->swap(old);
+			std::swap(*m, old);
 			map_pool.remove(m);
 			for(auto &pair : old)
 			{
@@ -1534,6 +1534,7 @@ struct map_operations : public generic_operations<map_operations, tags::tag_map>
 			map_t tmp;
 			std::swap(*m, tmp);
 			map_t *m2 = map_pool.add().get();
+			m2->set_ordered(m->ordered());
 			for(auto &pair : tmp)
 			{
 				m2->insert(pair.first.clone(), pair.second.clone());
@@ -1887,32 +1888,32 @@ struct pool_operations : public generic_operations<pool_operations, tags::tag_po
 
 	virtual bool del(tag_ptr tag, cell arg) const override
 	{
-		pool_t *l;
-		if(pool_pool.get_by_id(arg, l))
+		pool_t *p;
+		if(pool_pool.get_by_id(arg, p))
 		{
-			return pool_pool.remove(l);
+			return pool_pool.remove(p);
 		}
 		return false;
 	}
 
 	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
-		std::shared_ptr<pool_t> l;
-		if(pool_pool.get_by_id(arg, l))
+		std::shared_ptr<pool_t> p;
+		if(pool_pool.get_by_id(arg, p))
 		{
-			return l;
+			return p;
 		}
 		return {};
 	}
 
 	virtual bool release(tag_ptr tag, cell arg) const override
 	{
-		pool_t *l;
-		if(pool_pool.get_by_id(arg, l))
+		pool_t *p;
+		if(pool_pool.get_by_id(arg, p))
 		{
 			pool_t old;
-			l->swap(old);
-			pool_pool.remove(l);
+			std::swap(*p, old);
+			pool_pool.remove(p);
 			for(auto &obj : old)
 			{
 				obj.release();
@@ -1924,30 +1925,31 @@ struct pool_operations : public generic_operations<pool_operations, tags::tag_po
 
 	virtual cell copy(tag_ptr tag, cell arg) const override
 	{
-		pool_t *l;
-		if(pool_pool.get_by_id(arg, l))
+		pool_t *p;
+		if(pool_pool.get_by_id(arg, p))
 		{
-			pool_t *l2 = pool_pool.add().get();
-			*l2 = *l;
-			return pool_pool.get_id(l2);
+			pool_t *p2 = pool_pool.add().get();
+			*p2 = *p;
+			return pool_pool.get_id(p2);
 		}
 		return 0;
 	}
 
 	virtual cell clone(tag_ptr tag, cell arg) const override
 	{
-		pool_t *l;
-		if(pool_pool.get_by_id(arg, l))
+		pool_t *p;
+		if(pool_pool.get_by_id(arg, p))
 		{
 			pool_t tmp;
-			std::swap(*l, tmp);
-			pool_t *l2 = pool_pool.add().get();
-			for(auto &obj : tmp)
+			std::swap(*p, tmp);
+			pool_t *p2 = pool_pool.add().get();
+			p2->set_ordered(p->ordered());
+			for(auto it = p->begin(); it != p->end(); ++it)
 			{
-				l2->push_back(obj.clone());
+				p2->insert_or_set(p->index_of(it), it->clone());
 			}
-			std::swap(*l, tmp);
-			return pool_pool.get_id(l2);
+			std::swap(*p, tmp);
+			return pool_pool.get_id(p2);
 		}
 		return 0;
 	}

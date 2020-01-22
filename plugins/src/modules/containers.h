@@ -186,8 +186,10 @@ public:
 
 	void set_ordered(bool ordered)
 	{
-		data.set_ordered(ordered);
-		++revision;
+		if(data.set_ordered(ordered))
+		{
+			++revision;
+		}
 	}
 
 	bool ordered() const
@@ -261,8 +263,10 @@ public:
 
 	void set_ordered(bool ordered)
 	{
-		data.set_ordered(ordered);
-		++revision;
+		if(data.set_ordered(ordered))
+		{
+			++revision;
+		}
 	}
 
 	bool ordered() const

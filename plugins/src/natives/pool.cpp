@@ -145,9 +145,10 @@ namespace Natives
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
 		auto l = pool_pool.add();
-		for(auto &&obj : *ptr)
+		l->set_ordered(ptr->ordered());
+		for(auto it = ptr->begin(); it != ptr->end(); ++it)
 		{
-			l->push_back(obj.clone());
+			l->insert_or_set(ptr->index_of(it), it->clone());
 		}
 		return pool_pool.get_id(l);
 	}

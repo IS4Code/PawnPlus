@@ -344,7 +344,7 @@ namespace aux
 			return ordered;
 		}
 
-		void set_ordered(bool ordered)
+		bool set_ordered(bool ordered)
 		{
 			if(this->ordered != ordered)
 			{
@@ -366,7 +366,9 @@ namespace aux
 					}
 					*this = std::move(pool);
 				}
+				return true;
 			}
+			return false;
 		}
 
 		~hybrid_pool()
