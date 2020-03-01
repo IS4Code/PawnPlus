@@ -414,6 +414,21 @@ namespace aux
 			return false;
 		}
 
+		void swap(hybrid_map<Key, Value> &map)
+		{
+			if(ordered && map.ordered)
+			{
+				std::swap(omap, map.omap);
+			}else if(!ordered && !map.ordered)
+			{
+				std::swap(umap, map.umap);
+			}else{
+				hybrid_map<Key, Value> tmp(std::move(map));
+				map = std::move(*this);
+				*this = std::move(tmp);
+			}
+		}
+
 		~hybrid_map()
 		{
 			if(ordered)
@@ -424,6 +439,15 @@ namespace aux
 			}
 		}
 	};
+}
+
+namespace std
+{
+	template <class Key, class Value>
+	void swap(::aux::hybrid_map<Key, Value> &a, ::aux::hybrid_map<Key, Value> &b)
+	{
+		a.swap(b);
+	}
 }
 
 #endif

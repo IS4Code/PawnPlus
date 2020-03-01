@@ -837,7 +837,7 @@ native Iter:list_iter(List:list, index=0);
 
 const Map:INVALID_MAP = Map:0;
 
-native Map:map_new();
+native Map:map_new(bool:ordered=false);
 native Map:map_new_args_t(TagTag:key_tag_id=tagof(arg0), TagTag:value_tag_id=tagof(arg1), AnyTag:arg0, AnyTag:arg1, AnyTag:...) = map_new_args;
 native Map:map_new_args_packed(ArgTag:...);
 /*
@@ -1222,7 +1222,7 @@ native Iter:linked_list_iter(LinkedList:linked_list, index=0);
 
 const Pool:INVALID_POOL = Pool:0;
 
-native Pool:pool_new(capacity=-1);
+native Pool:pool_new(capacity=-1, bool:ordered=false);
 native bool:pool_valid(Pool:pool);
 native pool_delete(Pool:pool);
 native pool_delete_deep(Pool:pool);

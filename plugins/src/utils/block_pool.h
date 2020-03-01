@@ -734,7 +734,24 @@ namespace aux
 		{
 			return block ? block->num_elements : 0;
 		}
+
+		void swap(block_pool<Type, BlockSize> &obj)
+		{
+			std::swap(data, obj.data);
+			std::swap(block, obj.block);
+			std::swap(level, obj.level);
+			std::swap(last_set, obj.last_set);
+		}
 	};
+}
+
+namespace std
+{
+	template <class Type, size_t BlockSize>
+	void swap(::aux::block_pool<Type, BlockSize> &a, ::aux::block_pool<Type, BlockSize> &b)
+	{
+		a.swap(b);
+	}
 }
 
 #endif

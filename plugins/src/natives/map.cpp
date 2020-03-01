@@ -212,10 +212,11 @@ public:
 
 namespace Natives
 {
-	// native Map:map_new();
+	// native Map:map_new(bool:ordered=false);
 	AMX_DEFINE_NATIVE_TAG(map_new, 0, map)
 	{
-		return map_pool.get_id(map_pool.add());
+		bool ordered = optparam(1, 0);
+		return map_pool.get_id(map_pool.emplace(ordered));
 	}
 
 	// native Map:map_new_args(key_tag_id=tagof(arg0), TagTag:value_tag_id=tagof(arg1), AnyTag:arg0, AnyTag:arg1, AnyTag:...);
@@ -607,7 +608,7 @@ namespace Natives
 	{
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
-		map_t().swap(*ptr);
+		map_t(ptr->ordered()).swap(*ptr);
 		return 1;
 	}
 
@@ -616,7 +617,7 @@ namespace Natives
 	{
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
-		map_t old;
+		map_t old(ptr->ordered());
 		ptr->swap(old);
 		map_pool.remove(ptr);
 		for(auto &pair : old)

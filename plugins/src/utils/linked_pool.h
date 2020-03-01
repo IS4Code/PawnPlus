@@ -590,7 +590,26 @@ namespace aux
 		{
 			return count;
 		}
+
+		void swap(linked_pool<Type> &obj)
+		{
+			std::swap(data, obj.data);
+			std::swap(first_set, obj.first_set);
+			std::swap(last_set, obj.last_set);
+			std::swap(first_unset, obj.first_unset);
+			std::swap(last_unset, obj.last_unset);
+			std::swap(count, obj.count);
+		}
 	};
+}
+
+namespace std
+{
+	template <class Type>
+	void swap(::aux::linked_pool<Type> &a, ::aux::linked_pool<Type> &b)
+	{
+		a.swap(b);
+	}
 }
 
 #endif

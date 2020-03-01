@@ -25,6 +25,18 @@ class collection_base
 protected:
 	Type data;
 	int revision = 0;
+
+	collection_base()
+	{
+
+	}
+
+	template <class... Args>
+	collection_base(Args&&... args) : data(std::forward<Args>(args)...)
+	{
+
+	}
+
 public:
 	typedef typename Type::iterator iterator;
 	typedef typename Type::const_iterator const_iterator;
@@ -165,6 +177,16 @@ public:
 class map_t : public collection_base<aux::hybrid_map<dyn_object, dyn_object>>
 {
 public:
+	map_t()
+	{
+
+	}
+
+	map_t(bool ordered) : collection_base<aux::hybrid_map<dyn_object, dyn_object>>(ordered)
+	{
+
+	}
+
 	dyn_object &operator[](const dyn_object &key);
 	dyn_object &operator[](dyn_object &&key);
 	std::pair<iterator, bool> insert(const dyn_object &key, const dyn_object &value);
@@ -231,6 +253,16 @@ public:
 class pool_t : public collection_base<aux::hybrid_pool<dyn_object, 4>>
 {
 public:
+	pool_t()
+	{
+
+	}
+
+	pool_t(bool ordered) : collection_base<aux::hybrid_pool<dyn_object, 4>>(ordered)
+	{
+
+	}
+
 	dyn_object &operator[](size_t index)
 	{
 		return data[index];

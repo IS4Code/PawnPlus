@@ -371,6 +371,21 @@ namespace aux
 			return false;
 		}
 
+		void swap(hybrid_pool<Type, BlockSize> &pool)
+		{
+			if(ordered && pool.ordered)
+			{
+				std::swap(bpool, pool.bpool);
+			}else if(!ordered && !pool.ordered)
+			{
+				std::swap(lpool, pool.lpool);
+			}else{
+				hybrid_pool<Type, BlockSize> tmp(std::move(pool));
+				pool = std::move(*this);
+				*this = std::move(tmp);
+			}
+		}
+
 		~hybrid_pool()
 		{
 			if(ordered)
@@ -381,6 +396,15 @@ namespace aux
 			}
 		}
 	};
+}
+
+namespace std
+{
+	template <class Type, size_t BlockSize>
+	void swap(::aux::hybrid_pool<Type, BlockSize> &a, ::aux::hybrid_pool<Type, BlockSize> &b)
+	{
+		a.swap(b);
+	}
 }
 
 #endif

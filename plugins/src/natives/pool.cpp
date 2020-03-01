@@ -93,7 +93,7 @@ static cell AMX_NATIVE_CALL pool_set_cell(AMX *amx, cell *params)
 
 namespace Natives
 {
-	// native Pool:pool_new(capacity=-1);
+	// native Pool:pool_new(capacity=-1, bool:ordered=false);
 	AMX_DEFINE_NATIVE_TAG(pool_new, 0, pool)
 	{
 		cell size = optparam(1, -1);
@@ -104,7 +104,8 @@ namespace Natives
 		{
 			amx_LogicError(errors::out_of_range, "size");
 		}
-		auto &pool = pool_pool.add();
+		bool ordered = optparam(2, 0);
+		auto &pool = pool_pool.emplace(ordered);
 		pool->resize(size);
 		return pool_pool.get_id(pool);
 	}
@@ -196,7 +197,7 @@ namespace Natives
 	{
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		pool_t().swap(*ptr);
+		pool_t(ptr->ordered()).swap(*ptr);
 		return 1;
 	}
 
@@ -205,7 +206,7 @@ namespace Natives
 	{
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		pool_t old;
+		pool_t old(ptr->ordered());
 		ptr->swap(old);
 		pool_pool.remove(ptr);
 		for(auto &obj : old)
