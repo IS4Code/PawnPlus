@@ -368,6 +368,9 @@
     <ClInclude Include="src\modules\regex.h">
       <Filter>src\modules</Filter>
     </ClInclude>
+    <ClInclude Include="src\utils\obj_lock.h">
+      <Filter>src\utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />
