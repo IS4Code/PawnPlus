@@ -541,7 +541,7 @@ namespace Natives
 	{
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
-		map_t old;
+		map_t old(ptr->ordered());
 		ptr->swap(old);
 		return map_pool.remove(ptr);
 	}
@@ -551,7 +551,7 @@ namespace Natives
 	{
 		map_t *ptr;
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
-		map_t old;
+		map_t old(ptr->ordered());
 		ptr->swap(old);
 		map_pool.remove(ptr);
 		for(auto &pair : old)
@@ -619,7 +619,6 @@ namespace Natives
 		if(!map_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "map", params[1]);
 		map_t old(ptr->ordered());
 		ptr->swap(old);
-		map_pool.remove(ptr);
 		for(auto &pair : old)
 		{
 			pair.first.release();

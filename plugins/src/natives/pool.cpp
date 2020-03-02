@@ -130,7 +130,7 @@ namespace Natives
 	{
 		pool_t *ptr;
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
-		pool_t old;
+		pool_t old(ptr->ordered());
 		ptr->swap(old);
 		pool_pool.remove(ptr);
 		for(auto &obj : old)
@@ -208,7 +208,6 @@ namespace Natives
 		if(!pool_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "pool", params[1]);
 		pool_t old(ptr->ordered());
 		ptr->swap(old);
-		pool_pool.remove(ptr);
 		for(auto &obj : old)
 		{
 			obj.release();

@@ -1501,7 +1501,7 @@ struct map_operations : public generic_operations<map_operations, tags::tag_map>
 		map_t *m;
 		if(map_pool.get_by_id(arg, m))
 		{
-			map_t old;
+			map_t old(m->ordered());
 			std::swap(*m, old);
 			map_pool.remove(m);
 			for(auto &pair : old)
@@ -1911,7 +1911,7 @@ struct pool_operations : public generic_operations<pool_operations, tags::tag_po
 		pool_t *p;
 		if(pool_pool.get_by_id(arg, p))
 		{
-			pool_t old;
+			pool_t old(p->ordered());
 			std::swap(*p, old);
 			pool_pool.remove(p);
 			for(auto &obj : old)

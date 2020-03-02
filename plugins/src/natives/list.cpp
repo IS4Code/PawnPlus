@@ -315,7 +315,6 @@ namespace Natives
 		if(!list_pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "list", params[1]);
 		list_t old;
 		ptr->swap(old);
-		list_pool.remove(ptr);
 		for(auto &obj : old)
 		{
 			obj.release();
