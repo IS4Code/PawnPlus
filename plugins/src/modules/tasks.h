@@ -23,6 +23,28 @@ namespace tasks
 		virtual ~handler() = default;
 	};
 
+	template <class Func>
+	class func_handler : public handler
+	{
+		Func _func;
+
+	public:
+		func_handler(Func func) : _func(std::move(func))
+		{
+
+		}
+
+		virtual cell set_completed(task &t) override
+		{
+			return _func(t);
+		}
+
+		virtual cell set_faulted(task &t) override
+		{
+			return _func(t);
+		}
+	};
+
 	class task
 	{
 		union{
@@ -146,8 +168,15 @@ namespace tasks
 		cell set_completed(dyn_object &&result);
 		cell set_faulted(cell error);
 		handler_iterator register_reset(amx::reset &&reset);
-		handler_iterator register_handler(const std::function<cell(task&)> &func);
-		handler_iterator register_handler(std::function<cell(task&)> &&func);
+
+		template <class Func>
+		handler_iterator register_handler(Func func)
+		{
+			handlers.push_back(std::unique_ptr<func_handler<Func>>(new func_handler<Func>(std::move(func))));
+			auto it = handlers.end();
+			return --it;
+		}
+
 		void unregister_handler(const handler_iterator &it);
 
 		~task()

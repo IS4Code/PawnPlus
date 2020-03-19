@@ -130,13 +130,7 @@ namespace amx
 	bool has_parent_context(AMX *amx);
 	context &get_parent_context(AMX *amx, object &obj);
 
-	void on_bottom(const std::function<void(AMX*)> &callback);
-
-	template <class Func>
-	void on_bottom(const Func &callback)
-	{
-		return on_bottom(std::function<void(AMX*)>(callback));
-	}
+	void on_bottom(void(*callback)(AMX*));
 }
 
 #endif

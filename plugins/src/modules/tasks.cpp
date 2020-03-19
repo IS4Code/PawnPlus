@@ -26,25 +26,6 @@ namespace tasks
 		virtual cell set_faulted(task &t) override;
 	};
 
-	class func_handler : public handler
-	{
-		std::function<cell(task&)> _func;
-
-	public:
-		func_handler(const std::function<cell(task&)> &func) : _func(func)
-		{
-
-		}
-
-		func_handler(std::function<cell(task&)> &&func) : _func(std::move(func))
-		{
-
-		}
-
-		virtual cell set_completed(task &t) override;
-		virtual cell set_faulted(task &t) override;
-	};
-
 	class task_handler : public handler
 	{
 	protected:
@@ -139,16 +120,6 @@ namespace tasks
 	cell reset_handler::set_faulted(task &t)
 	{
 		return set_completed(t);
-	}
-
-	cell func_handler::set_completed(task &t)
-	{
-		return _func(t);
-	}
-
-	cell func_handler::set_faulted(task &t)
-	{
-		return _func(t);
 	}
 
 	cell task_handler::set_completed(task &t)
@@ -249,20 +220,6 @@ namespace tasks
 	task::handler_iterator task::register_reset(amx::reset &&reset)
 	{
 		handlers.push_back(std::unique_ptr<reset_handler>(new reset_handler(std::move(reset))));
-		auto it = handlers.end();
-		return --it;
-	}
-
-	task::handler_iterator task::register_handler(const std::function<cell(task&)> &func)
-	{
-		handlers.push_back(std::unique_ptr<func_handler>(new func_handler(func)));
-		auto it = handlers.end();
-		return --it;
-	}
-
-	task::handler_iterator task::register_handler(std::function<cell(task&)> &&func)
-	{
-		handlers.push_back(std::unique_ptr<func_handler>(new func_handler(std::move(func))));
 		auto it = handlers.end();
 		return --it;
 	}
@@ -457,13 +414,13 @@ namespace tasks
 			{
 				auto &pair = *it;
 
-				if(now >= pair.first)
+				if(pair.first <= now)
 				{
 					auto handler = std::move(pair.second);
 					it = timer_handlers.erase(it);
 					handler->set_completed(auto_result());
 				}else{
-					it++;
+					break;
 				}
 			}
 		}

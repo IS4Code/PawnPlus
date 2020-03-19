@@ -33,17 +33,12 @@ class invocation_list
 {
 	typedef Ret (Func)(Args...);
 
-	std::forward_list<std::function<Func>> list;
-	typename std::forward_list<std::function<Func>>::iterator end = list.before_begin();
+	std::forward_list<Func*> list;
+	typename decltype(list)::iterator end = list.before_begin();
 public:
-	void add(std::function<Func> &&func)
+	void add(Func *func)
 	{
-		end = list.emplace_after(end, func);
-	}
-
-	void add(const std::function<Func> &func)
-	{
-		end = list.emplace_after(end, func);
+		end = list.emplace_after(end, std::move(func));
 	}
 
 	void invoke(Args... args)
@@ -145,7 +140,7 @@ void amx::restore(AMX *amx, context &&context)
 	get_context(amx, obj) = std::move(context);
 }
 
-void amx::on_bottom(const std::function<void(AMX*)> &callback)
+void amx::on_bottom(void(*callback)(AMX*))
 {
 	ground_callbacks.add(callback);
 }
