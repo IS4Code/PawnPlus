@@ -26,7 +26,7 @@ public:
 	virtual bool set_to_first() override;
 	virtual bool set_to_last() override;
 	virtual bool reset() override;
-	virtual bool erase() override;
+	virtual bool erase(bool stay) override;
 	virtual bool can_reset() const override;
 	virtual bool can_erase() const override;
 	virtual bool can_insert() const override;
@@ -60,7 +60,7 @@ public:
 	virtual bool set_to_first() override;
 	virtual bool set_to_last() override;
 	virtual bool reset() override;
-	virtual bool erase() override;
+	virtual bool erase(bool stay) override;
 	virtual bool can_reset() const override;
 	virtual bool can_erase() const override;
 	virtual bool can_insert() const override;
@@ -120,7 +120,7 @@ public:
 	virtual bool set_to_first() override;
 	virtual bool set_to_last() override;
 	virtual bool reset() override;
-	virtual bool erase() override;
+	virtual bool erase(bool stay) override;
 	virtual bool can_reset() const override;
 	virtual bool can_erase() const override;
 	virtual bool can_insert() const override;
@@ -298,7 +298,7 @@ public:
 	virtual bool set_to_first() override;
 	virtual bool set_to_last() override;
 	virtual bool reset() override;
-	virtual bool erase() override;
+	virtual bool erase(bool stay) override;
 	virtual bool can_reset() const override;
 	virtual bool can_erase() const override;
 	virtual bool can_insert() const override;
@@ -331,7 +331,7 @@ public:
 	virtual bool set_to_first() override;
 	virtual bool set_to_last() override;
 	virtual bool reset() override;
-	virtual bool erase() override;
+	virtual bool erase(bool stay) override;
 	virtual bool can_reset() const override;
 	virtual bool can_erase() const override;
 	virtual bool can_insert() const override;

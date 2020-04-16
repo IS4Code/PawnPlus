@@ -370,7 +370,7 @@ public:
 	virtual bool set_to_first();
 	virtual bool set_to_last();
 	virtual bool reset();
-	virtual bool erase();
+	virtual bool erase(bool stay);
 	virtual bool can_reset() const;
 	virtual bool can_insert() const;
 	virtual bool can_erase() const;
@@ -408,12 +408,19 @@ template <class Base>
 class iterator_impl : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
 {
 protected:
+	enum class state
+	{
+		outside,
+		at_element,
+		before_element
+	};
+
 	typedef typename Base::iterator iterator;
 	typedef typename Base::value_type value_type;
 	std::weak_ptr<Base> _source;
 	int _revision;
 	iterator _position;
-	bool _inside;
+	state _state;
 
 	virtual std::shared_ptr<Base> lock_same()
 	{
@@ -422,7 +429,7 @@ protected:
 			if(source->get_revision() == _revision)
 			{
 				return source;
-			}else if(!_inside)
+			}else if(_state == state::outside)
 			{
 				_position = source->end();
 				_revision = source->get_revision();
@@ -445,25 +452,22 @@ protected:
 	}
 
 public:
-	iterator_impl()
+	/*iterator_impl()
+	{
+
+	}*/
+
+	iterator_impl(const std::shared_ptr<Base> &source) : iterator_impl(source, source->begin())
 	{
 
 	}
 
-	iterator_impl(const std::shared_ptr<Base> source) : iterator_impl(source, source->begin())
+	iterator_impl(const std::shared_ptr<Base> &source, iterator position) : _source(source), _revision(source->get_revision()), _position(position), _state(position != source->end() ? state::at_element : state::outside)
 	{
 
 	}
 
-	iterator_impl(const std::shared_ptr<Base> source, iterator position) : _source(source), _revision(source->get_revision()), _position(position)
-	{
-		_inside = position != source->end();
-	}
-
-	iterator_impl(const iterator_impl<Base> &iter) : _source(iter._source), _revision(iter._revision), _position(iter._position), _inside(iter._inside)
-	{
-		
-	}
+	iterator_impl(const iterator_impl<Base> &iter) = default;
 
 	virtual bool expired() const override
 	{
@@ -474,7 +478,7 @@ public:
 	{
 		if(auto source = lock_same())
 		{
-			return _position != source->end();
+			return _state != state::outside;
 		}
 		return false;
 	}
@@ -483,17 +487,23 @@ public:
 	{
 		if(auto source = lock_same())
 		{
-			if(_position == source->end())
+			if(_state == state::before_element)
+			{
+				_state = state::at_element;
+				return true;
+			}
+			if(_state == state::outside)
 			{
 				return false;
 			}else{
 				++_position;
 			}
-			if(_position != source->end())
+			if(_position == source->end())
 			{
-				return true;
+				_state = state::outside;
+				return false;
 			}
-			_inside = false;
+			return true;
 		}
 		return false;
 	}
@@ -506,8 +516,10 @@ public:
 			_position = source->begin();
 			if(_position != source->end())
 			{
-				_inside = true;
+				_state = state::at_element;
 				return true;
+			}else{
+				_state = state::outside;
 			}
 		}
 		return false;
@@ -524,7 +536,7 @@ public:
 		{
 			_revision = source->get_revision();
 			_position = source->end();
-			_inside = false;
+			_state = state::outside;
 			return true;
 		}
 		return false;
@@ -537,7 +549,7 @@ public:
 			if(source->get_revision() == _revision)
 			{
 				return std::hash<decltype(&*_position)>()(&*_position);
-			}else if(!_inside)
+			}else if(_state == state::outside)
 			{
 				return std::hash<Base*>()(source.get());
 			}
@@ -549,19 +561,26 @@ public:
 	{
 		if(auto source = lock_same())
 		{
-			return _position != source->end();
+			return _state == state::at_element;
 		}
 		return false;
 	}
 
-	virtual bool erase() override
+	virtual bool erase(bool stay) override
 	{
 		if(auto source = lock_same())
 		{
-			if(_position != source->end())
+			if(_state == state::at_element)
 			{
 				_position = source->erase(_position);
 				_revision = source->get_revision();
+				if(_position == source->end())
+				{
+					_state = state::outside;
+				}else if(stay)
+				{
+					_state = state::before_element;
+				}
 			}
 			return true;
 		}
@@ -573,7 +592,7 @@ public:
 		auto other = dynamic_cast<const iterator_impl<Base>*>(&obj);
 		if(other != nullptr)
 		{
-			return !_source.owner_before(other->_source) && !other->_source.owner_before(_source) && _revision == other->_revision && _position == other->_position && _inside == other->_inside;
+			return !_source.owner_before(other->_source) && !other->_source.owner_before(_source) && _revision == other->_revision && _position == other->_position && _state == other->_state;
 		}
 		return false;
 	}
@@ -589,7 +608,7 @@ public:
 
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override
 	{
-		if(valid())
+		if(_state != state::outside && valid())
 		{
 			if(type == typeid(value_type*))
 			{
@@ -611,6 +630,7 @@ public:
 			if(source->insert_dyn(_position, type, value, _position))
 			{
 				_revision = source->get_revision();
+				_state = state::at_element;
 				return true;
 			}
 		}
@@ -624,6 +644,7 @@ public:
 			if(source->insert_dyn(_position, type, value, _position))
 			{
 				_revision = source->get_revision();
+				_state = state::at_element;
 				return true;
 			}
 		}
@@ -644,10 +665,10 @@ public:
 class list_iterator_t : public iterator_impl<list_t>
 {
 public:
-	list_iterator_t()
+	/*list_iterator_t()
 	{
 
-	}
+	}*/
 
 	list_iterator_t(const std::shared_ptr<list_t> source) : iterator_impl(source)
 	{
@@ -674,11 +695,13 @@ public:
 			}else if(_position == source->begin())
 			{
 				_position = source->end();
-				_inside = false;
+				_state = state::outside;
 				return false;
+			}else{
+				--_position;
+				_state = state::at_element;
+				return true;
 			}
-			--_position;
-			return true;
 		}
 		return false;
 	}
@@ -692,7 +715,10 @@ public:
 			if(_position != source->begin())
 			{
 				--_position;
+				_state = state::at_element;
 				return true;
+			}else{
+				_state = state::outside;
 			}
 		}
 		return false;
@@ -714,10 +740,10 @@ public:
 class map_iterator_t : public iterator_impl<map_t>
 {
 public:
-	map_iterator_t()
+	/*map_iterator_t()
 	{
 
-	}
+	}*/
 
 	map_iterator_t(const std::shared_ptr<map_t> source) : iterator_impl(source)
 	{
@@ -746,11 +772,13 @@ public:
 			}else if(_position == source->begin())
 			{
 				_position = source->end();
-				_inside = false;
+				_state = state::outside;
 				return false;
+			}else{
+				--_position;
+				_state = state::at_element;
+				return true;
 			}
-			--_position;
-			return true;
 		}
 		return false;
 	}
@@ -766,7 +794,10 @@ public:
 			if(_position != source->begin())
 			{
 				--_position;
+				_state = state::at_element;
 				return true;
+			}else{
+				_state = state::outside;
 			}
 		}
 		return false;
@@ -791,22 +822,23 @@ protected:
 	std::weak_ptr<linked_list_t> _source;
 	iterator _position;
 	std::weak_ptr<dyn_object> _current;
+	bool _before;
 
 	virtual std::shared_ptr<linked_list_t> lock_same();
 	virtual std::shared_ptr<linked_list_t> lock_same() const;
 
 public:
-	linked_list_iterator_t()
+	/*linked_list_iterator_t()
 	{
 
-	}
+	}*/
 
 	linked_list_iterator_t(const std::shared_ptr<linked_list_t> source) : linked_list_iterator_t(source, source->begin())
 	{
 
 	}
 
-	linked_list_iterator_t(const std::shared_ptr<linked_list_t> source, iterator position) : _source(source), _position(position), _current(position != source->end() ? *position : nullptr)
+	linked_list_iterator_t(const std::shared_ptr<linked_list_t> source, iterator position) : _source(source), _position(position), _current(position != source->end() ? *position : nullptr), _before(false)
 	{
 
 	}
@@ -821,7 +853,7 @@ public:
 	virtual bool set_to_last() override;
 	virtual bool reset() override;
 	virtual size_t get_hash() const override;
-	virtual bool erase() override;
+	virtual bool erase(bool stay) override;
 	virtual std::unique_ptr<dyn_iterator> clone() const override;
 	virtual std::shared_ptr<dyn_iterator> clone_shared() const override;
 	virtual bool operator==(const dyn_iterator &obj) const override;
@@ -849,10 +881,10 @@ public:
 class pool_iterator_t : public iterator_impl<pool_t>
 {
 public:
-	pool_iterator_t()
+	/*pool_iterator_t()
 	{
 
-	}
+	}*/
 
 	pool_iterator_t(const std::shared_ptr<pool_t> source) : iterator_impl(source)
 	{
@@ -879,11 +911,13 @@ public:
 			}else if(_position == source->begin())
 			{
 				_position = source->end();
-				_inside = false;
+				_state = state::outside;
 				return false;
+			}else{
+				--_position;
+				_state = state::at_element;
+				return true;
 			}
-			--_position;
-			return true;
 		}
 		return false;
 	}
@@ -896,8 +930,10 @@ public:
 			_position = source->last_iter();
 			if(_position != source->end())
 			{
-				_inside = true;
+				_state = state::at_element;
 				return true;
+			}else{
+				_state = state::outside;
 			}
 		}
 		return false;

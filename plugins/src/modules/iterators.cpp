@@ -87,7 +87,7 @@ bool range_iterator::reset()
 	return true;
 }
 
-bool range_iterator::erase()
+bool range_iterator::erase(bool stay)
 {
 	return false;
 }
@@ -244,7 +244,7 @@ bool repeat_iterator::reset()
 	return true;
 }
 
-bool repeat_iterator::erase()
+bool repeat_iterator::erase(bool stay)
 {
 	return false;
 }
@@ -379,7 +379,7 @@ bool variant_iterator::reset()
 	return false;
 }
 
-bool variant_iterator::erase()
+bool variant_iterator::erase(bool stay)
 {
 	return false;
 }
@@ -579,9 +579,9 @@ bool filter_iterator::reset()
 	return source->reset();
 }
 
-bool filter_iterator::erase()
+bool filter_iterator::erase(bool stay)
 {
-	return source->erase();
+	return source->erase(stay);
 }
 
 bool filter_iterator::can_reset() const
@@ -719,9 +719,9 @@ bool project_iterator::reset()
 	return source->reset();
 }
 
-bool project_iterator::erase()
+bool project_iterator::erase(bool stay)
 {
-	return source->erase();
+	return source->erase(stay);
 }
 
 bool project_iterator::can_reset() const

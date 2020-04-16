@@ -522,17 +522,17 @@ namespace Natives
 		return strings::create(typeid(*iter).name());
 	}
 
-	// native Iter:iter_erase(IterTag:iter);
+	// native Iter:iter_erase(IterTag:iter, bool:stay=false);
 	AMX_DEFINE_NATIVE_TAG(iter_erase, 1, iter)
 	{
 		dyn_iterator *iter;
 		if(!iter_pool.get_by_id(params[1], iter)) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
 
-		if(!iter->erase()) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
+		if(!iter->erase(optparam(2, 0))) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return params[1];
 	}
 
-	// native Iter:iter_erase_deep(IterTag:iter);
+	// native Iter:iter_erase_deep(IterTag:iter, bool:stay=false);
 	AMX_DEFINE_NATIVE_TAG(iter_erase_deep, 1, iter)
 	{
 		dyn_iterator *iter;
@@ -540,7 +540,7 @@ namespace Natives
 		{
 			obj.release();
 		});
-		if(!iter->erase()) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
+		if(!iter->erase(optparam(2, 0))) amx_LogicError(errors::operation_not_supported, "iterator", params[1]);
 		return params[1];
 	}
 

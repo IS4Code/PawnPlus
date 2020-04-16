@@ -304,7 +304,7 @@ bool dyn_iterator::reset()
 	return false;
 }
 
-bool dyn_iterator::erase()
+bool dyn_iterator::erase(bool stay)
 {
 	return false;
 }
@@ -368,7 +368,7 @@ bool dyn_iterator::insert_dyn(const std::type_info &type, const void *value)
 
 bool list_iterator_t::extract_dyn(const std::type_info &type, void *value) const
 {
-	if(valid())
+	if(_state == state::at_element && valid())
 	{
 		if(type == typeid(value_type*))
 		{
@@ -440,6 +440,11 @@ bool linked_list_iterator_t::move_next()
 	{
 		if(_position != source->end())
 		{
+			if(_before)
+			{
+				_before = false;
+				return true;
+			}
 			++_position;
 			if(_position != source->end())
 			{
@@ -457,6 +462,7 @@ bool linked_list_iterator_t::move_previous()
 {
 	if(auto source = lock_same())
 	{
+		_before = false;
 		if(_position == source->begin())
 		{
 			_position = source->end();
@@ -478,6 +484,7 @@ bool linked_list_iterator_t::set_to_first()
 	if(auto source = _source.lock())
 	{
 		_position = source->begin();
+		_before = false;
 		if(_position != source->end())
 		{
 			_current = *_position;
@@ -494,6 +501,7 @@ bool linked_list_iterator_t::set_to_last()
 	if(auto source = _source.lock())
 	{
 		_position = source->end();
+		_before = false;
 		if(_position != source->begin())
 		{
 			--_position;
@@ -512,6 +520,7 @@ bool linked_list_iterator_t::reset()
 	{
 		_position = source->end();
 		_current.reset();
+		_before = false;
 		return true;
 	}
 	return false;
@@ -531,21 +540,25 @@ size_t linked_list_iterator_t::get_hash() const
 	return 0;
 }
 
-bool linked_list_iterator_t::erase()
+bool linked_list_iterator_t::erase(bool stay)
 {
 	if(auto source = lock_same())
 	{
-		if(_position != source->end())
+		if(_position != source->end() && !_before)
 		{
 			_position = source->erase(_position);
 			if(_position != source->end())
 			{
 				_current = *_position;
+				if(stay)
+				{
+					_before = true;
+				}
 			}else{
 				_current.reset();
 			}
-			return true;
 		}
+		return true;
 	}
 	return false;
 }
@@ -588,14 +601,14 @@ bool linked_list_iterator_t::operator==(const dyn_iterator &obj) const
 	auto other = dynamic_cast<const linked_list_iterator_t*>(&obj);
 	if(other != nullptr)
 	{
-		return !_source.owner_before(other->_source) && !other->_source.owner_before(_source) && _position == other->_position && !_current.owner_before(other->_current) && !other->_current.owner_before(_current);
+		return !_source.owner_before(other->_source) && !other->_source.owner_before(_source) && _position == other->_position && !_current.owner_before(other->_current) && !other->_current.owner_before(_current) && _before == other->_before;
 	}
 	return false;
 }
 
 bool linked_list_iterator_t::extract_dyn(const std::type_info &type, void *value) const
 {
-	if(valid())
+	if(!_before && valid())
 	{
 		if(type == typeid(dyn_object*))
 		{
@@ -621,6 +634,7 @@ bool linked_list_iterator_t::insert_dyn(const std::type_info &type, void *value)
 		if(source->insert_dyn(_position, type, value, _position))
 		{
 			_current = *_position;
+			_before = false;
 			return true;
 		}
 	}
@@ -634,6 +648,7 @@ bool linked_list_iterator_t::insert_dyn(const std::type_info &type, const void *
 		if(source->insert_dyn(_position, type, value, _position))
 		{
 			_current = *_position;
+			_before = false;
 			return true;
 		}
 	}
@@ -642,7 +657,7 @@ bool linked_list_iterator_t::insert_dyn(const std::type_info &type, const void *
 
 bool pool_iterator_t::extract_dyn(const std::type_info &type, void *value) const
 {
-	if(valid())
+	if(_state == state::at_element && valid())
 	{
 		if(type == typeid(value_type*))
 		{

@@ -220,7 +220,7 @@ public:
 		return true;
 	}
 
-	virtual bool erase() override
+	virtual bool erase(bool stay) override
 	{
 		return false;
 	}
