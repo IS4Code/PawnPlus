@@ -483,6 +483,18 @@ namespace Natives
 		return iter->valid();
 	}
 
+	// native bool:iter_empty(IterTag:iter);
+	AMX_DEFINE_NATIVE_TAG(iter_empty, 1, bool)
+	{
+		dyn_iterator *iter;
+		if(!iter_pool.get_by_id(params[1], iter) && iter != nullptr) amx_LogicError(errors::pointer_invalid, "iterator", params[1]);
+		if(iter == nullptr)
+		{
+			return true;
+		}
+		return iter->empty();
+	}
+
 	// native iter_type(IterTag:iter);
 	AMX_DEFINE_NATIVE_TAG(iter_type, 1, cell)
 	{
@@ -1241,6 +1253,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_delete),
 	AMX_DECLARE_NATIVE(iter_linked),
 	AMX_DECLARE_NATIVE(iter_inside),
+	AMX_DECLARE_NATIVE(iter_empty),
 	AMX_DECLARE_NATIVE(iter_type),
 	AMX_DECLARE_NATIVE(iter_type_str),
 	AMX_DECLARE_NATIVE(iter_type_str_s),

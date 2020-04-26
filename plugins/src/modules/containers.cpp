@@ -279,6 +279,11 @@ bool dyn_iterator::valid() const
 	return false;
 }
 
+bool dyn_iterator::empty() const
+{
+	return !valid();
+}
+
 bool dyn_iterator::move_next()
 {
 	return false;
@@ -430,6 +435,15 @@ bool linked_list_iterator_t::valid() const
 	if(auto source = lock_same())
 	{
 		return _position != source->end();
+	}
+	return false;
+}
+
+bool linked_list_iterator_t::empty() const
+{
+	if(auto source = lock_same())
+	{
+		return _position != source->end() && !_before;
 	}
 	return false;
 }

@@ -365,6 +365,7 @@ class dyn_iterator
 public:
 	virtual bool expired() const;
 	virtual bool valid() const;
+	virtual bool empty() const;
 	virtual bool move_next();
 	virtual bool move_previous();
 	virtual bool set_to_first();
@@ -479,6 +480,15 @@ public:
 		if(auto source = lock_same())
 		{
 			return _state != state::outside;
+		}
+		return false;
+	}
+
+	virtual bool empty() const override
+	{
+		if(auto source = lock_same())
+		{
+			return _state != state::at_element;
 		}
 		return false;
 	}
@@ -847,6 +857,7 @@ public:
 
 	virtual bool expired() const override;
 	virtual bool valid() const override;
+	virtual bool empty() const override;
 	virtual bool move_next() override;
 	virtual bool move_previous() override;
 	virtual bool set_to_first() override;
