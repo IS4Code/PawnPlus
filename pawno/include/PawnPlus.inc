@@ -1,4 +1,4 @@
-/** PawnPlus v1.2.1 by IllidanS4 **/
+/** PawnPlus v1.3 by IllidanS4 **/
 //github.com/IllidanS4/PawnPlus
 
 #if defined _inc_PawnPlus
@@ -14,7 +14,7 @@
 /*      Setup      */
 /*                 */
 
-const PP_VERSION = 0x120;
+const PP_VERSION = 0x130;
 
 #if defined PP_SYNTAX
 #define PP_SYNTAX_AMX_FORKED
@@ -1343,6 +1343,7 @@ native Iter:iter_release(IterTag:iter);
 native iter_delete(IterTag:iter);
 native bool:iter_linked(IterTag:iter);
 native bool:iter_inside(IterTag:iter);
+native bool:iter_empty(IterTag:iter);
 native iter_type(IterTag:iter);
 native iter_type_str(IterTag:iter, type[], size=sizeof(type));
 native String:iter_type_str_s(IterTag:iter);
@@ -2328,6 +2329,7 @@ PP_VARIANT_LOG_UN_OP(!, var_not);
 
 native bool:operator==(Iter:arg1, Iter:arg2) = iter_eq;
 stock bool:operator!=(Iter:arg1, Iter:arg2) return !(arg1 == arg2);
+native bool:operator!(Iter:arg) = iter_empty;
 
 native bool:operator==(Handle:arg1, Handle:arg2) = handle_eq;
 stock bool:operator!=(Handle:arg1, Handle:arg2) return !(arg1 == arg2);
