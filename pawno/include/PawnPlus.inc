@@ -683,7 +683,7 @@ native bool:var_not(ConstVariantTag:var);
 native Variant:var_call_op(VariantTag:var, tag_op:tag_op, AnyTag:...);
 native Variant:var_call_op_raw(VariantTag:var, tag_op:tag_op, AnyTag:...);
 
-native Iter:var_iter(VariantTag:value);
+native Iter:var_iter(VariantTag:value, count=1);
 
 
 /*                 */
@@ -1611,6 +1611,8 @@ native bool:handle_eq(HandleTag:handle1, HandleTag:handle2);
 
 native handle_tagof(HandleTag:handle);
 native handle_sizeof(HandleTag:handle);
+
+native Iter:handle_iter(HandleTag:handle, count=1);
 
 #if defined PP_SYNTAX_GENERIC
 

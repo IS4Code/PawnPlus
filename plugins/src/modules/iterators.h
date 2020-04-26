@@ -41,38 +41,88 @@ public:
 	virtual const dyn_iterator *get() const override;
 };
 
-class repeat_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
+class repeat_base_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
 {
+protected:
 	cell index;
 	cell count;
-	dyn_object value;
 
 public:
-	repeat_iterator(dyn_object &&value, cell count) : count(count), index(-1), value(std::move(value))
+	repeat_base_iterator(cell count) : count(count), index(-1)
 	{
 
 	}
 
-	virtual bool expired() const override;
-	virtual bool valid() const override;
+	virtual bool expired() const override { return false; }
+	virtual bool valid() const override { return !expired() && index != -1; }
 	virtual bool move_next() override;
 	virtual bool move_previous() override;
 	virtual bool set_to_first() override;
 	virtual bool set_to_last() override;
 	virtual bool reset() override;
-	virtual bool erase(bool stay) override;
-	virtual bool can_reset() const override;
-	virtual bool can_erase() const override;
-	virtual bool can_insert() const override;
+	virtual bool erase(bool stay) override { return false; }
+	virtual bool can_reset() const override { return true; }
+	virtual bool can_erase() const override { return false; }
+	virtual bool can_insert() const override { return false; }
+	virtual bool operator==(const dyn_iterator &obj) const override;
+	virtual bool operator==(const repeat_base_iterator &obj) const;
+	virtual bool insert_dyn(const std::type_info &type, void *value) override { return false; }
+	virtual bool insert_dyn(const std::type_info &type, const void *value) override { return false; }
+	virtual dyn_iterator *get() override { return this; }
+	virtual const dyn_iterator *get() const override { return this; }
+};
+
+class repeat_iterator : public repeat_base_iterator
+{
+	dyn_object value;
+
+public:
+	repeat_iterator(dyn_object value, cell count) : repeat_base_iterator(count), value(std::move(value))
+	{
+
+	}
+
 	virtual std::unique_ptr<dyn_iterator> clone() const override;
 	virtual std::shared_ptr<dyn_iterator> clone_shared() const override;
 	virtual size_t get_hash() const override;
-	virtual bool operator==(const dyn_iterator &obj) const override;
+	virtual bool operator==(const repeat_base_iterator &obj) const override;
 	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
-	virtual bool insert_dyn(const std::type_info &type, void *value) override;
-	virtual bool insert_dyn(const std::type_info &type, const void *value) override;
-	virtual dyn_iterator *get() override;
-	virtual const dyn_iterator *get() const override;
+};
+
+class variant_iterator : public repeat_base_iterator
+{
+	std::weak_ptr<dyn_object> var;
+
+public:
+	variant_iterator(const std::shared_ptr<dyn_object> &var, cell count) : repeat_base_iterator(count), var(var)
+	{
+
+	}
+
+	virtual bool expired() const override { return var.expired(); }
+	virtual std::unique_ptr<dyn_iterator> clone() const override;
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override;
+	virtual size_t get_hash() const override;
+	virtual bool operator==(const repeat_base_iterator &obj) const override;
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
+};
+
+class handle_iterator : public repeat_base_iterator
+{
+	std::weak_ptr<handle_t> handle;
+
+public:
+	handle_iterator(const std::shared_ptr<handle_t> &handle, cell count) : repeat_base_iterator(count), handle(handle)
+	{
+
+	}
+
+	virtual bool expired() const override;
+	virtual std::unique_ptr<dyn_iterator> clone() const override;
+	virtual std::shared_ptr<dyn_iterator> clone_shared() const override;
+	virtual size_t get_hash() const override;
+	virtual bool operator==(const repeat_base_iterator &obj) const override;
+	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
 };
 
 template <class T>
@@ -100,39 +150,6 @@ public:
 	{
 		return ptr;
 	}
-};
-
-class variant_iterator : public dyn_iterator, public object_pool<dyn_iterator>::ref_container_virtual
-{
-	std::weak_ptr<dyn_object> var;
-	bool inside = true;
-
-public:
-	variant_iterator(const std::shared_ptr<dyn_object> &var) : var(var)
-	{
-
-	}
-
-	virtual bool expired() const override;
-	virtual bool valid() const override;
-	virtual bool move_next() override;
-	virtual bool move_previous() override;
-	virtual bool set_to_first() override;
-	virtual bool set_to_last() override;
-	virtual bool reset() override;
-	virtual bool erase(bool stay) override;
-	virtual bool can_reset() const override;
-	virtual bool can_erase() const override;
-	virtual bool can_insert() const override;
-	virtual std::unique_ptr<dyn_iterator> clone() const override;
-	virtual std::shared_ptr<dyn_iterator> clone_shared() const override;
-	virtual size_t get_hash() const override;
-	virtual bool operator==(const dyn_iterator &obj) const override;
-	virtual bool extract_dyn(const std::type_info &type, void *value) const override;
-	virtual bool insert_dyn(const std::type_info &type, void *value) override;
-	virtual bool insert_dyn(const std::type_info &type, const void *value) override;
-	virtual dyn_iterator *get() override;
-	virtual const dyn_iterator *get() const override;
 };
 
 template <class Func>

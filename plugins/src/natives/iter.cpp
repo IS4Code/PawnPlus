@@ -128,7 +128,8 @@ public:
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_range(AMX *amx, cell *params)
 	{
-		auto &iter = iter_pool.add(std::make_unique<range_iterator>(Factory(amx, params[Indices]...), params[2], optparam(3, 1)));
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "count");
+		auto &iter = iter_pool.emplace_derived<range_iterator>(Factory(amx, params[Indices]...), params[2], optparam(3, 1));
 		iter->set_to_first();
 		return iter_pool.get_id(iter);
 	}
@@ -137,7 +138,8 @@ public:
 	template <value_ftype Factory>
 	static cell AMX_NATIVE_CALL iter_repeat(AMX *amx, cell *params)
 	{
-		auto &iter = iter_pool.add(std::make_unique<repeat_iterator>(Factory(amx, params[Indices]...), params[2]));
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "count");
+		auto &iter = iter_pool.emplace_derived<repeat_iterator>(Factory(amx, params[Indices]...), params[2]);
 		iter->set_to_first();
 		return iter_pool.get_id(iter);
 	}
@@ -383,13 +385,30 @@ namespace Natives
 		return index;
 	}
 
-	// native Iter:var_iter(VariantTag:var);
+	// native Iter:var_iter(VariantTag:var, count=1);
 	AMX_DEFINE_NATIVE_TAG(var_iter, 1, iter)
 	{
+		cell count = optparam(2, 1);
+		if(count < 0) amx_LogicError(errors::out_of_range, "count");
 		std::shared_ptr<dyn_object> ptr;
 		if(!variants::pool.get_by_id(params[1], ptr)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
 
-		return iter_pool.get_id(iter_pool.emplace_derived<variant_iterator>(ptr));
+		auto &iter = iter_pool.emplace_derived<variant_iterator>(ptr, count);
+		iter->set_to_first();
+		return iter_pool.get_id(iter);
+	}
+
+	// native Iter:handle_iter(HandleTag:handle, count=1);
+	AMX_DEFINE_NATIVE_TAG(handle_iter, 1, iter)
+	{
+		cell count = optparam(2, 1);
+		if(count < 0) amx_LogicError(errors::out_of_range, "count");
+		std::shared_ptr<handle_t> handle;
+		if(!handle_pool.get_by_id(params[1], handle)) amx_LogicError(errors::pointer_invalid, "handle", params[1]);
+
+		auto &iter = iter_pool.emplace_derived<handle_iterator>(handle, count);
+		iter->set_to_first();
+		return iter_pool.get_id(iter);
 	}
 
 	// native Iter:pool_iter(Pool:pool, index=0);
@@ -1244,6 +1263,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_iter_at_var),
 	AMX_DECLARE_NATIVE(linked_list_iter),
 	AMX_DECLARE_NATIVE(var_iter),
+	AMX_DECLARE_NATIVE(handle_iter),
 	AMX_DECLARE_NATIVE(pool_iter),
 	AMX_DECLARE_NATIVE(pool_iter_at),
 

@@ -179,17 +179,7 @@ const dyn_iterator *range_iterator::get() const
 	return this;
 }
 
-bool repeat_iterator::expired() const
-{
-	return false;
-}
-
-bool repeat_iterator::valid() const
-{
-	return index != -1;
-}
-
-bool repeat_iterator::move_next()
+bool repeat_base_iterator::move_next()
 {
 	if(valid())
 	{
@@ -204,7 +194,7 @@ bool repeat_iterator::move_next()
 	return false;
 }
 
-bool repeat_iterator::move_previous()
+bool repeat_base_iterator::move_previous()
 {
 	if(valid())
 	{
@@ -218,9 +208,9 @@ bool repeat_iterator::move_previous()
 	return false;
 }
 
-bool repeat_iterator::set_to_first()
+bool repeat_base_iterator::set_to_first()
 {
-	if(count == 0)
+	if(count == 0 || expired())
 	{
 		return false;
 	}
@@ -228,9 +218,9 @@ bool repeat_iterator::set_to_first()
 	return true;
 }
 
-bool repeat_iterator::set_to_last()
+bool repeat_base_iterator::set_to_last()
 {
-	if(count == 0)
+	if(count == 0 || expired())
 	{
 		return false;
 	}
@@ -238,30 +228,34 @@ bool repeat_iterator::set_to_last()
 	return true;
 }
 
-bool repeat_iterator::reset()
+bool repeat_base_iterator::reset()
 {
-	index = -1;
-	return true;
-}
-
-bool repeat_iterator::erase(bool stay)
-{
+	if(!expired())
+	{
+		index = -1;
+		return true;
+	}
 	return false;
 }
 
-bool repeat_iterator::can_reset() const
+bool repeat_base_iterator::operator==(const dyn_iterator &obj) const
 {
-	return true;
-}
-
-bool repeat_iterator::can_erase() const
-{
+	auto other = dynamic_cast<const repeat_base_iterator*>(&obj);
+	if(other != nullptr)
+	{
+		return *this == *other;
+	}
 	return false;
 }
 
-bool repeat_iterator::can_insert() const
+bool repeat_base_iterator::operator==(const repeat_base_iterator &other) const
 {
-	return false;
+	if(valid())
+	{
+		return other.valid() && index == other.index;
+	} else {
+		return !other.valid();
+	}
 }
 
 std::unique_ptr<dyn_iterator> repeat_iterator::clone() const
@@ -279,16 +273,14 @@ size_t repeat_iterator::get_hash() const
 	return value.get_hash();
 }
 
-bool repeat_iterator::operator==(const dyn_iterator &obj) const
+bool repeat_iterator::operator==(const repeat_base_iterator &obj) const
 {
-	auto other = dynamic_cast<const repeat_iterator*>(&obj);
-	if(other != nullptr)
+	if(repeat_base_iterator::operator==(obj))
 	{
-		if(valid())
+		auto other = dynamic_cast<const repeat_iterator*>(&obj);
+		if(other != nullptr)
 		{
-			return other->valid() && index == other->index && value == other->value;
-		}else{
-			return !other->valid();
+			return !other->valid() || value == other->value;
 		}
 	}
 	return false;
@@ -311,94 +303,6 @@ bool repeat_iterator::extract_dyn(const std::type_info &type, void *value) const
 	return false;
 }
 
-bool repeat_iterator::insert_dyn(const std::type_info &type, void *value)
-{
-	return false;
-}
-
-bool repeat_iterator::insert_dyn(const std::type_info &type, const void *value)
-{
-	return false;
-}
-
-dyn_iterator *repeat_iterator::get()
-{
-	return this;
-}
-
-const dyn_iterator *repeat_iterator::get() const
-{
-	return this;
-}
-
-bool variant_iterator::expired() const
-{
-	return var.expired();
-}
-
-bool variant_iterator::valid() const
-{
-	return !expired() && inside;
-}
-
-bool variant_iterator::move_next()
-{
-	return inside = false;
-}
-
-bool variant_iterator::move_previous()
-{
-	return inside = false;
-}
-
-bool variant_iterator::set_to_first()
-{
-	if(!expired())
-	{
-		inside = true;
-	}
-	return false;
-}
-
-bool variant_iterator::set_to_last()
-{
-	if(!expired())
-	{
-		inside = true;
-	}
-	return false;
-}
-
-bool variant_iterator::reset()
-{
-	if(!expired())
-	{
-		inside = false;
-		return true;
-	}
-	return false;
-}
-
-bool variant_iterator::erase(bool stay)
-{
-	return false;
-}
-
-bool variant_iterator::can_reset() const
-{
-	return !expired();
-}
-
-bool variant_iterator::can_erase() const
-{
-	return false;
-}
-
-bool variant_iterator::can_insert() const
-{
-	return false;
-}
-
 std::unique_ptr<dyn_iterator> variant_iterator::clone() const
 {
 	return std::make_unique<variant_iterator>(*this);
@@ -414,19 +318,22 @@ size_t variant_iterator::get_hash() const
 	return std::hash<dyn_object*>()(&*var.lock());
 }
 
-bool variant_iterator::operator==(const dyn_iterator &obj) const
+bool variant_iterator::operator==(const repeat_base_iterator &obj) const
 {
-	auto other = dynamic_cast<const variant_iterator*>(&obj);
-	if(other != nullptr)
+	if(repeat_base_iterator::operator==(obj))
 	{
-		return !var.owner_before(other->var) && !other->var.owner_before(var) && inside == other->inside;
+		auto other = dynamic_cast<const variant_iterator*>(&obj);
+		if(other != nullptr)
+		{
+			return !var.owner_before(other->var) && !other->var.owner_before(var);
+		}
 	}
 	return false;
 }
 
 bool variant_iterator::extract_dyn(const std::type_info &type, void *value) const
 {
-	if(inside)
+	if(index != -1)
 	{
 		if(auto obj = var.lock())
 		{
@@ -442,30 +349,84 @@ bool variant_iterator::extract_dyn(const std::type_info &type, void *value) cons
 			{
 				*reinterpret_cast<dyn_modifiable_const_ptr<dyn_object>*>(value) = obj.get();
 				return true;
+			}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
+			{
+				*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(index, tags::find_tag(tags::tag_cell)), *obj));
+				return true;
 			}
 		}
 	}
 	return false;
 }
 
-bool variant_iterator::insert_dyn(const std::type_info &type, void *value)
+
+bool handle_iterator::expired() const
 {
+	if(auto obj = handle.lock())
+	{
+		return !obj->alive();
+	}
+	return true;
+}
+
+std::unique_ptr<dyn_iterator> handle_iterator::clone() const
+{
+	return std::make_unique<handle_iterator>(*this);
+}
+
+std::shared_ptr<dyn_iterator> handle_iterator::clone_shared() const
+{
+	return std::make_shared<handle_iterator>(*this);
+}
+
+size_t handle_iterator::get_hash() const
+{
+	return std::hash<handle_t*>()(&*handle.lock());
+}
+
+bool handle_iterator::operator==(const repeat_base_iterator &obj) const
+{
+	if(repeat_base_iterator::operator==(obj))
+	{
+		auto other = dynamic_cast<const handle_iterator*>(&obj);
+		if(other != nullptr)
+		{
+			return !handle.owner_before(other->handle) && !other->handle.owner_before(handle);
+		}
+	}
 	return false;
 }
 
-bool variant_iterator::insert_dyn(const std::type_info &type, const void *value)
+bool handle_iterator::extract_dyn(const std::type_info &type, void *value) const
 {
+	if(index != -1)
+	{
+		if(auto obj = handle.lock())
+		{
+			if(obj->alive())
+			{
+				if(type == typeid(const dyn_object*))
+				{
+					*reinterpret_cast<const dyn_object**>(value) = &obj->get();
+					return true;
+				}else if(type == typeid(std::shared_ptr<const dyn_object>))
+				{
+					if(auto bond = obj->get_bond().lock())
+					{
+						*reinterpret_cast<std::shared_ptr<const dyn_object>*>(value) = std::shared_ptr<const dyn_object>(bond, &obj->get());
+					} else {
+						*reinterpret_cast<std::shared_ptr<const dyn_object>*>(value) = std::make_shared<const dyn_object>(obj->get());
+					}
+					return true;
+				}else if(type == typeid(std::shared_ptr<const std::pair<const dyn_object, dyn_object>>))
+				{
+					*reinterpret_cast<std::shared_ptr<const std::pair<const dyn_object, dyn_object>>*>(value) = std::make_shared<std::pair<const dyn_object, dyn_object>>(std::pair<const dyn_object, dyn_object>(dyn_object(index, tags::find_tag(tags::tag_cell)), obj->get()));
+					return true;
+				}
+			}
+		}
+	}
 	return false;
-}
-
-dyn_iterator *variant_iterator::get()
-{
-	return this;
-}
-
-const dyn_iterator *variant_iterator::get() const
-{
-	return this;
 }
 
 bool filter_iterator::is_valid(expression::args_type args) const
