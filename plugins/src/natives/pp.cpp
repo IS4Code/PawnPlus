@@ -318,7 +318,7 @@ namespace Natives
 		name = filename;
 #else
 		Dl_info info;
-		if(dladdr(reinterpret_cast<void*>(func), &info) != 0)
+		if(dladdr(reinterpret_cast<void*>(func), &info) == 0)
 		{
 			return 0;
 		}
