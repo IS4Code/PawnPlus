@@ -104,24 +104,36 @@ private:
 		return value;
 	}
 
+	bool parse_hex_digit(cell c, int &digit)
+	{
+		if(c >= '0' && c <= '9')
+		{
+			digit = c - '0';
+			return true;
+		}else if(c >= 'A' && c <= 'F')
+		{
+			digit = 10 + (c - 'A');
+			return true;
+		}else if(c >= 'a' && c <= 'f')
+		{
+			digit = 10 + (c - 'a');
+			return true;
+		}else{
+			return false;
+		}
+	}
+
 	expression_ptr parse_hex(Iter &begin, Iter end)
 	{
 		ucell value = 0;
 		while(begin != end)
 		{
-			cell c = *begin;
-			if(c >= '0' && c <= '9')
+			int digit;
+			if(!parse_hex_digit(*begin, digit))
 			{
-				value = value * 16 + (c - '0');
-			}else if(c >= 'A' && c <= 'F')
-			{
-				value = value * 16 + 10 + (c - 'A');
-			}else if(c >= 'a' && c <= 'f')
-			{
-				value = value * 16 + 10 + (c - 'a');
-			}else{
 				break;
 			}
+			value = value * 16 + digit;
 			++begin;
 		}
 		return std::make_shared<constant_expression>(dyn_object(value, tags::find_tag(tags::tag_cell)));
@@ -242,11 +254,32 @@ private:
 						++begin;
 						continue;
 					case '#':
+					case '%':
 						buffer.push_back('%');
 						++begin;
 						continue;
+					case 'x':
+					case 'u':
+						int size = (*begin == 'u') ? 8 : 2;
+						cell val = 0;
+						for(int i = 0; i < size; i++)
+						{
+							++begin;
+							if(begin == end) break;
+							int digit;
+							if(!parse_hex_digit(*begin, digit))
+							{
+								size = 0;
+								break;
+							}
+							val = val * 16 + digit;
+						}
+						if(size == 0) break;
+						buffer.push_back(val);
+						++begin;
+						continue;
 				}
-				amx_ParserError("unrecognized escape character", begin, end);
+				amx_ParserError("unrecognized escape sequence", begin, end);
 			}
 			buffer.push_back(*begin);
 			++begin;
