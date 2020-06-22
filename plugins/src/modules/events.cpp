@@ -39,11 +39,85 @@ public:
 	void invoke(AMX *amx, cell *retval);
 };
 
+class event_list
+{
+	int nested_level = 0;
+	std::vector<std::unique_ptr<event_info>> handlers;
+
+
+public:
+	event_list() noexcept = default;
+
+	event_list(event_list &&obj) noexcept : nested_level(obj.nested_level), handlers(std::move(obj.handlers))
+	{
+
+	}
+
+	event_list &operator=(event_list &&obj) noexcept
+	{
+		nested_level = obj.nested_level;
+		handlers = std::move(obj.handlers);
+		return *this;
+	}
+
+	std::vector<std::unique_ptr<event_info>>::iterator erase(std::vector<std::unique_ptr<event_info>>::iterator it)
+	{
+		if(nested_level == 0)
+		{
+			return handlers.erase(it);
+		}else{
+			*it = nullptr;
+			return ++it;
+		}
+	}
+
+	std::vector<std::unique_ptr<event_info>>::iterator begin()
+	{
+		return handlers.begin();
+	}
+
+	std::vector<std::unique_ptr<event_info>>::iterator end()
+	{
+		return handlers.end();
+	}
+
+	void push_back(std::unique_ptr<event_info> &&obj)
+	{
+		handlers.push_back(std::move(obj));
+	}
+
+	class level_guard
+	{
+		event_list &list;
+
+	public:
+		level_guard(event_list &list) : list(list)
+		{
+			++list.nested_level;
+		}
+
+		level_guard(const level_guard&) = delete;
+
+		level_guard &operator=(const level_guard&) = delete;
+
+		~level_guard()
+		{
+			if(--list.nested_level == 0)
+			{
+				list.handlers.erase(std::remove_if(std::make_move_iterator(list.handlers.begin()), std::make_move_iterator(list.handlers.end()), [](const std::unique_ptr<event_info> &ptr)
+				{
+					return ptr == nullptr;
+				}).base(), list.handlers.end());
+			}
+		}
+	};
+};
+
 class amx_info : public amx::extra
 {
 public:
-	std::vector<std::vector<std::unique_ptr<event_info>>> callback_handlers;
-	std::unordered_map<int, std::vector<std::unique_ptr<event_info>>> callback_handlers_negative;
+	std::vector<event_list> callback_handlers;
+	std::unordered_map<int, event_list> callback_handlers_negative;
 	std::unordered_map<cell, int> handler_ids;
 
 	std::vector<callback_info> custom_callbacks;
@@ -73,7 +147,7 @@ namespace events
 			amx_FormalError(errors::func_not_found, "public", callback);
 		}
 		auto &info = get_info(amx, obj);
-		std::vector<std::unique_ptr<event_info>> *list;
+		event_list *list;
 		if(index >= 0)
 		{
 			auto &callback_handlers = info.callback_handlers;
@@ -103,7 +177,7 @@ namespace events
 		if(hit != handler_ids.end())
 		{
 			int index = hit->second;
-			std::vector<std::unique_ptr<event_info>> *list;
+			event_list *list;
 			if(index >= 0)
 			{
 				list = &info.callback_handlers[index];
@@ -128,7 +202,7 @@ namespace events
 	{
 		amx::object obj;
 		auto &info = get_info(amx, obj);
-		std::vector<std::unique_ptr<event_info>> *list = nullptr;
+		event_list *list = nullptr;
 		if(index >= 0)
 		{
 			auto &callback_handlers = info.callback_handlers;
@@ -146,6 +220,7 @@ namespace events
 		}
 		if(list)
 		{
+			event_list::level_guard guard(*list);
 			for(auto &handler : *list)
 			{
 				if(handler)
