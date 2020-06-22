@@ -1,4 +1,5 @@
-/* Copyright (c) 2012-2015 Zeex
+/*
+ * Copyright (c) 2012-2018 Zeex
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,18 +25,14 @@
  */
 
 #include <stddef.h>
-#include <unistd.h>
-#include <sys/mman.h>
+#include <windows.h>
 
 void *subhook_unprotect(void *address, size_t size) {
-  long pagesize;
+  DWORD old;
 
-  pagesize = sysconf(_SC_PAGESIZE);
-  address = (void *)((long)address & ~(pagesize - 1));
-
-  if (mprotect(address, size, PROT_READ | PROT_WRITE | PROT_EXEC) != 0) {
+  if (VirtualProtect(address, size, PAGE_EXECUTE_READWRITE, &old) != 0) {
+    return address;
+  } else {
     return NULL;
   }
-
-  return address;
 }
