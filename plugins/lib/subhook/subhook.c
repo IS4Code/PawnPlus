@@ -65,13 +65,13 @@ SUBHOOK_EXPORT void SUBHOOK_API subhook_set_disasm_handler(
 #ifndef SUBHOOK_SEPARATE_SOURCE_FILES
 
 #if defined SUBHOOK_WINDOWS
-  #include "subhook_windows.c"
+  #include "subhook_windows.h"
 #elif defined SUBHOOK_UNIX
-  #include "subhook_unix.c"
+  #include "subhook_unix.h"
 #endif
 
 #if defined SUBHOOK_X86 || defined SUBHOOK_X86_64
-  #include "subhook_x86.c"
+  #include "subhook_x86.h"
 #endif
 
 #endif
