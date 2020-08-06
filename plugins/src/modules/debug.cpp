@@ -4,6 +4,7 @@
 #include "sdk/amx/amxdbg.h"
 #include "sdk/plugincommon.h"
 #include "subhook/subhook.h"
+#include "subhook/subhook_private.h"
 
 #include "fixes/linux.h"
 
@@ -146,6 +147,31 @@ void debug::init()
 	}
 	CreateFileA_Hook = subhook_new(func, reinterpret_cast<void*>(HookCreateFileA), {});
 	CreateFileA_Trampoline = reinterpret_cast<decltype(&CreateFileA)>(subhook_get_trampoline(CreateFileA_Hook));
+	if(!CreateFileA_Trampoline)
+	{
+		CreateFileA_Trampoline = [](LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+		{
+			auto dst = subhook_read_dst(CreateFileA);
+			auto olddst = subhook_get_dst(CreateFileA_Hook);
+			if(dst != olddst)
+			{
+				CreateFileA_Hook->dst = dst;
+				subhook_remove(CreateFileA_Hook);
+				auto ret = CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+				subhook_install(CreateFileA_Hook);
+				CreateFileA_Hook->dst = olddst;
+				return ret;
+			}else if(!dst)
+			{
+				return CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+			}else{
+				subhook_remove(CreateFileA_Hook);
+				auto ret = CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+				subhook_install(CreateFileA_Hook);
+				return ret;
+			}
+		};
+	}
 	subhook_install(CreateFileA_Hook);
 }
 #else
@@ -218,6 +244,31 @@ void debug::init()
 	}
 	fopen_hook = subhook_new(func, reinterpret_cast<void*>(hook_fopen), {});
 	fopen_trampoline = reinterpret_cast<decltype(&fopen)>(subhook_get_trampoline(fopen_hook));
+	if(!fopen_trampoline)
+	{
+		fopen_trampoline = [](const char *pathname, const char *mode)
+		{
+			auto dst = subhook_read_dst(fopen);
+			auto olddst = subhook_get_dst(fopen_hook);
+			if(dst != olddst)
+			{
+				fopen_hook->dst = dst;
+				subhook_remove(fopen_hook);
+				auto ret = fopen(pathname, mode);
+				subhook_install(fopen_hook);
+				fopen_hook->dst = olddst;
+				return ret;
+			}else if(!dst)
+			{
+				return fopen(pathname, mode);
+			}else{
+				subhook_remove(fopen_hook);
+				auto ret = fopen(pathname, mode);
+				subhook_install(fopen_hook);
+				return ret;
+			}
+		};
+	}
 	subhook_install(fopen_hook);
 }
 #endif
