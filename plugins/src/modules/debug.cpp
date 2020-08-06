@@ -151,7 +151,7 @@ void debug::init()
 	{
 		CreateFileA_Trampoline = [](LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 		{
-			auto dst = subhook_read_dst(CreateFileA);
+			auto dst = subhook_read_dst(reinterpret_cast<void*>(CreateFileA));
 			auto olddst = subhook_get_dst(CreateFileA_Hook);
 			if(dst != olddst)
 			{
@@ -248,7 +248,7 @@ void debug::init()
 	{
 		fopen_trampoline = [](const char *pathname, const char *mode)
 		{
-			auto dst = subhook_read_dst(fopen);
+			auto dst = subhook_read_dst(reinterpret_cast<void*>(fopen));
 			auto olddst = subhook_get_dst(fopen_hook);
 			if(dst != olddst)
 			{
