@@ -88,11 +88,14 @@ struct handle_delete
 	}
 };
 
-static thread_local std::unique_ptr<typename std::remove_pointer<HANDLE>::type, handle_delete> _last_file = nullptr;
+static std::unique_ptr<typename std::remove_pointer<HANDLE>::type, handle_delete> last_file = nullptr;
 
 static HANDLE WINAPI HookCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 {
-	auto &last_file = _last_file;
+	if(!is_main_thread)
+	{
+		return CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+	}
 	last_file = nullptr;
 	HANDLE hfile = CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	if(hfile && (dwDesiredAccess & GENERIC_READ))
@@ -107,7 +110,6 @@ static HANDLE WINAPI HookCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, D
 
 std::shared_ptr<AMX_DBG> debug::create_last(std::unique_ptr<char[]> &name)
 {
-	auto &last_file = _last_file;
 	if(!last_file)
 	{
 		return nullptr;
@@ -189,11 +191,14 @@ struct descriptor_delete
 	}
 };
 
-static thread_local std::unique_ptr<void, descriptor_delete> _last_file;
+static std::unique_ptr<void, descriptor_delete> last_file;
 
 static FILE *hook_fopen(const char *pathname, const char *mode)
 {
-	auto &last_file = _last_file;
+	if(!is_main_thread)
+	{
+		return fopen_trampoline(pathname, mode);
+	}
 	last_file = nullptr;
 	auto file = fopen_trampoline(pathname, mode);
 	if(file && !std::strcmp(mode, "rb"))
@@ -210,7 +215,6 @@ static FILE *hook_fopen(const char *pathname, const char *mode)
 
 std::shared_ptr<AMX_DBG> debug::create_last(std::unique_ptr<char[]> &name)
 {
-	auto &last_file = _last_file;
 	if(!last_file)
 	{
 		return nullptr;
@@ -272,3 +276,8 @@ void debug::init()
 	subhook_install(fopen_hook);
 }
 #endif
+
+void debug::clear_file()
+{
+	last_file = nullptr;
+}

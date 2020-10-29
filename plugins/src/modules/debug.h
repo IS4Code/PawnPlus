@@ -7,6 +7,7 @@
 namespace debug
 {
 	void init();
+	void clear_file();
 	std::shared_ptr<AMX_DBG> create_last(std::unique_ptr<char[]> &name);
 }
 

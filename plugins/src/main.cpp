@@ -96,6 +96,7 @@ void pp_tick()
 
 PLUGIN_EXPORT void PLUGIN_CALL ProcessTick() noexcept
 {
+	debug::clear_file();
 	pp_tick();
 }
 
