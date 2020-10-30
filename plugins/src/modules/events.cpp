@@ -71,6 +71,16 @@ public:
 		}
 	}
 
+	std::unique_ptr<event_info> &operator[](size_t index)
+	{
+		return handlers[index];
+	}
+
+	size_t size() const
+	{
+		return handlers.size();
+	}
+
 	std::vector<std::unique_ptr<event_info>>::iterator begin()
 	{
 		return handlers.begin();
@@ -221,8 +231,10 @@ namespace events
 		if(list)
 		{
 			event_list::level_guard guard(*list);
-			for(auto &handler : *list)
+			auto size = list->size();
+			for(size_t i = 0; i < size; i++)
 			{
+				auto &handler = (*list)[i];
 				if(handler)
 				{
 					if(handler->invoke(amx, retval, reinterpret_cast<cell>(handler.get())))
