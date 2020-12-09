@@ -11,10 +11,13 @@ namespace aux
 	template <class Type>
 	class shared_id_set_pool
 	{
-		std::unordered_map<Type*, std::shared_ptr<Type>> data;
+		template <class Key, class Value>
+		using map_template = std::unordered_map<Key, Value>;
 
-		typedef typename std::unordered_map<Type*, std::shared_ptr<Type>>::iterator iterator;
-		typedef typename std::unordered_map<Type*, std::shared_ptr<Type>>::const_iterator const_iterator;
+		map_template<Type*, std::shared_ptr<Type>> data;
+
+		typedef typename map_template<Type*, std::shared_ptr<Type>>::iterator iterator;
+		typedef typename map_template<Type*, std::shared_ptr<Type>>::const_iterator const_iterator;
 
 	public:
 		const std::shared_ptr<Type> &add(std::shared_ptr<Type> &&value)
@@ -128,7 +131,7 @@ namespace aux
 			return data.find(const_cast<Type*>(value));
 		}
 
-		iterator erase(iterator it)
+		auto erase(iterator it) -> decltype(data.erase(it))
 		{
 			return data.erase(it);
 		}

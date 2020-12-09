@@ -12,7 +12,10 @@ namespace aux
 	template <class Type>
 	class id_set_pool
 	{
-		std::unordered_set<Type*> data;
+		template <class Key>
+		using set_template = std::unordered_set<Key>;
+
+		set_template<Type*> data;
 
 		Type *add(Type *value)
 		{
@@ -20,8 +23,8 @@ namespace aux
 			return value;
 		}
 
-		typedef typename std::unordered_set<Type*>::iterator iterator;
-		typedef typename std::unordered_set<Type*>::const_iterator const_iterator;
+		typedef typename set_template<Type*>::iterator iterator;
+		typedef typename set_template<Type*>::const_iterator const_iterator;
 
 	public:
 		Type *add(std::unique_ptr<Type> &&value)
@@ -104,8 +107,8 @@ namespace aux
 		{
 			return data.find(const_cast<Type*>(value));
 		}
-
-		iterator erase(iterator it)
+		
+		auto erase(iterator it) -> decltype(data.erase(it))
 		{
 			auto ptr = *it;
 			delete ptr;
