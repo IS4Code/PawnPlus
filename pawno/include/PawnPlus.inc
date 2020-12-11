@@ -533,9 +533,9 @@ native String:str_join_s(List:list, ConstStringTag:delim);
 native String:str_to_lower(ConstStringTag:str);
 native String:str_to_upper(ConstStringTag:str);
 
-native String:str_set(StringTag:target, StringTag:other);
-native String:str_append(StringTag:target, StringTag:other);
-native String:str_ins(StringTag:target, StringTag:other, pos);
+native String:str_set(StringTag:target, ConstStringTag:other);
+native String:str_append(StringTag:target, ConstStringTag:other);
+native String:str_ins(StringTag:target, ConstStringTag:other, pos);
 native String:str_del(StringTag:target, start=0, end=cellmax);
 native String:str_clear(StringTag:str);
 native String:str_resize(StringTag:str, size, padding=0);
