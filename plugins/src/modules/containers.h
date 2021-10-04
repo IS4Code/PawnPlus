@@ -107,7 +107,8 @@ public:
 	void swap(collection_base<Type> &other)
 	{
 		std::swap(data, other.data);
-		std::swap(revision, other.revision);
+		++revision;
+		++other.revision;
 	}
 
 	Type &get_data()
