@@ -358,9 +358,9 @@ static const std::basic_regex<cell, regex_traits> &get_cached(Iter pattern_begin
 template <class Iter>
 static const std::basic_regex<cell, regex_traits> &get_cached_addr(Iter pattern_begin, Iter pattern_end, cell options, std::regex_constants::syntax_option_type syntax_options)
 {
-	static std::unordered_map<std::tuple<const void*, const void*, cell>, std::basic_regex<cell, regex_traits>> regex_cache;
+	static std::unordered_map<std::tuple<std::intptr_t, std::size_t, cell>, std::basic_regex<cell, regex_traits>> regex_cache;
 	options &= 255;
-	return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(&*pattern_begin, &*pattern_end, options), std::forward_as_tuple(pattern_begin, pattern_end, syntax_options)).first->second;
+	return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(reinterpret_cast<std::intptr_t>(&*pattern_begin), pattern_end - pattern_begin, options), std::forward_as_tuple(pattern_begin, pattern_end, syntax_options)).first->second;
 }
 
 template <class Iter>
