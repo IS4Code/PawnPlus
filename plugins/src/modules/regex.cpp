@@ -228,6 +228,7 @@ static std::regex_iterator<BidirIt, CharT, Traits> make_regex_iterator(BidirIt a
 	return {a, b, re, m};
 }
 
+constexpr const cell no_prev_avail_flag = 32768;
 constexpr const cell cache_flag = 4194304;
 constexpr const cell cache_addr_flag = 4194304 | 8388608;
 
@@ -375,7 +376,7 @@ struct regex_search_base
 		if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 		{
 			amx_LogicError(errors::out_of_range, "pos");
-		}else if(*pos > 0)
+		}else if(*pos > 0 && !(options & no_prev_avail_flag))
 		{
 			match_options |= std::regex_constants::match_prev_avail;
 		}
@@ -434,7 +435,7 @@ struct regex_extract_base
 		if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 		{
 			amx_LogicError(errors::out_of_range, "pos");
-		}else if(*pos > 0)
+		}else if(*pos > 0 && !(options & no_prev_avail_flag))
 		{
 			match_options |= std::regex_constants::match_prev_avail;
 		}
@@ -577,7 +578,7 @@ struct regex_replace_base
 			if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 			{
 				amx_LogicError(errors::out_of_range, "pos");
-			}else if(*pos > 0)
+			}else if(*pos > 0 && !(options & no_prev_avail_flag))
 			{
 				match_options |= std::regex_constants::match_prev_avail;
 			}
@@ -684,7 +685,7 @@ struct regex_replace_list_base
 		if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 		{
 			amx_LogicError(errors::out_of_range, "pos");
-		}else if(*pos > 0)
+		}else if(*pos > 0 && !(options & no_prev_avail_flag))
 		{
 			match_options |= std::regex_constants::match_prev_avail;
 		}
@@ -806,7 +807,7 @@ struct regex_replace_func_base
 		if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 		{
 			amx_LogicError(errors::out_of_range, "pos");
-		}else if(*pos > 0)
+		}else if(*pos > 0 && !(options & no_prev_avail_flag))
 		{
 			match_options |= std::regex_constants::match_prev_avail;
 		}
@@ -903,7 +904,7 @@ struct regex_replace_expr_base
 		if(*pos < 0 || static_cast<ucell>(*pos) > str.size())
 		{
 			amx_LogicError(errors::out_of_range, "pos");
-		}else if(*pos > 0)
+		}else if(*pos > 0 && !(options & no_prev_avail_flag))
 		{
 			match_options |= std::regex_constants::match_prev_avail;
 		}

@@ -570,6 +570,7 @@ enum regex_options (<<= 1)
     regex_any,
     regex_not_null,
     regex_continuous,
+    regex_start_at_pos,
     
     regex_no_copy = 65536,
     regex_first_only,
