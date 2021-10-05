@@ -12,6 +12,161 @@ namespace strings
 
 	void format(AMX *amx, strings::cell_string &str, const cell_string &format, cell argc, cell *args);
 	void format(AMX *amx, strings::cell_string &str, const cell *format, cell argc, cell *args);
+
+	namespace stream
+	{
+		inline void push_args(std::ostream &ostream)
+		{
+
+		}
+
+		template <class Arg, class... Args>
+		void push_args(std::ostream &ostream, Arg &&arg, Args&&... args)
+		{
+			ostream << std::forward<Arg>(arg);
+			push_args(ostream, std::forward<Args>(args)...);
+		}
+	}
+
+	template <class Obj, class... Args>
+	cell_string to_string(Obj &&obj, Args&&... args)
+	{
+		std::ostringstream ostream;
+		ostream.imbue(std::locale());
+		stream::push_args(ostream, std::forward<Args>(args)...);
+		ostream << std::forward<Obj>(obj);
+		return convert(ostream.str());
+	}
+
+	template <class Iter>
+	struct format_state;
+
+	template <class Iter>
+	struct num_parser
+	{
+		format_state<Iter> &state;
+		cell(*parse_func)(format_state<Iter> &state, Iter &begin, Iter end);
+
+		cell operator()(Iter &begin, Iter end) const
+		{
+			return parse_func(state, begin, end);
+		}
+	};
+
+	template <class Iter>
+	bool append_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, num_parser<Iter> &&parse_num);
+
+	template <class Iter>
+	struct format_specific
+	{
+		template <class QueryIter>
+		struct add_query
+		{
+			bool operator()(QueryIter begin, QueryIter end, Iter escape_begin, Iter escape_end, cell_string &buf) const
+			{
+				bool custom = escape_begin != escape_end;
+				cell escape_char;
+				if(custom)
+				{
+					escape_char = *escape_begin;
+					++escape_begin;
+					custom = escape_begin != escape_end;
+				}else{
+					escape_char = '\\';
+				}
+				auto last = begin;
+				while(begin != end)
+				{
+					if((!custom && (*begin == '\'' || *begin == '\\')) || std::find(escape_begin, escape_end, *begin) != escape_end)
+					{
+						buf.append(last, begin);
+						buf.append(1, escape_char);
+						buf.append(1, *begin);
+						++begin;
+						last = begin;
+					}else{
+						++begin;
+					}
+				}
+				buf.append(last, end);
+				return true;
+			}
+		};
+		
+		template <class StringIter>
+		struct append
+		{
+			bool operator()(StringIter begin, StringIter end, Iter param_begin, Iter param_end, num_parser<Iter> &&parse_num, cell_string &buf) const
+			{
+				if(param_begin == param_end)
+				{
+					buf.append(begin, end);
+					return true;
+				}else{
+					if(*param_begin == '.')
+					{
+						++param_begin;
+						cell max = parse_num(param_begin, param_end);
+						if(param_begin != param_end || max < 0)
+						{
+							return false;
+						}
+						auto new_end = begin + max;
+						if(new_end > end)
+						{
+							new_end = end;
+						}
+						buf.append(begin, new_end);
+						return true;
+					}else{
+						cell padding = *param_begin;
+						++param_begin;
+						cell width = parse_num(param_begin, param_end);
+						if(width < 0)
+						{
+							return false;
+						}
+						if(param_begin == param_end)
+						{
+							auto size = end - begin;
+							if(width > size)
+							{
+								buf.append(width - size, padding);
+							}
+							buf.append(begin, end);
+							return true;
+						}else if(*param_begin == '.')
+						{
+							++param_begin;
+							cell max = parse_num(param_begin, param_end);
+							if(param_begin != param_end || max < 0)
+							{
+								return false;
+							}
+							auto new_end = begin + max;
+							if(new_end <= end)
+							{
+								buf.append(begin, new_end);
+							}else{
+								auto size = end - begin;
+								if(size < width)
+								{
+									if(width > max)
+									{
+										width = max;
+									}
+									buf.append(width - size, padding);
+								}
+								buf.append(begin, end);
+							}
+							return true;
+						}
+						return false;
+					}
+				}
+			}
+		};
+	};
 }
 
 #endif

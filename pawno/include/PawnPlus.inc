@@ -329,6 +329,7 @@ enum tag_op
     tag_op_hash = 28,
     tag_op_acquire = 29,
     tag_op_handle = 30,
+    tag_op_format = 31,
 }
 
 /*                 */
@@ -548,6 +549,7 @@ native String:str_set_format(StringTag:target, const format[], AnyTag:...);
 native String:str_set_format_s(StringTag:target, ConstStringTag:format, AnyTag:...);
 native String:str_append_format(StringTag:target, const format[], AnyTag:...);
 native String:str_append_format_s(StringTag:target, ConstStringTag:format, AnyTag:...);
+native bool:str_register_format(specifier, TagTag:tag_id);
 
 enum regex_options (<<= 1)
 {

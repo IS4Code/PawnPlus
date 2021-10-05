@@ -38,6 +38,7 @@ enum class op_type
 	hash = 28,
 	acquire = 29,
 	handle = 30,
+	format = 31
 };
 
 namespace std

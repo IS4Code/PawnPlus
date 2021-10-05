@@ -1,6 +1,7 @@
 #include "tag_ops.h"
 #include "main.h"
 #include "modules/strings.h"
+#include "modules/format.h"
 #include "modules/variants.h"
 #include "modules/containers.h"
 #include "modules/tasks.h"
@@ -16,6 +17,12 @@
 #include <cmath>
 #include <cstring>
 #include <memory>
+#include <unordered_map>
+
+#include <cctype>
+#include <sstream>
+#include <bitset>
+#include <iomanip>
 
 using cell_string = strings::cell_string;
 
@@ -26,12 +33,37 @@ inline void hash_combine(size_t& seed, const T& v)
 	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-template <class Self>
-struct null_operations : public tag_operations
+static std::unordered_map<cell, const tag_operations*> specifier_map;
+
+const tag_operations *tag_operations::from_specifier(cell specifier)
+{
+	auto it = specifier_map.find(specifier);
+	if(it == specifier_map.end()) return nullptr;
+	return it->second;
+}
+
+bool tag_operations::register_specifier(cell specifier) const
+{
+	auto &slot = specifier_map[specifier];
+	if(slot != nullptr) return false;
+	slot = this;
+	return true;
+}
+
+struct tag_operations_base : public tag_operations
 {
 	cell tag_uid;
 
-	null_operations(cell tag_uid) : tag_uid(tag_uid)
+	tag_operations_base(cell tag_uid) : tag_uid(tag_uid)
+	{
+
+	}
+};
+
+template <class Self>
+struct null_operations : public tag_operations_base
+{
+	null_operations(cell tag_uid) : tag_operations_base(tag_uid)
 	{
 
 	}
@@ -227,11 +259,12 @@ struct null_operations : public tag_operations
 		return std::hash<cell>()(arg);
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		str.append(strings::convert(tags::find_tag(tag_uid)->format_name()));
 		str.push_back(':');
 		str.append(strings::convert(std::to_string(arg)));
+		return true;
 	}
 
 	virtual cell call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const override
@@ -256,30 +289,47 @@ struct null_operations : public tag_operations
 		return nullptr;
 	}
 
-	virtual void format_base(tag_ptr tag, const cell *arg, cell type, const cell *fmt_begin, const cell *fmt_end, cell_string &str) const override
+	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it1_t fmt_begin, it1_t fmt_end, strings::num_parser<it1_t> &&parse_num, cell_string &str) const override
 	{
-		return static_cast<const Self*>(this)->format(tag, arg, type, fmt_begin, fmt_end, str);
+		if(!tag) tag = tags::find_tag(tag_uid);
+		return Self::format(*this, tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
 	}
 
-	virtual void format_base(tag_ptr tag, const cell *arg, cell type, cell_string::const_iterator fmt_begin, cell_string::const_iterator fmt_end, cell_string &str) const override
+	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it2_t fmt_begin, it2_t fmt_end, strings::num_parser<it2_t> &&parse_num, cell_string &str) const override
 	{
-		return static_cast<const Self*>(this)->format(tag, arg, type, fmt_begin, fmt_end, str);
+		if(!tag) tag = tags::find_tag(tag_uid);
+		return Self::format(*this, tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
 	}
 
-	virtual void format_base(tag_ptr tag, const cell *arg, cell type, strings::aligned_const_char_iterator fmt_begin, strings::aligned_const_char_iterator fmt_end, cell_string &str) const override
+	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it3_t fmt_begin, it3_t fmt_end, strings::num_parser<it3_t> &&parse_num, cell_string &str) const override
 	{
-		return static_cast<const Self*>(this)->format(tag, arg, type, fmt_begin, fmt_end, str);
+		if(!tag) tag = tags::find_tag(tag_uid);
+		return Self::format(*this, tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
 	}
 
-	virtual void format_base(tag_ptr tag, const cell *arg, cell type, strings::unaligned_const_char_iterator fmt_begin, strings::unaligned_const_char_iterator fmt_end, cell_string &str) const override
+	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it4_t fmt_begin, it4_t fmt_end, strings::num_parser<it4_t> &&parse_num, cell_string &str) const override
 	{
-		return static_cast<const Self*>(this)->format(tag, arg, type, fmt_begin, fmt_end, str);
+		if(!tag) tag = tags::find_tag(tag_uid);
+		return Self::format(*this, tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
 	}
 
 	template <class Iter>
-	void format(tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, cell_string &str) const
+	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, strings::num_parser<Iter> &&parse_num, cell_string &str)
 	{
-		append_string(tag, *arg, str);
+		switch(type)
+		{
+			case 'v':
+			{
+				ops.append_string(tag, *arg, str);
+				return true;
+			}
+			break;
+		}
+		if(fmt_begin == fmt_end)
+		{
+			return ops.append_string(tag, *arg, str);
+		}
+		return false;
 	}
 };
 
@@ -288,7 +338,13 @@ struct cell_operations : public null_operations<Self>
 {
 	cell_operations(cell tag_uid) : null_operations<Self>(tag_uid)
 	{
-
+		register_specifier('d');
+		register_specifier('i');
+		register_specifier('u');
+		register_specifier('x');
+		register_specifier('h');
+		register_specifier('o');
+		register_specifier('b');
 	}
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
@@ -383,9 +439,132 @@ struct cell_operations : public null_operations<Self>
 		return arg;
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		str.append(strings::convert(std::to_string(arg)));
+		return true;
+	}
+
+	template <class Iter>
+	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	{
+		switch(type)
+		{
+			case 'd':
+			case 'i':
+			{
+				if(begin != end)
+				{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					cell width = parse_num(begin, end);
+					if(begin == end && width > 0)
+					{
+						buf.append(strings::to_string(*arg, std::setw(width), std::setfill(padding)));
+						return true;
+					}
+				}else{
+					buf.append(strings::to_string(*arg));
+					return true;
+				}
+			}
+			break;
+			case 'u':
+			{
+				ucell val = static_cast<ucell>(*arg);
+				if(begin != end)
+				{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					cell width = parse_num(begin, end);
+					if(begin == end && width > 0)
+					{
+						buf.append(strings::to_string(val, std::setw(width), std::setfill(padding)));
+						return true;
+					}
+				}else{
+					buf.append(strings::to_string(val));
+					return true;
+				}
+			}
+			break;
+			case 'h':
+			case 'x':
+			{
+				if(begin != end)
+				{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					cell width = parse_num(begin, end);
+					if(begin == end && width > 0)
+					{
+						buf.append(strings::to_string(*arg, std::hex, std::uppercase, std::setw(width), std::setfill(padding)));
+						return true;
+					}
+				}else{
+					buf.append(strings::to_string(*arg, std::hex, std::uppercase));
+					return true;
+				}
+			}
+			break;
+			case 'o':
+			{
+				if(begin != end)
+				{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					cell width = parse_num(begin, end);
+					if(begin == end && width > 0)
+					{
+						buf.append(strings::to_string(*arg, std::oct, std::setw(width), std::setfill(padding)));
+						return true;
+					}
+				}else{
+					buf.append(strings::to_string(*arg, std::oct));
+					return true;
+				}
+			}
+			break;
+			case 'b':
+			{
+				std::bitset<sizeof(cell) * 8> bits(*arg);
+				if(begin != end)
+				{
+					cell zero = *begin;
+					++begin;
+					if(begin != end)
+					{
+						cell one = *begin;
+						++begin;
+						if(begin == end)
+						{
+							buf.append(bits.to_string<cell>(zero, one));
+							return true;
+						}else if(*begin == '.')
+						{
+							++begin;
+							cell limit = parse_num(begin, end);
+							if(begin == end && limit > 0)
+							{
+								cell_string val(bits.to_string<cell>(zero, one));
+								if(val.size() > static_cast<size_t>(limit))
+								{
+									buf.append(val.begin() + val.size() - limit, val.end());
+								}else{
+									buf.append(val);
+								}
+								return true;
+							}
+						}
+					}
+				}else{
+					buf.append(bits.to_string<cell>());
+					return true;
+				}
+			}
+			break;
+		}
+		return null_operations<Self>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
 	}
 };
 
@@ -491,11 +670,12 @@ struct signed_operations : public cell_operations<signed_operations>
 		return !a;
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		str.append(strings::convert(tags::find_tag(tag_uid)->format_name()));
 		str.push_back(':');
 		str.append(strings::convert(std::to_string(arg)));
+		return true;
 	}
 };
 
@@ -601,11 +781,26 @@ struct unsigned_operations : public cell_operations<unsigned_operations>
 		return !static_cast<ucell>(a);
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		str.append(strings::convert(tags::find_tag(tag_uid)->format_name()));
 		str.push_back(':');
 		str.append(strings::convert(std::to_string(static_cast<ucell>(arg))));
+		return true;
+	}
+	
+	template <class Iter>
+	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	{
+		switch(type)
+		{
+			case 'd':
+			{
+				return cell_operations<unsigned_operations>::format(ops, tag, arg, 'u', begin, end, std::move(parse_num), buf);
+			}
+			break;
+		}
+		return cell_operations<unsigned_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
 	}
 };
 
@@ -616,7 +811,7 @@ struct bool_operations : public cell_operations<bool_operations>
 
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		static auto str_true = strings::convert("true");
 		static auto str_false = strings::convert("false");
@@ -635,6 +830,7 @@ struct bool_operations : public cell_operations<bool_operations>
 			}
 			str.append(strings::convert(std::to_string(arg)));
 		}
+		return true;
 	}
 };
 
@@ -642,7 +838,10 @@ struct char_operations : public cell_operations<char_operations>
 {
 	char_operations() : cell_operations(tags::tag_char)
 	{
-
+		register_specifier('c');
+		register_specifier('s');
+		register_specifier('q');
+		register_specifier('e');
 	}
 
 	virtual cell_string to_string(tag_ptr tag, cell arg) const override
@@ -668,9 +867,52 @@ struct char_operations : public cell_operations<char_operations>
 		return arr ? 's' : 'c';
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		str.push_back(arg);
+		return true;
+	}
+
+	template <class Iter>
+	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	{
+		switch(type)
+		{
+			case 's':
+			{
+				if(strings::select_iterator<typename strings::format_specific<Iter>::append>(arg, begin, end, std::move(parse_num), buf))
+				{
+					return true;
+				}
+			}
+			break;
+			case 'q':
+			case 'e':
+			{
+				if(strings::select_iterator<typename strings::format_specific<Iter>::add_query>(arg, begin, end, buf))
+				{
+					return true;
+				}
+			}
+			break;
+			case 'c':
+			{
+				if(begin == end)
+				{
+					buf.append(1, *arg);
+					return true;
+				}else{
+					cell count = parse_num(begin, end);
+					if(begin == end && count > 0)
+					{
+						buf.append(count, *arg);
+						return true;
+					}
+				}
+			}
+			break;
+		}
+		return cell_operations<char_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
 	}
 };
 
@@ -678,7 +920,7 @@ struct float_operations : public cell_operations<float_operations>
 {
 	float_operations() : cell_operations(tags::tag_float)
 	{
-
+		register_specifier('f');
 	}
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
@@ -779,9 +1021,70 @@ struct float_operations : public cell_operations<float_operations>
 		return arr ? 'a' : 'f';
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
-		str.append(strings::convert(std::to_string(amx_ctof(arg))));
+		str.append(strings::to_string(amx_ctof(arg)));
+		return true;
+	}
+
+	template <class Iter>
+	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	{
+		switch(type)
+		{
+			case 'f':
+			{
+				float val = amx_ctof(*arg);
+				if(*begin == '.')
+				{
+					++begin;
+					cell precision = parse_num(begin, end);
+					if(begin == end)
+					{
+						if(precision >= 0)
+						{
+							buf.append(strings::to_string(val, std::setprecision(precision), std::fixed));
+						}else{
+							buf.append(strings::to_string(val, std::setprecision(-precision), std::defaultfloat));
+						}
+						return true;
+					}
+				}else if(begin == end)
+				{
+					buf.append(strings::to_string(val));
+					return true;
+				}else{
+					char padding = static_cast<ucell>(*begin);
+					++begin;
+					cell width = parse_num(begin, end);
+					if(width < 0)
+					{
+						break;
+					}
+					if(begin == end)
+					{
+						buf.append(strings::to_string(val, std::setw(width), std::setfill(padding)));
+						return true;
+					}else if(*begin == '.')
+					{
+						++begin;
+						cell precision = parse_num(begin, end);
+						if(begin == end)
+						{
+							if(precision >= 0)
+							{
+								buf.append(strings::to_string(val, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed));
+							}else{
+								buf.append(strings::to_string(val, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat));
+							}
+							return true;
+						}
+					}
+				}
+			}
+			break;
+		}
+		return cell_operations<float_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
 	}
 };
 
@@ -789,7 +1092,9 @@ struct string_operations : public null_operations<string_operations>
 {
 	string_operations() : null_operations(tags::tag_string)
 	{
-
+		register_specifier('S');
+		register_specifier('Q');
+		register_specifier('E');
 	}
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
@@ -902,15 +1207,16 @@ struct string_operations : public null_operations<string_operations>
 		return null_operations::hash(tag, arg);
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		cell_string *ptr;
 		if(strings::pool.get_by_id(arg, ptr))
 		{
 			str.append(*ptr);
+			return true;
 		}
+		return ptr == nullptr;
 	}
-
 
 	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
 	{
@@ -921,13 +1227,47 @@ struct string_operations : public null_operations<string_operations>
 		}
 		return {};
 	}
+
+	template <class Iter>
+	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	{
+		switch(type)
+		{
+			case 'S':
+			{
+				cell_string *str;
+				if(strings::pool.get_by_id(*arg, str) || str == nullptr)
+				{
+					if(strings::select_iterator<typename strings::format_specific<Iter>::append>(str, begin, end, std::move(parse_num), buf))
+					{
+						return true;
+					}
+				}
+			}
+			break;
+			case 'Q':
+			case 'E':
+			{
+				cell_string *str;
+				if(strings::pool.get_by_id(*arg, str) || str == nullptr)
+				{
+					if(strings::select_iterator<typename strings::format_specific<Iter>::add_query>(str, begin, end, buf))
+					{
+						return true;
+					}
+				}
+			}
+			break;
+		}
+		return null_operations<string_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
+	}
 };
 
 struct variant_operations : public null_operations<variant_operations>
 {
 	variant_operations() : null_operations<variant_operations>(tags::tag_variant)
 	{
-
+		register_specifier('V');
 	}
 
 	template <dyn_object(dyn_object::*op_type)(const dyn_object&) const>
@@ -1115,15 +1455,22 @@ struct variant_operations : public null_operations<variant_operations>
 		return null_operations::hash(tag, arg);
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
-		str.push_back('(');
 		dyn_object *var;
 		if(variants::pool.get_by_id(arg, var))
 		{
+			str.push_back('(');
 			str.append(var->to_string());
+			str.push_back(')');
+			return true;
+		}else if(var == nullptr)
+		{
+			str.push_back('(');
+			str.push_back(')');
+			return true;
 		}
-		str.push_back(')');
+		return false;
 	}
 
 	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
@@ -1139,6 +1486,30 @@ struct variant_operations : public null_operations<variant_operations>
 			return ptr;
 		}
 		return {};
+	}
+	
+	template <class Iter>
+	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	{
+		switch(type)
+		{
+			case 'V':
+			{
+				dyn_object *var;
+				if(variants::pool.get_by_id(*arg, var))
+				{
+					if(strings::append_format(buf, begin, end, *var, std::move(parse_num)))
+					{
+						return true;
+					}
+				}else if(var == nullptr && begin == end)
+				{
+					return true;
+				}
+			}
+			break;
+		}
+		return null_operations<variant_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
 	}
 };
 
@@ -1197,15 +1568,22 @@ struct handle_operations : public null_operations<handle_operations>
 		return null_operations::hash(tag, arg);
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
-		str.push_back('<');
 		handle_t *handle;
 		if(handle_pool.get_by_id(arg, handle))
 		{
+			str.push_back('<');
 			str.append(handle->get().to_string());
+			str.push_back('>');
+			return true;
+		}else if(handle == nullptr)
+		{
+			str.push_back('<');
+			str.push_back('>');
+			return true;
 		}
-		str.push_back('>');
+		return false;
 	}
 
 	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
@@ -1619,12 +1997,12 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 		return null_operations::hash(tag, arg);
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
-		str.push_back('[');
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(arg, iter))
 		{
+			str.push_back('[');
 			const std::pair<const dyn_object, dyn_object> *pair;
 			if(iter->extract(pair))
 			{
@@ -1648,8 +2026,15 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 					}
 				}
 			}
+			str.push_back(']');
+			return true;
+		}else if(iter == nullptr)
+		{
+			str.push_back('[');
+			str.push_back(']');
+			return true;
 		}
-		str.push_back(']');
+		return false;
 	}
 
 	virtual std::weak_ptr<const void> handle(tag_ptr tag, cell arg) const override
@@ -1675,15 +2060,16 @@ struct ref_operations : public generic_operations<ref_operations, tags::tag_ref>
 
 	}
 	
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		auto base = tags::find_tag(tag_uid);
 		if(tag != base && tag->inherits_from(base))
 		{
 			auto subtag = tags::find_tag(tag->name.substr(base->name.size()+1).c_str());
 			str.append(subtag->get_ops().to_string(subtag, arg));
+			return true;
 		}else{
-			null_operations::append_string(tag, arg, str);
+			return null_operations::append_string(tag, arg, str);
 		}
 	}
 
@@ -1994,13 +2380,15 @@ struct expression_operations : public null_operations<expression_operations>
 		return true;
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		expression *ptr;
 		if(expression_pool.get_by_id(arg, ptr))
 		{
 			ptr->to_string(str);
+			return true;
 		}
+		return false;
 	}
 
 	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const override
@@ -2056,6 +2444,9 @@ std::vector<std::unique_ptr<tag_info>> tag_list([]()
 	v.push_back(std::move(string_const));
 	v.push_back(std::move(variant_const));
 	v.push_back(std::make_unique<tag_info>(27, "char@", v[3].get(), std::make_unique<char_operations>()));
+
+	unknown_ops.register_specifier('v');
+
 	return v;
 }());
 
@@ -2086,6 +2477,12 @@ class dynamic_operations : public null_operations<dynamic_operations>, public ta
 		}
 
 		virtual cell invoke(tag_ptr tag, cell *args, size_t numargs) = 0;
+
+		cell invoke(tag_ptr tag, cell arg1, cell arg2, cell arg3)
+		{
+			cell args[3] = {arg1, arg2, arg3};
+			return invoke(tag, args, 3);
+		}
 
 		cell invoke(tag_ptr tag, cell arg1, cell arg2)
 		{
@@ -2460,7 +2857,7 @@ public:
 		return base->get_ops().to_string(tag, arg, size);
 	}
 
-	virtual void append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
 	{
 		auto it = dyn_ops.find(op_type::string);
 		if(it != dyn_ops.end() && it->second)
@@ -2470,12 +2867,13 @@ public:
 			if(strings::pool.get_by_id(result, ptr))
 			{
 				str.append(*ptr);
+				return true;
 			}
-			return;
+			return ptr == nullptr;
 		}
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
-		base->get_ops().append_string(tag, arg, str);
+		return base->get_ops().append_string(tag, arg, str);
 	}
 
 	virtual cell call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const override
@@ -2491,11 +2889,30 @@ public:
 	}
 
 	template <class Iter>
-	void format(tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, cell_string &str) const
+	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, strings::num_parser<Iter> &&parse_num, cell_string &str)
 	{
-		tag_ptr base = tags::find_tag(tag_uid)->base;
+		auto it = static_cast<const dynamic_operations&>(ops).dyn_ops.find(op_type::format);
+		if(it != static_cast<const dynamic_operations&>(ops).dyn_ops.end() && it->second)
+		{
+			cell fmt;
+			if(fmt_begin == fmt_end)
+			{
+				fmt = 0;
+			}else{
+				fmt = strings::pool.get_id(strings::pool.emplace(fmt_begin, fmt_end));
+			}
+			cell result = it->second->invoke(tag, *arg, type, fmt);
+			cell_string *ptr;
+			if(strings::pool.get_by_id(result, ptr))
+			{
+				str.append(*ptr);
+				return true;
+			}
+			return ptr == nullptr;
+		}
+		tag_ptr base = tags::find_tag(ops.tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
-		return base->get_ops().format_base(tag, arg, type, fmt_begin, fmt_end, str);
+		return base->get_ops().format_base(tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
 	}
 };
 
