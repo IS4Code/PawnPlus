@@ -267,6 +267,12 @@ namespace Natives
 		return value_at<2>::linked_list_add<dyn_func_str>(amx, params);
 	}
 
+	// native linked_list_add_str_s(LinkedList:linked_list, ConstString:value, index=-1);
+	AMX_DEFINE_NATIVE_TAG(linked_list_add_str_s, 2, cell)
+	{
+		return value_at<2>::linked_list_add<dyn_func_str_s>(amx, params);
+	}
+
 	// native linked_list_add_var(LinkedList:linked_list, VariantTag:value, index=-1);
 	AMX_DEFINE_NATIVE_TAG(linked_list_add_var, 2, cell)
 	{
@@ -460,6 +466,12 @@ namespace Natives
 		return value_at<3>::linked_list_set<dyn_func_str>(amx, params);
 	}
 
+	// native linked_list_set_str_s(LinkedList:linked_list, index, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(linked_list_set_str_s, 3, cell)
+	{
+		return value_at<3>::linked_list_set<dyn_func_str_s>(amx, params);
+	}
+
 	// native linked_list_set_var(LinkedList:linked_list, index, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(linked_list_set_var, 3, cell)
 	{
@@ -583,6 +595,12 @@ namespace Natives
 		return value_at<2>::linked_list_count<dyn_func_str>(amx, params);
 	}
 
+	// native linked_list_count_str_s(LinkedList:linked_list, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(linked_list_count_str_s, 2, cell)
+	{
+		return value_at<2>::linked_list_count<dyn_func_str_s>(amx, params);
+	}
+
 	// native linked_list_count_var(LinkedList:linked_list, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(linked_list_count_var, 2, cell)
 	{
@@ -633,6 +651,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(linked_list_add),
 	AMX_DECLARE_NATIVE(linked_list_add_arr),
 	AMX_DECLARE_NATIVE(linked_list_add_str),
+	AMX_DECLARE_NATIVE(linked_list_add_str_s),
 	AMX_DECLARE_NATIVE(linked_list_add_var),
 	AMX_DECLARE_NATIVE(linked_list_add_linked_list),
 	AMX_DECLARE_NATIVE(linked_list_add_args),
@@ -657,6 +676,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(linked_list_set),
 	AMX_DECLARE_NATIVE(linked_list_set_arr),
 	AMX_DECLARE_NATIVE(linked_list_set_str),
+	AMX_DECLARE_NATIVE(linked_list_set_str_s),
 	AMX_DECLARE_NATIVE(linked_list_set_var),
 	AMX_DECLARE_NATIVE(linked_list_set_cell),
 	AMX_DECLARE_NATIVE(linked_list_set_cell_safe),
@@ -664,6 +684,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(linked_list_count),
 	AMX_DECLARE_NATIVE(linked_list_count_arr),
 	AMX_DECLARE_NATIVE(linked_list_count_str),
+	AMX_DECLARE_NATIVE(linked_list_count_str_s),
 	AMX_DECLARE_NATIVE(linked_list_count_var),
 	AMX_DECLARE_NATIVE(linked_list_count_if),
 

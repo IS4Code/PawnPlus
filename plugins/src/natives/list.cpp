@@ -341,6 +341,12 @@ namespace Natives
 		return value_at<2>::list_add<dyn_func_str>(amx, params);
 	}
 
+	// native list_add_str_s(List:list, ConstString:value, index=-1);
+	AMX_DEFINE_NATIVE_TAG(list_add_str_s, 2, cell)
+	{
+		return value_at<2>::list_add<dyn_func_str_s>(amx, params);
+	}
+
 	// native list_add_var(List:list, VariantTag:value, index=-1);
 	AMX_DEFINE_NATIVE_TAG(list_add_var, 2, cell)
 	{
@@ -565,6 +571,12 @@ namespace Natives
 		return value_at<3>::list_set<dyn_func_str>(amx, params);
 	}
 
+	// native list_set_str_s(List:list, index, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(list_set_str_s, 3, cell)
+	{
+		return value_at<3>::list_set<dyn_func_str_s>(amx, params);
+	}
+
 	// native list_set_var(List:list, index, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(list_set_var, 3, cell)
 	{
@@ -599,6 +611,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(list_resize_str, 3, cell)
 	{
 		return value_at<3>::list_resize<dyn_func_str>(amx, params);
+	}
+
+	// native list_resize_str_s(List:list, newsize, ConstString:padding);
+	AMX_DEFINE_NATIVE_TAG(list_resize_str_s, 3, cell)
+	{
+		return value_at<3>::list_resize<dyn_func_str_s>(amx, params);
 	}
 
 	// native list_resize_var(List:list, newsize, ConstVariantTag:padding);
@@ -658,6 +676,12 @@ namespace Natives
 		return value_at<2>::list_find<dyn_func_str>(amx, params);
 	}
 
+	// native list_find_str_s(List:list, ConstString:value, index=0);
+	AMX_DEFINE_NATIVE_TAG(list_find_str_s, 2, cell)
+	{
+		return value_at<2>::list_find<dyn_func_str_s>(amx, params);
+	}
+
 	// native list_find_var(List:list, VariantTag:value, index=0);
 	AMX_DEFINE_NATIVE_TAG(list_find_var, 2, cell)
 	{
@@ -680,6 +704,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(list_find_last_str, 2, cell)
 	{
 		return value_at<2>::list_find_last<dyn_func_str>(amx, params);
+	}
+
+	// native list_find_last_str_s(List:list, ConstString:value, index=0);
+	AMX_DEFINE_NATIVE_TAG(list_find_last_str_s, 2, cell)
+	{
+		return value_at<2>::list_find_last<dyn_func_str_s>(amx, params);
 	}
 
 	// native list_find_last_var(List:list, VariantTag:value, index=0);
@@ -827,6 +857,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(list_count_str, 2, cell)
 	{
 		return value_at<2>::list_count<dyn_func_str>(amx, params);
+	}
+
+	// native list_count_str_s(List:list, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(list_count_str_s, 2, cell)
+	{
+		return value_at<2>::list_count<dyn_func_str_s>(amx, params);
 	}
 
 	// native list_count_var(List:list, VariantTag:value);
@@ -1045,6 +1081,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_add),
 	AMX_DECLARE_NATIVE(list_add_arr),
 	AMX_DECLARE_NATIVE(list_add_str),
+	AMX_DECLARE_NATIVE(list_add_str_s),
 	AMX_DECLARE_NATIVE(list_add_var),
 	AMX_DECLARE_NATIVE(list_add_list),
 	AMX_DECLARE_NATIVE(list_add_args),
@@ -1071,6 +1108,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_set),
 	AMX_DECLARE_NATIVE(list_set_arr),
 	AMX_DECLARE_NATIVE(list_set_str),
+	AMX_DECLARE_NATIVE(list_set_str_s),
 	AMX_DECLARE_NATIVE(list_set_var),
 	AMX_DECLARE_NATIVE(list_set_cell),
 	AMX_DECLARE_NATIVE(list_set_cell_safe),
@@ -1078,15 +1116,18 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_resize),
 	AMX_DECLARE_NATIVE(list_resize_arr),
 	AMX_DECLARE_NATIVE(list_resize_str),
+	AMX_DECLARE_NATIVE(list_resize_str_s),
 	AMX_DECLARE_NATIVE(list_resize_var),
 
 	AMX_DECLARE_NATIVE(list_find),
 	AMX_DECLARE_NATIVE(list_find_arr),
 	AMX_DECLARE_NATIVE(list_find_str),
+	AMX_DECLARE_NATIVE(list_find_str_s),
 	AMX_DECLARE_NATIVE(list_find_var),
 	AMX_DECLARE_NATIVE(list_find_last),
 	AMX_DECLARE_NATIVE(list_find_last_arr),
 	AMX_DECLARE_NATIVE(list_find_last_str),
+	AMX_DECLARE_NATIVE(list_find_last_str_s),
 	AMX_DECLARE_NATIVE(list_find_last_var),
 	AMX_DECLARE_NATIVE(list_find_if),
 	AMX_DECLARE_NATIVE(list_find_last_if),
@@ -1094,6 +1135,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(list_count),
 	AMX_DECLARE_NATIVE(list_count_arr),
 	AMX_DECLARE_NATIVE(list_count_str),
+	AMX_DECLARE_NATIVE(list_count_str_s),
 	AMX_DECLARE_NATIVE(list_count_var),
 	AMX_DECLARE_NATIVE(list_count_if),
 

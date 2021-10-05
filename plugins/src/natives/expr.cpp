@@ -228,6 +228,12 @@ namespace Natives
 		return value_at<1>::expr_const<dyn_func_str>(amx, params);
 	}
 
+	// native Expression:expr_const_str_s(ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(expr_const_str_s, 1, expression)
+	{
+		return value_at<1>::expr_const<dyn_func_str_s>(amx, params);
+	}
+
 	// native Expression:expr_const_var(VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(expr_const_var, 1, expression)
 	{
@@ -797,6 +803,12 @@ namespace Natives
 		return value_at<2>::expr_set<dyn_func_str>(amx, params);
 	}
 
+	// native expr_set_str_s(Expression:expr, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(expr_set_str_s, 2, cell)
+	{
+		return value_at<2>::expr_set<dyn_func_str_s>(amx, params);
+	}
+
 	// native expr_set_var(Expression:expr, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(expr_set_var, 2, cell)
 	{
@@ -846,6 +858,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_const),
 	AMX_DECLARE_NATIVE(expr_const_arr),
 	AMX_DECLARE_NATIVE(expr_const_str),
+	AMX_DECLARE_NATIVE(expr_const_str_s),
 	AMX_DECLARE_NATIVE(expr_const_var),
 	AMX_DECLARE_NATIVE(expr_true),
 	AMX_DECLARE_NATIVE(expr_false),
@@ -935,6 +948,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(expr_set),
 	AMX_DECLARE_NATIVE(expr_set_arr),
 	AMX_DECLARE_NATIVE(expr_set_str),
+	AMX_DECLARE_NATIVE(expr_set_str_s),
 	AMX_DECLARE_NATIVE(expr_set_var),
 
 	AMX_DECLARE_NATIVE(expr_exec),

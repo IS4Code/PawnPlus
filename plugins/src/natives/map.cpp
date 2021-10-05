@@ -662,6 +662,12 @@ namespace Natives
 		return key_at<2, 4>::value_at<3>::map_add<dyn_func, dyn_func_str>(amx, params);
 	}
 
+	// native bool:map_add_str_s(Map:map, AnyTag:key, ConstString:value, TagTag:key_tag_id=tagof(key));
+	AMX_DEFINE_NATIVE_TAG(map_add_str_s, 4, bool)
+	{
+		return key_at<2, 4>::value_at<3>::map_add<dyn_func, dyn_func_str_s>(amx, params);
+	}
+
 	// native bool:map_add_var(Map:map, AnyTag:key, VariantTag:value, TagTag:key_tag_id=tagof(key));
 	AMX_DEFINE_NATIVE_TAG(map_add_var, 4, bool)
 	{
@@ -684,6 +690,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(map_arr_add_str, 5, bool)
 	{
 		return key_at<2, 4, 5>::value_at<3>::map_add<dyn_func_arr, dyn_func_str>(amx, params);
+	}
+
+	// native bool:map_arr_add_str_s(Map:map, const AnyTag:key[], ConstString:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+	AMX_DEFINE_NATIVE_TAG(map_arr_add_str_s, 5, bool)
+	{
+		return key_at<2, 4, 5>::value_at<3>::map_add<dyn_func_arr, dyn_func_str_s>(amx, params);
 	}
 
 	// native bool:map_arr_add_var(Map:map, const AnyTag:key[], VariantTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
@@ -710,10 +722,46 @@ namespace Natives
 		return key_at<2>::value_at<3>::map_add<dyn_func_str, dyn_func_str>(amx, params);
 	}
 
+	// native bool:map_str_add_str_s(Map:map, const key[], ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(map_str_add_str_s, 3, bool)
+	{
+		return key_at<2>::value_at<3>::map_add<dyn_func_str, dyn_func_str_s>(amx, params);
+	}
+
 	// native bool:map_str_add_var(Map:map, const key[], VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(map_str_add_var, 3, bool)
 	{
 		return key_at<2>::value_at<3>::map_add<dyn_func_str, dyn_func_var>(amx, params);
+	}
+
+	// native bool:map_str_s_add(Map:map, ConstString:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(map_str_s_add, 4, bool)
+	{
+		return key_at<2>::value_at<3, 4>::map_add<dyn_func_str_s, dyn_func>(amx, params);
+	}
+
+	// native bool:map_str_s_add_arr(Map:map, ConstString:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(map_str_s_add_arr, 5, bool)
+	{
+		return key_at<2>::value_at<3, 4, 5>::map_add<dyn_func_str_s, dyn_func_arr>(amx, params);
+	}
+
+	// native bool:map_str_s_add_str(Map:map, ConstString:key, const value[]);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_add_str, 3, bool)
+	{
+		return key_at<2>::value_at<3>::map_add<dyn_func_str_s, dyn_func_str>(amx, params);
+	}
+
+	// native bool:map_str_s_add_str_s(Map:map, ConstString:key, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_add_str_s, 3, bool)
+	{
+		return key_at<2>::value_at<3>::map_add<dyn_func_str_s, dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:map_str_s_add_var(Map:map, ConstString:key, VariantTag:value);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_add_var, 3, bool)
+	{
+		return key_at<2>::value_at<3>::map_add<dyn_func_str_s, dyn_func_var>(amx, params);
 	}
 
 	// native bool:map_var_add(Map:map, VariantTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
@@ -734,7 +782,13 @@ namespace Natives
 		return key_at<2>::value_at<3>::map_add<dyn_func_var, dyn_func_str>(amx, params);
 	}
 
-	// native bool:map_str_add_var(Map:map, VariantTag:key, VariantTag:value);
+	// native bool:map_var_add_str_s(Map:map, VariantTag:key, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(map_var_add_str_s, 3, bool)
+	{
+		return key_at<2>::value_at<3>::map_add<dyn_func_var, dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:map_var_add_var(Map:map, VariantTag:key, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(map_var_add_var, 3, bool)
 	{
 		return key_at<2>::value_at<3>::map_add<dyn_func_var, dyn_func_var>(amx, params);
@@ -1101,7 +1155,13 @@ namespace Natives
 		return key_at<2>::map_remove<dyn_func_str>(amx, params);
 	}
 
-	// native bool:map_str_remove(Map:map, VariantTag:key);
+	// native bool:map_str_s_remove(Map:map, ConstString:key);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_remove, 2, bool)
+	{
+		return key_at<2>::map_remove<dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:map_var_remove(Map:map, VariantTag:key);
 	AMX_DEFINE_NATIVE_TAG(map_var_remove, 2, bool)
 	{
 		return key_at<2>::map_remove<dyn_func_var>(amx, params);
@@ -1125,7 +1185,13 @@ namespace Natives
 		return key_at<2>::map_remove_deep<dyn_func_str>(amx, params);
 	}
 
-	// native bool:map_str_remove_deep(Map:map, VariantTag:key);
+	// native bool:map_str_s_remove_deep(Map:map, ConstString:key);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_remove_deep, 2, bool)
+	{
+		return key_at<2>::map_remove_deep<dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:map_var_remove_deep(Map:map, VariantTag:key);
 	AMX_DEFINE_NATIVE_TAG(map_var_remove_deep, 2, bool)
 	{
 		return key_at<2>::map_remove_deep<dyn_func_var>(amx, params);
@@ -1217,6 +1283,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(map_has_str_key, 2, bool)
 	{
 		return key_at<2>::map_has_key<dyn_func_str>(amx, params);
+	}
+
+	// native bool:map_has_str_s_key(Map:map, ConstString:key);
+	AMX_DEFINE_NATIVE_TAG(map_has_str_s_key, 2, bool)
+	{
+		return key_at<2>::map_has_key<dyn_func_str_s>(amx, params);
 	}
 
 	// native bool:map_has_var_key(Map:map, VariantTag:key);
@@ -1369,6 +1441,54 @@ namespace Natives
 		return key_at<2>::value_at<0>::map_get<dyn_func_str, dyn_func_str_s>(amx, params);
 	}
 
+	// native map_str_s_get(Map:map, ConstString:key, offset=0);
+	AMX_DEFINE_NATIVE(map_str_s_get, 3)
+	{
+		return key_at<2>::value_at<3>::map_get<dyn_func_str_s, dyn_func>(amx, params);
+	}
+
+	// native map_str_s_get_arr(Map:map, ConstString:key, AnyTag:value[], value_size=sizeof(value));
+	AMX_DEFINE_NATIVE_TAG(map_str_s_get_arr, 4, cell)
+	{
+		return key_at<2>::value_at<3, 4>::map_get<dyn_func_str_s, dyn_func_arr>(amx, params);
+	}
+
+	// native String:map_str_s_get_str_s(Map:map, ConstString:key);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_get_str_s, 2, string)
+	{
+		return key_at<2>::value_at<>::map_get<dyn_func_str_s, dyn_func_str_s>(amx, params);
+	}
+
+	// native Variant:map_str_s_get_var(Map:map, constConstString:key);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_get_var, 2, variant)
+	{
+		return key_at<2>::value_at<>::map_get<dyn_func_str_s, dyn_func_var>(amx, params);
+	}
+
+	// native bool:map_str_s_get_safe(Map:map, ConstString:key, &AnyTag:value, offset=0, TagTag:value_tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(map_str_s_get_safe, 5, bool)
+	{
+		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_str_s, dyn_func>(amx, params);
+	}
+
+	// native map_str_s_get_arr_safe(Map:map, ConstString:key, AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(map_str_s_get_arr_safe, 5, cell)
+	{
+		return key_at<2>::value_at<3, 4, 5>::map_get<dyn_func_str_s, dyn_func_arr>(amx, params);
+	}
+
+	// native map_str_s_get_str_safe(Map:map, ConstString:key, value[], value_size=sizeof(value));
+	AMX_DEFINE_NATIVE_TAG(map_str_s_get_str_safe, 4, cell)
+	{
+		return key_at<2>::value_at<3, 4>::map_get<dyn_func_str_s, dyn_func_str>(amx, params);
+	}
+
+	// native String:map_str_s_get_str_safe_s(Map:map, ConstString:key);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_get_str_safe_s, 2, string)
+	{
+		return key_at<2>::value_at<0>::map_get<dyn_func_str_s, dyn_func_str_s>(amx, params);
+	}
+
 	// native map_var_get(Map:map, VariantTag:key, offset=0);
 	AMX_DEFINE_NATIVE(map_var_get, 3)
 	{
@@ -1435,6 +1555,12 @@ namespace Natives
 		return key_at<2, 4>::value_at<3>::map_set<dyn_func, dyn_func_str>(amx, params);
 	}
 
+	// native map_set_str_s(Map:map, AnyTag:key, ConstString:value, TagTag:key_tag_id=tagof(key));
+	AMX_DEFINE_NATIVE_TAG(map_set_str_s, 4, cell)
+	{
+		return key_at<2, 4>::value_at<3>::map_set<dyn_func, dyn_func_str_s>(amx, params);
+	}
+
 	// native map_set_var(Map:map, AnyTag:key, VariantTag:value, TagTag:key_tag_id=tagof(key));
 	AMX_DEFINE_NATIVE_TAG(map_set_var, 4, cell)
 	{
@@ -1469,6 +1595,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(map_arr_set_str, 5, cell)
 	{
 		return key_at<2, 4, 5>::value_at<3>::map_set<dyn_func_arr, dyn_func_str>(amx, params);
+	}
+
+	// native map_arr_set_str_s(Map:map, const AnyTag:key[], ConstString:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+	AMX_DEFINE_NATIVE_TAG(map_arr_set_str_s, 5, cell)
+	{
+		return key_at<2, 4, 5>::value_at<3>::map_set<dyn_func_arr, dyn_func_str_s>(amx, params);
 	}
 
 	// native map_arr_set_var(Map:map, const AnyTag:key[], VariantTags:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
@@ -1507,6 +1639,12 @@ namespace Natives
 		return key_at<2>::value_at<3>::map_set<dyn_func_str, dyn_func_str>(amx, params);
 	}
 
+	// native map_str_set_str_s(Map:map, const key[], ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(map_str_set_str_s, 3, cell)
+	{
+		return key_at<2>::value_at<3>::map_set<dyn_func_str, dyn_func_str_s>(amx, params);
+	}
+
 	// native map_str_set_var(Map:map, const key[], VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(map_str_set_var, 3, cell)
 	{
@@ -1525,6 +1663,48 @@ namespace Natives
 		return key_at<2>::map_set_cell<dyn_func_str, 5>(amx, params);
 	}
 
+	// native map_str_s_set(Map:map, ConstString:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(map_str_s_set, 4, cell)
+	{
+		return key_at<2>::value_at<3, 4>::map_set<dyn_func_str_s, dyn_func>(amx, params);
+	}
+
+	// native map_str_s_set_arr(Map:map, ConstString:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(map_str_s_set_arr, 5, cell)
+	{
+		return key_at<2>::value_at<3, 4, 5>::map_set<dyn_func_str_s, dyn_func_arr>(amx, params);
+	}
+
+	// native map_str_s_set_str(Map:map, ConstString:key, const value[]);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_set_str, 3, cell)
+	{
+		return key_at<2>::value_at<3>::map_set<dyn_func_str_s, dyn_func_str>(amx, params);
+	}
+
+	// native map_str_s_set_str_s(Map:map, ConstString:key, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_set_str_s, 3, cell)
+	{
+		return key_at<2>::value_at<3>::map_set<dyn_func_str_s, dyn_func_str_s>(amx, params);
+	}
+
+	// native map_str_s_set_var(Map:map, ConstString:key, VariantTag:value);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_set_var, 3, cell)
+	{
+		return key_at<2>::value_at<3>::map_set<dyn_func_str_s, dyn_func_var>(amx, params);
+	}
+
+	// native map_str_s_set_cell(Map:map, ConstString:key, offset, AnyTag:value);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_set_cell, 4, cell)
+	{
+		return key_at<2>::map_set_cell<dyn_func_str_s>(amx, params);
+	}
+
+	// native bool:map_str_s_set_cell_safe(Map:map, ConstString:key, offset, AnyTag:value, TagTag:value_tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(map_str_s_set_cell_safe, 5, bool)
+	{
+		return key_at<2>::map_set_cell<dyn_func_str_s, 5>(amx, params);
+	}
+
 	// native map_var_set(Map:map, VariantTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
 	AMX_DEFINE_NATIVE_TAG(map_var_set, 4, cell)
 	{
@@ -1541,6 +1721,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(map_var_set_str, 3, cell)
 	{
 		return key_at<2>::value_at<3>::map_set<dyn_func_var, dyn_func_str>(amx, params);
+	}
+
+	// native map_var_set_str_s(Map:map, VariantTag:key, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(map_var_set_str_s, 3, cell)
+	{
+		return key_at<2>::value_at<3>::map_set<dyn_func_var, dyn_func_str_s>(amx, params);
 	}
 
 	// native map_var_set_var(Map:map, VariantTag:key, VariantTag:value);
@@ -1639,6 +1825,12 @@ namespace Natives
 		return value_at<2>::map_count<dyn_func_str>(amx, params);
 	}
 
+	// native map_count_str_s(Map:map, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(map_count_str_s, 2, cell)
+	{
+		return value_at<2>::map_count<dyn_func_str_s>(amx, params);
+	}
+
 	// native map_count_var(Map:map, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(map_count_var, 2, cell)
 	{
@@ -1711,6 +1903,18 @@ namespace Natives
 		return key_at<2>::map_sizeof<dyn_func_str>(amx, params);
 	}
 
+	// native map_str_s_tagof(Map:map, ConstString:key);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_tagof, 2, cell)
+	{
+		return key_at<2>::map_tagof<dyn_func_str_s>(amx, params);
+	}
+
+	// native map_str_s_sizeof(Map:map, ConstString:key);
+	AMX_DEFINE_NATIVE_TAG(map_str_s_sizeof, 2, cell)
+	{
+		return key_at<2>::map_sizeof<dyn_func_str_s>(amx, params);
+	}
+
 	// native map_var_tagof(Map:map, VariantTag:key);
 	AMX_DEFINE_NATIVE_TAG(map_var_tagof, 2, cell)
 	{
@@ -1757,18 +1961,27 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_add),
 	AMX_DECLARE_NATIVE(map_add_arr),
 	AMX_DECLARE_NATIVE(map_add_str),
+	AMX_DECLARE_NATIVE(map_add_str_s),
 	AMX_DECLARE_NATIVE(map_add_var),
 	AMX_DECLARE_NATIVE(map_arr_add),
 	AMX_DECLARE_NATIVE(map_arr_add_arr),
 	AMX_DECLARE_NATIVE(map_arr_add_str),
+	AMX_DECLARE_NATIVE(map_arr_add_str_s),
 	AMX_DECLARE_NATIVE(map_arr_add_var),
 	AMX_DECLARE_NATIVE(map_str_add),
 	AMX_DECLARE_NATIVE(map_str_add_arr),
 	AMX_DECLARE_NATIVE(map_str_add_str),
+	AMX_DECLARE_NATIVE(map_str_add_str_s),
 	AMX_DECLARE_NATIVE(map_str_add_var),
+	AMX_DECLARE_NATIVE(map_str_s_add),
+	AMX_DECLARE_NATIVE(map_str_s_add_arr),
+	AMX_DECLARE_NATIVE(map_str_s_add_str),
+	AMX_DECLARE_NATIVE(map_str_s_add_str_s),
+	AMX_DECLARE_NATIVE(map_str_s_add_var),
 	AMX_DECLARE_NATIVE(map_var_add),
 	AMX_DECLARE_NATIVE(map_var_add_arr),
 	AMX_DECLARE_NATIVE(map_var_add_str),
+	AMX_DECLARE_NATIVE(map_var_add_str_s),
 	AMX_DECLARE_NATIVE(map_var_add_var),
 	AMX_DECLARE_NATIVE(map_add_map),
 	AMX_DECLARE_NATIVE(map_add_args),
@@ -1787,10 +2000,12 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_remove),
 	AMX_DECLARE_NATIVE(map_arr_remove),
 	AMX_DECLARE_NATIVE(map_str_remove),
+	AMX_DECLARE_NATIVE(map_str_s_remove),
 	AMX_DECLARE_NATIVE(map_var_remove),
 	AMX_DECLARE_NATIVE(map_remove_deep),
 	AMX_DECLARE_NATIVE(map_arr_remove_deep),
 	AMX_DECLARE_NATIVE(map_str_remove_deep),
+	AMX_DECLARE_NATIVE(map_str_s_remove_deep),
 	AMX_DECLARE_NATIVE(map_var_remove_deep),
 	AMX_DECLARE_NATIVE(map_remove_if),
 	AMX_DECLARE_NATIVE(map_remove_if_deep),
@@ -1798,6 +2013,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_has_key),
 	AMX_DECLARE_NATIVE(map_has_arr_key),
 	AMX_DECLARE_NATIVE(map_has_str_key),
+	AMX_DECLARE_NATIVE(map_has_str_s_key),
 	AMX_DECLARE_NATIVE(map_has_var_key),
 
 	AMX_DECLARE_NATIVE(map_get),
@@ -1824,6 +2040,14 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_str_get_arr_safe),
 	AMX_DECLARE_NATIVE(map_str_get_str_safe),
 	AMX_DECLARE_NATIVE(map_str_get_str_safe_s),
+	AMX_DECLARE_NATIVE(map_str_s_get),
+	AMX_DECLARE_NATIVE(map_str_s_get_arr),
+	AMX_DECLARE_NATIVE(map_str_s_get_str_s),
+	AMX_DECLARE_NATIVE(map_str_s_get_var),
+	AMX_DECLARE_NATIVE(map_str_s_get_safe),
+	AMX_DECLARE_NATIVE(map_str_s_get_arr_safe),
+	AMX_DECLARE_NATIVE(map_str_s_get_str_safe),
+	AMX_DECLARE_NATIVE(map_str_s_get_str_safe_s),
 	AMX_DECLARE_NATIVE(map_var_get),
 	AMX_DECLARE_NATIVE(map_var_get_arr),
 	AMX_DECLARE_NATIVE(map_var_get_str_s),
@@ -1836,24 +2060,35 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_set),
 	AMX_DECLARE_NATIVE(map_set_arr),
 	AMX_DECLARE_NATIVE(map_set_str),
+	AMX_DECLARE_NATIVE(map_set_str_s),
 	AMX_DECLARE_NATIVE(map_set_var),
 	AMX_DECLARE_NATIVE(map_set_cell),
 	AMX_DECLARE_NATIVE(map_set_cell_safe),
 	AMX_DECLARE_NATIVE(map_arr_set),
 	AMX_DECLARE_NATIVE(map_arr_set_arr),
 	AMX_DECLARE_NATIVE(map_arr_set_str),
+	AMX_DECLARE_NATIVE(map_arr_set_str_s),
 	AMX_DECLARE_NATIVE(map_arr_set_var),
 	AMX_DECLARE_NATIVE(map_arr_set_cell),
 	AMX_DECLARE_NATIVE(map_arr_set_cell_safe),
 	AMX_DECLARE_NATIVE(map_str_set),
 	AMX_DECLARE_NATIVE(map_str_set_arr),
 	AMX_DECLARE_NATIVE(map_str_set_str),
+	AMX_DECLARE_NATIVE(map_str_set_str_s),
 	AMX_DECLARE_NATIVE(map_str_set_var),
 	AMX_DECLARE_NATIVE(map_str_set_cell),
 	AMX_DECLARE_NATIVE(map_str_set_cell_safe),
+	AMX_DECLARE_NATIVE(map_str_s_set),
+	AMX_DECLARE_NATIVE(map_str_s_set_arr),
+	AMX_DECLARE_NATIVE(map_str_s_set_str),
+	AMX_DECLARE_NATIVE(map_str_s_set_str_s),
+	AMX_DECLARE_NATIVE(map_str_s_set_var),
+	AMX_DECLARE_NATIVE(map_str_s_set_cell),
+	AMX_DECLARE_NATIVE(map_str_s_set_cell_safe),
 	AMX_DECLARE_NATIVE(map_var_set),
 	AMX_DECLARE_NATIVE(map_var_set_arr),
 	AMX_DECLARE_NATIVE(map_var_set_str),
+	AMX_DECLARE_NATIVE(map_var_set_str_s),
 	AMX_DECLARE_NATIVE(map_var_set_var),
 	AMX_DECLARE_NATIVE(map_var_set_cell),
 	AMX_DECLARE_NATIVE(map_var_set_cell_safe),
@@ -1871,6 +2106,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_count),
 	AMX_DECLARE_NATIVE(map_count_arr),
 	AMX_DECLARE_NATIVE(map_count_str),
+	AMX_DECLARE_NATIVE(map_count_str_s),
 	AMX_DECLARE_NATIVE(map_count_var),
 	AMX_DECLARE_NATIVE(map_count_if),
 
@@ -1880,6 +2116,8 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_arr_sizeof),
 	AMX_DECLARE_NATIVE(map_str_tagof),
 	AMX_DECLARE_NATIVE(map_str_sizeof),
+	AMX_DECLARE_NATIVE(map_str_s_tagof),
+	AMX_DECLARE_NATIVE(map_str_s_sizeof),
 	AMX_DECLARE_NATIVE(map_var_tagof),
 	AMX_DECLARE_NATIVE(map_var_sizeof),
 };

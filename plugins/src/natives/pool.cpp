@@ -250,6 +250,12 @@ namespace Natives
 		return value_at<2>::pool_add<dyn_func_str>(amx, params);
 	}
 
+	// native pool_add_str_s(Pool:pool, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(pool_add_str_s, 2, cell)
+	{
+		return value_at<2>::pool_add<dyn_func_str_s>(amx, params);
+	}
+
 	// native pool_add_var(Pool:pool, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(pool_add_var, 2, cell)
 	{
@@ -410,6 +416,12 @@ namespace Natives
 		return value_at<3>::pool_set<dyn_func_str>(amx, params);
 	}
 
+	// native pool_set_str_s(Pool:pool, index, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(pool_set_str_s, 3, cell)
+	{
+		return value_at<3>::pool_set<dyn_func_str_s>(amx, params);
+	}
+
 	// native pool_set_var(Pool:pool, index, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(pool_set_var, 3, cell)
 	{
@@ -531,6 +543,12 @@ namespace Natives
 		return value_at<2>::pool_find<dyn_func_str>(amx, params);
 	}
 
+	// native pool_find_str_s(Pool:pool, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(pool_find_str_s, 2, cell)
+	{
+		return value_at<2>::pool_find<dyn_func_str_s>(amx, params);
+	}
+
 	// native pool_find_var(Pool:pool, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(pool_find_var, 2, cell)
 	{
@@ -577,6 +595,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(pool_count_str, 2, cell)
 	{
 		return value_at<2>::pool_count<dyn_func_str>(amx, params);
+	}
+
+	// native pool_count_str_s(Pool:pool, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(pool_count_str_s, 2, cell)
+	{
+		return value_at<2>::pool_count<dyn_func_str_s>(amx, params);
 	}
 
 	// native pool_count_var(Pool:pool, VariantTag:value);
@@ -631,6 +655,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pool_add),
 	AMX_DECLARE_NATIVE(pool_add_arr),
 	AMX_DECLARE_NATIVE(pool_add_str),
+	AMX_DECLARE_NATIVE(pool_add_str_s),
 	AMX_DECLARE_NATIVE(pool_add_var),
 
 	AMX_DECLARE_NATIVE(pool_remove),
@@ -654,6 +679,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pool_set),
 	AMX_DECLARE_NATIVE(pool_set_arr),
 	AMX_DECLARE_NATIVE(pool_set_str),
+	AMX_DECLARE_NATIVE(pool_set_str_s),
 	AMX_DECLARE_NATIVE(pool_set_var),
 	AMX_DECLARE_NATIVE(pool_set_cell),
 	AMX_DECLARE_NATIVE(pool_set_cell_safe),
@@ -661,12 +687,14 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pool_find),
 	AMX_DECLARE_NATIVE(pool_find_arr),
 	AMX_DECLARE_NATIVE(pool_find_str),
+	AMX_DECLARE_NATIVE(pool_find_str_s),
 	AMX_DECLARE_NATIVE(pool_find_var),
 	AMX_DECLARE_NATIVE(pool_find_if),
 
 	AMX_DECLARE_NATIVE(pool_count),
 	AMX_DECLARE_NATIVE(pool_count_arr),
 	AMX_DECLARE_NATIVE(pool_count_str),
+	AMX_DECLARE_NATIVE(pool_count_str_s),
 	AMX_DECLARE_NATIVE(pool_count_var),
 	AMX_DECLARE_NATIVE(pool_count_if),
 

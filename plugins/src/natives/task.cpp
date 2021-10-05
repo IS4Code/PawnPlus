@@ -151,6 +151,12 @@ namespace Natives
 		return value_at<2>::task_set_result<dyn_func_str>(amx, params);
 	}
 
+	// native task_set_result_str_s(Task:task, ConstString:result);
+	AMX_DEFINE_NATIVE_TAG(task_set_result_str_s, 2, cell)
+	{
+		return value_at<2>::task_set_result<dyn_func_str_s>(amx, params);
+	}
+
 	// native task_set_result_var(Task:task, ConstVariantTag:result);
 	AMX_DEFINE_NATIVE_TAG(task_set_result_var, 2, cell)
 	{
@@ -489,6 +495,12 @@ namespace Natives
 		return value_at<2>::task_set_result_ms<dyn_func_str>(amx, params);
 	}
 
+	// native task_set_result_ms_str_s(Task:task, ConstString:result, interval);
+	AMX_DEFINE_NATIVE_TAG(task_set_result_ms_str_s, 3, cell)
+	{
+		return value_at<2>::task_set_result_ms<dyn_func_str_s>(amx, params);
+	}
+
 	// native task_set_result_ms_var(Task:task, ConstVariantTag:result, interval);
 	AMX_DEFINE_NATIVE_TAG(task_set_result_ms_var, 3, cell)
 	{
@@ -511,6 +523,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(task_set_result_ticks_str, 3, cell)
 	{
 		return value_at<2>::task_set_result_ticks<dyn_func_str>(amx, params);
+	}
+
+	// native task_set_result_ticks_str_s(Task:task, ConstString:result, interval);
+	AMX_DEFINE_NATIVE_TAG(task_set_result_ticks_str_s, 3, cell)
+	{
+		return value_at<2>::task_set_result_ticks<dyn_func_str_s>(amx, params);
 	}
 
 	// native task_set_result_ticks_var(Task:task, ConstVariantTag:result, interval);
@@ -734,6 +752,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_set_result),
 	AMX_DECLARE_NATIVE(task_set_result_arr),
 	AMX_DECLARE_NATIVE(task_set_result_str),
+	AMX_DECLARE_NATIVE(task_set_result_str_s),
 	AMX_DECLARE_NATIVE(task_set_result_var),
 	AMX_DECLARE_NATIVE(task_get_result),
 	AMX_DECLARE_NATIVE(task_get_result_arr),
@@ -760,10 +779,12 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(task_set_result_ms),
 	AMX_DECLARE_NATIVE(task_set_result_ms_arr),
 	AMX_DECLARE_NATIVE(task_set_result_ms_str),
+	AMX_DECLARE_NATIVE(task_set_result_ms_str_s),
 	AMX_DECLARE_NATIVE(task_set_result_ms_var),
 	AMX_DECLARE_NATIVE(task_set_result_ticks),
 	AMX_DECLARE_NATIVE(task_set_result_ticks_arr),
 	AMX_DECLARE_NATIVE(task_set_result_ticks_str),
+	AMX_DECLARE_NATIVE(task_set_result_ticks_str_s),
 	AMX_DECLARE_NATIVE(task_set_result_ticks_var),
 	AMX_DECLARE_NATIVE(task_set_error_ms),
 	AMX_DECLARE_NATIVE(task_set_error_ticks),

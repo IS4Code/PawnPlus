@@ -320,6 +320,12 @@ namespace Natives
 		return key_at<2>::map_iter_at<dyn_func_str>(amx, params);
 	}
 
+	// native Iter:map_iter_at_str_s(Map:map, ConstString:key);
+	AMX_DEFINE_NATIVE_TAG(map_iter_at_str_s, 2, iter)
+	{
+		return key_at<2>::map_iter_at<dyn_func_str_s>(amx, params);
+	}
+
 	// native Iter:map_iter_at_var(Map:map, ConstVariantTag:key);
 	AMX_DEFINE_NATIVE_TAG(map_iter_at_var, 2, iter)
 	{
@@ -934,6 +940,12 @@ namespace Natives
 		return value_at<2>::iter_set<dyn_func_str>(amx, params);
 	}
 
+	// native bool:iter_set_str_s(IterTag:iter, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(iter_set_str_s, 2, bool)
+	{
+		return value_at<2>::iter_set<dyn_func_str_s>(amx, params);
+	}
+
 	// native bool:iter_set_var(IterTag:iter, VariantTag:value);
 	AMX_DEFINE_NATIVE_TAG(iter_set_var, 2, bool)
 	{
@@ -1058,6 +1070,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(iter_insert_str, 2, iter)
 	{
 		return value_at<2>::iter_insert<dyn_func_str>(amx, params);
+	}
+
+	// native Iter:iter_insert_str_s(IterTag:iter, ConstString:value);
+	AMX_DEFINE_NATIVE_TAG(iter_insert_str_s, 2, iter)
+	{
+		return value_at<2>::iter_insert<dyn_func_str_s>(amx, params);
 	}
 
 	// native Iter:iter_insert_var(IterTag:iter, VariantTag:value);
@@ -1260,6 +1278,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(map_iter_at),
 	AMX_DECLARE_NATIVE(map_iter_at_arr),
 	AMX_DECLARE_NATIVE(map_iter_at_str),
+	AMX_DECLARE_NATIVE(map_iter_at_str_s),
 	AMX_DECLARE_NATIVE(map_iter_at_var),
 	AMX_DECLARE_NATIVE(linked_list_iter),
 	AMX_DECLARE_NATIVE(var_iter),
@@ -1319,6 +1338,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_set_arr_2d),
 	AMX_DECLARE_NATIVE(iter_set_arr_3d),
 	AMX_DECLARE_NATIVE(iter_set_str),
+	AMX_DECLARE_NATIVE(iter_set_str_s),
 	AMX_DECLARE_NATIVE(iter_set_var),
 
 	AMX_DECLARE_NATIVE(iter_set_cell),
@@ -1344,6 +1364,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(iter_insert_arr_2d),
 	AMX_DECLARE_NATIVE(iter_insert_arr_3d),
 	AMX_DECLARE_NATIVE(iter_insert_str),
+	AMX_DECLARE_NATIVE(iter_insert_str_s),
 	AMX_DECLARE_NATIVE(iter_insert_var),
 
 	AMX_DECLARE_NATIVE(iter_get_key),
