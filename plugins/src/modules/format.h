@@ -44,8 +44,8 @@ namespace strings
 	template <class Iter>
 	struct num_parser
 	{
-		format_state<Iter> &state;
-		cell(*parse_func)(format_state<Iter> &state, Iter &begin, Iter end);
+		void *state;
+		cell(*parse_func)(void *state, Iter &begin, Iter end);
 
 		cell operator()(Iter &begin, Iter end) const
 		{
@@ -54,7 +54,22 @@ namespace strings
 	};
 
 	template <class Iter>
-	bool append_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, num_parser<Iter> &&parse_num);
+	bool append_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, num_parser<Iter> &&parse_num)
+	{
+		auto tag = obj.get_tag();
+		if(obj.empty() || (obj.is_array() && !tag->inherits_from(tags::tag_char)))
+		{
+			if(begin == end)
+			{
+				buf.append(obj.to_string());
+				return true;
+			}
+			return false;
+		}
+
+		const cell *data = obj.get_cell_addr(nullptr, 0);
+		return tag->get_ops().format_base(tag, data, obj.get_specifier(), begin, end, std::move(parse_num), buf);
+	}
 
 	template <class Iter>
 	struct format_specific

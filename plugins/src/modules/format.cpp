@@ -13,28 +13,6 @@ using namespace strings;
 
 std::stack<std::weak_ptr<map_t>> strings::format_env;
 
-namespace aux
-{
-}
-
-template <class Iter>
-bool strings::append_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, num_parser<Iter> &&parse_num)
-{
-	auto tag = obj.get_tag();
-	if(obj.empty() || (obj.is_array() && !tag->inherits_from(tags::tag_char)))
-	{
-		if(begin == end)
-		{
-			buf.append(obj.to_string());
-			return true;
-		}
-		return false;
-	}
-
-	const cell *data = obj.get_cell_addr(nullptr, 0);
-	return tag->get_ops().format_base(tag, data, obj.get_specifier(), begin, end, std::move(parse_num), buf);
-}
-
 namespace strings
 {
 	template <class Iter>
@@ -122,9 +100,9 @@ namespace strings
 
 		num_parser<Iter> get_num_parser()
 		{
-			return num_parser<Iter>{*this, [](format_state<Iter> &state, Iter &begin, Iter end)
+			return num_parser<Iter>{this, [](void *state, Iter &begin, Iter end)
 			{
-				return state.parse_num(begin, end);
+				return static_cast<format_state<Iter>*>(state)->parse_num(begin, end);
 			}};
 		}
 

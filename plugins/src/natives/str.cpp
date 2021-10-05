@@ -6,13 +6,69 @@
 #include "modules/regex.h"
 #include "modules/variants.h"
 #include "modules/expressions.h"
+#include "modules/tag_ops.h"
 #include "objects/dyn_object.h"
 
 #include <cstring>
+#include <cctype>
 #include <algorithm>
 #include <limits>
 
 typedef strings::cell_string cell_string;
+
+template <class Iter>
+struct format_val
+{
+	static cell parse_num(Iter &begin, Iter end)
+	{
+		if(begin == end)
+		{
+			return 0;
+		}
+		switch(*begin)
+		{
+			case '-':
+			{
+				++begin;
+				auto oldbegin = begin;
+				cell num = parse_num(begin, end);
+				if(begin != oldbegin)
+				{
+					return -num;
+				}
+				amx_FormalError(errors::invalid_format, "invalid specifier parameter");
+			}
+			break;
+		}
+		cell val = 0;
+		cell c;
+		while(std::isdigit(c = *begin) && begin != end)
+		{
+			val = (val * 10) + (c - '0');
+			++begin;
+		}
+		return val;
+	}
+
+	cell operator()(Iter begin, Iter end, const dyn_object &obj) const
+	{
+		cell type = *begin;
+		++begin;
+		const cell *data = obj.get_cell_addr(nullptr, 0);
+		auto &buf = strings::pool.add();
+		if(!obj.get_tag()->get_ops().format_base(obj.get_tag(), data, type, begin, end, strings::num_parser<Iter>{
+			nullptr, [](void *ptr, Iter &begin, Iter end)
+			{
+				return parse_num(begin, end);
+			}
+		}, *buf))
+		{
+			strings::pool.remove(buf);
+			amx_FormalError(errors::invalid_format, "invalid value or specifier parameter");
+		}
+		return strings::pool.get_id(buf);
+	}
+};
 
 namespace Natives
 {
@@ -195,22 +251,32 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(std::move(str)));
 	}
 
-	// native String:str_val(AnyTag:val, TagTag:tag_id=tagof(value));
+	// native String:str_val(AnyTag:val, TagTag:tag_id=tagof(value), const format[]="");
 	AMX_DEFINE_NATIVE_TAG(str_val, 2, string)
 	{
 		dyn_object obj{amx, params[1], params[2]};
+		auto format = optparamref(3, 0);
+		if(*format)
+		{
+			return strings::select_iterator<format_val>(format, obj);
+		}
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
 
-	// native String:str_val_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+	// native String:str_val_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value), const format[]="");
 	AMX_DEFINE_NATIVE_TAG(str_val_arr, 3, string)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
 		dyn_object obj{amx, addr, params[2], params[3]};
+		auto format = optparamref(4, 0);
+		if(*format)
+		{
+			return strings::select_iterator<format_val>(format, obj);
+		}
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
 
-	// native String:str_val_var(ConstVariantTag:value);
+	// native String:str_val_var(ConstVariantTag:value, const format[]="");
 	AMX_DEFINE_NATIVE_TAG(str_val_var, 1, string)
 	{
 		dyn_object *var;
@@ -218,6 +284,11 @@ namespace Natives
 		if(!var)
 		{
 			return strings::pool.get_id(strings::pool.add());
+		}
+		auto format = optparamref(2, 0);
+		if(*format)
+		{
+			return strings::select_iterator<format_val>(format, *var);
 		}
 		return strings::pool.get_id(strings::pool.add(var->to_string()));
 	}

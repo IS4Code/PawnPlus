@@ -524,9 +524,9 @@ native str_find(ConstStringTag:str, ConstStringTag:value, offset=0);
 
 native String:str_cat(ConstStringTag:str1, ConstStringTag:str2);
 native String:str_sub(ConstStringTag:str, start=0, end=cellmax);
-native String:str_val(AnyTag:value, TagTag:tag_id=tagof(value));
-native String:str_val_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-native String:str_val_var(ConstVariantTag:value);
+native String:str_val(AnyTag:value, TagTag:tag_id=tagof(value), const format[]="");
+native String:str_val_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value), const format[]="");
+native String:str_val_var(ConstVariantTag:value, const format[]="");
 native List:str_split(ConstStringTag:str, const delims[]);
 native List:str_split_s(ConstStringTag:str, ConstStringTag:delims);
 native String:str_join(List:list, const delim[]);
