@@ -316,15 +316,6 @@ struct null_operations : public tag_operations_base
 	template <class Iter>
 	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, strings::num_parser<Iter> &&parse_num, cell_string &str)
 	{
-		switch(type)
-		{
-			case 'v':
-			{
-				ops.append_string(tag, *arg, str);
-				return true;
-			}
-			break;
-		}
 		if(fmt_begin == fmt_end)
 		{
 			return ops.append_string(tag, *arg, str);
@@ -1033,6 +1024,7 @@ struct float_operations : public cell_operations<float_operations>
 		switch(type)
 		{
 			case 'f':
+			case 'd':
 			{
 				float val = amx_ctof(*arg);
 				if(*begin == '.')
