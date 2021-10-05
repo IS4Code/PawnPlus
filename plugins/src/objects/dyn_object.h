@@ -156,10 +156,7 @@ public:
 		return is_null() ? -1 : static_cast<cell>(rank);
 	}
 
-	char get_specifier() const
-	{
-		return tag->get_ops().format_spec(tag, is_array());
-	}
+	cell get_specifier() const;
 
 	cell &operator[](cell index)
 	{

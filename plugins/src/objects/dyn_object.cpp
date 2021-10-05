@@ -2,6 +2,7 @@
 #include "dyn_object.h"
 #include "errors.h"
 #include "main.h"
+#include "modules/tag_ops.h"
 #include "modules/containers.h"
 #include "../fixes/linux.h"
 #include <cmath>
@@ -517,6 +518,11 @@ void dyn_object::load(AMX *amx, cell amx_addr)
 
 		assign_op();
 	}
+}
+
+cell dyn_object::get_specifier() const
+{
+	return tag->get_ops().format_spec(tag, is_array());
 }
 
 cell *dyn_object::begin()

@@ -232,6 +232,7 @@
     <ClInclude Include="src\modules\serialize.h" />
     <ClInclude Include="src\modules\strings.h" />
     <ClInclude Include="src\modules\tags.h" />
+    <ClInclude Include="src\modules\tag_ops.h" />
     <ClInclude Include="src\modules\tasks.h" />
     <ClInclude Include="src\modules\threads.h" />
     <ClInclude Include="src\modules\variants.h" />

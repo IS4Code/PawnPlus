@@ -1,6 +1,7 @@
 #include "natives.h"
 #include "modules/strings.h"
 #include "modules/tags.h"
+#include "modules/tag_ops.h"
 
 namespace Natives
 {

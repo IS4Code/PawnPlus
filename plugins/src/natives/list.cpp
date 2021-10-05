@@ -3,6 +3,7 @@
 #include "modules/containers.h"
 #include "modules/variants.h"
 #include "modules/expressions.h"
+#include "modules/tag_ops.h"
 
 #include <vector>
 #include <algorithm>

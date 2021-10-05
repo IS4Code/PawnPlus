@@ -1,4 +1,5 @@
 #include "tags.h"
+#include "tag_ops.h"
 #include "main.h"
 #include "amxinfo.h"
 #include "fixes/linux.h"
