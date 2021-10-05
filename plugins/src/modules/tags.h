@@ -94,10 +94,10 @@ public:
 	virtual bool init(tag_ptr tag, cell *arg, cell size) const = 0;
 	virtual size_t hash(tag_ptr tag, cell arg) const = 0;
 
-	virtual void format_base(tag_ptr tag, const cell *arg, const char *fmt_begin, const char *fmt_end, std::basic_string<cell> &str) const = 0;
-	virtual void format_base(tag_ptr tag, const cell *arg, std::basic_string<cell>::const_iterator fmt_begin, std::basic_string<cell>::const_iterator fmt_end, std::basic_string<cell> &str) const = 0;
-	virtual void format_base(tag_ptr tag, const cell *arg, strings::aligned_const_char_iterator fmt_begin, strings::aligned_const_char_iterator fmt_end, std::basic_string<cell> &str) const = 0;
-	virtual void format_base(tag_ptr tag, const cell *arg, strings::unaligned_const_char_iterator fmt_begin, strings::unaligned_const_char_iterator fmt_end, std::basic_string<cell> &str) const = 0;
+	virtual void format_base(tag_ptr tag, const cell *arg, cell type, const cell *fmt_begin, const cell *fmt_end, std::basic_string<cell> &str) const = 0;
+	virtual void format_base(tag_ptr tag, const cell *arg, cell type, std::basic_string<cell>::const_iterator fmt_begin, std::basic_string<cell>::const_iterator fmt_end, std::basic_string<cell> &str) const = 0;
+	virtual void format_base(tag_ptr tag, const cell *arg, cell type, strings::aligned_const_char_iterator fmt_begin, strings::aligned_const_char_iterator fmt_end, std::basic_string<cell> &str) const = 0;
+	virtual void format_base(tag_ptr tag, const cell *arg, cell type, strings::unaligned_const_char_iterator fmt_begin, strings::unaligned_const_char_iterator fmt_end, std::basic_string<cell> &str) const = 0;
 
 	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const = 0;
 	virtual tag_ptr get_element() const = 0;

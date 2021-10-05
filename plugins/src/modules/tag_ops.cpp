@@ -256,30 +256,30 @@ struct null_operations : public tag_operations
 		return nullptr;
 	}
 
-	virtual void format_base(tag_ptr tag, const cell *arg, const char *fmt_begin, const char *fmt_end, std::basic_string<cell> &str) const override
+	virtual void format_base(tag_ptr tag, const cell *arg, cell type, const cell *fmt_begin, const cell *fmt_end, cell_string &str) const override
 	{
-		return static_cast<const Self*>(this)->format(tag, arg, fmt_begin, fmt_end, str);
+		return static_cast<const Self*>(this)->format(tag, arg, type, fmt_begin, fmt_end, str);
 	}
 
-	virtual void format_base(tag_ptr tag, const cell *arg, std::basic_string<cell>::const_iterator fmt_begin, std::basic_string<cell>::const_iterator fmt_end, std::basic_string<cell> &str) const override
+	virtual void format_base(tag_ptr tag, const cell *arg, cell type, cell_string::const_iterator fmt_begin, cell_string::const_iterator fmt_end, cell_string &str) const override
 	{
-		return static_cast<const Self*>(this)->format(tag, arg, fmt_begin, fmt_end, str);
+		return static_cast<const Self*>(this)->format(tag, arg, type, fmt_begin, fmt_end, str);
 	}
 
-	virtual void format_base(tag_ptr tag, const cell *arg, strings::aligned_const_char_iterator fmt_begin, strings::aligned_const_char_iterator fmt_end, std::basic_string<cell> &str) const override
+	virtual void format_base(tag_ptr tag, const cell *arg, cell type, strings::aligned_const_char_iterator fmt_begin, strings::aligned_const_char_iterator fmt_end, cell_string &str) const override
 	{
-		return static_cast<const Self*>(this)->format(tag, arg, fmt_begin, fmt_end, str);
+		return static_cast<const Self*>(this)->format(tag, arg, type, fmt_begin, fmt_end, str);
 	}
 
-	virtual void format_base(tag_ptr tag, const cell *arg, strings::unaligned_const_char_iterator fmt_begin, strings::unaligned_const_char_iterator fmt_end, std::basic_string<cell> &str) const override
+	virtual void format_base(tag_ptr tag, const cell *arg, cell type, strings::unaligned_const_char_iterator fmt_begin, strings::unaligned_const_char_iterator fmt_end, cell_string &str) const override
 	{
-		return static_cast<const Self*>(this)->format(tag, arg, fmt_begin, fmt_end, str);
+		return static_cast<const Self*>(this)->format(tag, arg, type, fmt_begin, fmt_end, str);
 	}
 
 	template <class Iter>
-	void format(tag_ptr tag, const cell *arg, Iter fmt_begin, Iter fmt_end, std::basic_string<cell> &str) const
+	void format(tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, cell_string &str) const
 	{
-		
+		append_string(tag, *arg, str);
 	}
 };
 
@@ -2491,11 +2491,11 @@ public:
 	}
 
 	template <class Iter>
-	void format(tag_ptr tag, const cell *arg, Iter fmt_begin, Iter fmt_end, std::basic_string<cell> &str) const
+	void format(tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, cell_string &str) const
 	{
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
-		return base->get_ops().format_base(tag, arg, fmt_begin, fmt_end, str);
+		return base->get_ops().format_base(tag, arg, type, fmt_begin, fmt_end, str);
 	}
 };
 
