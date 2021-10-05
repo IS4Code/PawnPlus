@@ -46,7 +46,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData) noexcept
 			Threads::StartThreads();
 		}
 	);
-
+	
 	logprintf(" PawnPlus " PP_VERSION_STRING " loaded");
 	logprintf(" Created by IllidanS4");
 	return true;
@@ -66,6 +66,8 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload() noexcept
 	strings::pool.clear();
 
 	Hooks::Unregister();
+
+	strings::reset_locale();
 
 	logprintf(" PawnPlus " PP_VERSION_STRING " unloaded");
 }

@@ -301,6 +301,7 @@ namespace strings
 	bool clamp_pos(const cell_string &str, cell &pos);
 
 	void set_locale(const std::locale &loc, cell category);
+	void reset_locale();
 	const std::string &locale_name();
 
 	cell to_lower(cell c);
