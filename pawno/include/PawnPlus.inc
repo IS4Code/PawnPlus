@@ -105,11 +105,13 @@ stock _PP@TMP1, _PP@TMP2, _PP@TMP3;
 #define _PP@TAGGED2:_PP@TAGGED2_END:%0,%1, %0,pawn_arg_pack(%1),ArgTag:_PP@TAGGED2:_PP@TAGGED2_END:
 #define _PP@TAGGED2_END:%0,%1) %0,pawn_arg_pack(%1))
 
+#define unit _
+
 /*                 */
 /*    Adapters     */
 /*                 */
 
-native print_s(ConstStringTag:string);
+native unit:print_s(ConstStringTag:string);
 
 
 /*                 */
@@ -120,13 +122,13 @@ native pp_version();
 native pp_version_string(version[], size=sizeof(version));
 native String:pp_version_string_s();
 
-native pp_hook_strlen(bool:hook);
-native pp_hook_check_ref_args(bool:hook);
-native pp_max_recursion(level);
+native unit:pp_hook_strlen(bool:hook);
+native unit:pp_hook_check_ref_args(bool:hook);
+native unit:pp_max_recursion(level);
 native pp_public_min_index(index);
 native bool:pp_use_funcidx(bool:use);
 
-native pp_tick();
+native unit:pp_tick();
 native pp_num_tasks();
 native pp_num_local_strings();
 native pp_num_global_strings();
@@ -148,7 +150,7 @@ native pp_num_local_expressions();
 native pp_num_global_expressions();
 native pp_max_hooked_natives();
 native pp_num_hooked_natives();
-native pp_collect();
+native unit:pp_collect();
 native pp_num_natives();
 native pp_module_name(const function[], name[], size=sizeof(name));
 native String:pp_module_name_s(const function[]);
@@ -178,12 +180,12 @@ enum locale_category (<<= 1)
     locale_all = -1,
 }
 
-native pp_locale(const locale[], locale_category:category=locale_all);
+native unit:pp_locale(const locale[], locale_category:category=locale_all);
 native pp_locale_name(locale[], size=sizeof(locale));
 native String:pp_locale_name_s();
 
-native pp_format_env_push(Map:env);
-native pp_format_env_pop();
+native unit:pp_format_env_push(Map:env);
+native unit:pp_format_env_pop();
 
 native pp_stackspace();
 
@@ -405,7 +407,7 @@ native amx_set(Var:var, AnyTag:value, index=0);
 native amx_get(Var:var, index=0);
 native amx_sizeof(Var:var);
 native bool:amx_my(Var:var);
-native bool:amx_to_ref(Var:var, ref[1][]);
+native unit:amx_to_ref(Var:var, ref[1][]);
 
 native bool:amx_fork(fork_level:level=fork_machine, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
 native amx_commit(bool:context=true);
@@ -508,7 +510,7 @@ native ConstAmxString:str_addr_const(ConstStringTag:str);
 native AmxStringBuffer:str_buf_addr(StringTag:str);
 native String:str_acquire(StringTag:str);
 native String:str_release(StringTag:str);
-native str_delete(StringTag:str);
+native unit:str_delete(StringTag:str);
 native bool:str_valid(ConstStringTag:str);
 native String:str_clone(ConstStringTag:str);
 
@@ -644,7 +646,7 @@ native var_get_arr_safe(ConstVariantTag:var, AnyTag:value[], size=sizeof(value),
 native var_get_str_safe(ConstVariantTag:var, value[], size=sizeof(value));
 native String:var_get_str_safe_s(ConstVariantTag:var);
 
-native var_set_cell(VariantTag:var, offset, AnyTag:value);
+native unit:var_set_cell(VariantTag:var, offset, AnyTag:value);
 native bool:var_set_cell_safe(VariantTag:var, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 native var_set_cells(VariantTag:var, offset, AnyTag:values[], size=sizeof(values));
 native var_set_cells_safe(VariantTag:var, offset, AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
@@ -706,13 +708,13 @@ native List:list_new_args(AnyTag:...);
 native List:list_new_args_str(arg0[], ...);
 native List:list_new_args_var(ConstVariantTag:arg0, ConstVariantTag:...);
 native bool:list_valid(List:list);
-native list_delete(List:list);
-native list_delete_deep(List:list);
+native unit:list_delete(List:list);
+native unit:list_delete_deep(List:list);
 native list_size(List:list);
 native list_capacity(List:list);
-native list_reserve(List:list, capacity);
-native list_clear(List:list);
-native list_clear_deep(List:list);
+native unit:list_reserve(List:list, capacity);
+native unit:list_clear(List:list);
+native unit:list_clear_deep(List:list);
 native List:list_clone(List:list);
 
 native list_add(List:list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
@@ -731,10 +733,10 @@ native List:list_add_args(List:list, AnyTag:...);
 native list_add_args_str(List:list, arg0[], ...);
 native list_add_args_var(List:list, ConstVariantTag:arg0, ConstVariantTag:...);
 
-native list_remove(List:list, index);
-native list_remove_deep(List:list, index);
-native list_remove_range(List:list, begin, end);
-native list_remove_range_deep(List:list, begin, end);
+native unit:list_remove(List:list, index);
+native unit:list_remove_deep(List:list, index);
+native unit:list_remove_range(List:list, begin, end);
+native unit:list_remove_range_deep(List:list, begin, end);
 native list_remove_if(List:list, Expression:pred);
 native list_remove_if_deep(List:list, Expression:pred);
 
@@ -748,19 +750,19 @@ native list_get_arr_safe(List:list, index, AnyTag:value[], size=sizeof(value), T
 native list_get_str_safe(List:list, index, value[], size=sizeof(value));
 native String:list_get_str_safe_s(List:list, index);
 
-native list_set(List:list, index, AnyTag:value, TagTag:tag_id=tagof(value));
-native list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-native list_set_str(List:list, index, const value[]);
-native list_set_str_s(List:list, index, ConstStringTag:value);
-native list_set_var(List:list, index, ConstVariantTag:value);
-native list_set_cell(List:list, index, offset, AnyTag:value);
+native unit:list_set(List:list, index, AnyTag:value, TagTag:tag_id=tagof(value));
+native unit:list_set_arr(List:list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native unit:list_set_str(List:list, index, const value[]);
+native unit:list_set_str_s(List:list, index, ConstStringTag:value);
+native unit:list_set_var(List:list, index, ConstVariantTag:value);
+native unit:list_set_cell(List:list, index, offset, AnyTag:value);
 native bool:list_set_cell_safe(List:list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
-native list_resize(List:list, newsize, AnyTag:padding, TagTag:tag_id=tagof(padding));
-native list_resize_arr(List:list, newsize, const AnyTag:padding[], size=sizeof(padding), TagTag:tag_id=tagof(padding));
-native list_resize_str(List:list, newsize, const padding[]);
-native list_resize_str_s(List:list, newsize, ConstStringTag:padding);
-native list_resize_var(List:list, newsize, ConstVariantTag:padding);
+native unit:list_resize(List:list, newsize, AnyTag:padding, TagTag:tag_id=tagof(padding));
+native unit:list_resize_arr(List:list, newsize, const AnyTag:padding[], size=sizeof(padding), TagTag:tag_id=tagof(padding));
+native unit:list_resize_str(List:list, newsize, const padding[]);
+native unit:list_resize_str_s(List:list, newsize, ConstStringTag:padding);
+native unit:list_resize_var(List:list, newsize, ConstVariantTag:padding);
 
 native list_find(List:list, AnyTag:value, index=0, TagTag:tag_id=tagof(value));
 native list_find_arr(List:list, const AnyTag:value[], index=0, size=sizeof(value), TagTag:tag_id=tagof(value));
@@ -782,8 +784,8 @@ native list_count_str_s(List:list, ConstStringTag:value);
 native list_count_var(List:list, ConstVariantTag:value);
 native list_count_if(List:list, Expression:pred);
 
-native list_sort(List:list, offset=0, size=-1, bool:reverse=false, bool:stable=true);
-native list_sort_expr(List:list, Expression:expr, bool:reverse=false, bool:stable=true);
+native unit:list_sort(List:list, offset=0, size=-1, bool:reverse=false, bool:stable=true);
+native unit:list_sort_expr(List:list, Expression:expr, bool:reverse=false, bool:stable=true);
 
 native list_tagof(List:list, index);
 native list_sizeof(List:list, index);
@@ -882,15 +884,15 @@ native Map:map_new_var_args({ConstVariantTags,AnyTag}:...);
 native Map:map_new_var_args_str(ConstVariantTag:arg0, arg1[], {_,VariantTags}:...);
 native Map:map_new_var_args_var(ConstVariantTag:arg0, ConstVariantTag:arg1, ConstVariantTag:...);
 native bool:map_valid(Map:map);
-native map_delete(Map:map);
-native map_delete_deep(Map:map);
+native unit:map_delete(Map:map);
+native unit:map_delete_deep(Map:map);
 native Map:map_clone(Map:map);
 native map_size(Map:map);
 native map_capacity(Map:map);
-native map_reserve(Map:map, capacity);
-native map_clear(Map:map);
-native map_clear_deep(Map:map);
-native map_set_ordered(Map:map, bool:ordered);
+native unit:map_reserve(Map:map, capacity);
+native unit:map_clear(Map:map);
+native unit:map_clear_deep(Map:map);
+native unit:map_set_ordered(Map:map, bool:ordered);
 native bool:map_is_ordered(Map:map);
 
 native bool:map_add(Map:map, AnyTag:key, AnyTag:value, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
@@ -1018,40 +1020,40 @@ native map_var_get_arr_safe(Map:map, ConstVariantTag:key, AnyTag:value[], value_
 native map_var_get_str_safe(Map:map, ConstVariantTag:key, value[], value_size=sizeof(value));
 native String:map_var_get_str_safe_s(Map:map, ConstVariantTag:key);
 
-native map_set(Map:map, AnyTag:key, AnyTag:value, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
-native map_set_arr(Map:map, AnyTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
-native map_set_str(Map:map, AnyTag:key, const value[], TagTag:key_tag_id=tagof(key));
-native map_set_str_s(Map:map, AnyTag:key, ConstStringTag:value, TagTag:key_tag_id=tagof(key));
-native map_set_var(Map:map, AnyTag:key, ConstVariantTag:value, TagTag:key_tag_id=tagof(key));
-native map_set_cell(Map:map, AnyTag:key, offset, AnyTag:value, TagTag:key_tag_id=tagof(key));
+native unit:map_set(Map:map, AnyTag:key, AnyTag:value, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
+native unit:map_set_arr(Map:map, AnyTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
+native unit:map_set_str(Map:map, AnyTag:key, const value[], TagTag:key_tag_id=tagof(key));
+native unit:map_set_str_s(Map:map, AnyTag:key, ConstStringTag:value, TagTag:key_tag_id=tagof(key));
+native unit:map_set_var(Map:map, AnyTag:key, ConstVariantTag:value, TagTag:key_tag_id=tagof(key));
+native unit:map_set_cell(Map:map, AnyTag:key, offset, AnyTag:value, TagTag:key_tag_id=tagof(key));
 native bool:map_set_cell_safe(Map:map, AnyTag:key, offset, AnyTag:value, TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
-native map_arr_set(Map:map, const AnyTag:key[], AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
-native map_arr_set_arr(Map:map, const AnyTag:key[], const AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
-native map_arr_set_str(Map:map, const AnyTag:key[], const value[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
-native map_arr_set_str_s(Map:map, const AnyTag:key[], ConstStringTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
-native map_arr_set_var(Map:map, const AnyTag:key[], ConstVariantTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
-native map_arr_set_cell(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native unit:map_arr_set(Map:map, const AnyTag:key[], AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
+native unit:map_arr_set_arr(Map:map, const AnyTag:key[], const AnyTag:value[], value_size=sizeof(value), key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
+native unit:map_arr_set_str(Map:map, const AnyTag:key[], const value[], key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native unit:map_arr_set_str_s(Map:map, const AnyTag:key[], ConstStringTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native unit:map_arr_set_var(Map:map, const AnyTag:key[], ConstVariantTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
+native unit:map_arr_set_cell(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key));
 native bool:map_arr_set_cell_safe(Map:map, const AnyTag:key[], offset, AnyTag:value, key_size=sizeof(key), TagTag:key_tag_id=tagof(key), TagTag:value_tag_id=tagof(value));
-native map_str_set(Map:map, const key[], AnyTag:value, TagTag:value_tag_id=tagof(value));
-native map_str_set_arr(Map:map, const key[], const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
-native map_str_set_str(Map:map, const key[], const value[]);
-native map_str_set_str_s(Map:map, const key[], ConstStringTag:value);
-native map_str_set_var(Map:map, const key[], ConstVariantTag:value);
-native map_str_set_cell(Map:map, const key[], offset, AnyTag:value);
+native unit:map_str_set(Map:map, const key[], AnyTag:value, TagTag:value_tag_id=tagof(value));
+native unit:map_str_set_arr(Map:map, const key[], const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+native unit:map_str_set_str(Map:map, const key[], const value[]);
+native unit:map_str_set_str_s(Map:map, const key[], ConstStringTag:value);
+native unit:map_str_set_var(Map:map, const key[], ConstVariantTag:value);
+native unit:map_str_set_cell(Map:map, const key[], offset, AnyTag:value);
 native bool:map_str_set_cell_safe(Map:map, const key[], offset, AnyTag:value, TagTag:value_tag_id=tagof(value));
-native map_str_s_set(Map:map, ConstStringTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
-native map_str_s_set_arr(Map:map, ConstStringTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
-native map_str_s_set_str(Map:map, ConstStringTag:key, const value[]);
-native map_str_s_set_str_s(Map:map, ConstStringTag:key, ConstStringTag:value);
-native map_str_s_set_var(Map:map, ConstStringTag:key, VariantTag:value);
-native map_str_s_set_cell(Map:map, ConstStringTag:key, offset, AnyTag:value);
+native unit:map_str_s_set(Map:map, ConstStringTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
+native unit:map_str_s_set_arr(Map:map, ConstStringTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+native unit:map_str_s_set_str(Map:map, ConstStringTag:key, const value[]);
+native unit:map_str_s_set_str_s(Map:map, ConstStringTag:key, ConstStringTag:value);
+native unit:map_str_s_set_var(Map:map, ConstStringTag:key, VariantTag:value);
+native unit:map_str_s_set_cell(Map:map, ConstStringTag:key, offset, AnyTag:value);
 native bool:map_str_s_set_cell_safe(Map:map, ConstStringTag:key, offset, AnyTag:value, TagTag:value_tag_id=tagof(value));
-native map_var_set(Map:map, ConstVariantTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
-native map_var_set_arr(Map:map, ConstVariantTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
-native map_var_set_str(Map:map, ConstVariantTag:key, const value[]);
-native map_var_set_str_s(Map:map, VariantTag:key, ConstStringTag:value);
-native map_var_set_var(Map:map, ConstVariantTag:key, ConstVariantTag:value);
-native map_var_set_cell(Map:map, ConstVariantTag:key, offset, AnyTag:value);
+native unit:map_var_set(Map:map, ConstVariantTag:key, AnyTag:value, TagTag:value_tag_id=tagof(value));
+native unit:map_var_set_arr(Map:map, ConstVariantTag:key, const AnyTag:value[], value_size=sizeof(value), TagTag:value_tag_id=tagof(value));
+native unit:map_var_set_str(Map:map, ConstVariantTag:key, const value[]);
+native unit:map_var_set_str_s(Map:map, VariantTag:key, ConstStringTag:value);
+native unit:map_var_set_var(Map:map, ConstVariantTag:key, ConstVariantTag:value);
+native unit:map_var_set_cell(Map:map, ConstVariantTag:key, offset, AnyTag:value);
 native bool:map_var_set_cell_safe(Map:map, ConstVariantTag:key, offset, AnyTag:value, TagTag:value_tag_id=tagof(value));
 
 native map_key_at(Map:map, index, offset=0);
@@ -1168,11 +1170,11 @@ native LinkedList:linked_list_new_args(AnyTag:...);
 native LinkedList:linked_list_new_args_str(arg0[], ...);
 native LinkedList:linked_list_new_args_var(ConstVariantTag:arg0, ConstVariantTag:...);
 native bool:linked_list_valid(LinkedList:linked_list);
-native linked_list_delete(LinkedList:linked_list);
-native linked_list_delete_deep(LinkedList:linked_list);
+native unit:linked_list_delete(LinkedList:linked_list);
+native unit:linked_list_delete_deep(LinkedList:linked_list);
 native linked_list_size(LinkedList:linked_list);
-native linked_list_clear(LinkedList:linked_list);
-native linked_list_clear_deep(LinkedList:linked_list);
+native unit:linked_list_clear(LinkedList:linked_list);
+native unit:linked_list_clear_deep(LinkedList:linked_list);
 native LinkedList:linked_list_clone(LinkedList:linked_list);
 
 native linked_list_add(LinkedList:linked_list, AnyTag:value, index=-1, TagTag:tag_id=tagof(value));
@@ -1191,8 +1193,8 @@ native linked_list_add_args(LinkedList:linked_list, AnyTag:...);
 native linked_list_add_args_str(LinkedList:linked_list, arg0[], ...);
 native linked_list_add_args_var(LinkedList:linked_list, ConstVariantTag:arg0, ConstVariantTag:...);
 
-native linked_list_remove(LinkedList:linked_list, index);
-native linked_list_remove_deep(LinkedList:linked_list, index);
+native unit:linked_list_remove(LinkedList:linked_list, index);
+native unit:linked_list_remove_deep(LinkedList:linked_list, index);
 native linked_list_remove_if(LinkedList:linked_list, Expression:pred);
 native linked_list_remove_if_deep(LinkedList:linked_list, Expression:pred);
 
@@ -1206,12 +1208,12 @@ native linked_list_get_arr_safe(LinkedList:linked_list, index, AnyTag:value[], s
 native linked_list_get_str_safe(LinkedList:linked_list, index, value[], size=sizeof(value));
 native String:linked_list_get_str_safe_s(LinkedList:linked_list, index);
 
-native linked_list_set(LinkedList:linked_list, index, AnyTag:value, TagTag:tag_id=tagof(value));
-native linked_list_set_arr(LinkedList:linked_list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-native linked_list_set_str(LinkedList:linked_list, index, const value[]);
-native linked_list_set_str_s(LinkedList:linked_list, index, ConstStringTag:value);
-native linked_list_set_var(LinkedList:linked_list, index, ConstVariantTag:value);
-native linked_list_set_cell(LinkedList:linked_list, index, offset, AnyTag:value);
+native unit:linked_list_set(LinkedList:linked_list, index, AnyTag:value, TagTag:tag_id=tagof(value));
+native unit:linked_list_set_arr(LinkedList:linked_list, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native unit:linked_list_set_str(LinkedList:linked_list, index, const value[]);
+native unit:linked_list_set_str_s(LinkedList:linked_list, index, ConstStringTag:value);
+native unit:linked_list_set_var(LinkedList:linked_list, index, ConstVariantTag:value);
+native unit:linked_list_set_cell(LinkedList:linked_list, index, offset, AnyTag:value);
 native bool:linked_list_set_cell_safe(LinkedList:linked_list, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
 native linked_list_count(LinkedList:linked_list, AnyTag:value, TagTag:tag_id=tagof(value));
@@ -1271,15 +1273,15 @@ const Pool:INVALID_POOL = Pool:0;
 
 native Pool:pool_new(capacity=-1, bool:ordered=false);
 native bool:pool_valid(Pool:pool);
-native pool_delete(Pool:pool);
-native pool_delete_deep(Pool:pool);
+native unit:pool_delete(Pool:pool);
+native unit:pool_delete_deep(Pool:pool);
 native pool_size(Pool:pool);
-native pool_resize(Pool:pool, newsize);
+native unit:pool_resize(Pool:pool, newsize);
 native pool_capacity(Pool:pool);
-native pool_reserve(Pool:pool, capacity);
-native pool_clear(Pool:pool);
-native pool_clear_deep(Pool:pool);
-native pool_set_ordered(Pool:pool, bool:ordered);
+native unit:pool_reserve(Pool:pool, capacity);
+native unit:pool_clear(Pool:pool);
+native unit:pool_clear_deep(Pool:pool);
+native unit:pool_set_ordered(Pool:pool, bool:ordered);
 native bool:pool_is_ordered(Pool:pool);
 native Pool:pool_clone(Pool:pool);
 
@@ -1291,8 +1293,8 @@ native pool_add_var(Pool:pool, ConstVariantTag:value);
 
 native bool:pool_remove(Pool:pool, index);
 native bool:pool_remove_deep(Pool:pool, index);
-native pool_remove_range(Pool:pool, begin, end);
-native pool_remove_range_deep(Pool:pool, begin, end);
+native unit:pool_remove_range(Pool:pool, begin, end);
+native unit:pool_remove_range_deep(Pool:pool, begin, end);
 native pool_remove_if(Pool:pool, Expression:pred);
 native pool_remove_if_deep(Pool:pool, Expression:pred);
 
@@ -1308,12 +1310,12 @@ native pool_get_arr_safe(Pool:pool, index, AnyTag:value[], size=sizeof(value), T
 native pool_get_str_safe(Pool:pool, index, value[], size=sizeof(value));
 native String:pool_get_str_safe_s(Pool:pool, index);
 
-native pool_set(Pool:pool, index, AnyTag:value, TagTag:tag_id=tagof(value));
-native pool_set_arr(Pool:pool, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-native pool_set_str(Pool:pool, index, const value[]);
-native pool_set_str_s(Pool:pool, index, ConstStringTag:value);
-native pool_set_var(Pool:pool, index, ConstVariantTag:value);
-native pool_set_cell(Pool:pool, index, offset, AnyTag:value);
+native unit:pool_set(Pool:pool, index, AnyTag:value, TagTag:tag_id=tagof(value));
+native unit:pool_set_arr(Pool:pool, index, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native unit:pool_set_str(Pool:pool, index, const value[]);
+native unit:pool_set_str_s(Pool:pool, index, ConstStringTag:value);
+native unit:pool_set_var(Pool:pool, index, ConstVariantTag:value);
+native unit:pool_set_cell(Pool:pool, index, offset, AnyTag:value);
 native bool:pool_set_cell_safe(Pool:pool, index, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 
 native pool_find(Pool:pool, AnyTag:value, TagTag:tag_id=tagof(value));
@@ -1391,7 +1393,7 @@ const Iter:INVALID_ITERATOR = Iter:-1;
 native bool:iter_valid(IterTag:iter);
 native Iter:iter_acquire(IterTag:iter);
 native Iter:iter_release(IterTag:iter);
-native iter_delete(IterTag:iter);
+native unit:iter_delete(IterTag:iter);
 native bool:iter_linked(IterTag:iter);
 native bool:iter_inside(IterTag:iter);
 native bool:iter_empty(IterTag:iter);
@@ -1409,7 +1411,7 @@ native Iter:iter_to_last(IterTag:iter, index=0);
 native bool:iter_can_reset(IterTag:iter);
 native bool:iter_can_insert(IterTag:iter);
 native bool:iter_can_erase(IterTag:iter);
-native iter_swap(IterTag:iter1, IterTag:iter2);
+native unit:iter_swap(IterTag:iter1, IterTag:iter2);
 native bool:iter_eq(IterTag:iter1, IterTag:iter2);
 
 native Iter:iter_range(AnyTag:start, count, skip=1, tag_id=tagof(start));
@@ -1435,14 +1437,14 @@ native iter_get_arr_safe(IterTag:iter, AnyTag:value[], size=sizeof(value), TagTa
 native iter_get_str_safe(IterTag:iter, value[], size=sizeof(value));
 native String:iter_get_str_safe_s(IterTag:iter);
 
-native iter_set(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
-native iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-native iter_set_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
-native iter_set_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
-native iter_set_str(IterTag:iter, const value[]);
-native iter_set_str_s(IterTag:iter, ConstStringTag:value);
-native iter_set_var(IterTag:iter, ConstVariantTag:value);
-native iter_set_cell(IterTag:iter, offset, AnyTag:value);
+native unit:iter_set(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
+native unit:iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+native unit:iter_set_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
+native unit:iter_set_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
+native unit:iter_set_str(IterTag:iter, const value[]);
+native unit:iter_set_str_s(IterTag:iter, ConstStringTag:value);
+native unit:iter_set_var(IterTag:iter, ConstVariantTag:value);
+native unit:iter_set_cell(IterTag:iter, offset, AnyTag:value);
 native bool:iter_set_cell_safe(IterTag:iter, offset, AnyTag:value, TagTag:tag_id=tagof(value));
 native iter_set_cells(IterTag:iter, offset, AnyTag:values[], size=sizeof(values));
 native iter_set_cells_safe(IterTag:iter, offset, AnyTag:values[], size=sizeof(values), TagTag:tag_id=tagof(values));
@@ -1648,7 +1650,7 @@ native Handle:handle_alias_arr(HandleTag:handle, const AnyTag:value[], size=size
 native Handle:handle_alias_var(HandleTag:handle, ConstVariantTag:value);
 native Handle:handle_acquire(HandleTag:handle);
 native Handle:handle_release(HandleTag:handle);
-native handle_delete(HandleTag:handle);
+native unit:handle_delete(HandleTag:handle);
 native bool:handle_valid(HandleTag:handle);
 native bool:handle_linked(HandleTag:handle);
 native bool:handle_alive(HandleTag:handle);
@@ -1696,7 +1698,7 @@ const Expression:INVALID_EXPRESSION = Expression:0;
 
 native Expression:expr_acquire(Expression:expr);
 native Expression:expr_release(Expression:expr);
-native expr_delete(Expression:expr);
+native unit:expr_delete(Expression:expr);
 native bool:expr_valid(Expression:expr);
 native expr_type(Expression:expr);
 native expr_type_str(Expression:expr, type[], size=sizeof(type));
@@ -1796,13 +1798,13 @@ native expr_get_arr_safe(Expression:expr, AnyTag:value[], size=sizeof(value), Ta
 native expr_get_str_safe(Expression:expr, value[], size=sizeof(value));
 native String:expr_get_str_safe_s(Expression:expr);
 
-native expr_set(Expression:expr, AnyTag:value, TagTag:tag_id=tagof(value));
+native unit:expr_set(Expression:expr, AnyTag:value, TagTag:tag_id=tagof(value));
 native expr_set_arr(Expression:expr, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
 native expr_set_str(Expression:expr, const value[]);
 native expr_set_str_s(Expression:expr, ConstStringTag:value);
 native expr_set_var(Expression:expr, ConstVariantTag:value);
 
-native expr_exec(Expression:expr);
+native unit:expr_exec(Expression:expr);
 native expr_exec_multi(Expression:expr, List:output);
 
 enum parser_options (<<= 1)
@@ -1899,24 +1901,24 @@ native String:task_get_result_str_s(Task:task);
 native Variant:task_get_result_var(Task:task);
 native bool:task_get_result_safe(Task:task, &AnyTag:result, offset=0, TagTag:tag_id=tagof(result));
 native task_get_result_arr_safe(Task:task, AnyTag:result[], size=sizeof(result), TagTag:tag_id=tagof(result));
-native task_set_error(Task:task, amx_err:error);
+native unit:task_set_error(Task:task, amx_err:error);
 native amx_err:task_get_error(Task:task);
-native task_set_result_ms(Task:task, AnyTag:result, interval, TagTag:tag_id=tagof(result));
-native task_set_result_ms_arr(Task:task, const AnyTag:result[], interval, size=sizeof(result), TagTag:tag_id=tagof(result));
-native task_set_result_ms_str(Task:task, const result[], interval);
-native task_set_result_ms_str_s(Task:task, ConstStringTag:result, interval);
-native task_set_result_ms_var(Task:task, interval);
-native task_set_result_ticks(Task:task, AnyTag:result, ticks, TagTag:tag_id=tagof(result));
-native task_set_result_ticks_arr(Task:tasks, const AnyTag:result[], tick, size=sizeof(result), TagTag:tag_id=tagof(result));
-native task_set_result_ticks_str(Task:task, const result[], ticks);
-native task_set_result_ticks_str_s(Task:task, ConstStringTag:result, interval);
-native task_set_result_ticks_var(Task:task, ConstVariantTag:result, ticks);
-native task_set_error_ms(Task:task, amx_err:error, interval);
-native task_set_error_ticks(Task:task, amx_err:error, ticks);
+native unit:task_set_result_ms(Task:task, AnyTag:result, interval, TagTag:tag_id=tagof(result));
+native unit:task_set_result_ms_arr(Task:task, const AnyTag:result[], interval, size=sizeof(result), TagTag:tag_id=tagof(result));
+native unit:task_set_result_ms_str(Task:task, const result[], interval);
+native unit:task_set_result_ms_str_s(Task:task, ConstStringTag:result, interval);
+native unit:task_set_result_ms_var(Task:task, interval);
+native unit:task_set_result_ticks(Task:task, AnyTag:result, ticks, TagTag:tag_id=tagof(result));
+native unit:task_set_result_ticks_arr(Task:tasks, const AnyTag:result[], tick, size=sizeof(result), TagTag:tag_id=tagof(result));
+native unit:task_set_result_ticks_str(Task:task, const result[], ticks);
+native unit:task_set_result_ticks_str_s(Task:task, ConstStringTag:result, interval);
+native unit:task_set_result_ticks_var(Task:task, ConstVariantTag:result, ticks);
+native unit:task_set_error_ms(Task:task, amx_err:error, interval);
+native unit:task_set_error_ticks(Task:task, amx_err:error, ticks);
 native bool:task_completed(Task:task);
 native bool:task_faulted(Task:task);
 native task_state:task_state(Task:task);
-native task_reset(Task:task);
+native unit:task_reset(Task:task);
 native Task:task_ticks(ticks);
 native Task:task_ms(interval);
 native Task:task_any(Task:...);
@@ -1935,12 +1937,12 @@ native Variant:task_await_var(Task:task);
 */
 stock Variant:task_await_var(Task:task) return task_wait(task), task_get_result_var(task);
 native task_yield(AnyTag:value, TagTag:tag_id=tagof(value));
-native task_set_yielded(AnyTag:value);
+native unit:task_set_yielded(AnyTag:value);
 native task_get_yielded();
 native bool:task_bind(Task:task, const function[], const format[], AnyTag:...);
 native Task:task_bound();
 native task_config(task_restore:heap=task_restore_full, task_restore:stack=task_restore_full);
-native task_continue_with(Task:task, const handler[], const additional_format[]="", AnyTag:...);
+native unit:task_continue_with(Task:task, const handler[], const additional_format[]="", AnyTag:...);
 native Task:task_continue_with_bound(Task:task, Task:bound, const handler[], const additional_format[]="", AnyTag:...);
 native task_detach();
 native task_detach_bound(Task:task);
@@ -2075,7 +2077,7 @@ stock operator~(PP@ts:arr[], count)
 /*       Math      */
 /*                 */
 
-native math_random_seed(seed);
+native unit:math_random_seed(seed);
 native math_random(min=0, max=cellmax);
 native math_random_unsigned(min=0, max=-1);
 native Float:math_random_float(Float:min=0.0, Float:max=1.0);
@@ -2186,7 +2188,7 @@ native Symbol:debug_symbol_func(Symbol:symbol);
 native debug_symbol_name(Symbol:symbol, name[], size=sizeof(name));
 native String:debug_symbol_name_s(Symbol:symbol);
 native debug_symbol_addr(Symbol:symbol);
-native debug_symbol_range(Symbol:symbol, &codestart, &codeend);
+native unit:debug_symbol_range(Symbol:symbol, &codestart, &codeend);
 native debug_symbol_line(Symbol:symbol);
 native debug_symbol_file(Symbol:symbol, file[], size=sizeof(file));
 native String:debug_symbol_file_s(Symbol:symbol);
@@ -2203,10 +2205,10 @@ native Variant:debug_symbol_get_var(Symbol:symbol, level=0);
 native bool:debug_symbol_get_safe(Symbol:symbol, &AnyTag:value, level=0, offset=0, tag_id=tagof(value));
 native debug_symbol_get_arr_safe(Symbol:symbol, AnyTag:value[], level=0, offset=0, size=sizeof(value), tag_id=tagof(value));
 
-native debug_symbol_set(Symbol:symbol, AnyTag:value, level=0, offset=0);
+native unit:debug_symbol_set(Symbol:symbol, AnyTag:value, level=0, offset=0);
 native bool:debug_symbol_set_safe(Symbol:symbol, AnyTag:value, level=0, offset=0, tag_id=tagof(value));
-native debug_symbol_set_arr(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values));
-native debug_symbol_set_arr_safe(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values), tag_id=tagof(values));
+native unit:debug_symbol_set_arr(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values));
+native unit:debug_symbol_set_arr_safe(Symbol:symbol, const AnyTag:values[], level=0, offset=0, size=sizeof(values), tag_id=tagof(values));
 
 native debug_symbol_call(Symbol:symbol, AnyTag:...);
 native debug_symbol_call_list(Symbol:symbol, List:args);
@@ -2437,3 +2439,5 @@ stock Ref:operator=(Ref<LinkedList>:arg) return Ref:arg;
 stock Ref:operator=(Ref<Iter>:arg) return Ref:arg;
 
 #endif
+
+#undef unit
