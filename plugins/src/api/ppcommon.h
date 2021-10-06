@@ -143,6 +143,19 @@ namespace pp
 		{
 			return get<cell(const void *tag, cell optype, cell(*handler)(void *cookie, const void *tag, cell *args, cell numargs), void *cookie)>(3)(tag, optype, handler, cookie);
 		}
+
+		bool register_format(const void *tag, cell type, bool is_string, bool overwrite) const
+		{
+			return get<cell(const void *tag, cell type, cell is_string, cell overwrite)>(4)(tag, type, is_string, overwrite);
+		}
+
+		cell get_uid_from_format(cell type, bool &is_string) const
+		{
+			cell is_string_c = is_string;
+			cell result = get<cell(cell type, cell *is_string_ptr)>(5)(type, &is_string_c);
+			is_string = is_string_c;
+			return result;
+		}
 	};
 
 	class dyn_object_table : public api_table

@@ -166,6 +166,19 @@ static func_ptr tag_functions[] = {
 		auto ctl = static_cast<tag_ptr>(tag)->get_control();
 		return ctl->set_op(static_cast<op_type>(optype), handler, cookie);
 	},
+	+[]/*tag_register_format*/(const void *tag, cell type, cell is_string, cell overwrite) -> cell
+	{
+		auto &ops = static_cast<tag_ptr>(tag)->get_ops();
+		return ops.register_specifier(type, is_string, overwrite);
+	},
+	+[]/*tag_get_uid_from_format*/(cell type, cell *is_string_ptr) -> cell
+	{
+		bool is_string = false;
+		auto ops = tag_operations::from_specifier(type, is_string);
+		if(is_string_ptr) *is_string_ptr = is_string;
+		if(ops) return ops->get_tag_uid();
+		return 0;
+	},
 	nullptr
 };
 
