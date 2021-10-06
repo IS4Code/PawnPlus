@@ -553,8 +553,8 @@ native String:str_set_format(StringTag:target, const format[], AnyTag:...);
 native String:str_set_format_s(StringTag:target, ConstStringTag:format, AnyTag:...);
 native String:str_append_format(StringTag:target, const format[], AnyTag:...);
 native String:str_append_format_s(StringTag:target, ConstStringTag:format, AnyTag:...);
-native bool:str_register_format(specifier, TagTag:tag_id, bool:overwrite=false);
-native tag_uid:str_get_format_tag(specifier);
+native bool:str_register_format(specifier, TagTag:tag_id, bool:is_string=false, bool:overwrite=false);
+native tag_uid:str_get_format_tag(specifier, &bool:is_string=false);
 
 enum regex_options (<<= 1)
 {

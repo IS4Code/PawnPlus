@@ -70,8 +70,8 @@ public:
 	virtual tag_ptr get_element() const = 0;
 	virtual ~tag_operations() = default;
 
-	static const tag_operations *from_specifier(cell specifier);
-	bool register_specifier(cell specifier, bool overwrite = false) const;
+	static const tag_operations *from_specifier(cell specifier, bool &is_string);
+	bool register_specifier(cell specifier, bool is_string = false, bool overwrite = false) const;
 };
 
 class tag_control

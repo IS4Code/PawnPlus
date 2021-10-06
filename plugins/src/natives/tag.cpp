@@ -127,17 +127,19 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:str_register_format(specifier, TagTag:tag_id, bool:overwrite=false);
+	// native bool:str_register_format(specifier, TagTag:tag_id, bool:is_string=false, bool:overwrite=false);
 	AMX_DEFINE_NATIVE_TAG(str_register_format, 2, bool)
 	{
 		auto &ops = tags::find_tag(amx, params[2])->get_ops();
-		return ops.register_specifier(params[1], optparam(3, 0));
+		return ops.register_specifier(params[1], optparam(3, 0), optparam(4, 0));
 	}
 
-	// native tag_uid:str_get_format_tag(specifier);
+	// native tag_uid:str_get_format_tag(specifier, &bool:is_string=false);
 	AMX_DEFINE_NATIVE_TAG(str_get_format_tag, 1, cell)
 	{
-		auto ops = tag_operations::from_specifier(params[1]);
+		bool is_string = false;
+		auto ops = tag_operations::from_specifier(params[1], is_string);
+		*optparamref(2, 0) = is_string;
 		if(!ops) return tags::tag_unknown;
 		return ops->get_tag_uid();
 	}

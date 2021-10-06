@@ -33,20 +33,21 @@ inline void hash_combine(size_t& seed, const T& v)
 	seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
 }
 
-static std::unordered_map<cell, const tag_operations*> specifier_map;
+static std::unordered_map<cell, std::pair<const tag_operations*, bool>> specifier_map;
 
-const tag_operations *tag_operations::from_specifier(cell specifier)
+const tag_operations *tag_operations::from_specifier(cell specifier, bool &is_string)
 {
 	auto it = specifier_map.find(specifier);
 	if(it == specifier_map.end()) return nullptr;
-	return it->second;
+	is_string = it->second.second;
+	return it->second.first;
 }
 
-bool tag_operations::register_specifier(cell specifier, bool overwrite) const
+bool tag_operations::register_specifier(cell specifier, bool is_string, bool overwrite) const
 {
 	auto &slot = specifier_map[specifier];
-	if(!overwrite && slot != nullptr) return false;
-	slot = this;
+	if(!overwrite && slot.first != nullptr) return false;
+	slot = std::make_pair(this, is_string);
 	return true;
 }
 

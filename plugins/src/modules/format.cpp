@@ -120,11 +120,21 @@ namespace strings
 				break;
 				default:
 				{
-					if(auto ops = tag_operations::from_specifier(type))
+					bool is_string;
+					if(auto ops = tag_operations::from_specifier(type, is_string))
 					{
-						if(ops->format_base(nullptr, arg, type, begin, end, get_num_parser(), buf))
+						if(is_string)
 						{
-							return;
+							cell val = strings::create(arg, false, false);
+							if(ops->format_base(nullptr, &val, type, begin, end, get_num_parser(), buf))
+							{
+								return;
+							}
+						}else{
+							if(ops->format_base(nullptr, arg, type, begin, end, get_num_parser(), buf))
+							{
+								return;
+							}
 						}
 						break;
 					}
