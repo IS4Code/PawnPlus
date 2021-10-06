@@ -55,16 +55,7 @@ namespace std
 
 class tag_operations;
 
-class tag_control
-{
-protected:
-	tag_control() = default;
-public:
-	virtual bool set_op(op_type type, AMX *amx, const char *handler, const char *add_format, const cell *args, int numargs) = 0;
-	virtual bool set_op(op_type type, cell(*handler)(void *cookie, const void *tag, cell *args, cell numargs), void *cookie) = 0;
-	virtual bool lock() = 0;
-	virtual ~tag_control() = default;
-};
+class tag_control;
 
 struct tag_info
 {

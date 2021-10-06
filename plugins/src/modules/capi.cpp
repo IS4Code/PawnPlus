@@ -1,6 +1,7 @@
 #include "capi.h"
 #include "main.h"
 #include "tags.h"
+#include "tag_ops.h"
 #include "variants.h"
 #include "containers.h"
 #include "strings.h"
