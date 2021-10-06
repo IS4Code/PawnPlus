@@ -910,44 +910,44 @@ namespace Natives
 		return value_at<0>::iter_get<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:iter_set(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE_TAG(iter_set, 3, bool)
+	// native iter_set(IterTag:iter, AnyTag:value, TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(iter_set, 3, cell)
 	{
 		return value_at<2, 3>::iter_set<dyn_func>(amx, params);
 	}
 
-	// native bool:iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE_TAG(iter_set_arr, 4, bool)
+	// native iter_set_arr(IterTag:iter, const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(iter_set_arr, 4, cell)
 	{
 		return value_at<2, 3, 4>::iter_set<dyn_func_arr>(amx, params);
 	}
 
-	// native bool:iter_set_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE_TAG(iter_set_arr_2d, 5, bool)
+	// native iter_set_arr_2d(IterTag:iter, const AnyTag:value[][], size=sizeof(value), size2=sizeof(value[]), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(iter_set_arr_2d, 5, cell)
 	{
 		return value_at<2, 3, 4, 5>::iter_set<dyn_func_arr>(amx, params);
 	}
 
-	// native bool:iter_set_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
-	AMX_DEFINE_NATIVE_TAG(iter_set_arr_3d, 6, bool)
+	// native iter_set_arr_3d(IterTag:iter, const AnyTag:value[][][], size=sizeof(value), size2=sizeof(value[]), size3=sizeof(value[][]), TagTag:tag_id=tagof(value));
+	AMX_DEFINE_NATIVE_TAG(iter_set_arr_3d, 6, cell)
 	{
 		return value_at<2, 3, 4, 5, 6>::iter_set<dyn_func_arr>(amx, params);
 	}
 
-	// native bool:iter_set_str(IterTag:iter, const value[]);
-	AMX_DEFINE_NATIVE_TAG(iter_set_str, 2, bool)
+	// native iter_set_str(IterTag:iter, const value[]);
+	AMX_DEFINE_NATIVE_TAG(iter_set_str, 2, cell)
 	{
 		return value_at<2>::iter_set<dyn_func_str>(amx, params);
 	}
 
-	// native bool:iter_set_str_s(IterTag:iter, ConstStringTag:value);
-	AMX_DEFINE_NATIVE_TAG(iter_set_str_s, 2, bool)
+	// native iter_set_str_s(IterTag:iter, ConstStringTag:value);
+	AMX_DEFINE_NATIVE_TAG(iter_set_str_s, 2, cell)
 	{
 		return value_at<2>::iter_set<dyn_func_str_s>(amx, params);
 	}
 
-	// native bool:iter_set_var(IterTag:iter, VariantTag:value);
-	AMX_DEFINE_NATIVE_TAG(iter_set_var, 2, bool)
+	// native iter_set_var(IterTag:iter, VariantTag:value);
+	AMX_DEFINE_NATIVE_TAG(iter_set_var, 2, cell)
 	{
 		return value_at<2>::iter_set<dyn_func_var>(amx, params);
 	}
