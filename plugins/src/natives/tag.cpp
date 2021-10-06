@@ -120,6 +120,14 @@ namespace Natives
 		auto &ops = tags::find_tag(amx, params[2])->get_ops();
 		return ops.register_specifier(params[1]);
 	}
+
+	// native tag_uid:str_get_format_tag(specifier);
+	AMX_DEFINE_NATIVE_TAG(str_get_format_tag, 1, cell)
+	{
+		auto ops = tag_operations::from_specifier(params[1]);
+		if(!ops) return tags::tag_unknown;
+		return ops->get_tag_uid();
+	}
 }
 
 static AMX_NATIVE_INFO native_list[] =
@@ -137,6 +145,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(tag_lock),
 	AMX_DECLARE_NATIVE(tag_element),
 	AMX_DECLARE_NATIVE(str_register_format),
+	AMX_DECLARE_NATIVE(str_get_format_tag),
 };
 
 int RegisterTagNatives(AMX *amx)
