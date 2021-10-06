@@ -70,6 +70,15 @@ namespace strings
 		const cell *data = obj.get_cell_addr(nullptr, 0);
 		return tag->get_ops().format_base(tag, data, obj.get_specifier(), begin, end, std::move(parse_num), buf);
 	}
+		
+	template <class StringIter>
+	struct append_simple
+	{
+		void operator()(StringIter begin, StringIter end, cell_string &buf) const
+		{
+			buf.append(begin, end);
+		}
+	};
 
 	template <class Iter>
 	struct format_specific

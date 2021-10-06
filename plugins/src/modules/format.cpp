@@ -137,11 +137,24 @@ namespace strings
 
 		void operator()(Iter format_begin, Iter format_end, AMX *amx, strings::cell_string &buf, cell argc, const cell *args)
 		{
+			auto flen = format_end - format_begin;
+
+			if(argc == 1 && flen == 2 && *format_begin == '%')
+			{
+				auto test = format_begin;
+				++test;
+				if(*test == 's')
+				{
+					// short-circuiting "%s" form
+					select_iterator<append_simple>(amx_GetAddrSafe(amx, args[0]), buf);
+					return;
+				}
+			}
+
 			this->amx = amx;
 			this->argc = argc;
 			this->args = args;
 
-			auto flen = format_end - format_begin;
 			buf.reserve(buf.size() + flen + 8 * argc);
 
 			auto last = format_begin;
