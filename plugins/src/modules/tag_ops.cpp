@@ -1017,7 +1017,11 @@ struct float_operations : public cell_operations<float_operations>
 			case 'd':
 			{
 				float val = amx_ctof(*arg);
-				if(*begin == '.')
+				if(begin == end)
+				{
+					buf.append(strings::to_string(val));
+					return true;
+				}else if(*begin == '.')
 				{
 					++begin;
 					cell precision = parse_num(begin, end);
@@ -1031,10 +1035,6 @@ struct float_operations : public cell_operations<float_operations>
 						}
 						return true;
 					}
-				}else if(begin == end)
-				{
-					buf.append(strings::to_string(val));
-					return true;
 				}else{
 					char padding = static_cast<ucell>(*begin);
 					++begin;

@@ -107,7 +107,7 @@ namespace strings
 			}
 			cell val = 0;
 			cell c;
-			while(std::isdigit(c = *begin) && begin != end)
+			while(begin != end && std::isdigit(c = *begin))
 			{
 				val = (val * 10) + (c - '0');
 				++begin;
