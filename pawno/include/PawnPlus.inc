@@ -633,7 +633,7 @@ native ConstAmxVariant:var_addr_const(ConstVariantTag:var);
 native AmxVariantBuffer:var_buf_addr(VariantTag:str);
 native Variant:var_acquire(VariantTag:var);
 native Variant:var_release(VariantTag:var);
-native var_delete(VariantTag:var);
+native unit:var_delete(VariantTag:var);
 native bool:var_valid(ConstVariantTag:var);
 native Variant:var_clone(ConstVariantTag:var);
 

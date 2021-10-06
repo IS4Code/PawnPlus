@@ -136,7 +136,8 @@ namespace Natives
 	// native var_delete(VariantTag:var);
 	AMX_DEFINE_NATIVE_TAG(var_delete, 1, cell)
 	{
-		return variants::pool.remove_by_id(params[1]);
+		if(!variants::pool.remove_by_id(params[1])) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
+		return 1;
 	}
 
 	// native bool:var_valid(ConstVariantTag:var);
