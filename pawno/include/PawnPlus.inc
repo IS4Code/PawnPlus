@@ -284,6 +284,7 @@ const tag_uid:tag_uid_unsigned = tag_uid:20;
 const tag_uid:tag_uid_pool = tag_uid:21;
 const tag_uid:tag_uid_expression = tag_uid:22;
 const tag_uid:tag_uid_address = tag_uid:23;
+const tag_uid:tag_uid_amx_guard = tag_uid:24;
 
 const TAG_EXPORTED = 0x80000000;
 const TAG_STRONG = 0x40000000;
