@@ -5,6 +5,7 @@
 #include "modules/containers.h"
 
 #include <stack>
+#include <cctype>
 
 namespace strings
 {
@@ -83,6 +84,37 @@ namespace strings
 	template <class Iter>
 	struct format_specific
 	{
+		static cell parse_num_simple(Iter &begin, Iter end)
+		{
+			if(begin == end)
+			{
+				return 0;
+			}
+			switch(*begin)
+			{
+				case '-':
+				{
+					++begin;
+					auto oldbegin = begin;
+					cell num = parse_num_simple(begin, end);
+					if(begin != oldbegin)
+					{
+						return -num;
+					}
+					amx_FormalError(errors::invalid_format, "invalid specifier parameter");
+				}
+				break;
+			}
+			cell val = 0;
+			cell c;
+			while(std::isdigit(c = *begin) && begin != end)
+			{
+				val = (val * 10) + (c - '0');
+				++begin;
+			}
+			return val;
+		}
+
 		template <class QueryIter>
 		struct add_query
 		{

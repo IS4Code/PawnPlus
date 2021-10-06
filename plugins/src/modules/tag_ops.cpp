@@ -3011,6 +3011,40 @@ cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numar
 			return numargs >= 1 ? init(tag, &args[0], 1) : 0;
 		case op_type::hash:
 			return numargs >= 1 ? hash(tag, args[0]) : 0;
+		case op_type::handle:
+			return numargs >= 1 ? handle_pool.get_id(handle_pool.emplace(dyn_object(), handle(tag, args[0]), true)) : 0;
+		case op_type::format:
+			if(numargs >= 3)
+			{
+				cell_string *format;
+				if(strings::pool.get_by_id(args[2], format) || format == nullptr)
+				{
+					auto &ref = strings::pool.add();
+					bool result;
+					if(format == nullptr)
+					{
+						result = format_base(tag, &args[0], args[1], nullptr, nullptr, strings::num_parser<const cell*>{
+							nullptr, [](void *ptr, const cell *&begin, const cell *end)
+							{
+								return strings::format_specific<const cell*>::parse_num_simple(begin, end);
+							}
+						}, *ref);
+					}else{
+						result = format_base(tag, &args[0], args[1], format->cbegin(), format->cend(), strings::num_parser<cell_string::const_iterator>{
+							nullptr, [](void *ptr, cell_string::const_iterator &begin, cell_string::const_iterator end)
+							{
+								return strings::format_specific<cell_string::const_iterator>::parse_num_simple(begin, end);
+							}
+						}, *ref);
+					}
+					if(result)
+					{
+						return strings::pool.get_id(ref);
+					}
+					strings::pool.remove(ref);
+				}
+			}
+			return 0;
 		default:
 			return call_dyn_op(tag, type, args, numargs);
 	}

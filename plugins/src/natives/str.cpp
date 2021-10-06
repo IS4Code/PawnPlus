@@ -10,7 +10,6 @@
 #include "objects/dyn_object.h"
 
 #include <cstring>
-#include <cctype>
 #include <algorithm>
 #include <limits>
 
@@ -19,37 +18,6 @@ typedef strings::cell_string cell_string;
 template <class Iter>
 struct format_val
 {
-	static cell parse_num(Iter &begin, Iter end)
-	{
-		if(begin == end)
-		{
-			return 0;
-		}
-		switch(*begin)
-		{
-			case '-':
-			{
-				++begin;
-				auto oldbegin = begin;
-				cell num = parse_num(begin, end);
-				if(begin != oldbegin)
-				{
-					return -num;
-				}
-				amx_FormalError(errors::invalid_format, "invalid specifier parameter");
-			}
-			break;
-		}
-		cell val = 0;
-		cell c;
-		while(std::isdigit(c = *begin) && begin != end)
-		{
-			val = (val * 10) + (c - '0');
-			++begin;
-		}
-		return val;
-	}
-
 	cell operator()(Iter begin, Iter end, const dyn_object &obj) const
 	{
 		cell type = *begin;
@@ -59,7 +27,7 @@ struct format_val
 		if(!obj.get_tag()->get_ops().format_base(obj.get_tag(), data, type, begin, end, strings::num_parser<Iter>{
 			nullptr, [](void *ptr, Iter &begin, Iter end)
 			{
-				return parse_num(begin, end);
+				return strings::format_specific<Iter>::parse_num_simple(begin, end);
 			}
 		}, *buf))
 		{
