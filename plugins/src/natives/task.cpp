@@ -151,7 +151,7 @@ namespace Natives
 		return value_at<2>::task_set_result<dyn_func_str>(amx, params);
 	}
 
-	// native task_set_result_str_s(Task:task, ConstString:result);
+	// native task_set_result_str_s(Task:task, ConstStringTag:result);
 	AMX_DEFINE_NATIVE_TAG(task_set_result_str_s, 2, cell)
 	{
 		return value_at<2>::task_set_result<dyn_func_str_s>(amx, params);
@@ -495,7 +495,7 @@ namespace Natives
 		return value_at<2>::task_set_result_ms<dyn_func_str>(amx, params);
 	}
 
-	// native task_set_result_ms_str_s(Task:task, ConstString:result, interval);
+	// native task_set_result_ms_str_s(Task:task, ConstStringTag:result, interval);
 	AMX_DEFINE_NATIVE_TAG(task_set_result_ms_str_s, 3, cell)
 	{
 		return value_at<2>::task_set_result_ms<dyn_func_str_s>(amx, params);
@@ -525,7 +525,7 @@ namespace Natives
 		return value_at<2>::task_set_result_ticks<dyn_func_str>(amx, params);
 	}
 
-	// native task_set_result_ticks_str_s(Task:task, ConstString:result, interval);
+	// native task_set_result_ticks_str_s(Task:task, ConstStringTag:result, interval);
 	AMX_DEFINE_NATIVE_TAG(task_set_result_ticks_str_s, 3, cell)
 	{
 		return value_at<2>::task_set_result_ticks<dyn_func_str_s>(amx, params);

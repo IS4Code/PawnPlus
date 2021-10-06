@@ -118,7 +118,7 @@ namespace Natives
 		return strings::select_iterator<parse_base>(str, amx, optparam(2, -1));
 	}
 
-	// native Expression:expr_parse_s(ConstString:string, parser_options:options=parser_all);
+	// native Expression:expr_parse_s(ConstStringTag:string, parser_options:options=parser_all);
 	AMX_DEFINE_NATIVE_TAG(expr_parse_s, 1, expression)
 	{
 		strings::cell_string *str;
@@ -228,7 +228,7 @@ namespace Natives
 		return value_at<1>::expr_const<dyn_func_str>(amx, params);
 	}
 
-	// native Expression:expr_const_str_s(ConstString:value);
+	// native Expression:expr_const_str_s(ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(expr_const_str_s, 1, expression)
 	{
 		return value_at<1>::expr_const<dyn_func_str_s>(amx, params);
@@ -803,7 +803,7 @@ namespace Natives
 		return value_at<2>::expr_set<dyn_func_str>(amx, params);
 	}
 
-	// native expr_set_str_s(Expression:expr, ConstString:value);
+	// native expr_set_str_s(Expression:expr, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(expr_set_str_s, 2, cell)
 	{
 		return value_at<2>::expr_set<dyn_func_str_s>(amx, params);

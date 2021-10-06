@@ -341,7 +341,7 @@ namespace Natives
 		return value_at<2>::list_add<dyn_func_str>(amx, params);
 	}
 
-	// native list_add_str_s(List:list, ConstString:value, index=-1);
+	// native list_add_str_s(List:list, ConstStringTag:value, index=-1);
 	AMX_DEFINE_NATIVE_TAG(list_add_str_s, 2, cell)
 	{
 		return value_at<2>::list_add<dyn_func_str_s>(amx, params);
@@ -571,7 +571,7 @@ namespace Natives
 		return value_at<3>::list_set<dyn_func_str>(amx, params);
 	}
 
-	// native list_set_str_s(List:list, index, ConstString:value);
+	// native list_set_str_s(List:list, index, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(list_set_str_s, 3, cell)
 	{
 		return value_at<3>::list_set<dyn_func_str_s>(amx, params);
@@ -613,7 +613,7 @@ namespace Natives
 		return value_at<3>::list_resize<dyn_func_str>(amx, params);
 	}
 
-	// native list_resize_str_s(List:list, newsize, ConstString:padding);
+	// native list_resize_str_s(List:list, newsize, ConstStringTag:padding);
 	AMX_DEFINE_NATIVE_TAG(list_resize_str_s, 3, cell)
 	{
 		return value_at<3>::list_resize<dyn_func_str_s>(amx, params);
@@ -676,7 +676,7 @@ namespace Natives
 		return value_at<2>::list_find<dyn_func_str>(amx, params);
 	}
 
-	// native list_find_str_s(List:list, ConstString:value, index=0);
+	// native list_find_str_s(List:list, ConstStringTag:value, index=0);
 	AMX_DEFINE_NATIVE_TAG(list_find_str_s, 2, cell)
 	{
 		return value_at<2>::list_find<dyn_func_str_s>(amx, params);
@@ -706,7 +706,7 @@ namespace Natives
 		return value_at<2>::list_find_last<dyn_func_str>(amx, params);
 	}
 
-	// native list_find_last_str_s(List:list, ConstString:value, index=0);
+	// native list_find_last_str_s(List:list, ConstStringTag:value, index=0);
 	AMX_DEFINE_NATIVE_TAG(list_find_last_str_s, 2, cell)
 	{
 		return value_at<2>::list_find_last<dyn_func_str_s>(amx, params);
@@ -859,7 +859,7 @@ namespace Natives
 		return value_at<2>::list_count<dyn_func_str>(amx, params);
 	}
 
-	// native list_count_str_s(List:list, ConstString:value);
+	// native list_count_str_s(List:list, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(list_count_str_s, 2, cell)
 	{
 		return value_at<2>::list_count<dyn_func_str_s>(amx, params);

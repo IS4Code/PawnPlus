@@ -267,7 +267,7 @@ namespace Natives
 		return value_at<2>::linked_list_add<dyn_func_str>(amx, params);
 	}
 
-	// native linked_list_add_str_s(LinkedList:linked_list, ConstString:value, index=-1);
+	// native linked_list_add_str_s(LinkedList:linked_list, ConstStringTag:value, index=-1);
 	AMX_DEFINE_NATIVE_TAG(linked_list_add_str_s, 2, cell)
 	{
 		return value_at<2>::linked_list_add<dyn_func_str_s>(amx, params);
@@ -466,7 +466,7 @@ namespace Natives
 		return value_at<3>::linked_list_set<dyn_func_str>(amx, params);
 	}
 
-	// native linked_list_set_str_s(LinkedList:linked_list, index, ConstString:value);
+	// native linked_list_set_str_s(LinkedList:linked_list, index, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(linked_list_set_str_s, 3, cell)
 	{
 		return value_at<3>::linked_list_set<dyn_func_str_s>(amx, params);
@@ -595,7 +595,7 @@ namespace Natives
 		return value_at<2>::linked_list_count<dyn_func_str>(amx, params);
 	}
 
-	// native linked_list_count_str_s(LinkedList:linked_list, ConstString:value);
+	// native linked_list_count_str_s(LinkedList:linked_list, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(linked_list_count_str_s, 2, cell)
 	{
 		return value_at<2>::linked_list_count<dyn_func_str_s>(amx, params);

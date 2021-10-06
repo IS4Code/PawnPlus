@@ -320,7 +320,7 @@ namespace Natives
 		return key_at<2>::map_iter_at<dyn_func_str>(amx, params);
 	}
 
-	// native Iter:map_iter_at_str_s(Map:map, ConstString:key);
+	// native Iter:map_iter_at_str_s(Map:map, ConstStringTag:key);
 	AMX_DEFINE_NATIVE_TAG(map_iter_at_str_s, 2, iter)
 	{
 		return key_at<2>::map_iter_at<dyn_func_str_s>(amx, params);
@@ -940,7 +940,7 @@ namespace Natives
 		return value_at<2>::iter_set<dyn_func_str>(amx, params);
 	}
 
-	// native bool:iter_set_str_s(IterTag:iter, ConstString:value);
+	// native bool:iter_set_str_s(IterTag:iter, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(iter_set_str_s, 2, bool)
 	{
 		return value_at<2>::iter_set<dyn_func_str_s>(amx, params);
@@ -1072,7 +1072,7 @@ namespace Natives
 		return value_at<2>::iter_insert<dyn_func_str>(amx, params);
 	}
 
-	// native Iter:iter_insert_str_s(IterTag:iter, ConstString:value);
+	// native Iter:iter_insert_str_s(IterTag:iter, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(iter_insert_str_s, 2, iter)
 	{
 		return value_at<2>::iter_insert<dyn_func_str_s>(amx, params);

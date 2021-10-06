@@ -250,7 +250,7 @@ namespace Natives
 		return value_at<2>::pool_add<dyn_func_str>(amx, params);
 	}
 
-	// native pool_add_str_s(Pool:pool, ConstString:value);
+	// native pool_add_str_s(Pool:pool, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(pool_add_str_s, 2, cell)
 	{
 		return value_at<2>::pool_add<dyn_func_str_s>(amx, params);
@@ -416,7 +416,7 @@ namespace Natives
 		return value_at<3>::pool_set<dyn_func_str>(amx, params);
 	}
 
-	// native pool_set_str_s(Pool:pool, index, ConstString:value);
+	// native pool_set_str_s(Pool:pool, index, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(pool_set_str_s, 3, cell)
 	{
 		return value_at<3>::pool_set<dyn_func_str_s>(amx, params);
@@ -543,7 +543,7 @@ namespace Natives
 		return value_at<2>::pool_find<dyn_func_str>(amx, params);
 	}
 
-	// native pool_find_str_s(Pool:pool, ConstString:value);
+	// native pool_find_str_s(Pool:pool, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(pool_find_str_s, 2, cell)
 	{
 		return value_at<2>::pool_find<dyn_func_str_s>(amx, params);
@@ -597,7 +597,7 @@ namespace Natives
 		return value_at<2>::pool_count<dyn_func_str>(amx, params);
 	}
 
-	// native pool_count_str_s(Pool:pool, ConstString:value);
+	// native pool_count_str_s(Pool:pool, ConstStringTag:value);
 	AMX_DEFINE_NATIVE_TAG(pool_count_str_s, 2, cell)
 	{
 		return value_at<2>::pool_count<dyn_func_str_s>(amx, params);
