@@ -69,7 +69,7 @@ public:
 	virtual ~tag_operations() = default;
 
 	static const tag_operations *from_specifier(cell specifier);
-	bool register_specifier(cell specifier) const;
+	bool register_specifier(cell specifier, bool overwrite = false) const;
 };
 
 #endif

@@ -114,11 +114,11 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:str_register_format(specifier, TagTag:tag_id);
+	// native bool:str_register_format(specifier, TagTag:tag_id, bool:overwrite=false);
 	AMX_DEFINE_NATIVE_TAG(str_register_format, 2, bool)
 	{
 		auto &ops = tags::find_tag(amx, params[2])->get_ops();
-		return ops.register_specifier(params[1]);
+		return ops.register_specifier(params[1], optparam(3, 0));
 	}
 
 	// native tag_uid:str_get_format_tag(specifier);

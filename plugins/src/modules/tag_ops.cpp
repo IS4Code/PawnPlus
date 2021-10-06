@@ -42,10 +42,10 @@ const tag_operations *tag_operations::from_specifier(cell specifier)
 	return it->second;
 }
 
-bool tag_operations::register_specifier(cell specifier) const
+bool tag_operations::register_specifier(cell specifier, bool overwrite) const
 {
 	auto &slot = specifier_map[specifier];
-	if(slot != nullptr) return false;
+	if(!overwrite && slot != nullptr) return false;
 	slot = this;
 	return true;
 }
