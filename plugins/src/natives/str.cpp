@@ -20,8 +20,9 @@ struct format_val
 {
 	cell operator()(Iter begin, Iter end, const dyn_object &obj) const
 	{
-		cell type = *begin;
-		++begin;
+		if(begin == end) return 0;
+		--end;
+		cell type = *end;
 		const cell *data = obj.get_cell_addr(nullptr, 0);
 		auto &buf = strings::pool.add();
 		if(!obj.get_tag()->get_ops().format_base(obj.get_tag(), data, type, begin, end, strings::num_parser<Iter>{
@@ -226,7 +227,8 @@ namespace Natives
 		auto format = optparamref(3, 0);
 		if(*format)
 		{
-			return strings::select_iterator<format_val>(format, obj);
+			cell result = strings::select_iterator<format_val>(format, obj);
+			if(result != 0) return result;
 		}
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
@@ -239,7 +241,8 @@ namespace Natives
 		auto format = optparamref(4, 0);
 		if(*format)
 		{
-			return strings::select_iterator<format_val>(format, obj);
+			cell result = strings::select_iterator<format_val>(format, obj);
+			if(result != 0) return result;
 		}
 		return strings::pool.get_id(strings::pool.add(obj.to_string()));
 	}
@@ -256,7 +259,8 @@ namespace Natives
 		auto format = optparamref(2, 0);
 		if(*format)
 		{
-			return strings::select_iterator<format_val>(format, *var);
+			cell result = strings::select_iterator<format_val>(format, *var);
+			if(result != 0) return result;
 		}
 		return strings::pool.get_id(strings::pool.add(var->to_string()));
 	}
