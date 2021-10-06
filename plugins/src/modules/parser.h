@@ -974,7 +974,7 @@ private:
 		return result;
 	}
 
-	expression_ptr parse_condition(AMX *amx, Iter &begin, Iter end, cell endchar)
+	expression_ptr parse_condition(AMX *amx, Iter &begin, Iter end, cell endchar, bool allow_partial)
 	{
 		expression_ptr result;
 		while(begin != end)
@@ -1167,14 +1167,14 @@ private:
 				return result;
 			}
 		}
-		if(endchar != '\0')
+		if(endchar != '\0' && !allow_partial)
 		{
 			amx_ParserError("unexpected end of string", begin, end);
 		}
 		return result;
 	}
 
-	expression_ptr parse_expression(AMX *amx, Iter &begin, Iter end, cell endchar)
+	expression_ptr parse_expression(AMX *amx, Iter &begin, Iter end, cell endchar, bool allow_partial)
 	{
 		expression_ptr result;
 		while(begin != end)
@@ -1203,7 +1203,7 @@ private:
 						break;
 					}
 					++begin;
-					auto inner = parse_condition(amx, begin, end, endchar);
+					auto inner = parse_condition(amx, begin, end, endchar, allow_partial);
 					result = std::make_shared<logic_and_expression>(std::move(result), std::move(inner));
 				}
 				continue;
@@ -1220,7 +1220,7 @@ private:
 						break;
 					}
 					++begin;
-					auto inner = parse_condition(amx, begin, end, endchar);
+					auto inner = parse_condition(amx, begin, end, endchar, allow_partial);
 					result = std::make_shared<logic_or_expression>(std::move(result), std::move(inner));
 				}
 				continue;
@@ -1233,7 +1233,7 @@ private:
 					++begin;
 					auto inner1 = parse_outer_expression(amx, begin, end, ':');
 					++begin;
-					auto inner2 = parse_outer_expression(amx, begin, end, endchar);
+					auto inner2 = parse_outer_expression(amx, begin, end, endchar, allow_partial);
 					result = std::make_shared<conditional_expression>(std::move(result), std::move(inner1), std::move(inner2));
 				}
 				continue;
@@ -1245,7 +1245,7 @@ private:
 					}
 					auto old = begin;
 					++begin;
-					auto inner = parse_expression(amx, begin, end, endchar);
+					auto inner = parse_expression(amx, begin, end, endchar, allow_partial);
 					if(!inner)
 					{
 						begin = old;
@@ -1268,7 +1268,7 @@ private:
 						break;
 					}
 					++begin;
-					auto inner = parse_condition(amx, begin, end, endchar);
+					auto inner = parse_condition(amx, begin, end, endchar, allow_partial);
 					if(!inner)
 					{
 						begin = old;
@@ -1280,7 +1280,7 @@ private:
 			}
 			if(!result)
 			{
-				result = parse_condition(amx, begin, end, endchar);
+				result = parse_condition(amx, begin, end, endchar, allow_partial);
 				if(!result)
 				{
 					return result;
@@ -1289,17 +1289,17 @@ private:
 				return result;
 			}
 		}
-		if(endchar != '\0')
+		if(endchar != '\0' && !allow_partial)
 		{
 			amx_ParserError("unexpected end of string", begin, end);
 		}
 		return result;
 	}
 
-	std::vector<expression_ptr> parse_expressions(AMX *amx, Iter &begin, Iter end, cell endchar)
+	std::vector<expression_ptr> parse_expressions(AMX *amx, Iter &begin, Iter end, cell endchar, bool allow_partial = false)
 	{
 		std::vector<expression_ptr> result;
-		auto inner = parse_expression(amx, begin, end, endchar);
+		auto inner = parse_expression(amx, begin, end, endchar, allow_partial);
 		if(!inner)
 		{
 			return result;
@@ -1318,7 +1318,7 @@ private:
 				case ',':
 				{
 					++begin;
-					inner = parse_expression(amx, begin, end, endchar);
+					inner = parse_expression(amx, begin, end, endchar, allow_partial);
 					if(!inner)
 					{
 						amx_ParserError("missing expression", begin, end);
@@ -1329,7 +1329,7 @@ private:
 				case ';':
 				{
 					++begin;
-					inner = parse_expression(amx, begin, end, endchar);
+					inner = parse_expression(amx, begin, end, endchar, allow_partial);
 					if(inner)
 					{
 						result.push_back(std::move(inner));
@@ -1347,16 +1347,16 @@ private:
 				break;
 			}
 		}
-		if(endchar != '\0')
+		if(endchar != '\0' && !allow_partial)
 		{
 			amx_ParserError("unexpected end of string", begin, end);
 		}
 		return result;
 	}
 
-	expression_ptr parse_outer_expression(AMX *amx, Iter &begin, Iter end, cell endchar)
+	expression_ptr parse_outer_expression(AMX *amx, Iter &begin, Iter end, cell endchar, bool allow_partial = false)
 	{
-		auto result = parse_expressions(amx, begin, end, endchar);
+		auto result = parse_expressions(amx, begin, end, endchar, allow_partial);
 		if(result.size() == 0)
 		{
 			return empty_expression::instance;
@@ -1386,6 +1386,17 @@ public:
 		if(begin != end)
 		{
 			amx_ParserError("unrecognized character", begin, end);
+		}
+		return expr;
+	}
+
+	expression_ptr parse_partial(AMX *amx, Iter &begin, Iter end, cell endchar)
+	{
+		parse_start = begin;
+		auto expr = parse_outer_expression(amx, begin, end, endchar, true);
+		if(!expr)
+		{
+			amx_ParserError("missing expression", begin, end);
 		}
 		return expr;
 	}

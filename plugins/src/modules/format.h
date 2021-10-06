@@ -57,6 +57,12 @@ namespace strings
 	template <class Iter>
 	bool append_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, num_parser<Iter> &&parse_num)
 	{
+		return append_format(buf, obj.get_specifier(), begin, end, obj, std::move(parse_num));
+	}
+
+	template <class Iter>
+	bool append_format(cell_string &buf, cell specifier, Iter begin, Iter end, const dyn_object &obj, num_parser<Iter> &&parse_num)
+	{
 		auto tag = obj.get_tag();
 		if(obj.empty() || (obj.is_array() && !tag->inherits_from(tags::tag_char)))
 		{
@@ -69,7 +75,7 @@ namespace strings
 		}
 
 		const cell *data = obj.get_cell_addr(nullptr, 0);
-		return tag->get_ops().format_base(tag, data, obj.get_specifier(), begin, end, std::move(parse_num), buf);
+		return tag->get_ops().format_base(tag, data, specifier, begin, end, std::move(parse_num), buf);
 	}
 		
 	template <class StringIter>

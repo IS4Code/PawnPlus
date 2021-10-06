@@ -232,7 +232,7 @@ namespace strings
 				{
 					buf.append(last, format_begin);
 
-					auto color_begin = format_begin;
+					const auto brace_begin = format_begin;
 
 					++format_begin;
 					if(format_begin == format_end)
@@ -250,61 +250,74 @@ namespace strings
 					}
 					if(*format_begin != ':')
 					{
-						auto color_end = std::find(format_begin, format_end, '}');
-						if(color_end != format_end && color_end - color_begin == 7)
+						const auto brace_end = std::find(format_begin, format_end, '}');
+						if(brace_end != format_end && brace_end - brace_begin == 7)
 						{
-							if(std::all_of(std::next(color_begin), color_end, [](cell c) {return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }))
+							if(std::all_of(std::next(brace_begin), brace_end, [](cell c) {return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }))
 							{
-								++color_end;
-								buf.append(color_begin, color_end);
-								format_begin = last = color_end;
+								format_begin = last = std::next(brace_end);
+								buf.append(brace_begin, format_begin);
 								continue;
 							}
 						}
-						auto expr = expression_parser<Iter>(parser_options::all).parse_simple(amx, std::next(color_begin), color_end);
+						format_begin = std::next(brace_begin);
+						auto expr = expression_parser<Iter>(parser_options::all).parse_partial(amx, format_begin, brace_end, ':');
 						auto lock = format_env.size() > 0 ? format_env.top().lock() : std::shared_ptr<map_t>();
-						buf.append(expr->execute({}, expression::exec_info(amx, lock.get(), true)).to_string());
-					
-						++color_end;
-						format_begin = last = color_end;
-						continue;
-					}
+						expression::exec_info info(amx, lock.get(), true);
 
-					last = format_begin;
-					auto lastspec = format_begin;
-					++format_begin;
-
-					while(format_begin != format_end && *format_begin != '}')
-					{
-						lastspec = format_begin;
+						if(format_begin == brace_end)
+						{
+							buf.append(expr->execute({}, info).to_string());
+						}else{
+							++format_begin;
+							if(format_begin == brace_end)
+							{
+								amx_FormalError(errors::invalid_format, "missing specifier");
+								return;
+							}
+							last = format_begin;
+							format_begin = std::prev(brace_end);
+							append_format(buf, *format_begin, last, format_begin, expr->execute({}, info), get_num_parser());
+						}
+						
+						format_begin = last = std::next(brace_end);
+					}else{
+						last = format_begin;
+						auto lastspec = format_begin;
 						++format_begin;
-					}
-					if(format_begin == format_end)
-					{
-						amx_FormalError(errors::invalid_format, "unexpected end");
-						return;
-					}
-					if(last == lastspec)
-					{
-						amx_FormalError(errors::invalid_format, "missing specifier");
-						return;
-					}
-					++last;
 
-					if(argi < 0)
-					{
-						amx_FormalError(errors::invalid_format, "negative argument index");
-						return;
-					}else if(argi < argc)
-					{
-						add_format(buf, last, lastspec, *lastspec, get_arg(argi));
-					}else if(argi > maxargn)
-					{
-						maxargn = argi;
-					}
+						while(format_begin != format_end && *format_begin != '}')
+						{
+							lastspec = format_begin;
+							++format_begin;
+						}
+						if(format_begin == format_end)
+						{
+							amx_FormalError(errors::invalid_format, "unexpected end");
+							return;
+						}
+						if(last == lastspec)
+						{
+							amx_FormalError(errors::invalid_format, "missing specifier");
+							return;
+						}
+						++last;
 
-					++format_begin;
-					last = format_begin;
+						if(argi < 0)
+						{
+							amx_FormalError(errors::invalid_format, "negative argument index");
+							return;
+						}else if(argi < argc)
+						{
+							add_format(buf, last, lastspec, *lastspec, get_arg(argi));
+						}else if(argi > maxargn)
+						{
+							maxargn = argi;
+						}
+
+						++format_begin;
+						last = format_begin;
+					}
 				}else if(*format_begin == '}')
 				{
 					amx_FormalError(errors::invalid_format, "unexpected '}'");
