@@ -214,7 +214,7 @@ namespace Natives
 	{
 		if(params[2] == AMX_ERR_SLEEP || params[2] == AMX_ERR_NONE)
 		{
-			return 0;
+			amx_LogicError(errors::out_of_range, "error");
 		}
 		task *task;
 		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
