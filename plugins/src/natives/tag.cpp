@@ -2,6 +2,7 @@
 #include "modules/strings.h"
 #include "modules/tags.h"
 #include "modules/tag_ops.h"
+#include "modules/expressions.h"
 
 namespace Natives
 {
@@ -82,6 +83,18 @@ namespace Natives
 		return ctl->set_op(static_cast<op_type>(params[2]), amx, handler, add_format, args, numargs);
 	}
 
+	// native bool:tag_set_op_expr(tag_uid:tag_uid, tag_op:tag_op, Expression:handler);
+	AMX_DEFINE_NATIVE_TAG(tag_set_op_expr, 3, bool)
+	{
+		tag_control *ctl = tags::find_tag(params[1])->get_control();
+		if(ctl == nullptr) return 0;
+
+		expression_ptr ptr;
+		if(!expression_pool.get_by_id(params[3], ptr)) amx_LogicError(errors::pointer_invalid, "expression", params[3]);
+		
+		return ctl->set_op(static_cast<op_type>(params[2]), std::move(ptr));
+	}
+
 	// native bool:tag_lock(tag_uid:tag_uid);
 	AMX_DEFINE_NATIVE_TAG(tag_lock, 1, bool)
 	{
@@ -141,6 +154,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(tag_find),
 	AMX_DECLARE_NATIVE(tag_new),
 	AMX_DECLARE_NATIVE(tag_set_op),
+	AMX_DECLARE_NATIVE(tag_set_op_expr),
 	AMX_DECLARE_NATIVE(tag_call_op),
 	AMX_DECLARE_NATIVE(tag_lock),
 	AMX_DECLARE_NATIVE(tag_element),

@@ -298,6 +298,7 @@ native bool:tag_derived_from(tag_uid:tag_uid, tag_uid:base_uid);
 native tag_uid:tag_find(const name[]);
 native tag_uid:tag_new(const name[], tag_uid:base=tag_uid_unknown);
 native bool:tag_set_op(tag_uid:tag_uid, tag_op:tag_op, const handler[], const additional_format[]="", AnyTag:...);
+native bool:tag_set_op_expr(tag_uid:tag_uid, tag_op:tag_op, Expression:handler);
 native tag_call_op(tag_uid:tag_uid, tag_op:tag_op, AnyTag:...);
 native bool:tag_lock(tag_uid:tag_uid);
 native tag_uid:tag_element(tag_uid:tag_uid);

@@ -4,6 +4,8 @@
 #include "tags.h"
 #include "format.h"
 
+#include <memory>
+
 class tag_operations
 {
 protected:
@@ -79,6 +81,7 @@ protected:
 public:
 	virtual bool set_op(op_type type, AMX *amx, const char *handler, const char *add_format, const cell *args, int numargs) = 0;
 	virtual bool set_op(op_type type, cell(*handler)(void *cookie, const void *tag, cell *args, cell numargs), void *cookie) = 0;
+	virtual bool set_op(op_type type, std::shared_ptr<const class expression> handler) = 0;
 	virtual bool lock() = 0;
 	virtual ~tag_control() = default;
 };

@@ -2583,6 +2583,41 @@ class dynamic_operations : public null_operations<dynamic_operations>, public ta
 		}
 	};
 
+	class expr_op_handler : public op_handler
+	{
+		expression_ptr func;
+		expression::exec_info info;
+
+	public:
+		expr_op_handler() = default;
+
+		expr_op_handler(op_type type, expression_ptr &&func) : op_handler(type), func(std::move(func))
+		{
+
+		}
+
+		virtual cell invoke(tag_ptr tag, cell *args, size_t numargs) override
+		{
+			if(func != nullptr)
+			{
+				auto tag = tags::find_tag(tags::tag_cell);
+				std::vector<dyn_object> args_data;
+				for(size_t i = 0; i < numargs; i++)
+				{
+					args_data.emplace_back(args[i], tag);
+				}
+				expression::args_type args;
+				for(size_t i = 0; i < numargs; i++)
+				{
+					args.push_back(std::cref(args_data[i]));
+				}
+				
+				return func->execute(args, info).get_cell(0);
+			}
+			return 0;
+		}
+	};
+
 	bool _locked = false;
 	std::unordered_map<op_type, std::unique_ptr<op_handler>> dyn_ops;
 
@@ -2807,6 +2842,13 @@ public:
 	{
 		if(_locked) return false;
 		dyn_ops[type] = std::make_unique<func_op_handler>(type, handler, cookie);
+		return true;
+	}
+
+	virtual bool set_op(op_type type, expression_ptr handler) override
+	{
+		if(_locked) return false;
+		dyn_ops[type] = std::make_unique<expr_op_handler>(type, std::move(handler));
 		return true;
 	}
 
