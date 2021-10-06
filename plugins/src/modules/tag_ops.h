@@ -7,8 +7,15 @@
 class tag_operations
 {
 protected:
-	tag_operations() = default;
+	const cell tag_uid;
+
+	tag_operations(cell tag_uid) : tag_uid(tag_uid)
+	{
+
+	}
+
 public:
+	cell get_tag_uid() const { return tag_uid; }
 	cell call_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const;
 	virtual cell call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const = 0;
 

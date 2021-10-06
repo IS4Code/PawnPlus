@@ -50,20 +50,10 @@ bool tag_operations::register_specifier(cell specifier) const
 	return true;
 }
 
-struct tag_operations_base : public tag_operations
-{
-	cell tag_uid;
-
-	tag_operations_base(cell tag_uid) : tag_uid(tag_uid)
-	{
-
-	}
-};
-
 template <class Self>
-struct null_operations : public tag_operations_base
+struct null_operations : public tag_operations
 {
-	null_operations(cell tag_uid) : tag_operations_base(tag_uid)
+	null_operations(cell tag_uid) : tag_operations(tag_uid)
 	{
 
 	}
@@ -314,7 +304,7 @@ struct null_operations : public tag_operations_base
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, strings::num_parser<Iter> &&parse_num, cell_string &str)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, strings::num_parser<Iter> &&parse_num, cell_string &str)
 	{
 		if(fmt_begin == fmt_end)
 		{
@@ -437,7 +427,7 @@ struct cell_operations : public null_operations<Self>
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
 	{
 		switch(type)
 		{
@@ -781,7 +771,7 @@ struct unsigned_operations : public cell_operations<unsigned_operations>
 	}
 	
 	template <class Iter>
-	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
 	{
 		switch(type)
 		{
@@ -865,7 +855,7 @@ struct char_operations : public cell_operations<char_operations>
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
 	{
 		switch(type)
 		{
@@ -1019,7 +1009,7 @@ struct float_operations : public cell_operations<float_operations>
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
 	{
 		switch(type)
 		{
@@ -1221,7 +1211,7 @@ struct string_operations : public null_operations<string_operations>
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
 	{
 		switch(type)
 		{
@@ -1481,7 +1471,7 @@ struct variant_operations : public null_operations<variant_operations>
 	}
 	
 	template <class Iter>
-	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
 	{
 		switch(type)
 		{
@@ -2881,7 +2871,7 @@ public:
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations_base &ops, tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, strings::num_parser<Iter> &&parse_num, cell_string &str)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, strings::num_parser<Iter> &&parse_num, cell_string &str)
 	{
 		auto it = static_cast<const dynamic_operations&>(ops).dyn_ops.find(op_type::format);
 		if(it != static_cast<const dynamic_operations&>(ops).dyn_ops.end() && it->second)
@@ -2902,7 +2892,7 @@ public:
 			}
 			return ptr == nullptr;
 		}
-		tag_ptr base = tags::find_tag(ops.tag_uid)->base;
+		tag_ptr base = tags::find_tag(ops.get_tag_uid())->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
 		return base->get_ops().format_base(tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
 	}
