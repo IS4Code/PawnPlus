@@ -20,6 +20,8 @@
 #else
 #include <dlfcn.h>
 #endif
+#include <chrono>
+#include <time.h>
 
 namespace Natives
 {
@@ -430,6 +432,33 @@ namespace Natives
 		return stackspace();
 	}
 
+	// native pp_daytime(bool:utc=false);
+	AMX_DEFINE_NATIVE_TAG(pp_daytime, 0, cell)
+	{
+		using clock = std::chrono::system_clock;
+		auto now = clock::now();
+		auto seconds = std::chrono::time_point_cast<std::chrono::seconds>(now);
+		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - seconds);
+		std::time_t time = clock::to_time_t(seconds);
+		std::tm tm;
+		
+		if(optparam(1, 0))
+		{
+#ifdef _WIN32
+			gmtime_s(&tm, &time);
+#else
+			gmtime_r(&time, &tm);
+#endif
+		}else{
+#ifdef _WIN32
+			localtime_s(&tm, &time);
+#else
+			localtime_r(&time, &tm);
+#endif
+		}
+		return static_cast<ucell>(((tm.tm_hour * 60 + tm.tm_min) * 60 + tm.tm_sec) * 1000 + ms.count());
+	}
+
 	// native pp__reserved1();
 	AMX_DEFINE_NATIVE(pp__reserved1, 0)
 	{
@@ -571,6 +600,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_format_env_push),
 	AMX_DECLARE_NATIVE(pp_format_env_pop),
 	AMX_DECLARE_NATIVE(pp_stackspace),
+	AMX_DECLARE_NATIVE(pp_daytime),
 
 	//Reserved for private use
 	AMX_DECLARE_NATIVE(pp__reserved1),

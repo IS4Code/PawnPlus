@@ -189,6 +189,8 @@ native unit:pp_format_env_pop();
 
 native pp_stackspace();
 
+native pp_daytime(bool:utc=false);
+
 
 /*                 */
 /*      Pawn       */
