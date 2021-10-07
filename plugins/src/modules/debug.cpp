@@ -12,6 +12,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <io.h>
+#include <cstdlib>
 #else
 #include <stdio.h>
 #include <unistd.h>
@@ -19,40 +20,6 @@
 #include <fcntl.h>
 #include <cstring>
 #include <memory>
-
-static thread_local std::unique_ptr<char[]> _last_name(nullptr);
-
-static void set_script_name(const char *name)
-{
-	size_t len = std::strlen(name);
-	if(len > 0)
-	{
-		const char *last = name + len;
-		const char *dot = nullptr;
-		while(last > name)
-		{
-			last -= 1;
-			if(*last == '.' && !dot)
-			{
-				dot = last;
-			}else if(*last == '/' || *last == '\\')
-			{
-				name = last + 1;
-				break;
-			}
-		}
-		if(dot)
-		{
-			if(!std::strcmp(dot + 1, "amx"))
-			{
-				len = dot - name;
-				_last_name = std::make_unique<char[]>(len + 1);
-				std::memcpy(_last_name.get(), name, dot - name);
-				_last_name[len] = '\0';
-			}
-		}
-	}
-}
 
 struct amx_dbg_info
 {
@@ -73,10 +40,98 @@ struct amx_dbg_info
 	}
 };
 
-#ifdef _WIN32
-static subhook_t CreateFileA_Hook;
-static decltype(&CreateFileA) CreateFileA_Trampoline;
+template <class CharType, class StoreFunc>
+static bool get_file_name(const CharType *name, size_t len, StoreFunc &&store)
+{
+	if(len > 0)
+	{
+		const CharType *last = name + len;
+		const CharType *dot = nullptr;
+		while(last > name)
+		{
+			last -= 1;
+			if(*last == '.' && !dot)
+			{
+				dot = last;
+			}else if(*last == '/' || *last == '\\')
+			{
+				name = last + 1;
+				break;
+			}
+		}
+		if(dot)
+		{
+			return store(name, dot);
+		}
+	}
+	return false;
+}
 
+template <class HookType>
+class hook_type
+{
+protected:
+	std::unique_ptr<char[]> last_name;
+
+	static bool set_script_name(const char *name)
+	{
+		return get_file_name(name, std::strlen(name), [](const char *name, const char *dot)
+		{
+			if(!std::strcmp(dot + 1, "amx"))
+			{
+				auto len = dot - name;
+				auto &last_name = get_inst().last_name;
+				last_name = std::make_unique<char[]>(len + 1);
+				std::memcpy(last_name.get(), name, dot - name);
+				last_name[len] = '\0';
+				return true;
+			}
+			return false;
+		});
+	}
+
+#ifdef _WIN32
+	static bool set_script_name(const wchar_t *name)
+	{
+		return get_file_name(name, std::wcslen(name), [](const wchar_t *name, const wchar_t *dot)
+		{
+			if(!std::wcscmp(dot + 1, L"amx"))
+			{
+				size_t len = dot - name;
+				auto &last_name = get_inst().last_name;
+				last_name = std::make_unique<char[]>(len * MB_LEN_MAX + 1);
+				std::mbstate_t state{};
+				len = 0;
+				while(name != dot)
+				{
+					auto dst = last_name.get() + len;
+					auto result = std::wcrtomb(dst, *name, &state);
+					if(result != (size_t)-1)
+					{
+						len += result;
+					}else{
+						*dst = static_cast<char>(*name);
+						len++;
+					}
+					++name;
+				}
+				last_name[len] = '\0';
+				return true;
+			}
+			return false;
+		});
+	}
+#endif
+
+public:
+	static HookType &get_inst()
+	{
+		static HookType inst{};
+		return inst;
+	}
+};
+
+#ifdef _WIN32
 struct handle_delete
 {
 	void operator()(HANDLE ptr) const
@@ -88,104 +143,116 @@ struct handle_delete
 	}
 };
 
-static std::unique_ptr<typename std::remove_pointer<HANDLE>::type, handle_delete> LastHandle_CreateFileA = nullptr;
+std::unique_ptr<typename std::remove_pointer<HANDLE>::type, handle_delete> last_handle;
 
-static HANDLE WINAPI HookCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+template <class CreateFileType, CreateFileType CreateFileFunc, class StringType>
+class create_file_hook : public hook_type<create_file_hook<CreateFileType, CreateFileFunc, StringType>>
 {
-	if(!is_main_thread)
-	{
-		return CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-	}
-	LastHandle_CreateFileA = nullptr;
-	HANDLE hfile = CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-	if(hfile && (dwDesiredAccess & GENERIC_READ))
-	{
-		HANDLE handle;
-		DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &handle, 0, TRUE, DUPLICATE_SAME_ACCESS);
-		LastHandle_CreateFileA = std::unique_ptr<void, handle_delete>(handle);
-		set_script_name(lpFileName);
-	}
-	return hfile;
-}
+	subhook_t hook;
+	CreateFileType trampoline;
 
-static std::shared_ptr<AMX_DBG> StoreLast_CreateFileA(std::unique_ptr<char[]> &name)
-{
-	if(!LastHandle_CreateFileA)
+	static HANDLE WINAPI hook_func(StringType lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 	{
-		return nullptr;
-	}
-	int fd = _open_osfhandle(reinterpret_cast<intptr_t>(LastHandle_CreateFileA.get()), _O_RDONLY);
-	if(fd == -1)
-	{
-		LastHandle_CreateFileA = nullptr;
-		return nullptr;
-	}
-	LastHandle_CreateFileA.release();
-	auto f = _fdopen(fd, "rb");
-	if(!f)
-	{
-		_close(fd);
-		return nullptr;
-	}
-
-	name = std::move(_last_name);
-
-	auto dbg = std::make_shared<amx_dbg_info>(f);
-	fclose(f);
-	if(dbg->err != AMX_ERR_NONE)
-	{
-		return nullptr;
-	}
-	return std::shared_ptr<AMX_DBG>(dbg, &dbg->dbg);
-}
-
-void Init_CreateFileA()
-{
-	auto func = reinterpret_cast<void*>(CreateFileA);
-	auto dst = subhook_read_dst(func);
-	if(dst != nullptr)
-	{
-		func = dst; // crashdetect may remove its hook, so hook crashdetect instead
-	}
-	CreateFileA_Hook = subhook_new(func, reinterpret_cast<void*>(static_cast<decltype(&CreateFileA)>(HookCreateFileA)), {});
-	CreateFileA_Trampoline = reinterpret_cast<decltype(&CreateFileA)>(subhook_get_trampoline(CreateFileA_Hook));
-	if(!CreateFileA_Trampoline)
-	{
-		CreateFileA_Trampoline = [](LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+		auto &inst = get_inst();
+		if(!is_main_thread)
 		{
-			auto dst = subhook_read_dst(reinterpret_cast<void*>(CreateFileA));
-			auto olddst = subhook_get_dst(CreateFileA_Hook);
-			if(dst != olddst)
+			return inst.trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+		}
+		last_handle = nullptr;
+		HANDLE hfile = inst.trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+		last_handle = nullptr;
+		if(hfile && (dwDesiredAccess & GENERIC_READ))
+		{
+			if(inst.set_script_name(lpFileName))
 			{
-				CreateFileA_Hook->dst = dst;
-				subhook_remove(CreateFileA_Hook);
-				auto ret = CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-				subhook_install(CreateFileA_Hook);
-				CreateFileA_Hook->dst = olddst;
-				return ret;
-			}else if(!dst)
-			{
-				return CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-			}else{
-				subhook_remove(CreateFileA_Hook);
-				auto ret = CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-				subhook_install(CreateFileA_Hook);
-				return ret;
+				HANDLE handle;
+				DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &handle, 0, TRUE, DUPLICATE_SAME_ACCESS);
+				last_handle = std::unique_ptr<void, handle_delete>(handle);
 			}
-		};
+		}
+		return hfile;
 	}
-	subhook_install(CreateFileA_Hook);
-}
 
-#define close _close
-#define fileno _fileno
-#define dup _dup
-#define fdopen _fdopen
-#endif
+public:
+	std::shared_ptr<AMX_DBG> store_last(std::unique_ptr<char[]> &name)
+	{
+		if(!last_handle)
+		{
+			return nullptr;
+		}
+		int fd = _open_osfhandle(reinterpret_cast<intptr_t>(last_handle.get()), _O_RDONLY);
+		if(fd == -1)
+		{
+			last_handle = nullptr;
+			return nullptr;
+		}
+		last_handle.release();
+		auto f = _fdopen(fd, "rb");
+		if(!f)
+		{
+			_close(fd);
+			return nullptr;
+		}
 
-static subhook_t fopen_hook;
-static decltype(&fopen) fopen_trampoline;
+		name = std::move(last_name);
 
+		auto dbg = std::make_shared<amx_dbg_info>(f);
+		fclose(f);
+		if(dbg->err != AMX_ERR_NONE)
+		{
+			return nullptr;
+		}
+		return std::shared_ptr<AMX_DBG>(dbg, &dbg->dbg);
+	}
+
+	static void reset()
+	{
+		last_handle = nullptr;
+	}
+
+	void init()
+	{
+		auto func = reinterpret_cast<void*>(CreateFileFunc);
+		auto dst = subhook_read_dst(func);
+		if(dst != nullptr)
+		{
+			func = dst; // crashdetect may remove its hook, so hook crashdetect instead
+		}
+		hook = subhook_new(func, reinterpret_cast<void*>(static_cast<CreateFileType>(hook_func)), {});
+		trampoline = reinterpret_cast<CreateFileType>(subhook_get_trampoline(hook));
+		if(!trampoline)
+		{
+			trampoline = [](StringType lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+			{
+				auto &inst = get_inst();
+				auto dst = subhook_read_dst(reinterpret_cast<void*>(CreateFileFunc));
+				auto olddst = subhook_get_dst(inst.hook);
+				if(dst != olddst)
+				{
+					inst.hook->dst = dst;
+					subhook_remove(inst.hook);
+					auto ret = CreateFileFunc(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+					subhook_install(inst.hook);
+					inst.hook->dst = olddst;
+					return ret;
+				}else if(!dst)
+				{
+					return CreateFileFunc(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+				}else{
+					subhook_remove(inst.hook);
+					auto ret = CreateFileFunc(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+					subhook_install(inst.hook);
+					return ret;
+				}
+			};
+		}
+		subhook_install(hook);
+	}
+};
+
+using win_hook_a = create_file_hook<decltype(&CreateFileA), &CreateFileA, LPCSTR>;
+using win_hook_w = create_file_hook<decltype(&CreateFileW), &CreateFileW, LPCWSTR>;
+#else
 struct descriptor_delete
 {
 	void operator()(void *ptr) const
@@ -197,114 +264,140 @@ struct descriptor_delete
 	}
 };
 
-static std::unique_ptr<void, descriptor_delete> last_file_descriptor;
+std::unique_ptr<void, descriptor_delete> last_file_descriptor;
 
-static FILE *hook_fopen(const char *pathname, const char *mode)
+class fopen_hook : public hook_type<fopen_hook>
 {
-	if(!is_main_thread)
+	subhook_t hook;
+	decltype(&fopen) trampoline;
+
+	static FILE *hook_fopen(const char *pathname, const char *mode)
 	{
-		return fopen_trampoline(pathname, mode);
-	}
-	last_file_descriptor = nullptr;
-	auto file = fopen_trampoline(pathname, mode);
-	if(file && !std::strcmp(mode, "rb"))
-	{
-		int fd = fileno(file);
-		if(fd != -1)
+		auto &inst = get_inst();
+		if(!is_main_thread)
 		{
-			last_file_descriptor = std::unique_ptr<void, descriptor_delete>(reinterpret_cast<void*>(dup(fd) + 1));
-			set_script_name(pathname);
+			return inst.trampoline(pathname, mode);
 		}
+		last_file_descriptor = nullptr;
+		auto file = inst.trampoline(pathname, mode);
+		last_file_descriptor = nullptr;
+		if(file && !std::strcmp(mode, "rb"))
+		{
+			if(inst.set_script_name(pathname))
+			{
+				int fd = fileno(file);
+				if(fd != -1)
+				{
+					last_file_descriptor = std::unique_ptr<void, descriptor_delete>(reinterpret_cast<void*>(dup(fd) + 1));
+				}
+			}
+		}
+		return file;
 	}
-	return file;
-}
 
-static std::shared_ptr<AMX_DBG> store_last_fopen(std::unique_ptr<char[]> &name)
-{
-	if(!last_file_descriptor)
+public:
+	std::shared_ptr<AMX_DBG> store_last(std::unique_ptr<char[]> &name)
 	{
-		return nullptr;
+		if(!last_file_descriptor)
+		{
+			return nullptr;
+		}
+		auto f = fdopen(reinterpret_cast<int>(last_file_descriptor.get()) - 1, "rb");
+		if(!f)
+		{
+			last_file_descriptor = nullptr;
+			return nullptr;
+		}
+		last_file_descriptor.release();
+
+		name = std::move(last_name);
+	
+		auto dbg = std::make_shared<amx_dbg_info>(f);
+		fclose(f);
+		if(dbg->err != AMX_ERR_NONE)
+		{
+			return nullptr;
+		}
+		return std::shared_ptr<AMX_DBG>(dbg, &dbg->dbg);
 	}
-	auto f = fdopen(reinterpret_cast<int>(last_file_descriptor.get()) - 1, "rb");
-	if(!f)
+
+	static void reset()
 	{
 		last_file_descriptor = nullptr;
-		return nullptr;
 	}
-	last_file_descriptor.release();
 
-	name = std::move(_last_name);
-	
-	auto dbg = std::make_shared<amx_dbg_info>(f);
-	fclose(f);
-	if(dbg->err != AMX_ERR_NONE)
+	void init()
 	{
-		return nullptr;
-	}
-	return std::shared_ptr<AMX_DBG>(dbg, &dbg->dbg);
-}
-
-static void init_fopen()
-{
-	auto func = reinterpret_cast<void*>(fopen);
-	auto dst = subhook_read_dst(func);
-	if(dst != nullptr)
-	{
-		func = dst; // crashdetect may remove its hook, so hook crashdetect instead
-	}
-	fopen_hook = subhook_new(func, reinterpret_cast<void*>(static_cast<decltype(&fopen)>(hook_fopen)), {});
-	fopen_trampoline = reinterpret_cast<decltype(&fopen)>(subhook_get_trampoline(fopen_hook));
-	if(!fopen_trampoline)
-	{
-		fopen_trampoline = [](const char *pathname, const char *mode)
+		auto func = reinterpret_cast<void*>(fopen);
+		auto dst = subhook_read_dst(func);
+		if(dst != nullptr)
 		{
-			auto dst = subhook_read_dst(reinterpret_cast<void*>(fopen));
-			auto olddst = subhook_get_dst(fopen_hook);
-			if(dst != olddst)
+			func = dst; // crashdetect may remove its hook, so hook crashdetect instead
+		}
+		hook = subhook_new(func, reinterpret_cast<void*>(static_cast<decltype(&fopen)>(hook_fopen)), {});
+		trampoline = reinterpret_cast<decltype(&fopen)>(subhook_get_trampoline(hook));
+		if(!trampoline)
+		{
+			trampoline = [](const char *pathname, const char *mode)
 			{
-				fopen_hook->dst = dst;
-				subhook_remove(fopen_hook);
-				auto ret = fopen(pathname, mode);
-				subhook_install(fopen_hook);
-				fopen_hook->dst = olddst;
-				return ret;
-			}else if(!dst)
-			{
-				return fopen(pathname, mode);
-			}else{
-				subhook_remove(fopen_hook);
-				auto ret = fopen(pathname, mode);
-				subhook_install(fopen_hook);
-				return ret;
-			}
-		};
+				auto &inst = get_inst();
+				auto dst = subhook_read_dst(reinterpret_cast<void*>(fopen));
+				auto olddst = subhook_get_dst(inst.hook);
+				if(dst != olddst)
+				{
+					inst.hook->dst = dst;
+					subhook_remove(inst.hook);
+					auto ret = fopen(pathname, mode);
+					subhook_install(inst.hook);
+					inst.hook->dst = olddst;
+					return ret;
+				}else if(!dst)
+				{
+					return fopen(pathname, mode);
+				}else{
+					subhook_remove(inst.hook);
+					auto ret = fopen(pathname, mode);
+					subhook_install(inst.hook);
+					return ret;
+				}
+			};
+		}
+		subhook_install(hook);
 	}
-	subhook_install(fopen_hook);
-}
+};
+#endif
 
 void debug::init()
 {
 #ifdef _WIN32
-	Init_CreateFileA();
+	win_hook_a::get_inst().init();
+	win_hook_w::get_inst().init();
+#else
+	fopen_hook::get_inst().init();
 #endif
-	init_fopen();
 }
 
 std::shared_ptr<AMX_DBG> debug::create_last(std::unique_ptr<char[]> &name)
 {
 #ifdef _WIN32
-	auto ptr = StoreLast_CreateFileA(name);
+	auto ptr = win_hook_a::get_inst().store_last(name);
 	if(ptr)
 	{
-		last_file_descriptor = nullptr;
+		win_hook_w::reset();
 		return ptr;
 	}
+	return win_hook_w::get_inst().store_last(name);
+#else
+	return fopen_hook::get_inst().store_last(name);
 #endif
-	return store_last_fopen(name);
 }
 
 void debug::clear_file()
 {
-	LastHandle_CreateFileA = nullptr;
-	last_file_descriptor = nullptr;
+#ifdef _WIN32
+	win_hook_a::reset();
+	win_hook_w::reset();
+#else
+	fopen_hook::reset();
+#endif
 }
