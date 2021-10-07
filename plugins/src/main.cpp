@@ -74,6 +74,8 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload() noexcept
 
 PLUGIN_EXPORT int PLUGIN_CALL AmxLoad(AMX *amx) noexcept
 {
+	debug::clear_file();
+
 	auto &obj = amx::load_lock(amx);
 	RegisterNatives(amx);
 
