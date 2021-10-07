@@ -1,11 +1,14 @@
 #ifndef FORMAT_H_INCLUDED
 #define FORMAT_H_INCLUDED
 
-#include "modules/strings.h"
-#include "modules/containers.h"
+#include "strings.h"
+#include "containers.h"
+#include "tag_ops.h"
+#include "errors.h"
 
 #include <stack>
 #include <cctype>
+#include <sstream>
 
 namespace strings
 {

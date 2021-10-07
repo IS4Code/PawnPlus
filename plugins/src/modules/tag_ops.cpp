@@ -18,9 +18,6 @@
 #include <cstring>
 #include <memory>
 #include <unordered_map>
-
-#include <cctype>
-#include <sstream>
 #include <bitset>
 #include <iomanip>
 
@@ -320,13 +317,13 @@ struct cell_operations : public null_operations<Self>
 {
 	cell_operations(cell tag_uid) : null_operations<Self>(tag_uid)
 	{
-		register_specifier('d');
-		register_specifier('i');
-		register_specifier('u');
-		register_specifier('x');
-		register_specifier('h');
-		register_specifier('o');
-		register_specifier('b');
+		this->register_specifier('d');
+		this->register_specifier('i');
+		this->register_specifier('u');
+		this->register_specifier('x');
+		this->register_specifier('h');
+		this->register_specifier('o');
+		this->register_specifier('b');
 	}
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
@@ -820,10 +817,10 @@ struct char_operations : public cell_operations<char_operations>
 {
 	char_operations() : cell_operations(tags::tag_char)
 	{
-		register_specifier('c');
-		register_specifier('s');
-		register_specifier('q');
-		register_specifier('e');
+		this->register_specifier('c');
+		this->register_specifier('s');
+		this->register_specifier('q');
+		this->register_specifier('e');
 	}
 
 	virtual cell_string to_string(tag_ptr tag, cell arg) const override
@@ -862,7 +859,7 @@ struct char_operations : public cell_operations<char_operations>
 		{
 			case 's':
 			{
-				if(strings::select_iterator<typename strings::format_specific<Iter>::append>(arg, begin, end, std::move(parse_num), buf))
+				if(strings::select_iterator<strings::format_specific<Iter>::template append>(arg, begin, end, std::move(parse_num), buf))
 				{
 					return true;
 				}
@@ -871,7 +868,7 @@ struct char_operations : public cell_operations<char_operations>
 			case 'q':
 			case 'e':
 			{
-				if(strings::select_iterator<typename strings::format_specific<Iter>::add_query>(arg, begin, end, buf))
+				if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(arg, begin, end, buf))
 				{
 					return true;
 				}
@@ -902,7 +899,7 @@ struct float_operations : public cell_operations<float_operations>
 {
 	float_operations() : cell_operations(tags::tag_float)
 	{
-		register_specifier('f');
+		this->register_specifier('f');
 	}
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
@@ -1075,9 +1072,9 @@ struct string_operations : public null_operations<string_operations>
 {
 	string_operations() : null_operations(tags::tag_string)
 	{
-		register_specifier('S');
-		register_specifier('Q');
-		register_specifier('E');
+		this->register_specifier('S');
+		this->register_specifier('Q');
+		this->register_specifier('E');
 	}
 
 	virtual cell add(tag_ptr tag, cell a, cell b) const override
@@ -1221,7 +1218,7 @@ struct string_operations : public null_operations<string_operations>
 				cell_string *str;
 				if(strings::pool.get_by_id(*arg, str) || str == nullptr)
 				{
-					if(strings::select_iterator<typename strings::format_specific<Iter>::append>(str, begin, end, std::move(parse_num), buf))
+					if(strings::select_iterator<strings::format_specific<Iter>::template append>(str, begin, end, std::move(parse_num), buf))
 					{
 						return true;
 					}
@@ -1234,7 +1231,7 @@ struct string_operations : public null_operations<string_operations>
 				cell_string *str;
 				if(strings::pool.get_by_id(*arg, str) || str == nullptr)
 				{
-					if(strings::select_iterator<typename strings::format_specific<Iter>::add_query>(str, begin, end, buf))
+					if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(str, begin, end, buf))
 					{
 						return true;
 					}
@@ -1250,7 +1247,7 @@ struct variant_operations : public null_operations<variant_operations>
 {
 	variant_operations() : null_operations<variant_operations>(tags::tag_variant)
 	{
-		register_specifier('V');
+		this->register_specifier('V');
 	}
 
 	template <dyn_object(dyn_object::*op_type)(const dyn_object&) const>

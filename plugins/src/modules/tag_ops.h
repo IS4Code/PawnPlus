@@ -2,9 +2,14 @@
 #define TAG_OPS_H_INCLUDED
 
 #include "tags.h"
-#include "format.h"
 
 #include <memory>
+
+namespace strings
+{
+	template <class Iter>
+	struct num_parser;
+}
 
 class tag_operations
 {
