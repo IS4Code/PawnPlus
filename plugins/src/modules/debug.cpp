@@ -67,62 +67,59 @@ static bool get_file_name(const CharType *name, size_t len, StoreFunc &&store)
 	return false;
 }
 
-template <class HookType>
-class hook_type
-{
-protected:
-	std::unique_ptr<char[]> last_name;
+static std::unique_ptr<char[]> last_name;
 
-	static bool set_script_name(const char *name)
+static bool set_script_name(const char *name)
+{
+	return get_file_name(name, std::strlen(name), [](const char *name, const char *dot)
 	{
-		return get_file_name(name, std::strlen(name), [](const char *name, const char *dot)
+		if(!std::strcmp(dot + 1, "amx"))
 		{
-			if(!std::strcmp(dot + 1, "amx"))
-			{
-				auto len = dot - name;
-				auto &last_name = get_inst().last_name;
-				last_name = std::make_unique<char[]>(len + 1);
-				std::memcpy(last_name.get(), name, dot - name);
-				last_name[len] = '\0';
-				return true;
-			}
-			return false;
-		});
-	}
+			auto len = dot - name;
+			last_name = std::make_unique<char[]>(len + 1);
+			std::memcpy(last_name.get(), name, dot - name);
+			last_name[len] = '\0';
+			return true;
+		}
+		return false;
+	});
+}
 
 #ifdef _WIN32
-	static bool set_script_name(const wchar_t *name)
+static bool set_script_name(const wchar_t *name)
+{
+	return get_file_name(name, std::wcslen(name), [](const wchar_t *name, const wchar_t *dot)
 	{
-		return get_file_name(name, std::wcslen(name), [](const wchar_t *name, const wchar_t *dot)
+		if(!std::wcscmp(dot + 1, L"amx"))
 		{
-			if(!std::wcscmp(dot + 1, L"amx"))
+			size_t len = dot - name;
+			last_name = std::make_unique<char[]>(len * MB_LEN_MAX + 1);
+			std::mbstate_t state{};
+			len = 0;
+			while(name != dot)
 			{
-				size_t len = dot - name;
-				auto &last_name = get_inst().last_name;
-				last_name = std::make_unique<char[]>(len * MB_LEN_MAX + 1);
-				std::mbstate_t state{};
-				len = 0;
-				while(name != dot)
+				auto dst = last_name.get() + len;
+				auto result = std::wcrtomb(dst, *name, &state);
+				if(result != (size_t)-1)
 				{
-					auto dst = last_name.get() + len;
-					auto result = std::wcrtomb(dst, *name, &state);
-					if(result != (size_t)-1)
-					{
-						len += result;
-					}else{
-						*dst = static_cast<char>(*name);
-						len++;
-					}
-					++name;
+					len += result;
+				}else{
+					*dst = static_cast<char>(*name);
+					len++;
 				}
-				last_name[len] = '\0';
-				return true;
+				++name;
 			}
-			return false;
-		});
-	}
+			last_name[len] = '\0';
+			return true;
+		}
+		return false;
+	});
+}
 #endif
 
+template <class HookType>
+class hook_data
+{
 public:
 	static HookType &get_inst()
 	{
@@ -145,35 +142,10 @@ struct handle_delete
 
 std::unique_ptr<typename std::remove_pointer<HANDLE>::type, handle_delete> last_handle;
 
-template <class CreateFileType, CreateFileType CreateFileFunc, class StringType>
-class create_file_hook : public hook_type<create_file_hook<CreateFileType, CreateFileFunc, StringType>>
+class win_hook
 {
-	subhook_t hook;
-	CreateFileType trampoline;
-
-	static HANDLE WINAPI hook_func(StringType lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
-	{
-		auto &inst = get_inst();
-		if(!is_main_thread)
-		{
-			return inst.trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-		}
-		last_handle = nullptr;
-		HANDLE hfile = inst.trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-		if(hfile && (dwDesiredAccess & GENERIC_READ) && !last_handle)
-		{
-			if(inst.set_script_name(lpFileName))
-			{
-				HANDLE handle;
-				DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &handle, 0, TRUE, DUPLICATE_SAME_ACCESS);
-				last_handle = std::unique_ptr<void, handle_delete>(handle);
-			}
-		}
-		return hfile;
-	}
-
 public:
-	std::shared_ptr<AMX_DBG> store_last(std::unique_ptr<char[]> &name)
+	static std::shared_ptr<AMX_DBG> store_last(std::unique_ptr<char[]> &name)
 	{
 		if(!last_handle)
 		{
@@ -208,7 +180,36 @@ public:
 	{
 		last_handle = nullptr;
 	}
+};
 
+template <class CreateFileType, CreateFileType CreateFileFunc, class StringType>
+class win_hook_data : public hook_data<win_hook_data<CreateFileType, CreateFileFunc, StringType>>
+{
+	subhook_t hook;
+	CreateFileType trampoline;
+
+	static HANDLE WINAPI hook_func(StringType lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
+	{
+		auto &inst = get_inst();
+		if(!is_main_thread)
+		{
+			return inst.trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+		}
+		last_handle = nullptr;
+		HANDLE hfile = inst.trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
+		if(hfile && (dwDesiredAccess & GENERIC_READ) && !last_handle)
+		{
+			if(set_script_name(lpFileName))
+			{
+				HANDLE handle;
+				DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &handle, 0, TRUE, DUPLICATE_SAME_ACCESS);
+				last_handle = std::unique_ptr<void, handle_delete>(handle);
+			}
+		}
+		return hfile;
+	}
+
+public:
 	void init()
 	{
 		auto func = reinterpret_cast<void*>(CreateFileFunc);
@@ -249,8 +250,8 @@ public:
 	}
 };
 
-using win_hook_a = create_file_hook<decltype(&CreateFileA), &CreateFileA, LPCSTR>;
-using win_hook_w = create_file_hook<decltype(&CreateFileW), &CreateFileW, LPCWSTR>;
+using win_hook_a = win_hook_data<decltype(&CreateFileA), &CreateFileA, LPCSTR>;
+using win_hook_w = win_hook_data<decltype(&CreateFileW), &CreateFileW, LPCWSTR>;
 #else
 struct descriptor_delete
 {
@@ -265,7 +266,7 @@ struct descriptor_delete
 
 std::unique_ptr<void, descriptor_delete> last_file_descriptor;
 
-class fopen_hook : public hook_type<fopen_hook>
+class fopen_hook : public hook_data<fopen_hook>
 {
 	subhook_t hook;
 	decltype(&fopen) trampoline;
@@ -281,7 +282,7 @@ class fopen_hook : public hook_type<fopen_hook>
 		auto file = inst.trampoline(pathname, mode);
 		if(file && !std::strcmp(mode, "rb") && !last_file_descriptor)
 		{
-			if(inst.set_script_name(pathname))
+			if(set_script_name(pathname))
 			{
 				int fd = fileno(file);
 				if(fd != -1)
@@ -294,7 +295,7 @@ class fopen_hook : public hook_type<fopen_hook>
 	}
 
 public:
-	std::shared_ptr<AMX_DBG> store_last(std::unique_ptr<char[]> &name)
+	static std::shared_ptr<AMX_DBG> store_last(std::unique_ptr<char[]> &name)
 	{
 		if(!last_file_descriptor)
 		{
@@ -378,23 +379,16 @@ void debug::init()
 std::shared_ptr<AMX_DBG> debug::create_last(std::unique_ptr<char[]> &name)
 {
 #ifdef _WIN32
-	auto ptr = win_hook_a::get_inst().store_last(name);
-	if(ptr)
-	{
-		win_hook_w::reset();
-		return ptr;
-	}
-	return win_hook_w::get_inst().store_last(name);
+	return win_hook::store_last(name);
 #else
-	return fopen_hook::get_inst().store_last(name);
+	return fopen_hook::store_last(name);
 #endif
 }
 
 void debug::clear_file()
 {
 #ifdef _WIN32
-	win_hook_a::reset();
-	win_hook_w::reset();
+	win_hook::reset();
 #else
 	fopen_hook::reset();
 #endif
