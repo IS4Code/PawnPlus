@@ -94,7 +94,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 {
 	bool main_thread = is_main_thread;
 
-	amx::reset *old = nullptr;
+	std::unique_ptr<amx::reset> old;
 	bool restore_context = false;
 	AMX_DEBUG old_debug;
 	bool restore_debug = false;
@@ -118,9 +118,9 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 			if(amx::has_context(amx))
 			{
 				restore_context = true;
-				old = new amx::reset(amx, true);
+				old = std::make_unique<amx::reset>(amx, true);
 			}else{
-				old = new amx::reset(amx, false);
+				old = std::make_unique<amx::reset>(amx, false);
 			}
 		}
 
@@ -448,7 +448,6 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						}
 						continue;
 					}else{
-						delete old;
 						return ret;
 					}
 				}
@@ -724,10 +723,10 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 			if(restore_context)
 			{
 				old->restore();
-			} else {
+			}else{
 				old->restore_no_context();
 			}
-			delete old;
+			old = nullptr;
 		}
 		if(!forked)
 		{
