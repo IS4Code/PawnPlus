@@ -153,10 +153,7 @@ namespace aux
 			return {};
 		}
 
-		shared_id_set_pool()
-		{
-
-		}
+		shared_id_set_pool() = default;
 
 		shared_id_set_pool(shared_id_set_pool<Type> &&obj) : data(std::move(obj.data))
 		{

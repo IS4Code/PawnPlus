@@ -122,10 +122,7 @@ namespace aux
 			return std::unique_ptr<Type>(ptr);
 		}
 
-		id_set_pool()
-		{
-
-		}
+		id_set_pool() = default;
 
 		id_set_pool(id_set_pool<Type> &&obj) : data(std::move(obj.data))
 		{

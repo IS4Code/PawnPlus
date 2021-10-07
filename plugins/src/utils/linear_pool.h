@@ -67,10 +67,7 @@ namespace aux
 			data.clear();
 		}
 
-		linear_pool()
-		{
-
-		}
+		linear_pool() = default;
 
 		linear_pool(const linear_pool<Type> &obj)
 		{
