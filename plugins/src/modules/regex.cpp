@@ -200,10 +200,9 @@ struct regex_traits
 
 	locale_type imbue(locale_type loc)
 	{
-		locale_type tmp = _locale;
-		_locale = std::move(loc);
+		std::swap(_locale, loc);
 		cache_locale();
-		return tmp;
+		return loc;
 	}
 
 	locale_type getloc() const
