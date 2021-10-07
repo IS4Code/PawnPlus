@@ -88,7 +88,7 @@ struct handle_delete
 	}
 };
 
-static std::unique_ptr<typename std::remove_pointer<HANDLE>::type, handle_delete> last_file_handle = nullptr;
+static std::unique_ptr<typename std::remove_pointer<HANDLE>::type, handle_delete> LastHandle_CreateFileA = nullptr;
 
 static HANDLE WINAPI HookCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 {
@@ -96,31 +96,31 @@ static HANDLE WINAPI HookCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, D
 	{
 		return CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	}
-	last_file_handle = nullptr;
+	LastHandle_CreateFileA = nullptr;
 	HANDLE hfile = CreateFileA_Trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 	if(hfile && (dwDesiredAccess & GENERIC_READ))
 	{
 		HANDLE handle;
 		DuplicateHandle(GetCurrentProcess(), hfile, GetCurrentProcess(), &handle, 0, TRUE, DUPLICATE_SAME_ACCESS);
-		last_file_handle = std::unique_ptr<void, handle_delete>(handle);
+		LastHandle_CreateFileA = std::unique_ptr<void, handle_delete>(handle);
 		set_script_name(lpFileName);
 	}
 	return hfile;
 }
 
-static std::shared_ptr<AMX_DBG> create_last_createfile(std::unique_ptr<char[]> &name)
+static std::shared_ptr<AMX_DBG> StoreLast_CreateFileA(std::unique_ptr<char[]> &name)
 {
-	if(!last_file_handle)
+	if(!LastHandle_CreateFileA)
 	{
 		return nullptr;
 	}
-	int fd = _open_osfhandle(reinterpret_cast<intptr_t>(last_file_handle.get()), _O_RDONLY);
+	int fd = _open_osfhandle(reinterpret_cast<intptr_t>(LastHandle_CreateFileA.get()), _O_RDONLY);
 	if(fd == -1)
 	{
-		last_file_handle = nullptr;
+		LastHandle_CreateFileA = nullptr;
 		return nullptr;
 	}
-	last_file_handle.release();
+	LastHandle_CreateFileA.release();
 	auto f = _fdopen(fd, "rb");
 	if(!f)
 	{
@@ -139,7 +139,7 @@ static std::shared_ptr<AMX_DBG> create_last_createfile(std::unique_ptr<char[]> &
 	return std::shared_ptr<AMX_DBG>(dbg, &dbg->dbg);
 }
 
-void init_createfile()
+void Init_CreateFileA()
 {
 	auto func = reinterpret_cast<void*>(CreateFileA);
 	auto dst = subhook_read_dst(func);
@@ -147,7 +147,7 @@ void init_createfile()
 	{
 		func = dst; // crashdetect may remove its hook, so hook crashdetect instead
 	}
-	CreateFileA_Hook = subhook_new(func, reinterpret_cast<void*>(HookCreateFileA), {});
+	CreateFileA_Hook = subhook_new(func, reinterpret_cast<void*>(static_cast<decltype(&CreateFileA)>(HookCreateFileA)), {});
 	CreateFileA_Trampoline = reinterpret_cast<decltype(&CreateFileA)>(subhook_get_trampoline(CreateFileA_Hook));
 	if(!CreateFileA_Trampoline)
 	{
@@ -219,7 +219,7 @@ static FILE *hook_fopen(const char *pathname, const char *mode)
 	return file;
 }
 
-static std::shared_ptr<AMX_DBG> create_last_fopen(std::unique_ptr<char[]> &name)
+static std::shared_ptr<AMX_DBG> store_last_fopen(std::unique_ptr<char[]> &name)
 {
 	if(!last_file_descriptor)
 	{
@@ -252,7 +252,7 @@ static void init_fopen()
 	{
 		func = dst; // crashdetect may remove its hook, so hook crashdetect instead
 	}
-	fopen_hook = subhook_new(func, reinterpret_cast<void*>(hook_fopen), {});
+	fopen_hook = subhook_new(func, reinterpret_cast<void*>(static_cast<decltype(&fopen)>(hook_fopen)), {});
 	fopen_trampoline = reinterpret_cast<decltype(&fopen)>(subhook_get_trampoline(fopen_hook));
 	if(!fopen_trampoline)
 	{
@@ -285,7 +285,7 @@ static void init_fopen()
 void debug::init()
 {
 #ifdef _WIN32
-	init_createfile();
+	Init_CreateFileA();
 #endif
 	init_fopen();
 }
@@ -293,18 +293,18 @@ void debug::init()
 std::shared_ptr<AMX_DBG> debug::create_last(std::unique_ptr<char[]> &name)
 {
 #ifdef _WIN32
-	auto ptr = create_last_createfile(name);
+	auto ptr = StoreLast_CreateFileA(name);
 	if(ptr)
 	{
 		last_file_descriptor = nullptr;
 		return ptr;
 	}
 #endif
-	return create_last_fopen(name);
+	return store_last_fopen(name);
 }
 
 void debug::clear_file()
 {
-	last_file_handle = nullptr;
+	LastHandle_CreateFileA = nullptr;
 	last_file_descriptor = nullptr;
 }
