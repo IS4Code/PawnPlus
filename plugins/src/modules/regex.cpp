@@ -201,7 +201,7 @@ struct regex_traits
 	locale_type imbue(locale_type loc)
 	{
 		locale_type tmp = _locale;
-		_locale = loc;
+		_locale = std::move(loc);
 		cache_locale();
 		return tmp;
 	}

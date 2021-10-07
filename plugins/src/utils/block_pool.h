@@ -109,10 +109,7 @@ namespace aux
 			std::array<std::unique_ptr<block_info>, BlockSize> blocks;
 			block_info *parent = nullptr;
 
-			block_info()
-			{
-
-			}
+			block_info() = default;
 
 			block_info(block_info &parent) : parent(&parent)
 			{

@@ -1258,10 +1258,7 @@ template <bool Value>
 class const_bool_expression : public bool_expression
 {
 public:
-	const_bool_expression()
-	{
-
-	}
+	const_bool_expression() = default;
 
 	virtual bool execute_inner(const args_type &args, const exec_info &info) const override
 	{

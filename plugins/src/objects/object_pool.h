@@ -19,10 +19,7 @@ public:
 		unsigned int ref_count = 0;
 
 	public:
-		ref_container_simple()
-		{
-
-		}
+		ref_container_simple() = default;
 
 		ref_container_simple(ObjType &&object) : object(std::move(object))
 		{

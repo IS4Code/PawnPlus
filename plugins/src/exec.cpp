@@ -448,6 +448,7 @@ int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx:
 						}
 						continue;
 					}else{
+						delete old;
 						return ret;
 					}
 				}

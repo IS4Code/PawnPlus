@@ -56,10 +56,7 @@ namespace tasks
 		std::list<std::unique_ptr<handler>> handlers;
 
 	public:
-		task() noexcept
-		{
-
-		}
+		task() noexcept = default;
 		task(dyn_object &&result) noexcept : _state(1), _value(std::move(result))
 		{
 
