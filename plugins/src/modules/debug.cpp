@@ -160,8 +160,7 @@ class create_file_hook : public hook_type<create_file_hook<CreateFileType, Creat
 		}
 		last_handle = nullptr;
 		HANDLE hfile = inst.trampoline(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-		last_handle = nullptr;
-		if(hfile && (dwDesiredAccess & GENERIC_READ))
+		if(hfile && (dwDesiredAccess & GENERIC_READ) && !last_handle)
 		{
 			if(inst.set_script_name(lpFileName))
 			{
@@ -280,8 +279,7 @@ class fopen_hook : public hook_type<fopen_hook>
 		}
 		last_file_descriptor = nullptr;
 		auto file = inst.trampoline(pathname, mode);
-		last_file_descriptor = nullptr;
-		if(file && !std::strcmp(mode, "rb"))
+		if(file && !std::strcmp(mode, "rb") && !last_file_descriptor)
 		{
 			if(inst.set_script_name(pathname))
 			{
