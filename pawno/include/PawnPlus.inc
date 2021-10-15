@@ -1009,6 +1009,7 @@ native map_str_get_str_safe(Map:map, const key[], value[], value_size=sizeof(val
 native String:map_str_get_str_safe_s(Map:map, const key[]);
 native map_str_s_get(Map:map, ConstStringTag:key, offset=0);
 native map_str_s_get_arr(Map:map, ConstStringTag:key, AnyTag:value[], value_size=sizeof(value));
+native map_str_s_get_str(Map:map, ConstStringTag:key, value[], value_size=sizeof(value)) = map_str_s_get_arr;
 native String:map_str_s_get_str_s(Map:map, ConstStringTag:key);
 native Variant:map_str_s_get_var(Map:map, ConstStringTag:key);
 native bool:map_str_s_get_safe(Map:map, ConstStringTag:key, &AnyTag:value, offset=0, TagTag:value_tag_id=tagof(value));
@@ -1017,7 +1018,7 @@ native map_str_s_get_str_safe(Map:map, ConstStringTag:key, value[], value_size=s
 native String:map_str_s_get_str_safe_s(Map:map, ConstStringTag:key);
 native map_var_get(Map:map, ConstVariantTag:key, offset=0);
 native map_var_get_arr(Map:map, ConstVariantTag:key, AnyTag:value[], value_size=sizeof(value));
-native map_var_get_str(Map:map, ConstVariantTag:key, AnyTag:value[], value_size=sizeof(value)) = map_var_get_arr;
+native map_var_get_str(Map:map, ConstVariantTag:key, value[], value_size=sizeof(value)) = map_var_get_arr;
 native String:map_var_get_str_s(Map:map, ConstVariantTag:key);
 native Variant:map_var_get_var(Map:map, ConstVariantTag:key);
 native bool:map_var_get_safe(Map:map, ConstVariantTag:key, &AnyTag:value, offset=0, TagTag:value_tag_id=tagof(value));
