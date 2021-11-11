@@ -1930,10 +1930,19 @@ native Task:task_ms(interval);
 native Task:task_any(Task:...);
 native Task:task_all(Task:...);
 native task_state:task_wait(Task:task);
+
 /*
 native task_await(Task:task);
 */
 stock task_await(Task:task) return task_wait(task), task_get_result(task);
+/*
+native String:task_await_str(Task:task, result[], size = sizeof result);
+*/
+stock String:task_await_str(Task:task, result[], size = sizeof(result)) return task_await(task), task_get_result_str(task, result, size);
+/*
+native String:task_await_str_s(Task:task);
+*/
+stock String:task_await_str_s(Task:task) return task_await(task), task_get_result_str_s(task);
 /*
 native task_await_arr(Task:task, AnyTag:result[], size=sizeof result);
 */
@@ -1942,6 +1951,7 @@ stock task_await_arr(Task:task, AnyTag:result[], size=sizeof(result)) return tas
 native Variant:task_await_var(Task:task);
 */
 stock Variant:task_await_var(Task:task) return task_wait(task), task_get_result_var(task);
+
 native task_yield(AnyTag:value, TagTag:tag_id=tagof value);
 native unit:task_set_yielded(AnyTag:value);
 native task_get_yielded();
@@ -1997,6 +2007,8 @@ PP_TASK_TAG(Handle);
 
 #endif
 
+#define await_str%0(%1)%2; task_await_str%0(%2,%1);
+#define await_str_s%0\32;%1; task_await_str_s%0(%1);
 #define await_arr%0(%1)%2; task_await_arr%0(%2,%1);
 #define await_var%0\32;%1; task_await_var%0(%1);
 
