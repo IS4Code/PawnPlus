@@ -778,9 +778,9 @@ namespace Natives
 
 		if(str != nullptr)
 		{
-			return strings::regex_search(*str, pattern, pos, options);
+			return strings::regex_search(*str, pattern, pos, options, amx::load(amx));
 		}else{
-			return strings::regex_search(cell_string(), pattern, pos, options);
+			return strings::regex_search(cell_string(), pattern, pos, options, amx::load(amx));
 		}
 	}
 
@@ -790,7 +790,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
 		cell *pos = optparamref(3, 0);
@@ -798,10 +798,10 @@ namespace Natives
 
 		if(str != nullptr && pattern != nullptr)
 		{
-			return strings::regex_search(*str, *pattern, pos, options);
+			return strings::regex_search(*str, *pattern, pos, options, pattern);
 		}else{
 			cell_string blank;
-			return strings::regex_search(str != nullptr ? *str : blank, pattern != nullptr ? *pattern : blank, pos, options);
+			return strings::regex_search(str != nullptr ? *str : blank, pattern != nullptr ? *pattern : blank, pos, options, pattern);
 		}
 	}
 
@@ -818,9 +818,9 @@ namespace Natives
 
 		if(str != nullptr)
 		{
-			return strings::regex_extract(*str, pattern, pos, options);
+			return strings::regex_extract(*str, pattern, pos, options, amx::load(amx));
 		}else{
-			return strings::regex_extract(cell_string(), pattern, pos, options);
+			return strings::regex_extract(cell_string(), pattern, pos, options, amx::load(amx));
 		}
 	}
 
@@ -830,7 +830,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
 		cell *pos = optparamref(3, 0);
@@ -838,10 +838,10 @@ namespace Natives
 
 		if(str != nullptr && pattern != nullptr)
 		{
-			return strings::regex_extract(*str, *pattern, pos, options);
+			return strings::regex_extract(*str, *pattern, pos, options, pattern);
 		}else{
 			cell_string empty;
-			return strings::regex_extract(str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, pos, options);
+			return strings::regex_extract(str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, pos, options, pattern);
 		}
 	}
 
@@ -861,9 +861,9 @@ namespace Natives
 		cell_string target;
 		if(str != nullptr)
 		{
-			strings::regex_replace(target, *str, pattern, replacement, pos, options);
+			strings::regex_replace(target, *str, pattern, replacement, pos, options, amx::load(amx));
 		}else{
-			strings::regex_replace(target, cell_string(), pattern, replacement, pos, options);
+			strings::regex_replace(target, cell_string(), pattern, replacement, pos, options, amx::load(amx));
 		}
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
@@ -874,7 +874,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
 		cell_string *replacement;
@@ -886,10 +886,10 @@ namespace Natives
 		cell_string target;
 		if(str != nullptr && pattern != nullptr && replacement != nullptr)
 		{
-			strings::regex_replace(target, *str, *pattern, *replacement, pos, options);
+			strings::regex_replace(target, *str, *pattern, *replacement, pos, options, pattern);
 		}else{
 			cell_string empty;
-			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, pos, options);
+			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, pos, options, pattern);
 		}
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
@@ -911,9 +911,9 @@ namespace Natives
 		cell_string target;
 		if(str != nullptr)
 		{
-			strings::regex_replace(target, *str, pattern, *replacement, pos, options);
+			strings::regex_replace(target, *str, pattern, *replacement, pos, options, amx::load(amx));
 		}else{
-			strings::regex_replace(target, cell_string(), pattern, *replacement, pos, options);
+			strings::regex_replace(target, cell_string(), pattern, *replacement, pos, options, amx::load(amx));
 		}
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
@@ -924,7 +924,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
 		list_t *replacement;
@@ -936,10 +936,10 @@ namespace Natives
 		cell_string target;
 		if(str != nullptr && pattern != nullptr)
 		{
-			strings::regex_replace(target, *str, *pattern, *replacement, pos, options);
+			strings::regex_replace(target, *str, *pattern, *replacement, pos, options, pattern);
 		}else{
 			cell_string empty;
-			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, *replacement, pos, options);
+			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, *replacement, pos, options, pattern);
 		}
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
@@ -973,9 +973,9 @@ namespace Natives
 		cell_string target;
 		if(str != nullptr)
 		{
-			strings::regex_replace(target, *str, pattern, amx, index, pos, options, format, params + 7, params[0] / sizeof(cell) - 6);
+			strings::regex_replace(target, *str, pattern, amx, index, pos, options, format, params + 7, params[0] / sizeof(cell) - 6, amx::load(amx));
 		}else{
-			strings::regex_replace(target, cell_string(), pattern, amx, index, pos, options, format, params + 7, params[0] / sizeof(cell) - 6);
+			strings::regex_replace(target, cell_string(), pattern, amx, index, pos, options, format, params + 7, params[0] / sizeof(cell) - 6, amx::load(amx));
 		}
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
@@ -986,7 +986,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
 		const char *fname;
@@ -1010,10 +1010,10 @@ namespace Natives
 		cell_string target;
 		if(str != nullptr && pattern != nullptr)
 		{
-			strings::regex_replace(target, *str, *pattern, amx, index, pos, options, format, params + 7, params[0] / sizeof(cell) - 6);
+			strings::regex_replace(target, *str, *pattern, amx, index, pos, options, format, params + 7, params[0] / sizeof(cell) - 6, pattern);
 		}else{
 			cell_string empty;
-			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, index, pos, options, format, params + 7, params[0] / sizeof(cell) - 6);
+			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, index, pos, options, format, params + 7, params[0] / sizeof(cell) - 6, pattern);
 		}
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
@@ -1035,9 +1035,9 @@ namespace Natives
 		cell_string target;
 		if(str != nullptr)
 		{
-			strings::regex_replace(target, *str, pattern, amx, *expr, pos, options);
+			strings::regex_replace(target, *str, pattern, amx, *expr, pos, options, amx::load(amx));
 		}else{
-			strings::regex_replace(target, cell_string(), pattern, amx, *expr, pos, options);
+			strings::regex_replace(target, cell_string(), pattern, amx, *expr, pos, options, amx::load(amx));
 		}
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
@@ -1048,7 +1048,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[2], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
 		expression *expr;
@@ -1060,10 +1060,10 @@ namespace Natives
 		cell_string target;
 		if(str != nullptr && pattern != nullptr)
 		{
-			strings::regex_replace(target, *str, *pattern, amx, *expr, pos, options);
+			strings::regex_replace(target, *str, *pattern, amx, *expr, pos, options, pattern);
 		}else{
 			cell_string empty;
-			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, *expr, pos, options);
+			strings::regex_replace(target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, *expr, pos, options, pattern);
 		}
 		return strings::pool.get_id(strings::pool.add(std::move(target)));
 	}
@@ -1088,14 +1088,14 @@ namespace Natives
 		{
 			cell_string tmp;
 			std::swap(tmp, *target);
-			strings::regex_replace(*target, tmp, pattern, replacement, pos, options);
+			strings::regex_replace(*target, tmp, pattern, replacement, pos, options, amx::load(amx));
 		}else{
 			target->clear();
 			if(str != nullptr)
 			{
-				strings::regex_replace(*target, *str, pattern, replacement, pos, options);
+				strings::regex_replace(*target, *str, pattern, replacement, pos, options, amx::load(amx));
 			}else{
-				strings::regex_replace(*target, cell_string(), pattern, replacement, pos, options);
+				strings::regex_replace(*target, cell_string(), pattern, replacement, pos, options, amx::load(amx));
 			}
 		}
 		return params[1];
@@ -1110,7 +1110,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[3], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[3]);
 
 		cell_string *replacement;
@@ -1125,19 +1125,19 @@ namespace Natives
 			std::swap(tmp, *target);
 			if(pattern != nullptr && replacement != nullptr)
 			{
-				strings::regex_replace(*target, tmp, *pattern, *replacement, pos, options);
+				strings::regex_replace(*target, tmp, *pattern, *replacement, pos, options, pattern);
 			}else{
 				cell_string empty;
-				strings::regex_replace(*target, tmp, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, pos, options);
+				strings::regex_replace(*target, tmp, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, pos, options, pattern);
 			}
 		}else{
 			target->clear();
 			if(str != nullptr && pattern != nullptr && replacement != nullptr)
 			{
-				strings::regex_replace(*target, *str, *pattern, *replacement, pos, options);
+				strings::regex_replace(*target, *str, *pattern, *replacement, pos, options, pattern);
 			}else{
 				cell_string empty;
-				strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, pos, options);
+				strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, replacement != nullptr ? *replacement : empty, pos, options, pattern);
 			}
 		}
 
@@ -1165,14 +1165,14 @@ namespace Natives
 		{
 			cell_string tmp;
 			std::swap(tmp, *target);
-			strings::regex_replace(*target, tmp, pattern, *replacement, pos, options);
+			strings::regex_replace(*target, tmp, pattern, *replacement, pos, options, amx::load(amx));
 		}else{
 			target->clear();
 			if(str != nullptr)
 			{
-				strings::regex_replace(*target, *str, pattern, *replacement, pos, options);
+				strings::regex_replace(*target, *str, pattern, *replacement, pos, options, amx::load(amx));
 			}else{
-				strings::regex_replace(*target, cell_string(), pattern, *replacement, pos, options);
+				strings::regex_replace(*target, cell_string(), pattern, *replacement, pos, options, amx::load(amx));
 			}
 		}
 		return params[1];
@@ -1187,7 +1187,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[3], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[3]);
 
 		list_t *replacement;
@@ -1202,18 +1202,18 @@ namespace Natives
 			std::swap(tmp, *target);
 			if(pattern != nullptr)
 			{
-				strings::regex_replace(*target, tmp, *pattern, *replacement, pos, options);
+				strings::regex_replace(*target, tmp, *pattern, *replacement, pos, options, pattern);
 			}else{
-				strings::regex_replace(*target, tmp, cell_string(), *replacement, pos, options);
+				strings::regex_replace(*target, tmp, cell_string(), *replacement, pos, options, pattern);
 			}
 		}else{
 			target->clear();
 			if(str != nullptr && pattern != nullptr)
 			{
-				strings::regex_replace(*target, *str, *pattern, *replacement, pos, options);
+				strings::regex_replace(*target, *str, *pattern, *replacement, pos, options, pattern);
 			}else{
 				cell_string empty;
-				strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, *replacement, pos, options);
+				strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, *replacement, pos, options, pattern);
 			}
 		}
 
@@ -1253,14 +1253,14 @@ namespace Natives
 		{
 			cell_string tmp;
 			std::swap(tmp, *target);
-			strings::regex_replace(*target, tmp, pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7);
+			strings::regex_replace(*target, tmp, pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7, amx::load(amx));
 		}else{
 			target->clear();
 			if(str != nullptr)
 			{
-				strings::regex_replace(*target, *str, pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7);
+				strings::regex_replace(*target, *str, pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7, amx::load(amx));
 			}else{
-				strings::regex_replace(*target, cell_string(), pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7);
+				strings::regex_replace(*target, cell_string(), pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7, amx::load(amx));
 			}
 		}
 		return params[1];
@@ -1275,7 +1275,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[3], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[3]);
 
 		const char *fname;
@@ -1302,18 +1302,18 @@ namespace Natives
 			std::swap(tmp, *target);
 			if(pattern != nullptr)
 			{
-				strings::regex_replace(*target, tmp, *pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7);
+				strings::regex_replace(*target, tmp, *pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7, pattern);
 			}else{
-				strings::regex_replace(*target, tmp, cell_string(), amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7);
+				strings::regex_replace(*target, tmp, cell_string(), amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7, pattern);
 			}
 		}else{
 			target->clear();
 			if(str != nullptr && pattern != nullptr)
 			{
-				strings::regex_replace(*target, *str, *pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7);
+				strings::regex_replace(*target, *str, *pattern, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7, pattern);
 			}else{
 				cell_string empty;
-				strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7);
+				strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, index, pos, options, format, params + 8, params[0] / sizeof(cell) - 7, pattern);
 			}
 		}
 
@@ -1341,14 +1341,14 @@ namespace Natives
 		{
 			cell_string tmp;
 			std::swap(tmp, *target);
-			strings::regex_replace(*target, tmp, pattern, amx, *expr, pos, options);
+			strings::regex_replace(*target, tmp, pattern, amx, *expr, pos, options, amx::load(amx));
 		}else{
 			target->clear();
 			if(str != nullptr)
 			{
-				strings::regex_replace(*target, *str, pattern, amx, *expr, pos, options);
+				strings::regex_replace(*target, *str, pattern, amx, *expr, pos, options, amx::load(amx));
 			}else{
-				strings::regex_replace(*target, cell_string(), pattern, amx, *expr, pos, options);
+				strings::regex_replace(*target, cell_string(), pattern, amx, *expr, pos, options, amx::load(amx));
 			}
 		}
 		return params[1];
@@ -1363,7 +1363,7 @@ namespace Natives
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[2], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
 
-		cell_string *pattern;
+		std::shared_ptr<cell_string> pattern;
 		if(!strings::pool.get_by_id(params[3], pattern) && pattern != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[3]);
 
 		expression *expr;
@@ -1378,18 +1378,18 @@ namespace Natives
 			std::swap(tmp, *target);
 			if(pattern != nullptr)
 			{
-				strings::regex_replace(*target, tmp, *pattern, amx, *expr, pos, options);
+				strings::regex_replace(*target, tmp, *pattern, amx, *expr, pos, options, pattern);
 			}else{
-				strings::regex_replace(*target, *str, cell_string(), amx, *expr, pos, options);
+				strings::regex_replace(*target, *str, cell_string(), amx, *expr, pos, options, pattern);
 			}
 		}else{
 			target->clear();
 			if(str != nullptr && pattern != nullptr)
 			{
-				strings::regex_replace(*target, *str, *pattern, amx, *expr, pos, options);
+				strings::regex_replace(*target, *str, *pattern, amx, *expr, pos, options, pattern);
 			}else{
 				cell_string empty;
-				strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, *expr, pos, options);
+				strings::regex_replace(*target, str != nullptr ? *str : empty, pattern != nullptr ? *pattern : empty, amx, *expr, pos, options, pattern);
 			}
 		}
 

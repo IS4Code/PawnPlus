@@ -227,6 +227,8 @@ static std::regex_iterator<BidirIt, CharT, Traits> make_regex_iterator(BidirIt a
 	return {a, b, re, m};
 }
 
+typedef std::basic_regex<cell, regex_traits> cell_regex;
+
 constexpr const cell no_prev_avail_flag = 32768;
 constexpr const cell cache_flag = 4194304;
 constexpr const cell cache_addr_flag = 4194304 | 8388608;
@@ -336,16 +338,16 @@ static const char *get_error(std::regex_constants::error_type code)
 	return "unknown";
 }
 
-static std::unordered_map<std::pair<cell_string, cell>, std::basic_regex<cell, regex_traits>> regex_cache;
+static std::unordered_map<std::pair<cell_string, cell>, cell_regex> regex_cache;
 
-static const std::basic_regex<cell, regex_traits> &get_cached(const cell_string &pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
+static const cell_regex &get_cached(const cell_string &pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
 {
 	options &= 255;
 	return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(pattern, options), std::forward_as_tuple(pattern, syntax_options)).first->second;
 }
 
 template <class Iter>
-static const std::basic_regex<cell, regex_traits> &get_cached(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
+static const cell_regex &get_cached(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
 {
 	if(pattern != nullptr)
 	{
@@ -355,18 +357,37 @@ static const std::basic_regex<cell, regex_traits> &get_cached(Iter pattern_begin
 	return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(cell_string(pattern_begin, pattern_end), options), std::forward_as_tuple(pattern_begin, pattern_end, syntax_options)).first->second;
 }
 
-template <class Iter>
-static const std::basic_regex<cell, regex_traits> &get_cached_addr(Iter pattern_begin, Iter pattern_end, cell options, std::regex_constants::syntax_option_type syntax_options)
+struct regex_cached_addr
 {
-	static std::unordered_map<std::tuple<std::intptr_t, std::size_t, cell>, std::basic_regex<cell, regex_traits>> regex_cache;
+	cell_regex regex;
+	std::weak_ptr<void> mem_handle;
+
+	template <class Iter>
+	regex_cached_addr(Iter pattern_begin, Iter pattern_end, std::regex_constants::syntax_option_type syntax_options, std::weak_ptr<void> mem_handle) : regex(pattern_begin, pattern_end, syntax_options), mem_handle(mem_handle)
+	{
+
+	}
+};
+
+template <class Iter>
+static const cell_regex &get_cached_addr(Iter pattern_begin, Iter pattern_end, cell options, std::regex_constants::syntax_option_type syntax_options, std::weak_ptr<void> mem_handle)
+{
+	static std::unordered_map<std::tuple<std::intptr_t, std::size_t, cell>, regex_cached_addr> regex_cache;
 	options &= 255;
-	return regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(reinterpret_cast<std::intptr_t>(&*pattern_begin), pattern_end - pattern_begin, options), std::forward_as_tuple(pattern_begin, pattern_end, syntax_options)).first->second;
+	auto result = regex_cache.emplace(std::piecewise_construct, std::forward_as_tuple(reinterpret_cast<std::intptr_t>(&*pattern_begin), pattern_end - pattern_begin, options), std::forward_as_tuple(pattern_begin, pattern_end, syntax_options, mem_handle));
+	regex_cached_addr &cached = result.first->second;
+	if(result.second || (!cached.mem_handle.owner_before(mem_handle) && !mem_handle.owner_before(cached.mem_handle)))
+	{
+		return cached.regex;
+	}
+	cached.mem_handle = mem_handle;
+	return cached.regex = cell_regex(pattern_begin, pattern_end, syntax_options);
 }
 
 template <class Iter>
 struct regex_search_base
 {
-	bool operator()(Iter pattern_begin, Iter pattern_end, const cell_string &str, const cell_string *pattern, cell *pos, cell options) const
+	bool operator()(Iter pattern_begin, Iter pattern_end, const cell_string &str, const cell_string *pattern, cell *pos, cell options, std::weak_ptr<void> mem_handle) const
 	{
 		std::regex_constants::syntax_option_type syntax_options;
 		std::regex_constants::match_flag_type match_options;
@@ -383,13 +404,13 @@ struct regex_search_base
 		std::match_results<cell_string::const_iterator> match;
 		if(options & cache_flag)
 		{
-			const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+			const cell_regex &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options, mem_handle) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
 			if(!std::regex_search(begin, str.cend(), match, regex, match_options))
 			{
 				return false;
 			}
 		}else{
-			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+			cell_regex regex(pattern_begin, pattern_end, syntax_options);
 			if(!std::regex_search(begin, str.cend(), match, regex, match_options))
 			{
 				return false;
@@ -400,10 +421,10 @@ struct regex_search_base
 	}
 };
 
-bool strings::regex_search(const cell_string &str, const cell *pattern, cell *pos, cell options)
+bool strings::regex_search(const cell_string &str, const cell *pattern, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		return select_iterator<regex_search_base>(pattern, str, nullptr, pos, options);
+		return select_iterator<regex_search_base>(pattern, str, nullptr, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -411,10 +432,10 @@ bool strings::regex_search(const cell_string &str, const cell *pattern, cell *po
 	}
 }
 
-bool strings::regex_search(const cell_string &str, const cell_string &pattern, cell *pos, cell options)
+bool strings::regex_search(const cell_string &str, const cell_string &pattern, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		return regex_search_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), str, &pattern, pos, options);
+		return regex_search_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), str, &pattern, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -425,7 +446,7 @@ bool strings::regex_search(const cell_string &str, const cell_string &pattern, c
 template <class Iter>
 struct regex_extract_base
 {
-	cell operator()(Iter pattern_begin, Iter pattern_end, const cell_string &str, const cell_string *pattern, cell *pos, cell options) const
+	cell operator()(Iter pattern_begin, Iter pattern_end, const cell_string &str, const cell_string *pattern, cell *pos, cell options, std::weak_ptr<void> mem_handle) const
 	{
 		std::regex_constants::syntax_option_type syntax_options;
 		std::regex_constants::match_flag_type match_options;
@@ -442,13 +463,13 @@ struct regex_extract_base
 		std::match_results<cell_string::const_iterator> match;
 		if(options & cache_flag)
 		{
-			const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+			const cell_regex &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options, mem_handle) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
 			if(!std::regex_search(begin, str.cend(), match, regex, match_options))
 			{
 				return 0;
 			}
 		}else{
-			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+			cell_regex regex(pattern_begin, pattern_end, syntax_options);
 			if(!std::regex_search(begin, str.cend(), match, regex, match_options))
 			{
 				return 0;
@@ -467,10 +488,10 @@ struct regex_extract_base
 	}
 };
 
-cell strings::regex_extract(const cell_string &str, const cell *pattern, cell *pos, cell options)
+cell strings::regex_extract(const cell_string &str, const cell *pattern, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		return select_iterator<regex_extract_base>(pattern, str, nullptr, pos, options);
+		return select_iterator<regex_extract_base>(pattern, str, nullptr, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -478,10 +499,10 @@ cell strings::regex_extract(const cell_string &str, const cell *pattern, cell *p
 	}
 }
 
-cell strings::regex_extract(const cell_string &str, const cell_string &pattern, cell *pos, cell options)
+cell strings::regex_extract(const cell_string &str, const cell_string &pattern, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		return regex_extract_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), str, &pattern, pos, options);
+		return regex_extract_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), str, &pattern, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -545,7 +566,7 @@ struct replace_sub_match_base
 };
 
 template <class StringIter, class ReplacementIter>
-void replace(cell_string &target, StringIter &begin, StringIter end, const std::basic_regex<cell, regex_traits> &regex, ReplacementIter replacement_begin, ReplacementIter replacement_end, std::regex_constants::match_flag_type match_options)
+void replace(cell_string &target, StringIter &begin, StringIter end, const cell_regex &regex, ReplacementIter replacement_begin, ReplacementIter replacement_end, std::regex_constants::match_flag_type match_options)
 {
 	std::match_results<StringIter> result;
 	while(std::regex_search(begin, end, result, regex, match_options))
@@ -568,7 +589,7 @@ struct regex_replace_base
 	template <class ReplacementIter>
 	struct inner
 	{
-		void operator()(ReplacementIter replacement_begin, ReplacementIter replacement_end, PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, cell *pos, cell options) const
+		void operator()(ReplacementIter replacement_begin, ReplacementIter replacement_end, PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, cell *pos, cell options, std::weak_ptr<void> mem_handle) const
 		{
 			std::regex_constants::syntax_option_type syntax_options;
 			std::regex_constants::match_flag_type match_options;
@@ -585,36 +606,36 @@ struct regex_replace_base
 			target.append(str.cbegin(), begin);
 			if(options & cache_flag)
 			{
-				const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+				const cell_regex &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options, mem_handle) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
 				replace(target, begin, str.cend(), regex, replacement_begin, replacement_end, match_options);
 			}else{
-				std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+				cell_regex regex(pattern_begin, pattern_end, syntax_options);
 				replace(target, begin, str.cend(), regex, replacement_begin, replacement_end, match_options);
 			}
 			*pos = begin - str.cbegin();
 		}
 	};
 
-	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell *replacement, cell *pos, cell options) const
+	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell *replacement, cell *pos, cell options, std::weak_ptr<void> mem_handle) const
 	{
-		select_iterator<inner>(replacement, pattern_begin, pattern_end, target, str, nullptr, pos, options);
+		select_iterator<inner>(replacement, pattern_begin, pattern_end, target, str, nullptr, pos, options, mem_handle);
 	}
 };
 
-void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const cell *replacement, cell *pos, cell options)
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const cell *replacement, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		select_iterator<regex_replace_base>(pattern, target, str, replacement, pos, options);
+		select_iterator<regex_replace_base>(pattern, target, str, replacement, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 	}
 }
 
-void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell *pos, cell options)
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const cell_string &replacement, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		typename regex_replace_base<cell_string::const_iterator>::template inner<cell_string::const_iterator>()(replacement.begin(), replacement.end(), pattern.begin(), pattern.end(), target, str, &pattern, pos, options);
+		typename regex_replace_base<cell_string::const_iterator>::template inner<cell_string::const_iterator>()(replacement.begin(), replacement.end(), pattern.begin(), pattern.end(), target, str, &pattern, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -622,7 +643,7 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 }
 
 template <class StringIter>
-void replace(cell_string &target, StringIter &begin, StringIter end, const std::basic_regex<cell, regex_traits> &regex, const list_t &replacement, std::regex_constants::match_flag_type match_options)
+void replace(cell_string &target, StringIter &begin, StringIter end, const cell_regex &regex, const list_t &replacement, std::regex_constants::match_flag_type match_options)
 {
 	std::match_results<StringIter> result;
 	while(std::regex_search(begin, end, result, regex, match_options))
@@ -675,7 +696,7 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 template <class PatternIter>
 struct regex_replace_list_base
 {
-	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, const list_t &replacement, cell *pos, cell options) const
+	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, const list_t &replacement, cell *pos, cell options, std::weak_ptr<void> mem_handle) const
 	{
 		std::regex_constants::syntax_option_type syntax_options;
 		std::regex_constants::match_flag_type match_options;
@@ -692,30 +713,30 @@ struct regex_replace_list_base
 		target.append(str.cbegin(), begin);
 		if(options & cache_flag)
 		{
-			const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+			const cell_regex &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options, mem_handle) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
 			replace(target, begin, str.cend(), regex, replacement, match_options);
 		}else{
-			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+			cell_regex regex(pattern_begin, pattern_end, syntax_options);
 			replace(target, begin, str.cend(), regex, replacement, match_options);
 		}
 		*pos = begin - str.cbegin();
 	}
 };
 
-void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const list_t &replacement, cell *pos, cell options)
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, const list_t &replacement, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		select_iterator<regex_replace_list_base>(pattern, target, str, nullptr, replacement, pos, options);
+		select_iterator<regex_replace_list_base>(pattern, target, str, nullptr, replacement, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 	}
 }
 
-void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const list_t &replacement, cell *pos, cell options)
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, const list_t &replacement, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		regex_replace_list_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), target, str, &pattern, replacement, pos, options);
+		regex_replace_list_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), target, str, &pattern, replacement, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -723,7 +744,7 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 }
 
 template <class StringIter>
-void replace(cell_string &target, StringIter &begin, StringIter end, const std::basic_regex<cell, regex_traits> &regex, AMX *amx, int replacement_index, std::regex_constants::match_flag_type match_options, const char *format, cell *params, size_t numargs)
+void replace(cell_string &target, StringIter &begin, StringIter end, const cell_regex &regex, AMX *amx, int replacement_index, std::regex_constants::match_flag_type match_options, const char *format, cell *params, size_t numargs)
 {
 	std::vector<stored_param> arg_values;
 	if(format != nullptr)
@@ -797,7 +818,7 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 template <class PatternIter>
 struct regex_replace_func_base
 {
-	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs) const
+	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs, std::weak_ptr<void> mem_handle) const
 	{
 		std::regex_constants::syntax_option_type syntax_options;
 		std::regex_constants::match_flag_type match_options;
@@ -814,30 +835,30 @@ struct regex_replace_func_base
 		target.append(str.cbegin(), begin);
 		if(options & cache_flag)
 		{
-			const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+			const cell_regex &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options, mem_handle) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
 			replace(target, begin, str.cend(), regex, amx, replacement_index, match_options, format, params, numargs);
 		}else{
-			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+			cell_regex regex(pattern_begin, pattern_end, syntax_options);
 			replace(target, begin, str.cend(), regex, amx, replacement_index, match_options, format, params, numargs);
 		}
 		*pos = begin - str.cbegin();
 	}
 };
 
-void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs)
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs, std::weak_ptr<void> mem_handle)
 {
 	try{
-		select_iterator<regex_replace_func_base>(pattern, target, str, nullptr, amx, replacement_index, pos, options, format, params, numargs);
+		select_iterator<regex_replace_func_base>(pattern, target, str, nullptr, amx, replacement_index, pos, options, format, params, numargs, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 	}
 }
 
-void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs)
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs, std::weak_ptr<void> mem_handle)
 {
 	try{
-		regex_replace_func_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), target, str, &pattern, amx, replacement_index, pos, options, format, params, numargs);
+		regex_replace_func_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), target, str, &pattern, amx, replacement_index, pos, options, format, params, numargs, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
@@ -845,7 +866,7 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 }
 
 template <class StringIter>
-void replace(cell_string &target, StringIter &begin, StringIter end, const std::basic_regex<cell, regex_traits> &regex, AMX *amx, const expression &expr, std::regex_constants::match_flag_type match_options)
+void replace(cell_string &target, StringIter &begin, StringIter end, const cell_regex &regex, AMX *amx, const expression &expr, std::regex_constants::match_flag_type match_options)
 {
 	expression::exec_info info(amx);
 
@@ -894,7 +915,7 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const std::
 template <class PatternIter>
 struct regex_replace_expr_base
 {
-	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, AMX *amx, const expression &expr, cell *pos, cell options) const
+	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const cell_string &str, const cell_string *pattern, AMX *amx, const expression &expr, cell *pos, cell options, std::weak_ptr<void> mem_handle) const
 	{
 		std::regex_constants::syntax_option_type syntax_options;
 		std::regex_constants::match_flag_type match_options;
@@ -911,30 +932,30 @@ struct regex_replace_expr_base
 		target.append(str.cbegin(), begin);
 		if(options & cache_flag)
 		{
-			const std::basic_regex<cell, regex_traits> &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
+			const cell_regex &regex = options & cache_addr_flag ? get_cached_addr(pattern_begin, pattern_end, options, syntax_options, mem_handle) : get_cached(pattern_begin, pattern_end, pattern, options, syntax_options);
 			replace(target, begin, str.cend(), regex, amx, expr, match_options);
 		}else{
-			std::basic_regex<cell, regex_traits> regex(pattern_begin, pattern_end, syntax_options);
+			cell_regex regex(pattern_begin, pattern_end, syntax_options);
 			replace(target, begin, str.cend(), regex, amx, expr, match_options);
 		}
 		*pos = begin - str.cbegin();
 	}
 };
 
-void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, const expression &expr, cell *pos, cell options)
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, const expression &expr, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		select_iterator<regex_replace_expr_base>(pattern, target, str, nullptr, amx, expr, pos, options);
+		select_iterator<regex_replace_expr_base>(pattern, target, str, nullptr, amx, expr, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 	}
 }
 
-void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, const expression &expr, cell *pos, cell options)
+void strings::regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, const expression &expr, cell *pos, cell options, std::weak_ptr<void> mem_handle)
 {
 	try{
-		regex_replace_expr_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), target, str, &pattern, amx, expr, pos, options);
+		regex_replace_expr_base<cell_string::const_iterator>()(pattern.begin(), pattern.end(), target, str, &pattern, amx, expr, pos, options, mem_handle);
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
