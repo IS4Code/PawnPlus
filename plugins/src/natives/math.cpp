@@ -14,6 +14,7 @@
 #include <math.h>
 #include <cmath>
 #include <ctime>
+#include <type_traits>
 
 namespace Natives
 {
@@ -279,7 +280,37 @@ namespace Natives
 		return (ucell)params[1] >= (ucell)params[2];
 	}
 
-	thread_local std::default_random_engine generator(static_cast<decltype(std::default_random_engine::default_seed)>(std::time(nullptr)));
+	static decltype(std::mt19937::default_seed) default_seed()
+	{
+		static thread_local std::random_device random_device;
+		return random_device() ^ static_cast<std::random_device::result_type>(std::time(nullptr));
+	}
+
+	thread_local std::mt19937 generator(default_seed());
+	
+	template <typename Wide, typename Generator, typename UInt>
+	static UInt rand_gen(Generator &g, UInt range)
+	{
+		static_assert(!std::is_signed<UInt>::value && !std::is_signed<Wide>::value, "types must be unsigned");
+
+		auto product = static_cast<Wide>(g()) * static_cast<Wide>(range);
+		auto low = static_cast<UInt>(product);
+		if(low < range)
+		{
+			auto threshold = (static_cast<UInt>(0) - range) % range;
+			while(low < threshold)
+			{
+				product = static_cast<Wide>(g()) * static_cast<Wide>(range);
+				low = static_cast<UInt>(product);
+			}
+		}
+		return product >> std::numeric_limits<UInt>::digits;
+	}
+
+	static ucell rand_cell(ucell range)
+	{
+		return rand_gen<std::uint_fast64_t>(generator, range);
+	}
 	
 	// native math_random_seed(seed);
 	AMX_DEFINE_NATIVE_TAG(math_random_seed, 1, cell)
@@ -297,7 +328,11 @@ namespace Natives
 		{
 			amx_LogicError(errors::out_of_range, "max");
 		}
-		return std::uniform_int_distribution<cell>(min, max)(generator);
+		if(min == std::numeric_limits<cell>::min() && max == std::numeric_limits<cell>::max())
+		{
+			return generator();
+		}
+		return rand_cell(max - min + 1) + min;
 	}
 
 	// native math_random_unsigned(min=0, max=-1);
@@ -309,7 +344,11 @@ namespace Natives
 		{
 			amx_LogicError(errors::out_of_range, "max");
 		}
-		return std::uniform_int_distribution<ucell>(min, max)(generator);
+		if(min == std::numeric_limits<ucell>::min() && max == std::numeric_limits<ucell>::max())
+		{
+			return generator();
+		}
+		return rand_cell(max - min + 1) + min;
 	}
 
 	// native Float:math_random_float(Float:min=0.0, Float:max=1.0);
@@ -335,7 +374,7 @@ namespace Natives
 		{
 			if(std::isinf(max))
 			{
-				return std::uniform_int_distribution<int>(0, 1)(generator) == 0 ? cmin : cmax;
+				return (generator() % 2) == 0 ? cmin : cmax;
 			}else{
 				return cmin;
 			}
@@ -343,7 +382,8 @@ namespace Natives
 		{
 			return cmax;
 		}
-		float result = std::uniform_real_distribution<float>(min, max)(generator);
+		float scale = (float)(generator.max() - generator.min()) + 1.0f;
+		float result = (generator() - generator.min()) / scale * (max - min) + min;
 		return amx_ftoc(result);
 	}
 
