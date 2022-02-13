@@ -350,6 +350,17 @@ bool event_info::invoke(AMX *amx, cell *retval, cell id)
 
 		handled = 0;
 		err = amx_Exec(amx, &handled, index);
+		if(flags & 4)
+		{
+			if (handled < 0)
+			{
+				handled = ~handled;
+			}
+			else
+			{
+				handled = 0;
+			}
+		}
 		if(handled || !(flags & 2))
 		{
 			guard.paramcount = amx->paramcount;
