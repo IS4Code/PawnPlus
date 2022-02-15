@@ -505,11 +505,14 @@ void callback_info::invoke(AMX *amx, cell *retval)
 	amx::guard guard(amx);
 	try{
 		auto result = action->execute(args, expression::exec_info(amx));
-		if(!result.is_null() && result.array_size() > 0)
+		if(retval)
 		{
-			*retval = result.get_cell(0);
-		}else{
-			*retval = 0;
+			if(!result.is_null() && result.array_size() > 0)
+			{
+				*retval = result.get_cell(0);
+			}else{
+				*retval = 0;
+			}
 		}
 	}catch(const errors::native_error &err)
 	{
