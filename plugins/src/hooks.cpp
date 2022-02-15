@@ -176,7 +176,8 @@ public:
 #define base_func _base_func
 #define amx_Hook(Func) amx_hook<PLUGIN_AMX_EXPORT_##Func>::ctl<decltype(&::amx_##Func), &Hooks::amx_##Func>
 
-bool hook_ref_args = false;
+static bool hook_ref_args = false;
+static thread_local AMX *public_lookup_amx = nullptr;
 
 namespace Hooks
 {
@@ -330,13 +331,16 @@ namespace Hooks
 				return AMX_ERR_NONE;
 			}
 		}
-		return base_func(amx, funcname, index);
+		public_lookup_amx = amx;
+		auto result = base_func(amx, funcname, index);
+		public_lookup_amx = nullptr;
+		return result;
 	}
 
 	int AMX_HOOK_FUNC(amx_NumPublics, AMX *amx, int *number)
 	{
 		int ret = base_func(amx, number);
-		if(ret == AMX_ERR_NONE && number)
+		if(ret == AMX_ERR_NONE && number && public_lookup_amx != amx)
 		{
 			*number += events::num_callbacks(amx);
 		}
