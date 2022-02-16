@@ -662,11 +662,12 @@ namespace Natives
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		str->clear();
-
+		
 		cell *format = amx_GetAddrSafe(amx, params[2]);
 
-		strings::format(amx, *str, format, params[0] / sizeof(cell) - 2, params + 3);
+		cell_string buffer;
+		strings::format(amx, buffer, format, params[0] / sizeof(cell) - 2, params + 3);
+		std::swap(*str, buffer);
 		return params[1];
 	}
 
@@ -675,14 +676,16 @@ namespace Natives
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
-		str->clear();
 		
 		cell_string *strformat;
 		if(!strings::pool.get_by_id(params[2], strformat) && strformat != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[2]);
+
+		cell_string buffer;
 		if(strformat != nullptr)
 		{
-			strings::format(amx, *str, *strformat, params[0] / sizeof(cell) - 2, params + 3);
+			strings::format(amx, buffer, *strformat, params[0] / sizeof(cell) - 2, params + 3);
 		}
+		std::swap(*str, buffer);
 		return params[1];
 	}
 
