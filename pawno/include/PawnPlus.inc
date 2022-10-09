@@ -2096,6 +2096,22 @@ stock operator~(PP@ts:arr[], count)
 /*       Math      */
 /*                 */
 
+enum random_generator
+{
+    generator_library_default = 0,
+    generator_mt19937 = 1,
+    generator_mt19937_64 = 2,
+    generator_minstd_rand0 = 3,
+    generator_minstd_rand = 4,
+    generator_ranlux24_base = 5,
+    generator_ranlux48_base = 6,
+    generator_ranlux24 = 7,
+    generator_ranlux48 = 8,
+    generator_knuth_b = 9,
+    generator_random_device = 10
+}
+
+native unit:math_random_generator(random_generator:type);
 native unit:math_random_seed(seed);
 native math_random(min=0, max=cellmax);
 native math_random_unsigned(min=0, max=-1);

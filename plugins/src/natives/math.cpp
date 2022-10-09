@@ -280,42 +280,142 @@ namespace Natives
 		return (ucell)params[1] >= (ucell)params[2];
 	}
 
-	static decltype(std::mt19937::default_seed) default_seed()
+	static std::random_device::result_type default_seed()
 	{
 		static thread_local std::random_device random_device;
 		return random_device() ^ static_cast<std::random_device::result_type>(std::time(nullptr));
 	}
 
-	thread_local std::mt19937 generator(default_seed());
-	
-	template <typename Wide, typename Generator, typename UInt>
-	static UInt rand_gen(Generator &g, UInt range)
+	namespace generators
 	{
-		static_assert(!std::is_signed<UInt>::value && !std::is_signed<Wide>::value, "types must be unsigned");
-
-		auto product = static_cast<Wide>(g()) * static_cast<Wide>(range);
-		auto low = static_cast<UInt>(product);
-		if(low < range)
-		{
-			auto threshold = (static_cast<UInt>(0) - range) % range;
-			while(low < threshold)
-			{
-				product = static_cast<Wide>(g()) * static_cast<Wide>(range);
-				low = static_cast<UInt>(product);
-			}
-		}
-		return product >> std::numeric_limits<UInt>::digits;
+		thread_local std::default_random_engine library_default(default_seed());
+		thread_local std::mt19937 mt19937(default_seed());
+		thread_local std::mt19937_64 mt19937_64(default_seed());
+		thread_local std::minstd_rand0 minstd_rand0(default_seed());
+		thread_local std::minstd_rand minstd_rand(default_seed());
+		thread_local std::ranlux24_base ranlux24_base(default_seed());
+		thread_local std::ranlux48_base ranlux48_base(default_seed());
+		thread_local std::ranlux24 ranlux24(default_seed());
+		thread_local std::ranlux48 ranlux48(default_seed());
+		thread_local std::knuth_b knuth_b(default_seed());
+		thread_local std::random_device random_device;
 	}
+
+	enum class generator_type
+	{
+		library_default = 0,
+		mt19937 = 1,
+		mt19937_64 = 2,
+		minstd_rand0 = 3,
+		minstd_rand = 4,
+		ranlux24_base = 5,
+		ranlux48_base = 6,
+		ranlux24 = 7,
+		ranlux48 = 8,
+		knuth_b = 9,
+		random_device = 10
+	};
+
+	thread_local generator_type current_generator_type = generator_type::mt19937;
+
+	// native math_random_generator(random_generator:type);
+	AMX_DEFINE_NATIVE_TAG(math_random_generator, 1, cell)
+	{
+		current_generator_type = static_cast<generator_type>(params[1]);
+		return 1;
+	}
+
+	template <typename Func, typename... Args>
+	static auto generator_pick(Func selector, Args&&... args) -> decltype(selector(generators::mt19937, std::forward<Args>(args)...))
+	{
+		switch(current_generator_type)
+		{
+			case generator_type::mt19937:
+				return selector(generators::mt19937, std::forward<Args>(args)...);
+			case generator_type::mt19937_64:
+				return selector(generators::mt19937_64, std::forward<Args>(args)...);
+			case generator_type::minstd_rand0:
+				return selector(generators::minstd_rand0, std::forward<Args>(args)...);
+			case generator_type::minstd_rand:
+				return selector(generators::minstd_rand, std::forward<Args>(args)...);
+			case generator_type::ranlux24_base:
+				return selector(generators::ranlux24_base, std::forward<Args>(args)...);
+			case generator_type::ranlux48_base:
+				return selector(generators::ranlux48_base, std::forward<Args>(args)...);
+			case generator_type::ranlux24:
+				return selector(generators::ranlux24, std::forward<Args>(args)...);
+			case generator_type::ranlux48:
+				return selector(generators::ranlux48, std::forward<Args>(args)...);
+			case generator_type::knuth_b:
+				return selector(generators::knuth_b, std::forward<Args>(args)...);
+			case generator_type::random_device:
+				return selector(generators::random_device, std::forward<Args>(args)...);
+			default:
+				return selector(generators::library_default, std::forward<Args>(args)...);
+		}
+	}
+	
+	template <typename Wide, typename UInt>
+	struct rand_gen
+	{
+		template <typename Generator>
+		UInt operator()(Generator &g, UInt range) const
+		{
+			static_assert(!std::is_signed<UInt>::value && !std::is_signed<Wide>::value, "types must be unsigned");
+
+			auto product = static_cast<Wide>(g()) * static_cast<Wide>(range);
+			auto low = static_cast<UInt>(product);
+			if(low < range)
+			{
+				auto threshold = (static_cast<UInt>(0) - range) % range;
+				while(low < threshold)
+				{
+					product = static_cast<Wide>(g()) * static_cast<Wide>(range);
+					low = static_cast<UInt>(product);
+				}
+			}
+			return product >> std::numeric_limits<UInt>::digits;
+		}
+	};
 
 	static ucell rand_cell(ucell range)
 	{
-		return rand_gen<std::uint_fast64_t>(generator, range);
+		return generator_pick(rand_gen<std::uint_fast64_t, ucell>(), range);
 	}
+
+	template <typename Result>
+	struct rand_caller
+	{
+		template <typename Generator>
+		Result operator()(Generator &g) const
+		{
+			return static_cast<Result>(g());
+		}
+	};
+
+	static cell generator()
+	{
+		return generator_pick(rand_caller<cell>());
+	}
+
+	struct rand_seeder
+	{
+		void operator()(std::random_device &g, cell) const
+		{
+			amx_LogicError(errors::operation_not_supported, "generator");
+		}
+
+		template <typename Generator>
+		void operator()(Generator &g, cell seed) const
+		{
+			g.seed(seed);
+		}
+	};
 	
 	// native math_random_seed(seed);
 	AMX_DEFINE_NATIVE_TAG(math_random_seed, 1, cell)
 	{
-		generator.seed(params[1]);
+		generator_pick(rand_seeder(), params[1]);
 		return 1;
 	}
 
@@ -351,6 +451,16 @@ namespace Natives
 		return rand_cell(max - min + 1) + min;
 	}
 
+	struct rand_float_range
+	{
+		template <typename Generator>
+		float operator()(Generator &g, float min, float max) const
+		{
+			float scale = (float)(g.max() - g.min()) + 1.0f;
+			return (g() - g.min()) / scale * (max - min) + min;
+		}
+	};
+
 	// native Float:math_random_float(Float:min=0.0, Float:max=1.0);
 	AMX_DEFINE_NATIVE_TAG(math_random_float, 0, float)
 	{
@@ -382,8 +492,7 @@ namespace Natives
 		{
 			return cmax;
 		}
-		float scale = (float)(generator.max() - generator.min()) + 1.0f;
-		float result = (generator() - generator.min()) / scale * (max - min) + min;
+		float result = generator_pick(rand_float_range(), min, max);
 		return amx_ftoc(result);
 	}
 
@@ -506,6 +615,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(math_ugt),
 	AMX_DECLARE_NATIVE(math_ugte),
 
+	AMX_DECLARE_NATIVE(math_random_generator),
 	AMX_DECLARE_NATIVE(math_random_seed),
 	AMX_DECLARE_NATIVE(math_random),
 	AMX_DECLARE_NATIVE(math_random_unsigned),
