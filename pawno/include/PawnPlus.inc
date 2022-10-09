@@ -1939,11 +1939,11 @@ stock task_await(Task:task) return task_wait(task), task_get_result(task);
 /*
 native task_await_str(Task:task, result[], size = sizeof result);
 */
-stock task_await_str(Task:task, result[], size = sizeof(result)) return task_await(task), task_get_result_str(task, result, size);
+stock task_await_str(Task:task, result[], size = sizeof(result)) return task_wait(task), task_get_result_str(task, result, size);
 /*
 native String:task_await_str_s(Task:task);
 */
-stock String:task_await_str_s(Task:task) return task_await(task), task_get_result_str_s(task);
+stock String:task_await_str_s(Task:task) return task_wait(task), task_get_result_str_s(task);
 /*
 native task_await_arr(Task:task, AnyTag:result[], size=sizeof result);
 */
