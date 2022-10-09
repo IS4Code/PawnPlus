@@ -252,11 +252,11 @@ stock _pp_fake_cast(val)
 #endif
 
 #if defined PP_SYNTAX_ON_INIT
-#define pawn_on_init[%0] forward _pp@on_init@%0();public _pp@on_init@%0()
+#define pawn_on_init[%0] forward _pp@i%0();public _pp@i%0()
 #endif
 
 #if defined PP_SYNTAX_ON_EXIT
-#define pawn_on_exit[%0] forward _pp@on_exit@%0();public _pp@on_exit@%0()
+#define pawn_on_exit[%0] forward _pp@e%0();public _pp@e%0()
 #endif
 
 /*                 */

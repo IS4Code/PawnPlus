@@ -266,8 +266,7 @@ void amx::instance::run_initializers()
 			{
 				if(amx_GetPublic(_amx, i, funcname) == AMX_ERR_NONE)
 				{
-					funcname[12] = '\0';
-					if(!std::strcmp(funcname, "_pp@on_init@"))
+					if(!std::memcmp(funcname, "_pp@i", 5) || !std::memcmp(funcname, "_pp@on_init@", 12))
 					{
 						amx_Exec(_amx, &ret, i);
 					}
@@ -291,8 +290,7 @@ void amx::instance::run_finalizers()
 			{
 				if(amx_GetPublic(_amx, i, funcname) == AMX_ERR_NONE)
 				{
-					funcname[12] = '\0';
-					if(!std::strcmp(funcname, "_pp@on_exit@"))
+					if(!std::memcmp(funcname, "_pp@e", 5) || !std::memcmp(funcname, "_pp@on_exit@", 12))
 					{
 						amx_Exec(_amx, &ret, i);
 					}
