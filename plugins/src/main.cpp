@@ -24,9 +24,11 @@ extern void *pAMXFunctions;
 
 thread_local bool is_main_thread = false;
 
+#define SUPPORTS_OMP 0x00100000
+
 PLUGIN_EXPORT unsigned int PLUGIN_CALL Supports() noexcept
 {
-	return SUPPORTS_VERSION | SUPPORTS_AMX_NATIVES | SUPPORTS_PROCESS_TICK;
+	return SUPPORTS_VERSION | SUPPORTS_AMX_NATIVES | SUPPORTS_PROCESS_TICK | SUPPORTS_OMP;
 }
 
 PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData) noexcept
