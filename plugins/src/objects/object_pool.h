@@ -269,7 +269,7 @@ public:
 	cell get_relative_address(AMX *amx, const_object_ptr obj) const
 	{
 		unsigned char *data = amx_GetData(amx);
-		return reinterpret_cast<cell>(&obj->operator[](0)) - reinterpret_cast<cell>(data);
+		return static_cast<cell>(reinterpret_cast<ucell>(&obj->operator[](0)) - reinterpret_cast<ucell>(data));
 	}
 
 	cell get_null_address(AMX *amx) const
@@ -344,7 +344,7 @@ public:
 	bool find_cache_relative(AMX *amx, cell addr, ref_container *&obj) const
 	{
 		unsigned char *data = amx_GetData(amx);
-		addr += reinterpret_cast<cell>(data);
+		addr = static_cast<cell>(static_cast<ucell>(addr) + reinterpret_cast<ucell>(data));
 		return find_cache(reinterpret_cast<const_inner_ptr>(addr), obj);
 	}
 
