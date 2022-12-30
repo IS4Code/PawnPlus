@@ -88,7 +88,8 @@ namespace Natives
 		{
 			amx_LogicError(errors::operation_not_supported, "variant");
 		}
-		return variants::pool.get_address(amx, *var);
+		variants::pool.set_cache(*var);
+		return variants::pool.get_relative_address(amx, *var);
 	}
 
 	// native ConstAmxVariant:var_addr_const(ConstVariantTag:str);
@@ -100,7 +101,8 @@ namespace Natives
 		{
 			return variants::pool.get_null_address(amx);
 		}
-		return variants::pool.get_address(amx, *var);
+		variants::pool.set_cache(*var);
+		return variants::pool.get_relative_address(amx, *var);
 	}
 
 	// native AmxVariantBuffer:var_buf_addr(VariantTag:str);
@@ -112,7 +114,8 @@ namespace Natives
 		{
 			amx_LogicError(errors::operation_not_supported, "variant");
 		}
-		return variants::pool.get_inner_address(amx, *var);
+		variants::pool.set_cache(*var);
+		return variants::pool.get_relative_address(amx, *var);
 	}
 
 	// native Variant:var_acquire(VariantTag:var);

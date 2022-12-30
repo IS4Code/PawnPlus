@@ -128,7 +128,8 @@ namespace Natives
 		{
 			return strings::pool.get_null_address(amx);
 		}
-		return strings::pool.get_address(amx, *str);
+		strings::pool.set_cache(*str);
+		return strings::pool.get_relative_address(amx, *str);
 	}
 
 	// native ConstAmxString:str_addr_const(ConstStringTag:str);
@@ -140,7 +141,8 @@ namespace Natives
 		{
 			return strings::pool.get_null_address(amx);
 		}
-		return strings::pool.get_address(amx, *str);
+		strings::pool.set_cache(*str);
+		return strings::pool.get_relative_address(amx, *str);
 	}
 
 	// native AmxStringBuffer:str_buf_addr(StringTag:str);
@@ -152,7 +154,8 @@ namespace Natives
 		{
 			amx_LogicError(errors::operation_not_supported, "string");
 		}
-		return strings::pool.get_inner_address(amx, *str);
+		strings::pool.set_cache(*str);
+		return strings::pool.get_relative_address(amx, *str);
 	}
 
 	// native String:str_acquire(StringTag:str);

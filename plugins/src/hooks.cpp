@@ -231,16 +231,15 @@ namespace Hooks
 				return AMX_ERR_NONE;
 			}
 			decltype(strings::pool)::ref_container *str;
-			if(strings::pool.get_by_addr(amx, amx_addr, str))
+			if(strings::pool.find_cache_relative(amx, amx_addr, str))
 			{
-				strings::pool.set_cache(*str);
-				*phys_addr = &(**str)[0];
+				*phys_addr = &(*str)->operator[](0);
 				return AMX_ERR_NONE;
 			}
 			decltype(variants::pool)::ref_container *var;
-			if(variants::pool.get_by_addr(amx, amx_addr, var))
+			if(variants::pool.find_cache_relative(amx, amx_addr, var))
 			{
-				*phys_addr = &(**var)[0];
+				*phys_addr = &(*var)->operator[](0);
 				return AMX_ERR_NONE;
 			}
 		}else if(ret == 0 && hook_ref_args)
@@ -257,16 +256,15 @@ namespace Hooks
 				return AMX_ERR_NONE;
 			}
 			decltype(strings::pool)::ref_container *str;
-			if(strings::pool.get_by_addr(amx, amx_addr, str))
+			if(strings::pool.find_cache_relative(amx, amx_addr, str))
 			{
-				strings::pool.set_cache(*str);
-				*phys_addr = &(**str)[0];
+				*phys_addr = &(*str)->operator[](0);
 				return AMX_ERR_NONE;
 			}
 			decltype(variants::pool)::ref_container *var;
-			if(variants::pool.get_by_addr(amx, amx_addr, var))
+			if(variants::pool.find_cache_relative(amx, amx_addr, var))
 			{
-				*phys_addr = &(**var)[0];
+				*phys_addr = &(*var)->operator[](0);
 				return AMX_ERR_NONE;
 			}
 		}
@@ -275,7 +273,7 @@ namespace Hooks
 
 	int AMX_HOOK_FUNC(amx_StrLen, const cell *cstring, int *length)
 	{
-		const decltype(strings::pool)::ref_container *str;
+		decltype(strings::pool)::ref_container *str;
 		if(strings::pool.find_cache(cstring, str))
 		{
 			*length = (*str)->size();

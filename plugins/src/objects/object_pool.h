@@ -226,7 +226,7 @@ public:
 private:
 	list_type global_object_list;
 	list_type local_object_list;
-	std::unordered_map<const_inner_ptr, const ref_container*> inner_cache;
+	std::unordered_map<const_inner_ptr, ref_container*> inner_cache;
 
 public:
 	object_ptr add()
@@ -266,13 +266,7 @@ public:
 		return *local_object_list.template emplace_derived<Type>(std::forward<Args>(args)...);
 	}
 
-	cell get_address(AMX *amx, const_object_ptr obj) const
-	{
-		unsigned char *data = amx_GetData(amx);
-		return reinterpret_cast<cell>(&obj) - reinterpret_cast<cell>(data);
-	}
-
-	cell get_inner_address(AMX *amx, const_object_ptr obj) const
+	cell get_relative_address(AMX *amx, const_object_ptr obj) const
 	{
 		unsigned char *data = amx_GetData(amx);
 		return reinterpret_cast<cell>(&obj->operator[](0)) - reinterpret_cast<cell>(data);
@@ -331,12 +325,12 @@ public:
 		return false;
 	}
 
-	void set_cache(const_object_ptr obj)
+	void set_cache(object_ptr obj)
 	{
 		inner_cache[&obj->operator[](0)] = &obj;
 	}
 
-	bool find_cache(const_inner_ptr ptr, const ref_container *&obj)
+	bool find_cache(const_inner_ptr ptr, ref_container *&obj) const
 	{
 		auto it = inner_cache.find(ptr);
 		if(it != inner_cache.end())
@@ -345,6 +339,13 @@ public:
 			return true;
 		}
 		return false;
+	}
+
+	bool find_cache_relative(AMX *amx, cell addr, ref_container *&obj) const
+	{
+		unsigned char *data = amx_GetData(amx);
+		addr += reinterpret_cast<cell>(data);
+		return find_cache(reinterpret_cast<const_inner_ptr>(addr), obj);
 	}
 
 	bool remove(object_ptr obj)
@@ -484,23 +485,6 @@ public:
 			return it->second;
 		}
 		return {};
-	}
-
-	bool get_by_addr(AMX *amx, cell addr, ref_container *&obj)
-	{
-		obj = reinterpret_cast<ref_container*>(amx_GetData(amx) + addr);
-
-		auto it = local_object_list.find(obj);
-		if(it != local_object_list.end())
-		{
-			return true;
-		}
-		it = global_object_list.find(obj);
-		if(it != global_object_list.end())
-		{
-			return true;
-		}
-		return false;
 	}
 
 	size_t local_size() const
