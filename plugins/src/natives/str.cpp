@@ -148,6 +148,10 @@ namespace Natives
 	{
 		decltype(strings::pool)::ref_container *str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str == nullptr)
+		{
+			amx_LogicError(errors::operation_not_supported, "string");
+		}
 		return strings::pool.get_inner_address(amx, *str);
 	}
 

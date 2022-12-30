@@ -108,7 +108,7 @@ namespace Natives
 	{
 		decltype(variants::pool)::ref_container *var;
 		if(!variants::pool.get_by_id(params[1], var)) amx_LogicError(errors::pointer_invalid, "variant", params[1]);
-		if((*var)->is_cell())
+		if(var == nullptr || (*var)->is_cell())
 		{
 			amx_LogicError(errors::operation_not_supported, "variant");
 		}
