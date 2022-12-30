@@ -269,8 +269,17 @@ namespace Natives
 	// native pp_max_recursion(level);
 	AMX_DEFINE_NATIVE_TAG(pp_max_recursion, 1, cell)
 	{
+		cell oldvalue = maxRecursionLevel;
 		maxRecursionLevel = params[1];
-		return 1;
+		return oldvalue;
+	}
+
+	// native bool:pp_toggle_exec_hook(bool:toggle);
+	AMX_DEFINE_NATIVE_TAG(pp_toggle_exec_hook, 1, bool)
+	{
+		bool oldvalue = enableExecHook;
+		enableExecHook = static_cast<bool>(params[1]);
+		return oldvalue;
 	}
 
 	// native pp_error_level(error_level:level);
@@ -590,6 +599,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_collect),
 	AMX_DECLARE_NATIVE(pp_num_natives),
 	AMX_DECLARE_NATIVE(pp_max_recursion),
+	AMX_DECLARE_NATIVE(pp_toggle_exec_hook),
 	AMX_DECLARE_NATIVE(pp_error_level),
 	AMX_DECLARE_NATIVE(pp_raise_error),
 	AMX_DECLARE_NATIVE(pp_module_name),

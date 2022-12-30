@@ -6,6 +6,8 @@
 
 extern int maxRecursionLevel;
 
+extern bool enableExecHook;
+
 int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset, bool forked = false);
 
 // Holds the original code of the program (i.e. before relocation)

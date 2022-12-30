@@ -10,6 +10,7 @@
 [[noreturn]] void amx_LogicError(const char *format, ...);
 cell *amx_GetAddrSafe(AMX *amx, cell amx_addr);
 void amx_AllotSafe(AMX *amx, int cells, cell *amx_addr, cell **phys_addr);
+void amx_Sleep(AMX *amx);
 
 namespace errors
 {
@@ -67,6 +68,7 @@ namespace errors
 	extern error invalid_expression;
 	extern error inner_error_msg;
 	extern error unhandled_system_exception;
+	extern error feature_disabled;
 }
 
 namespace amx

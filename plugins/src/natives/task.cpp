@@ -68,7 +68,7 @@ namespace Natives
 	// native Task:wait_ticks(ticks);
 	AMX_DEFINE_NATIVE_TAG(wait_ticks, 1, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		if(params[1] < 0)
 		{
 			return SleepReturnWaitInf;
@@ -86,7 +86,7 @@ namespace Natives
 	// native Task:wait_ms(interval);
 	AMX_DEFINE_NATIVE_TAG(wait_ms, 1, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		if(params[1] < 0)
 		{
 			return SleepReturnWaitInf;
@@ -349,7 +349,7 @@ namespace Natives
 			auto &info = tasks::get_extra(amx, owner);
 			info.awaited_task = task;
 
-			amx_RaiseError(amx, AMX_ERR_SLEEP);
+			amx_Sleep(amx);
 			return SleepReturnAwait;
 		}else{
 			return task->state();
@@ -726,7 +726,7 @@ namespace Natives
 	// native task_detach();
 	AMX_DEFINE_NATIVE_TAG(task_detach, 0, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnTaskDetach;
 	}
 
@@ -736,7 +736,7 @@ namespace Natives
 		task *task;
 		if(!tasks::get_by_id(params[1], task)) amx_LogicError(errors::pointer_invalid, "task", params[1]);
 
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnTaskDetachBound;
 	}
 }

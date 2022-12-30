@@ -1443,7 +1443,7 @@ namespace Natives
 			}
 		}
 
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnDebugCall | index;
 	}
 
@@ -1510,7 +1510,7 @@ namespace Natives
 			}
 		}
 
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnDebugCallList | index;
 	}
 

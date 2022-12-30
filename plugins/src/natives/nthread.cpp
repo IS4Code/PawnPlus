@@ -9,21 +9,21 @@ namespace Natives
 	// native thread_detach(sync_flags:flags);
 	AMX_DEFINE_NATIVE_TAG(thread_detach, 1, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnDetach | (SleepReturnValueMask & params[1]);
 	}
 
 	// native thread_attach();
 	AMX_DEFINE_NATIVE_TAG(thread_attach, 0, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnAttach;
 	}
 
 	// native thread_sync();
 	AMX_DEFINE_NATIVE_TAG(thread_sync, 0, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnSync;
 	}
 
@@ -60,7 +60,7 @@ namespace Natives
 		{
 			return false;
 		}
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnThreadFix;
 	}
 }

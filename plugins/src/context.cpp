@@ -1,5 +1,6 @@
 #include "context.h"
 #include "main.h"
+#include "errors.h"
 
 #include <unordered_map>
 #include <forward_list>
@@ -112,7 +113,12 @@ amx::context &amx::get_context(AMX *amx, amx::object &obj)
 		state.contexts.emplace_back(amx, 0);
 		return state.contexts.back();
 	}
-	return get_state(amx, obj).contexts.back();
+	auto &contexts = get_state(amx, obj).contexts;
+	if(contexts.empty())
+	{
+		amx_LogicError(errors::feature_disabled, "pp_toggle_exec_hook");
+	}
+	return contexts.back();
 }
 
 bool amx::has_parent_context(AMX *amx)

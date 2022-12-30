@@ -124,7 +124,8 @@ native String:pp_version_string_s();
 
 native unit:pp_hook_strlen(bool:hook);
 native unit:pp_hook_check_ref_args(bool:hook);
-native unit:pp_max_recursion(level);
+native pp_max_recursion(level);
+native bool:pp_toggle_exec_hook(bool:toggle);
 native pp_public_min_index(index);
 native bool:pp_use_funcidx(bool:use);
 

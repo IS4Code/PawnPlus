@@ -1,4 +1,5 @@
 #include "errors.h"
+#include "exec.h"
 
 namespace errors
 {
@@ -19,6 +20,7 @@ namespace errors
 	error invalid_expression = "invalid expression: %s";
 	error inner_error_msg = "%s function '%s' has raised an error: %s";
 	error unhandled_system_exception = "unhandled system exception 0x%X (possibly corrupted memory)";
+	error feature_disabled = "this function cannot be used because the corresponding feature has been disabled (use %s to enable it)";
 }
 
 errors::native_error::native_error(const char *format, va_list args, int level) : message(vsnprintf(NULL, 0, format, args), '\0'), level(level)
@@ -84,6 +86,19 @@ void amx_AllotSafe(AMX *amx, int cells, cell *amx_addr, cell **phys_addr)
 			throw errors::amx_error(AMX_ERR_MEMORY);
 		}
 	}else{
+		throw errors::amx_error(err);
+	}
+}
+
+void amx_Sleep(AMX *amx)
+{
+	if(!enableExecHook)
+	{
+		return amx_LogicError(errors::feature_disabled, "pp_toggle_exec_hook");
+	}
+	int err = amx_RaiseError(amx, AMX_ERR_SLEEP);
+	if(err != AMX_ERR_NONE)
+	{
 		throw errors::amx_error(err);
 	}
 }

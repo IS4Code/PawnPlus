@@ -554,7 +554,7 @@ namespace Natives
 	// native bool:amx_fork(fork_level:level=fork_machine, &result=0, bool:use_data=true, &amx_err:error=amx_err:0);
 	AMX_DEFINE_NATIVE_TAG(amx_fork, 0, bool)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		cell flags = optparam(1, 2) & SleepReturnForkFlagsMethodMask;
 		if(optparam(3, 1))
 		{
@@ -570,14 +570,14 @@ namespace Natives
 	// native amx_commit(bool:context=true);
 	AMX_DEFINE_NATIVE_TAG(amx_commit, 0, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnForkCommit | (SleepReturnValueMask & optparam(1, 1));
 	}
 
 	// native amx_fork_end();
 	AMX_DEFINE_NATIVE_TAG(amx_fork_end, 0, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnForkEnd;
 	}
 
@@ -591,7 +591,7 @@ namespace Natives
 	// native Var:amx_alloc(size, bool:zero=true);
 	AMX_DEFINE_NATIVE_TAG(amx_alloc, 1, var)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return (optparam(2, 1) ? SleepReturnAllocVarZero : SleepReturnAllocVar) | (SleepReturnValueMask & params[1]);
 	}
 
@@ -605,7 +605,7 @@ namespace Natives
 		cell addr = info->free();
 		if(addr != -1)
 		{
-			amx_RaiseError(amx, AMX_ERR_SLEEP);
+			amx_Sleep(amx);
 			return SleepReturnFreeVar | (SleepReturnValueMask & ((addr - amx->hlw) / sizeof(cell)));
 		}
 
@@ -616,21 +616,21 @@ namespace Natives
 	// native amx_parallel_begin(count=1);
 	AMX_DEFINE_NATIVE_TAG(amx_parallel_begin, 0, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnParallel | (SleepReturnValueMask & optparam(1, 1));
 	}
 
 	// native amx_parallel_end();
 	AMX_DEFINE_NATIVE_TAG(amx_parallel_end, 0, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnParallelEnd;
 	}
 
 	// native amx_tailcall();
 	AMX_DEFINE_NATIVE_TAG(amx_tailcall, 0, cell)
 	{
-		amx_RaiseError(amx, AMX_ERR_SLEEP);
+		amx_Sleep(amx);
 		return SleepReturnTailCall;
 	}
 

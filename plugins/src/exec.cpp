@@ -17,6 +17,8 @@
 
 int maxRecursionLevel = std::numeric_limits<int>::max();
 
+bool enableExecHook = true;
+
 // Automatically destroys the AMX machine when the info instance is destroyed (i.e. the AMX becomes unused)
 struct forked_amx_holder : public amx::extra
 {
@@ -92,6 +94,11 @@ int AMXAPI amx_on_debug(AMX *amx)
 
 int AMXAPI amx_ExecContext(AMX *amx, cell *retval, int index, bool restore, amx::reset *reset, bool forked)
 {
+	if(!enableExecHook)
+	{
+		return amx_ExecOrig(amx, retval, index);
+	}
+
 	bool main_thread = is_main_thread;
 
 	std::unique_ptr<amx::reset> old;
