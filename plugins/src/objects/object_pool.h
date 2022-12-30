@@ -226,7 +226,7 @@ public:
 private:
 	list_type global_object_list;
 	list_type local_object_list;
-	std::unordered_map<const_inner_ptr, ref_container*> inner_cache;
+	std::unordered_map<const_inner_ptr, std::weak_ptr<ref_container>> inner_cache;
 
 public:
 	object_ptr add()
@@ -325,9 +325,9 @@ public:
 		return false;
 	}
 
-	void set_cache(object_ptr obj)
+	void set_cache(const std::shared_ptr<ref_container> &obj)
 	{
-		inner_cache[&obj->operator[](0)] = &obj;
+		inner_cache[&(*obj)->operator[](0)] = obj;
 	}
 
 	bool find_cache(const_inner_ptr ptr, ref_container *&obj) const
@@ -335,8 +335,11 @@ public:
 		auto it = inner_cache.find(ptr);
 		if(it != inner_cache.end())
 		{
-			obj = it->second;
-			return true;
+			if(auto lock = it->second.lock())
+			{
+				obj = lock.get();
+				return true;
+			}
 		}
 		return false;
 	}

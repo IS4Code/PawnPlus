@@ -122,39 +122,39 @@ namespace Natives
 	// native AmxString:str_addr(StringTag:str);
 	AMX_DEFINE_NATIVE_TAG(str_addr, 1, cell)
 	{
-		decltype(strings::pool)::ref_container *str;
+		std::shared_ptr<decltype(strings::pool)::ref_container> str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 		if(str == nullptr)
 		{
 			return strings::pool.get_null_address(amx);
 		}
-		strings::pool.set_cache(*str);
+		strings::pool.set_cache(str);
 		return strings::pool.get_relative_address(amx, *str);
 	}
 
 	// native ConstAmxString:str_addr_const(ConstStringTag:str);
 	AMX_DEFINE_NATIVE_TAG(str_addr_const, 1, cell)
 	{
-		decltype(strings::pool)::ref_container *str;
+		std::shared_ptr<decltype(strings::pool)::ref_container> str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 		if(str == nullptr)
 		{
 			return strings::pool.get_null_address(amx);
 		}
-		strings::pool.set_cache(*str);
+		strings::pool.set_cache(str);
 		return strings::pool.get_relative_address(amx, *str);
 	}
 
 	// native AmxStringBuffer:str_buf_addr(StringTag:str);
 	AMX_DEFINE_NATIVE_TAG(str_buf_addr, 1, cell)
 	{
-		decltype(strings::pool)::ref_container *str;
+		std::shared_ptr<decltype(strings::pool)::ref_container> str;
 		if(!strings::pool.get_by_id(params[1], str)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
 		if(str == nullptr)
 		{
 			amx_LogicError(errors::operation_not_supported, "string");
 		}
-		strings::pool.set_cache(*str);
+		strings::pool.set_cache(str);
 		return strings::pool.get_relative_address(amx, *str);
 	}
 
