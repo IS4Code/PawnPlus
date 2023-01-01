@@ -119,7 +119,7 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.emplace(size - 1, 0));
 	}
 
-	// native AmxString:str_addr(StringTag:str);
+	// native AmxString:str_addr(StringTag:str, amx_buffer_options:options=amx_buffer_default);
 	AMX_DEFINE_NATIVE_TAG(str_addr, 1, cell)
 	{
 		std::shared_ptr<decltype(strings::pool)::ref_container> str;
@@ -128,11 +128,11 @@ namespace Natives
 		{
 			return strings::pool.get_null_address(amx);
 		}
-		strings::pool.set_cache(str);
+		strings::pool.set_cache(str, optparam(2, 0));
 		return strings::pool.get_relative_address(amx, *str);
 	}
 
-	// native ConstAmxString:str_addr_const(ConstStringTag:str);
+	// native ConstAmxString:str_addr_const(ConstStringTag:str, amx_buffer_options:options=amx_buffer_default);
 	AMX_DEFINE_NATIVE_TAG(str_addr_const, 1, cell)
 	{
 		std::shared_ptr<decltype(strings::pool)::ref_container> str;
@@ -141,11 +141,11 @@ namespace Natives
 		{
 			return strings::pool.get_null_address(amx);
 		}
-		strings::pool.set_cache(str);
+		strings::pool.set_cache(str, optparam(2, 0));
 		return strings::pool.get_relative_address(amx, *str);
 	}
 
-	// native AmxStringBuffer:str_buf_addr(StringTag:str);
+	// native AmxStringBuffer:str_buf_addr(StringTag:str, amx_buffer_options:options=amx_buffer_default);
 	AMX_DEFINE_NATIVE_TAG(str_buf_addr, 1, cell)
 	{
 		std::shared_ptr<decltype(strings::pool)::ref_container> str;
@@ -154,7 +154,7 @@ namespace Natives
 		{
 			amx_LogicError(errors::operation_not_supported, "string");
 		}
-		strings::pool.set_cache(str);
+		strings::pool.set_cache(str, optparam(2, 0));
 		return strings::pool.get_relative_address(amx, *str);
 	}
 

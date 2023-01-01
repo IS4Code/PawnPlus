@@ -507,13 +507,24 @@ enum str_create_mode
     str_no_nulls = 2
 }
 
+enum amx_buffer_options
+{
+    amx_buffer_default = 0,
+    amx_buffer_string_auto_fit = 1,
+    amx_buffer_string_set_unpacked = 0b010,
+    amx_buffer_string_set_packed = 0b110,
+    amx_buffer_string_set_narrow = 0b01000,
+    amx_buffer_string_set_wide = 0b11000,
+    amx_buffer_string_use_strlen = 0b100000
+}
+
 native String:str_new(const str[], str_create_mode:mode=str_preserve);
 native String:str_new_arr(const arr[], size=sizeof arr, str_create_mode:mode=str_preserve);
 native String:str_new_static(const str[], str_create_mode:mode=str_preserve, size=sizeof str);
 native String:str_new_buf(size);
-native AmxString:str_addr(StringTag:str);
-native ConstAmxString:str_addr_const(ConstStringTag:str);
-native AmxStringBuffer:str_buf_addr(StringTag:str);
+native AmxString:str_addr(StringTag:str, amx_buffer_options:options=amx_buffer_default);
+native ConstAmxString:str_addr_const(ConstStringTag:str, amx_buffer_options:options=amx_buffer_default);
+native AmxStringBuffer:str_buf_addr(StringTag:str, amx_buffer_options:options=amx_buffer_default);
 native String:str_acquire(StringTag:str);
 native String:str_release(StringTag:str);
 native unit:str_delete(StringTag:str);
@@ -637,9 +648,9 @@ native Variant:var_new_buf(size, TagTag:tag_id=0);
 native Variant:var_new_str(const value[]);
 native Variant:var_new_str_s(ConstStringTag:value);
 native Variant:var_new_var(ConstVariantTag:value);
-native AmxVariant:var_addr(VariantTag:var);
-native ConstAmxVariant:var_addr_const(ConstVariantTag:var);
-native AmxVariantBuffer:var_buf_addr(VariantTag:str);
+native AmxVariant:var_addr(VariantTag:var, amx_buffer_options:options=amx_buffer_default);
+native ConstAmxVariant:var_addr_const(ConstVariantTag:var, amx_buffer_options:options=amx_buffer_default);
+native AmxVariantBuffer:var_buf_addr(VariantTag:str, amx_buffer_options:options=amx_buffer_default);
 native Variant:var_acquire(VariantTag:var);
 native Variant:var_release(VariantTag:var);
 native unit:var_delete(VariantTag:var);

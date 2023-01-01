@@ -75,7 +75,7 @@ namespace Natives
 		return value_at<1>::var_new<dyn_func_var>(amx, params);
 	}
 
-	// native AmxVariant:var_addr(VariantTag:str);
+	// native AmxVariant:var_addr(VariantTag:str, amx_buffer_options:options=amx_buffer_default);
 	AMX_DEFINE_NATIVE_TAG(var_addr, 1, cell)
 	{
 		std::shared_ptr<decltype(variants::pool)::ref_container> var;
@@ -88,11 +88,11 @@ namespace Natives
 		{
 			amx_LogicError(errors::operation_not_supported, "variant");
 		}
-		variants::pool.set_cache(var);
+		variants::pool.set_cache(var, optparam(2, 0));
 		return variants::pool.get_relative_address(amx, *var);
 	}
 
-	// native ConstAmxVariant:var_addr_const(ConstVariantTag:str);
+	// native ConstAmxVariant:var_addr_const(ConstVariantTag:str, amx_buffer_options:options=amx_buffer_default);
 	AMX_DEFINE_NATIVE_TAG(var_addr_const, 1, cell)
 	{
 		std::shared_ptr<decltype(variants::pool)::ref_container> var;
@@ -101,11 +101,11 @@ namespace Natives
 		{
 			return variants::pool.get_null_address(amx);
 		}
-		variants::pool.set_cache(var);
+		variants::pool.set_cache(var, optparam(2, 0));
 		return variants::pool.get_relative_address(amx, *var);
 	}
 
-	// native AmxVariantBuffer:var_buf_addr(VariantTag:str);
+	// native AmxVariantBuffer:var_buf_addr(VariantTag:str, amx_buffer_options:options=amx_buffer_default);
 	AMX_DEFINE_NATIVE_TAG(var_buf_addr, 1, cell)
 	{
 		std::shared_ptr<decltype(variants::pool)::ref_container> var;
@@ -114,7 +114,7 @@ namespace Natives
 		{
 			amx_LogicError(errors::operation_not_supported, "variant");
 		}
-		variants::pool.set_cache(var);
+		variants::pool.set_cache(var, optparam(2, 0));
 		return variants::pool.get_relative_address(amx, *var);
 	}
 

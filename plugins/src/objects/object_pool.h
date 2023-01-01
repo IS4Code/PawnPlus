@@ -226,7 +226,7 @@ public:
 private:
 	list_type global_object_list;
 	list_type local_object_list;
-	std::unordered_map<const_inner_ptr, std::weak_ptr<ref_container>> inner_cache;
+	std::unordered_map<const_inner_ptr, std::pair<std::weak_ptr<ref_container>, cell>> inner_cache;
 
 public:
 	object_ptr add()
@@ -325,9 +325,16 @@ public:
 		return false;
 	}
 
-	void set_cache(const std::shared_ptr<ref_container> &obj)
+	void set_cache(const std::shared_ptr<ref_container> &obj, cell options)
 	{
-		inner_cache[&(*obj)->operator[](0)] = obj;
+		auto addr = &(*obj)->operator[](0);
+		auto result = inner_cache.emplace(std::piecewise_construct, std::forward_as_tuple(addr), std::forward_as_tuple(obj, options));
+		if(!result.second)
+		{
+			auto &record = result.first->second;
+			record.first = obj;
+			record.second = options;
+		}
 	}
 
 	bool find_cache(const_inner_ptr ptr, ref_container *&obj) const
@@ -335,9 +342,47 @@ public:
 		auto it = inner_cache.find(ptr);
 		if(it != inner_cache.end())
 		{
-			if(auto lock = it->second.lock())
+			if(auto lock = it->second.first.lock())
 			{
 				obj = lock.get();
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool find_cache(const_inner_ptr ptr, ref_container *&obj, cell &options) const
+	{
+		auto it = inner_cache.find(ptr);
+		if(it != inner_cache.end())
+		{
+			if(auto lock = it->second.first.lock())
+			{
+				obj = lock.get();
+				options = it->second.second;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool find_cache(const_inner_ptr ptr, ref_container *&obj, cell &options, int &pack, int &use_wchar, size_t &size) const
+	{
+		auto it = inner_cache.find(ptr);
+		if(it != inner_cache.end())
+		{
+			if(auto lock = it->second.first.lock())
+			{
+				obj = lock.get();
+				options = it->second.second;
+				if(options & 2)
+				{
+					pack = (options & 4) != 0;
+				}
+				if(options & 8)
+				{
+					use_wchar = (options & 16) != 0;
+				}
 				return true;
 			}
 		}

@@ -274,13 +274,57 @@ namespace Hooks
 	int AMX_HOOK_FUNC(amx_StrLen, const cell *cstring, int *length)
 	{
 		decltype(strings::pool)::ref_container *str;
-		if(strings::pool.find_cache(cstring, str))
+		cell options;
+		if(strings::pool.find_cache(cstring, str, options) && !(options & 32))
 		{
 			*length = (*str)->size();
 			return AMX_ERR_NONE;
 		}
 
 		return base_func(cstring, length);
+	}
+
+	int AMX_HOOK_FUNC(amx_SetString, cell *dest, const char *source, int pack, int use_wchar, size_t size)
+	{
+		decltype(strings::pool)::ref_container *str;
+		cell options;
+		if(strings::pool.find_cache(dest, str, options, pack, use_wchar, size))
+		{
+			if(options & 1)
+			{
+				auto &string = **str;
+				auto buffer_size = string.size() + 1;
+				if(size > 0 && size <= buffer_size)
+				{
+					auto new_size = use_wchar ? std::wcslen(reinterpret_cast<const wchar_t*>(source)) : std::strlen(source);
+					if(pack)
+					{
+						new_size = (new_size + sizeof(cell) - 1) / sizeof(cell);
+					}
+					if(size < buffer_size)
+					{
+						// truncate the output if requested this way
+						new_size = std::min(size - 1, new_size);
+					}
+					if(new_size <= string.capacity())
+					{
+						// the characters can fit into the current memory
+						string.resize(new_size, 0);
+					}else{
+						// allocate a new storage for the characters
+						auto &tmp_string = *strings::pool.emplace(new_size, 0);
+						// use the temporary string to keep the old buffer alive (just in case)
+						std::swap(string, tmp_string);
+					}
+					size = new_size + 1;
+					dest = &string[0];
+				}
+			}
+		}else{
+			decltype(variants::pool)::ref_container *var;
+			variants::pool.find_cache(dest, var, options, pack, use_wchar, size);
+		}
+		return base_func(dest, source, pack, use_wchar, size);
 	}
 
 	int AMX_HOOK_FUNC(amx_Register, AMX *amx, const AMX_NATIVE_INFO *nativelist, int number)
@@ -412,6 +456,7 @@ void Hooks::Register()
 	amx_Hook(Exec)::load();
 	amx_Hook(GetAddr)::load();
 	amx_Hook(StrLen)::load();
+	amx_Hook(SetString)::load();
 	amx_Hook(Register)::load();
 	amx_Hook(Flags)::load();
 	amx_Hook(FindPublic)::load();
@@ -428,6 +473,7 @@ void Hooks::Unregister()
 	amx_Hook(Exec)::unload();
 	amx_Hook(GetAddr)::unload();
 	amx_Hook(StrLen)::unload();
+	amx_Hook(SetString)::unload();
 	amx_Hook(Register)::unload();
 	amx_Hook(Flags)::unload();
 	amx_Hook(FindPublic)::unload();
