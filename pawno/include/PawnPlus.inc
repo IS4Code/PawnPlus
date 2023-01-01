@@ -521,6 +521,7 @@ native bool:str_valid(ConstStringTag:str);
 native String:str_clone(ConstStringTag:str);
 
 native str_len(ConstStringTag:str);
+native str_capacity(ConstStringTag:str);
 native str_get(ConstStringTag:str, buffer[], size=sizeof buffer, start=0, end=cellmax);
 native str_getc(ConstStringTag:str, pos);
 native str_setc(StringTag:str, pos, value);
@@ -548,6 +549,7 @@ native String:str_ins(StringTag:target, ConstStringTag:other, pos);
 native String:str_del(StringTag:target, start=0, end=cellmax);
 native String:str_clear(StringTag:str);
 native String:str_resize(StringTag:str, size, padding=0);
+native String:str_reserve(StringTag:str, size);
 native String:str_set_to_lower(StringTag:str);
 native String:str_set_to_upper(StringTag:str);
 

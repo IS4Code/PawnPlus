@@ -390,6 +390,15 @@ namespace Natives
 		return static_cast<cell>(str->size());
 	}
 
+	// native str_capacity(StringTag:str);
+	AMX_DEFINE_NATIVE_TAG(str_capacity, 1, cell)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str == nullptr) return 0;
+		return static_cast<cell>(str->capacity());
+	}
+
 	// native str_get(StringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
 	AMX_DEFINE_NATIVE_TAG(str_get, 3, cell)
 	{
@@ -637,6 +646,19 @@ namespace Natives
 		if(str != nullptr)
 		{
 			str->resize(static_cast<size_t>(params[2]), optparam(3, 0));
+		}
+		return params[1];
+	}
+
+	// native String:str_reserve(StringTag:str, size);
+	AMX_DEFINE_NATIVE_TAG(str_reserve, 2, string)
+	{
+		if(params[2] < 0) amx_LogicError(errors::out_of_range, "size");
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && (params[2] != 0 || str != nullptr)) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str != nullptr)
+		{
+			str->reserve(static_cast<size_t>(params[2]));
 		}
 		return params[1];
 	}
@@ -1425,6 +1447,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_clone),
 
 	AMX_DECLARE_NATIVE(str_len),
+	AMX_DECLARE_NATIVE(str_capacity),
 	AMX_DECLARE_NATIVE(str_get),
 	AMX_DECLARE_NATIVE(str_getc),
 	AMX_DECLARE_NATIVE(str_setc),
@@ -1452,6 +1475,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_del),
 	AMX_DECLARE_NATIVE(str_clear),
 	AMX_DECLARE_NATIVE(str_resize),
+	AMX_DECLARE_NATIVE(str_reserve),
 	AMX_DECLARE_NATIVE(str_set_to_lower),
 	AMX_DECLARE_NATIVE(str_set_to_upper),
 
