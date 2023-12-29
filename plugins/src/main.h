@@ -44,6 +44,8 @@ void logdebug(const char *format, Args&&... args)
 	//logprintf(format, std::forward<Args>(args)...);
 }
 
+bool isenv(const char *env_var);
+
 void pp_tick();
 
 void gc_collect();

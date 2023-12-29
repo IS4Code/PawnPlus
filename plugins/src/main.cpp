@@ -18,6 +18,7 @@
 
 #include <list>
 #include <limits>
+#include <cstdlib>
 
 logprintf_t logprintf;
 extern void *pAMXFunctions;
@@ -38,8 +39,16 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData) noexcept
 	is_main_thread = true;
 
 	strings::set_locale(std::locale::classic(), -1);
-	Hooks::Register();
-	debug::init();
+
+	if(!isenv("PAWNPLUS_NO_AMX_HOOKS"))
+	{
+		Hooks::Register();
+	}
+
+	if(!isenv("PAWNPLUS_NO_FILE_HOOKS"))
+	{
+		debug::init();
+	}
 
 	amx::on_bottom(
 		[](AMX *amx){
@@ -66,8 +75,11 @@ PLUGIN_EXPORT void PLUGIN_CALL Unload() noexcept
 	iter_pool.clear();
 	tasks::clear();
 	strings::pool.clear();
-
-	Hooks::Unregister();
+	
+	if(!isenv("PAWNPLUS_NO_AMX_HOOKS"))
+	{
+		Hooks::Unregister();
+	}
 
 	strings::reset_locale();
 
@@ -203,4 +215,11 @@ int amx_NameLengthSafe(AMX *amx)
 		return sNAMEMAX;
 	}
 	return len;
+}
+
+bool isenv(const char *env_var)
+{
+	const char *value = std::getenv(env_var);
+	if(!value) return false;
+	return !!strcmp(value, "0");
 }
