@@ -50,7 +50,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData) noexcept
 	);
 	
 	logprintf(" PawnPlus " PP_VERSION_STRING " loaded");
-	logprintf(" Created by IllidanS4");
+	logprintf(" Created by IS4");
 	return true;
 }
 
