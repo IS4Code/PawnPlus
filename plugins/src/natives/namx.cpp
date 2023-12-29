@@ -9,7 +9,7 @@
 #include "utils/shared_id_set_pool.h"
 #include <limits>
 
-cell pawn_call(AMX *amx, cell paramsize, cell *params, bool native, bool try_, std::string *msg, AMX *target_amx);
+cell pawn_call(AMX *amx, cell paramsize, cell *params, size_t args_start, bool native, bool try_, std::string *msg, AMX *target_amx);
 AMX *source_amx;
 
 namespace Natives
@@ -54,7 +54,7 @@ namespace Natives
 		return strings::create(amx::load_lock(amx)->name);
 	}
 
-	cell amx_call(AMX *amx, cell *params, bool native, bool try_, std::string *msg)
+	cell amx_call(AMX *amx, cell *params, size_t args_start, bool native, bool try_, std::string *msg)
 	{
 		cell result = 0;
 		switch(params[1])
@@ -62,7 +62,7 @@ namespace Natives
 			case -1:
 				amx::call_all([&](AMX *target_amx)
 				{
-					result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, msg, target_amx);
+					result = pawn_call(amx, params[0] - sizeof(cell), params + 2, args_start - 1, native, try_, msg, target_amx);
 				});
 				break;
 			case -2:
@@ -70,14 +70,14 @@ namespace Natives
 				{
 					if(amx != target_amx)
 					{
-						result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, msg, target_amx);
+						result = pawn_call(amx, params[0] - sizeof(cell), params + 2, args_start - 1, native, try_, msg, target_amx);
 					}
 				});
 				break;
 			default:
 				auto target_amx = reinterpret_cast<AMX*>(params[1]);
 				if(!amx::valid(target_amx)) amx_LogicError(errors::pointer_invalid, "AMX", params[1]);
-				result = pawn_call(amx, params[0] - sizeof(cell), params + 2, native, try_, msg, target_amx);
+				result = pawn_call(amx, params[0] - sizeof(cell), params + 2, args_start - 1, native, try_, msg, target_amx);
 				break;
 		}
 		return result;
@@ -86,19 +86,19 @@ namespace Natives
 	// native amx_call_native(Amx:amx, const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE(amx_call_native, 3)
 	{
-		return amx_call(amx, params, true, false, nullptr);
+		return amx_call(amx, params, 3, true, false, nullptr);
 	}
 
 	// native amx_call_public(Amx:amx, const function[], const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE_TAG(amx_call_public, 3, cell)
 	{
-		return amx_call(amx, params, false, false, nullptr);
+		return amx_call(amx, params, 3, false, false, nullptr);
 	}
 
 	// native amx_err:amx_try_call_native(Amx:amx, const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE_TAG(amx_try_call_native, 4, cell)
 	{
-		return amx_call(amx, params, true, true, nullptr);
+		return amx_call(amx, params, 4, true, true, nullptr);
 	}
 
 	// native amx_err:amx_try_call_native_msg(Amx:amx, const function[], &result, msg[], msg_size=sizeof(msg), const format[]="", AnyTag:...);
@@ -106,7 +106,7 @@ namespace Natives
 	{
 		std::string msg;
 		cell *msg_addr = amx_GetAddrSafe(amx, params[4]);
-		cell result = amx_call(amx, params, true, true, &msg);
+		cell result = amx_call(amx, params, 6, true, true, &msg);
 		if(msg.size() == 0)
 		{
 			amx_SetString(msg_addr, amx::StrError(result), false, false, params[5]);
@@ -121,7 +121,7 @@ namespace Natives
 	{
 		std::string msg;
 		cell *msg_addr = amx_GetAddrSafe(amx, params[4]);
-		cell result = amx_call(amx, params, true, true, &msg);
+		cell result = amx_call(amx, params, 5, true, true, &msg);
 		if(msg.size() == 0)
 		{
 			*msg_addr = strings::create(amx::StrError(result));
@@ -134,7 +134,7 @@ namespace Natives
 	// native amx_err:amx_try_call_public(Amx:amx, const function[], &result, const format[], AnyTag:...);
 	AMX_DEFINE_NATIVE_TAG(amx_try_call_public, 4, cell)
 	{
-		return amx_call(amx, params, false, true, nullptr);
+		return amx_call(amx, params, 4, false, true, nullptr);
 	}
 
 	// native amx_name_length();
