@@ -11,6 +11,7 @@
 #include "modules/containers.h"
 #include "modules/amxhook.h"
 #include "modules/expressions.h"
+#include "modules/amxutils.h"
 #include "utils/systools.h"
 
 #include <cstring>
@@ -153,6 +154,12 @@ namespace Natives
 	AMX_DEFINE_NATIVE_TAG(pp_num_amx_guards, 0, cell)
 	{
 		return amx_guards::count(amx);
+	}
+
+	// native pp_num_amx_vars();
+	AMX_DEFINE_NATIVE_TAG(pp_num_amx_vars, 0, cell)
+	{
+		return amx_var_pool.size();
 	}
 
 	template <class Func>
@@ -586,6 +593,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_num_pools),
 	AMX_DECLARE_NATIVE(pp_num_guards),
 	AMX_DECLARE_NATIVE(pp_num_amx_guards),
+	AMX_DECLARE_NATIVE(pp_num_amx_vars),
 	AMX_DECLARE_NATIVE(pp_num_local_iters),
 	AMX_DECLARE_NATIVE(pp_num_global_iters),
 	AMX_DECLARE_NATIVE(pp_num_local_handles),

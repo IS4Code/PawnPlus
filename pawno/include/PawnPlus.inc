@@ -141,6 +141,7 @@ native pp_num_maps();
 native pp_num_pools();
 native pp_num_guards();
 native pp_num_amx_guards();
+native pp_num_amx_vars();
 native pp_entry(name[], size=sizeof name);
 native String:pp_entry_s();
 native pp_num_local_iters();
