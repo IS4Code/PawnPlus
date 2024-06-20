@@ -393,16 +393,11 @@ namespace Natives
 		char *locale;
 		amx_StrParam(amx, params[1], locale);
 		try{
-			if(locale)
-			{
-				strings::set_locale(std::locale(locale), optparam(2, -1));
-			}else{
-				strings::set_locale(std::locale(""), optparam(2, -1));
-			}
+			strings::set_locale(strings::find_locale(locale), optparam(2, -1));
 			return 1;
-		}catch(const std::runtime_error &err)
+		}catch(const std::runtime_error &)
 		{
-			amx_LogicError("%s", err.what());
+			amx_LogicError(errors::locale_not_found, locale);
 			return 0;
 		}
 	}

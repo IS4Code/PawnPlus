@@ -69,6 +69,7 @@ namespace errors
 	extern error inner_error_msg;
 	extern error unhandled_system_exception;
 	extern error feature_disabled;
+	extern error locale_not_found;
 }
 
 namespace amx

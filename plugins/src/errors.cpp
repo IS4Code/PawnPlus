@@ -21,6 +21,7 @@ namespace errors
 	error inner_error_msg = "%s function '%s' has raised an error: %s";
 	error unhandled_system_exception = "unhandled system exception 0x%X (possibly corrupted memory)";
 	error feature_disabled = "this function cannot be used because the corresponding feature has been disabled (use %s to enable it)";
+	error locale_not_found = "no locales could be found matching the locale identifier '%s'";
 }
 
 errors::native_error::native_error(const char *format, va_list args, int level) : message(vsnprintf(NULL, 0, format, args), '\0'), level(level)

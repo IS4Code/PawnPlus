@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <vector>
+#include <cstring>
 #include <unordered_map>
 #include <memory>
 #include <unordered_map>
@@ -153,6 +154,37 @@ std::locale::category get_category(cell category)
 		cat |= std::locale::messages;
 	}
 	return cat;
+}
+
+char *split_locale(char *str)
+{
+	auto pos = std::strstr(str, "|");
+	if(pos)
+	{
+		*pos = '\0';
+		++pos;
+	}
+	return pos;
+}
+
+std::locale strings::find_locale(char *&spec)
+{
+	if(!spec)
+	{
+		return std::locale("");
+	}
+	char *nextspec;
+	while(nextspec = split_locale(spec))
+	{
+		try{
+			return std::locale(spec);
+		}catch(const std::runtime_error &)
+		{
+
+		}
+		spec = nextspec;
+	}
+	return std::locale(spec);
 }
 
 void strings::set_locale(const std::locale &loc, cell category)
