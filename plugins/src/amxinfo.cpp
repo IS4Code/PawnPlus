@@ -195,6 +195,10 @@ cell call_external_native(AMX *amx, AMX_NATIVE native, cell *params)
 		amx_LogicError(errors::unhandled_system_exception, error);
 	}
 #else
+	if(!is_main_thread)
+	{
+		return native(amx, params);
+	}
 	int error = sigsetjmp(jmp, true);
 	if(error)
 	{
@@ -225,7 +229,7 @@ cell amx::dynamic_call(AMX *amx, AMX_NATIVE native, cell *params, tag_ptr &out_t
 			{
 				amx_FormalError(errors::not_enough_args, info.arg_count, params[0] / static_cast<cell>(sizeof(cell)));
 			}
-			result = info.inner(amx, params);
+			result = call_external_native(amx, info.inner, params);
 			if(info.tag_uid != tags::tag_unknown)
 			{
 				native_return_tag = tags::find_tag(info.tag_uid);
