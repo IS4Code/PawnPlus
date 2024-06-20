@@ -121,10 +121,6 @@ bool strings::clamp_pos(const cell_string &str, cell &pos)
 	return true;
 }
 
-const std::ctype<char> *std::ctype<cell>::base_facet;
-
-std::locale::id std::ctype<cell>::id;
-
 std::locale custom_locale;
 std::string custom_locale_name;
 
@@ -162,14 +158,15 @@ std::locale::category get_category(cell category)
 void strings::set_locale(const std::locale &loc, cell category)
 {
 	auto cat = get_category(category);
+	auto ctype = new std::ctype<cell>();
 	if(cat == std::locale::all)
 	{
-		std::locale::global(custom_locale = std::locale(loc, new std::ctype<cell>()));
+		std::locale::global(custom_locale = std::locale(loc, ctype));
 	}else{
-		std::locale::global(custom_locale = std::locale(std::locale(custom_locale, loc, cat), new std::ctype<cell>()));
+		std::locale::global(custom_locale = std::locale(std::locale(custom_locale, loc, cat), ctype));
 	}
+	ctype->set_base(std::use_facet<std::ctype<char>>(custom_locale));
 	custom_locale_name = loc.name();
-	std::ctype<cell>::base_facet = &std::use_facet<std::ctype<char>>(custom_locale);
 }
 
 void strings::reset_locale()
@@ -184,18 +181,10 @@ const std::string &strings::locale_name()
 
 cell strings::to_lower(cell c)
 {
-	if(c < 0 || c > std::numeric_limits<unsigned char>::max())
-	{
-		return c;
-	}
-	return static_cast<unsigned char>(std::ctype<cell>::base_facet->tolower(static_cast<unsigned char>(c)));
+	return std::use_facet<std::ctype<cell>>(std::locale()).tolower(c);
 }
 
 cell strings::to_upper(cell c)
 {
-	if(c < 0 || c > std::numeric_limits<unsigned char>::max())
-	{
-		return c;
-	}
-	return static_cast<unsigned char>(std::ctype<cell>::base_facet->toupper(static_cast<unsigned char>(c)));
+	return std::use_facet<std::ctype<cell>>(std::locale()).toupper(c);
 }

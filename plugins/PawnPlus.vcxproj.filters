@@ -163,6 +163,9 @@
     <ClCompile Include="src\modules\regex.cpp">
       <Filter>src\modules</Filter>
     </ClCompile>
+    <ClCompile Include="src\fixes\int_string.cpp">
+      <Filter>src\fixes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -373,6 +376,12 @@
     </ClInclude>
     <ClInclude Include="src\modules\tag_ops.h">
       <Filter>src\modules</Filter>
+    </ClInclude>
+    <ClInclude Include="src\fixes\int_string.h">
+      <Filter>src\fixes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\fixes\int_regex.h">
+      <Filter>src\fixes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

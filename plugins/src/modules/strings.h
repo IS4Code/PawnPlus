@@ -3,6 +3,7 @@
 
 #include "objects/object_pool.h"
 #include "sdk/amx/amx.h"
+#include "fixes/int_string.h"
 #include <string>
 #include <cstdint>
 #include <stdexcept>
@@ -310,30 +311,6 @@ namespace strings
 
 namespace std
 {
-	namespace
-	{
-		template <class T>
-		inline void hash_combine(size_t &seed, const T &v)
-		{
-			std::hash<T> hasher;
-			seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-		}
-	}
-
-	template <class Type>
-	struct hash<std::basic_string<Type>>
-	{
-		size_t operator()(const std::basic_string<Type> &obj) const
-		{
-			size_t seed = 0;
-			for(const auto &c : obj)
-			{
-				hash_combine(seed, c);
-			}
-			return seed;
-		}
-	};
-
 	template <class Elem>
 	struct iterator_traits<strings::impl::aligned_char_iterator<Elem>>
 	{
@@ -352,86 +329,6 @@ namespace std
 		typedef Elem value_type;
 		typedef std::ptrdiff_t difference_type;
 		typedef std::random_access_iterator_tag iterator_category;
-	};
-
-	template <>
-	class ctype<cell> : public locale::facet
-	{
-	public:
-		static const std::ctype<char> *base_facet;
-
-		typedef cell char_type;
-
-		enum
-		{
-			alnum = std::ctype_base::alnum,
-			alpha = std::ctype_base::alpha,
-			cntrl = std::ctype_base::cntrl,
-			digit = std::ctype_base::digit,
-			graph = std::ctype_base::graph,
-			lower = std::ctype_base::lower,
-			print = std::ctype_base::print,
-			punct = std::ctype_base::punct,
-			space = std::ctype_base::space,
-			upper = std::ctype_base::upper,
-			xdigit = std::ctype_base::xdigit
-		};
-		typedef std::ctype_base::mask mask;
-
-		static locale::id id;
-
-		bool is(mask mask, cell ch) const
-		{
-			if(ch < 0 || ch > std::numeric_limits<unsigned char>::max())
-			{
-				return false;
-			}
-			return base_facet->is(mask, static_cast<unsigned char>(ch));
-		}
-
-		char narrow(cell ch, char dflt = '\0') const
-		{
-			if(ch < 0 || ch > std::numeric_limits<unsigned char>::max())
-			{
-				return dflt;
-			}
-			return static_cast<unsigned char>(ch);
-		}
-
-		const char *narrow(const cell *first, const cell *last, char dflt, char *dest) const
-		{
-			return std::transform(first, last, dest, [&](cell c) {return narrow(c, dflt); });
-		}
-
-		cell widen(char c) const
-		{
-			return static_cast<unsigned char>(c);
-		}
-
-		const cell *widen(const char *first, const char *last, cell *dest) const
-		{
-			return std::transform(first, last, dest, [&](char c) {return widen(c); });
-		}
-
-		cell tolower(cell ch) const
-		{
-			return strings::to_lower(ch);
-		}
-
-		const cell *tolower(cell *first, const cell *last) const
-		{
-			return std::transform(first, const_cast<cell*>(last), first, strings::to_lower);
-		}
-
-		cell toupper(cell ch) const
-		{
-			return strings::to_upper(ch);
-		}
-
-		const cell *toupper(cell *first, const cell *last) const
-		{
-			return std::transform(first, const_cast<cell*>(last), first, strings::to_upper);
-		}
 	};
 }
 
