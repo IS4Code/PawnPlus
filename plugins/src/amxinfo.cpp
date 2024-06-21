@@ -165,6 +165,29 @@ size_t amx::num_natives(AMX *amx)
 namespace
 {
 #ifdef _WIN32
+	struct local_deleter
+	{
+		void operator()(LPSTR str)
+		{
+			LocalFree(str);
+		}
+	};
+
+	std::unique_ptr<CHAR[], local_deleter> status_message(LONG status)
+	{
+		HMODULE ntdll = LoadLibrary("NTDLL.DLL");
+		LPSTR buffer = nullptr;
+		FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_IGNORE_INSERTS, ntdll, status, MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US), reinterpret_cast<LPSTR>(&buffer), 0, nullptr);
+		FreeLibrary(ntdll);
+		return {buffer, local_deleter()};
+	}
+
+	[[noreturn]] void status_error(LONG status)
+	{
+		auto message = status_message(status);
+		amx_LogicError(errors::unhandled_system_exception, status, message.get());
+	}
+
 	bool filter_exception(DWORD code)
 	{
 		switch(code)
@@ -241,7 +264,7 @@ namespace
 			{
 				RaiseException(EXCEPTION_STACK_OVERFLOW, EXCEPTION_NONCONTINUABLE, 0, nullptr);
 			}
-			amx_LogicError(errors::unhandled_system_exception, error);
+			status_error(error);
 		}
 #else
 		if(!is_main_thread)
@@ -251,7 +274,7 @@ namespace
 		int error = sigsetjmp(jmp, true);
 		if(error)
 		{
-			amx_LogicError(errors::unhandled_system_exception, error);
+			amx_LogicError(errors::unhandled_system_exception, error, sigdescr_np(error));
 		}
 		signals_guard guard;
 		return native(amx, params);
