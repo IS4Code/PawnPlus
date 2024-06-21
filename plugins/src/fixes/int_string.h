@@ -19,7 +19,7 @@ namespace impl
 	};
 
 	template <class CharType>
-	class ctype : public ctype_base
+	class int_ctype : public ctype_base
 	{
 		const std::ctype_base *base_ptr;
 		enum
@@ -89,7 +89,7 @@ namespace impl
 			base_type = base_char32_t;
 		}
 
-		ctype()
+		int_ctype()
 		{
 
 		}
@@ -99,7 +99,7 @@ namespace impl
 
 		static std::locale::id id;
 
-		bool is(mask mask, CharType ch) const
+		bool is(mask mask, char_type ch) const
 		{
 			return get_base([&](const auto &base)
 			{
@@ -114,7 +114,7 @@ namespace impl
 		}
 
 		template <class BaseCharType>
-		char narrow(CharType ch, const std::ctype<BaseCharType> &base, char dflt = '\0') const
+		char narrow(char_type ch, const std::ctype<BaseCharType> &base, char dflt = '\0') const
 		{
 			using unsigned_char = unsigned_ctype_char_type<decltype(base)>;
 
@@ -125,7 +125,7 @@ namespace impl
 			return base.narrow(static_cast<unsigned_char>(ch), dflt);
 		}
 
-		char narrow(CharType ch, char dflt = '\0') const
+		char narrow(char_type ch, char dflt = '\0') const
 		{
 			return get_base([&](const auto &base)
 			{
@@ -133,23 +133,24 @@ namespace impl
 			});
 		}
 
-		const char *narrow(const CharType *first, const CharType *last, char dflt, char *dest) const
+		const char_type *narrow(const char_type *first, const char_type *last, char dflt, char *dest) const
 		{
 			return get_base([&](const auto &base)
 			{
-				return std::transform(first, last, dest, [&](CharType c) { return narrow(c, base, dflt); });
+				std::transform(first, last, dest, [&](char_type c) { return narrow(c, base, dflt); });
+				return last;
 			});
 		}
 
 		template <class BaseCharType>
-		CharType widen(char c, const std::ctype<BaseCharType> &base) const
+		char_type widen(char c, const std::ctype<BaseCharType> &base) const
 		{
 			using unsigned_char = unsigned_ctype_char_type<decltype(base)>;
 
 			return static_cast<unsigned_char>(base.widen(c));
 		}
 
-		CharType widen(char c) const
+		char_type widen(char c) const
 		{
 			return get_base([&](const auto &base)
 			{
@@ -157,16 +158,17 @@ namespace impl
 			});
 		}
 
-		const CharType *widen(const char *first, const char *last, CharType *dest) const
+		const char *widen(const char *first, const char *last, char_type *dest) const
 		{
 			return get_base([&](const auto &base)
 			{
-				return std::transform(first, last, dest, [&](char c) { return widen(c, base); });
+				std::transform(first, last, dest, [&](char c) { return widen(c, base); });
+				return last;
 			});
 		}
 
 		template <class BaseCharType>
-		CharType tolower(CharType ch, const std::ctype<BaseCharType> &base) const
+		char_type tolower(char_type ch, const std::ctype<BaseCharType> &base) const
 		{
 			using unsigned_char = unsigned_ctype_char_type<decltype(base)>;
 
@@ -177,7 +179,7 @@ namespace impl
 			return static_cast<unsigned_char>(base.tolower(static_cast<unsigned_char>(ch)));
 		}
 
-		CharType tolower(CharType ch) const
+		char_type tolower(char_type ch) const
 		{
 			return get_base([&](const auto &base)
 			{
@@ -185,16 +187,16 @@ namespace impl
 			});
 		}
 
-		const CharType *tolower(CharType *first, const CharType *last) const
+		const char_type *tolower(char_type *first, const char_type *last) const
 		{
 			return get_base([&](const auto &base)
 			{
-				return std::transform(first, const_cast<CharType*>(last), first, [&](CharType c) { return tolower(c, base); });
+				return std::transform(first, const_cast<char_type*>(last), first, [&](char_type c) { return tolower(c, base); });
 			});
 		}
 
 		template <class BaseCharType>
-		CharType toupper(CharType ch, const std::ctype<BaseCharType> &base) const
+		char_type toupper(char_type ch, const std::ctype<BaseCharType> &base) const
 		{
 			using unsigned_char = unsigned_ctype_char_type<decltype(base)>;
 
@@ -205,7 +207,7 @@ namespace impl
 			return static_cast<unsigned_char>(base.toupper(static_cast<unsigned_char>(ch)));
 		}
 
-		CharType toupper(CharType ch) const
+		char_type toupper(char_type ch) const
 		{
 			return get_base([&](const auto &base)
 			{
@@ -213,12 +215,163 @@ namespace impl
 			});
 		}
 
-		const CharType *toupper(CharType *first, const CharType *last) const
+		const char_type *toupper(char_type *first, const char_type *last) const
 		{
 			return get_base([&](const auto &base)
 			{
-				return std::transform(first, const_cast<CharType*>(last), first, [&](CharType c) { return toupper(c, base); });
+				return std::transform(first, const_cast<char_type*>(last), first, [&](char_type c) { return toupper(c, base); });
 			});
+		}
+	};
+
+	template <class CharType>
+	class wchar_traits;
+
+	template <>
+	class wchar_traits<char16_t>
+	{
+		static bool is_surrogate(char16_t ch)
+		{
+			return ch >= u'\xD800' && ch <= u'\xDFFF';
+		}
+
+	public:
+		static bool can_cast_to_wchar(char16_t ch)
+		{
+			return sizeof(char16_t) == sizeof(wchar_t) || !is_surrogate(ch);
+		}
+
+		static bool can_cast_from_wchar(wchar_t ch)
+		{
+			return ch <= std::numeric_limits<char16_t>::max();
+		}
+	};
+
+	template <>
+	class wchar_traits<char32_t>
+	{
+		static bool is_surrogate(wchar_t ch)
+		{
+			return ch >= L'\xD800' && ch <= L'\xDFFF';
+		}
+
+	public:
+		static bool can_cast_to_wchar(char32_t ch)
+		{
+			return ch <= std::numeric_limits<wchar_t>::max();
+		}
+
+		static bool can_cast_from_wchar(wchar_t ch)
+		{
+			return sizeof(wchar_t) == sizeof(char32_t) || !is_surrogate(ch);
+		}
+	};
+
+	template <class CharType, class Traits = wchar_traits<CharType>>
+	class char_ctype : public ::impl::ctype_base
+	{
+		const std::ctype<wchar_t> *base;
+
+	protected:
+		void set_base(const std::ctype<wchar_t> &base_facet)
+		{
+			base = &base_facet;
+		}
+
+		char_ctype()
+		{
+
+		}
+
+	public:
+		typedef CharType char_type;
+
+		static std::locale::id id;
+
+		bool is(mask mask, char_type ch) const
+		{
+			if(!Traits::can_cast_to_wchar(ch))
+			{
+				return false;
+			}
+			return base->is(mask, static_cast<wchar_t>(ch));
+		}
+
+		char narrow(char_type ch, char dflt = '\0') const
+		{
+			if(!Traits::can_cast_to_wchar(ch))
+			{
+				return dflt;
+			}
+			return base->narrow(static_cast<wchar_t>(ch), dflt);
+		}
+
+		const char_type *narrow(const char_type *first, const char_type *last, char dflt, char *dest) const
+		{
+			if(sizeof(char_type) == sizeof(wchar_t))
+			{
+				return reinterpret_cast<const char_type*>(base->narrow(reinterpret_cast<const wchar_t*>(first), reinterpret_cast<const wchar_t*>(last), dflt, dest));
+			}else{
+				std::transform(first, last, dest, [&](char_type c) { return narrow(c, dflt); });
+				return last;
+			}
+		}
+
+		char_type widen(char c) const
+		{
+			auto result = base->widen(c);
+
+			if(!Traits::can_cast_from_wchar(result))
+			{
+				return -1;
+			}
+
+			return static_cast<char_type>(result);
+		}
+
+		const char *widen(const char *first, const char *last, char_type *dest) const
+		{
+			if(sizeof(char_type) == sizeof(wchar_t))
+			{
+				return base->widen(first, last, reinterpret_cast<wchar_t*>(dest));
+			}else{
+				std::transform(first, last, dest, [&](char_type c) { return widen(c); });
+				return last;
+			}
+		}
+
+		char_type tolower(char_type ch) const
+		{
+			if(!Traits::can_cast_to_wchar(ch))
+			{
+				return ch;
+			}
+
+			auto result = base->tolower(static_cast<wchar_t>(ch));
+
+			if(!Traits::can_cast_from_wchar(result))
+			{
+				return ch;
+			}
+
+			return static_cast<char_type>(result);
+		}
+
+		char_type toupper(char_type ch) const
+		{
+			if(!Traits::can_cast_to_wchar(ch))
+			{
+				return ch;
+			}
+
+			auto result = base->toupper(static_cast<wchar_t>(ch));
+
+			if(!Traits::can_cast_from_wchar(result))
+			{
+				return ch;
+			}
+
+			return static_cast<char_type>(result);
 		}
 	};
 }
@@ -226,15 +379,41 @@ namespace impl
 namespace std
 {
 	template <>
-	class ctype<std::int32_t> : public ::impl::ctype<std::int32_t>
+	class ctype<std::int32_t> : public ::impl::int_ctype<std::int32_t>
 	{
 	public:
 		template <class BaseCharType>
-		static const ctype<std::int32_t> &install(std::locale &locale)
+		static const ctype<char_type> &install(std::locale &locale)
 		{
-			auto facet = new ctype<std::int32_t>();
+			auto facet = new ctype<char_type>();
 			locale = std::locale(locale, facet);
 			facet->set_base(std::use_facet<std::ctype<BaseCharType>>(locale));
+			return *facet;
+		}
+	};
+
+	template <>
+	class ctype<char16_t> : public ::impl::char_ctype<char16_t>
+	{
+	public:
+		static const ctype<char_type> &install(std::locale &locale)
+		{
+			auto facet = new ctype<char_type>();
+			locale = std::locale(locale, facet);
+			facet->set_base(std::use_facet<std::ctype<wchar_t>>(locale));
+			return *facet;
+		}
+	};
+
+	template <>
+	class ctype<char32_t> : public ::impl::char_ctype<char32_t>
+	{
+	public:
+		static const ctype<char_type> &install(std::locale &locale)
+		{
+			auto facet = new ctype<char_type>();
+			locale = std::locale(locale, facet);
+			facet->set_base(std::use_facet<std::ctype<wchar_t>>(locale));
 			return *facet;
 		}
 	};
