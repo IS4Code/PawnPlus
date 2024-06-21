@@ -9,6 +9,7 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <malloc.h>
 #else
 #include <signal.h>
 #include <setjmp.h>
@@ -161,58 +162,101 @@ size_t amx::num_natives(AMX *amx)
 	return natives.size();
 }
 
+namespace
+{
 #ifdef _WIN32
-bool filter_exception(DWORD code)
-{
-	switch(code)
+	bool filter_exception(DWORD code)
 	{
-		case EXCEPTION_ACCESS_VIOLATION:
-		case EXCEPTION_INT_DIVIDE_BY_ZERO:
-			return true;
-		default:
-			return false;
+		switch(code)
+		{
+			case EXCEPTION_ACCESS_VIOLATION:
+			case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+			case EXCEPTION_DATATYPE_MISALIGNMENT:
+			case EXCEPTION_FLT_DENORMAL_OPERAND:
+			case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+			case EXCEPTION_FLT_INEXACT_RESULT:
+			case EXCEPTION_FLT_INVALID_OPERATION:
+			case EXCEPTION_FLT_OVERFLOW:
+			case EXCEPTION_FLT_STACK_CHECK:
+			case EXCEPTION_FLT_UNDERFLOW:
+			case EXCEPTION_ILLEGAL_INSTRUCTION:
+			case EXCEPTION_INT_DIVIDE_BY_ZERO:
+			case EXCEPTION_INT_OVERFLOW:
+			case EXCEPTION_INVALID_HANDLE:
+			case EXCEPTION_STACK_OVERFLOW:
+				return true;
+			default:
+				return false;
+		}
 	}
-}
 #else
-sigjmp_buf jmp;
+	sigjmp_buf jmp;
 
-void signal_handler(int signal)
-{
-	siglongjmp(jmp, signal);
-}
+	void signal_handler(int signal)
+	{
+		siglongjmp(jmp, signal);
+	}
+
+	static int checked_signals[] = {SIGILL, SIGABRT, SIGFPE, SIGSEGV, SIGPIPE};
+	constexpr const int num_checked_signals = sizeof(checked_signals) / sizeof(int);
+
+	class signals_guard
+	{
+		struct sigaction oldact[num_checked_signals], act;
+
+	public:
+		signals_guard()
+		{
+			memset(&act, 0, sizeof(act));
+			act.sa_handler = signal_handler;
+			act.sa_flags = SA_RESETHAND;
+			for(int i = 0; i < num_checked_signals; i++)
+			{
+				sigaction(checked_signals[i], &act, &oldact[i]);
+			}
+		}
+
+		~signals_guard()
+		{
+			for(int i = 0; i < num_checked_signals; i++)
+			{
+				sigaction(checked_signals[i], &oldact[i], nullptr);
+			}
+		}
+	};
+
 #endif
 
-cell call_external_native(AMX *amx, AMX_NATIVE native, cell *params)
-{
+	cell call_external_native(AMX *amx, AMX_NATIVE native, cell *params)
+	{
 #ifdef _DEBUG
-	return native(amx, params);
+		return native(amx, params);
 #elif defined _WIN32
-	DWORD error;
-	__try{
-		return native(amx, params);
-	}__except(filter_exception(error = GetExceptionCode()) ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
-	{
-		amx_LogicError(errors::unhandled_system_exception, error);
-	}
+		DWORD error;
+		__try{
+			return native(amx, params);
+		}__except(filter_exception(error = GetExceptionCode()) ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
+		{
+			if(error == EXCEPTION_STACK_OVERFLOW && !_resetstkoflw())
+			{
+				RaiseException(EXCEPTION_STACK_OVERFLOW, EXCEPTION_NONCONTINUABLE, 0, nullptr);
+			}
+			amx_LogicError(errors::unhandled_system_exception, error);
+		}
 #else
-	if(!is_main_thread)
-	{
+		if(!is_main_thread)
+		{
+			return native(amx, params);
+		}
+		int error = sigsetjmp(jmp, true);
+		if(error)
+		{
+			amx_LogicError(errors::unhandled_system_exception, error);
+		}
+		signals_guard guard;
 		return native(amx, params);
-	}
-	int error = sigsetjmp(jmp, true);
-	if(error)
-	{
-		amx_LogicError(errors::unhandled_system_exception, error);
-	}
-	struct sigaction act, oldact;
-	memset(&act, 0, sizeof(act));
-	act.sa_handler = signal_handler;
-	act.sa_flags = SA_RESETHAND;
-	sigaction(SIGSEGV, &act, &oldact);
-	cell result = native(amx, params);
-	sigaction(SIGSEGV, &oldact, nullptr);
-	return result;
 #endif
+	}
 }
 
 cell amx::dynamic_call(AMX *amx, AMX_NATIVE native, cell *params, tag_ptr &out_tag)
