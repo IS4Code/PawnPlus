@@ -301,13 +301,24 @@ namespace strings
 	bool clamp_range(const cell_string &str, cell &start, cell &end);
 	bool clamp_pos(const cell_string &str, cell &pos);
 
-	std::locale find_locale(char *&spec);
+	std::locale find_locale(char *spec);
 	void set_locale(const std::locale &loc, cell category);
 	void reset_locale();
 	const std::string &locale_name();
 
-	cell to_lower(cell c);
-	cell to_upper(cell c);
+	struct encoding
+	{
+		std::locale locale;
+
+		const std::ctype<cell> &ctype() const
+		{
+			return std::use_facet<std::ctype<cell>>(locale);
+		}
+	};
+	encoding find_encoding(char *spec);
+
+	void to_lower(cell_string &str, const encoding &enc);
+	void to_upper(cell_string &str, const encoding &enc);
 }
 
 namespace std

@@ -552,8 +552,8 @@ native List:str_split(ConstStringTag:str, const delims[]);
 native List:str_split_s(ConstStringTag:str, ConstStringTag:delims);
 native String:str_join(List:list, const delim[]);
 native String:str_join_s(List:list, ConstStringTag:delim);
-native String:str_to_lower(ConstStringTag:str);
-native String:str_to_upper(ConstStringTag:str);
+native String:str_to_lower(ConstStringTag:str, const encoding[]="");
+native String:str_to_upper(ConstStringTag:str, const encoding[]="");
 
 native String:str_set(StringTag:target, ConstStringTag:other);
 native String:str_append(StringTag:target, ConstStringTag:other);
@@ -562,8 +562,8 @@ native String:str_del(StringTag:target, start=0, end=cellmax);
 native String:str_clear(StringTag:str);
 native String:str_resize(StringTag:str, size, padding=0);
 native String:str_reserve(StringTag:str, size);
-native String:str_set_to_lower(StringTag:str);
-native String:str_set_to_upper(StringTag:str);
+native String:str_set_to_lower(StringTag:str, const encoding[]="");
+native String:str_set_to_upper(StringTag:str, const encoding[]="");
 
 native String:str_format(const format[], AnyTag:...);
 native String:str_format_s(ConstStringTag:format, AnyTag:...);

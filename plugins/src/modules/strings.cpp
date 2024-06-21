@@ -167,7 +167,7 @@ char *split_locale(char *str)
 	return pos;
 }
 
-std::locale strings::find_locale(char *&spec)
+std::locale strings::find_locale(char *spec)
 {
 	if(!spec)
 	{
@@ -211,12 +211,18 @@ const std::string &strings::locale_name()
 	return custom_locale_name;
 }
 
-cell strings::to_lower(cell c)
+encoding strings::find_encoding(char *spec)
 {
-	return std::use_facet<std::ctype<cell>>(std::locale()).tolower(c);
+	auto locale = spec ? find_locale(spec) : std::locale();
+	return {locale};
 }
 
-cell strings::to_upper(cell c)
+void strings::to_lower(cell_string &str, const encoding &enc)
 {
-	return std::use_facet<std::ctype<cell>>(std::locale()).toupper(c);
+	enc.ctype().tolower(&str[0], &str[str.size()]);
+}
+
+void strings::to_upper(cell_string &str, const encoding &enc)
+{
+	enc.ctype().toupper(&str[0], &str[str.size()]);
 }

@@ -745,7 +745,7 @@ namespace Natives
 		return params[1];
 	}
 
-	// native String:str_to_lower(StringTag:str);
+	// native String:str_to_lower(StringTag:str, const encoding[]="");
 	AMX_DEFINE_NATIVE_TAG(str_to_lower, 1, string)
 	{
 		cell_string *str;
@@ -754,12 +754,16 @@ namespace Natives
 		{
 			return strings::pool.get_id(strings::pool.add());
 		}
+
+		char *encoding;
+		amx_OptStrParam(amx, 2, encoding, nullptr);
+
 		auto str2 = *str;
-		std::transform(str2.begin(), str2.end(), str2.begin(), strings::to_lower);
+		strings::to_lower(str2, strings::find_encoding(encoding));
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
-	// native String:str_to_upper(StringTag:str);
+	// native String:str_to_upper(StringTag:str, const encoding[]="");
 	AMX_DEFINE_NATIVE_TAG(str_to_upper, 1, string)
 	{
 		cell_string *str;
@@ -768,31 +772,43 @@ namespace Natives
 		{
 			return strings::pool.get_id(strings::pool.add());
 		}
+
+		char *encoding;
+		amx_OptStrParam(amx, 2, encoding, nullptr);
+
 		auto str2 = *str;
-		std::transform(str2.begin(), str2.end(), str2.begin(), strings::to_upper);
+		strings::to_upper(str2, strings::find_encoding(encoding));
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
-	// native String:str_set_to_lower(StringTag:str);
+	// native String:str_set_to_lower(StringTag:str, const encoding[]="");
 	AMX_DEFINE_NATIVE_TAG(str_set_to_lower, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+
+		char *encoding;
+		amx_OptStrParam(amx, 2, encoding, nullptr);
+
 		if(str != nullptr)
 		{
-			std::transform(str->begin(), str->end(), str->begin(), strings::to_lower);
+			strings::to_lower(*str, strings::find_encoding(encoding));
 		}
 		return params[1];
 	}
 
-	// native String:str_set_to_upper(StringTag:str);
+	// native String:str_set_to_upper(StringTag:str, const encoding[]="");
 	AMX_DEFINE_NATIVE_TAG(str_set_to_upper, 1, string)
 	{
 		cell_string *str;
 		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+
+		char *encoding;
+		amx_OptStrParam(amx, 2, encoding, nullptr);
+
 		if(str != nullptr)
 		{
-			std::transform(str->begin(), str->end(), str->begin(), strings::to_upper);
+			strings::to_upper(*str, strings::find_encoding(encoding));
 		}
 		return params[1];
 	}
