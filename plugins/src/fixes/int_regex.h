@@ -176,7 +176,7 @@ namespace impl
 namespace std
 {
 	template <>
-	class regex_traits<std::int32_t> : public impl::regex_traits<std::int32_t>
+	class regex_traits<std::int32_t> : public ::impl::regex_traits<std::int32_t>
 	{
 
 	};
