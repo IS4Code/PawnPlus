@@ -52,7 +52,8 @@ namespace impl
 
 			return static_cast<unsigned_type>(ch) <= std::numeric_limits<BaseCharType>::max();
 		}
-	public:
+
+	protected:
 		void set_base(const std::ctype<char> &base_facet)
 		{
 			base_ptr = &base_facet;
@@ -77,6 +78,12 @@ namespace impl
 			base_type = base_char32_t;
 		}
 
+		ctype()
+		{
+
+		}
+
+	public:
 		typedef CharType char_type;
 
 		enum
@@ -226,7 +233,15 @@ namespace std
 	template <>
 	class ctype<std::int32_t> : public ::impl::ctype<std::int32_t>
 	{
-
+	public:
+		template <class BaseCharType>
+		static const ctype<std::int32_t> &install(std::locale &locale)
+		{
+			auto facet = new ctype<std::int32_t>();
+			locale = std::locale(locale, facet);
+			facet->set_base(std::use_facet<std::ctype<BaseCharType>>(locale));
+			return *facet;
+		}
 	};
 }
 
