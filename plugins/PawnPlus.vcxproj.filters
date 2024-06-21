@@ -383,6 +383,9 @@
     <ClInclude Include="src\fixes\int_regex.h">
       <Filter>src\fixes</Filter>
     </ClInclude>
+    <ClInclude Include="src\fixes\char8_t.h">
+      <Filter>src\fixes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />

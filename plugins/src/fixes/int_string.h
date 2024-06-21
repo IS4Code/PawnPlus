@@ -1,6 +1,7 @@
 #ifndef INT_STRING_H_INCLUDED
 #define INT_STRING_H_INCLUDED
 
+#include "char8_t.h"
 #include <locale>
 #include <type_traits>
 #include <algorithm>
@@ -228,6 +229,21 @@ namespace impl
 	class wchar_traits;
 
 	template <>
+	class wchar_traits<char8_t>
+	{
+	public:
+		static bool can_cast_to_wchar(char8_t ch)
+		{
+			return ch <= 0x7F;
+		}
+
+		static bool can_cast_from_wchar(wchar_t ch)
+		{
+			return ch <= 0x7F;
+		}
+	};
+
+	template <>
 	class wchar_traits<char16_t>
 	{
 		static bool is_surrogate(char16_t ch)
@@ -388,6 +404,19 @@ namespace std
 			auto facet = new ctype<char_type>();
 			locale = std::locale(locale, facet);
 			facet->set_base(std::use_facet<std::ctype<BaseCharType>>(locale));
+			return *facet;
+		}
+	};
+
+	template <>
+	class ctype<char8_t> : public ::impl::char_ctype<char8_t>
+	{
+	public:
+		static const ctype<char_type> &install(std::locale &locale)
+		{
+			auto facet = new ctype<char_type>();
+			locale = std::locale(locale, facet);
+			facet->set_base(std::use_facet<std::ctype<wchar_t>>(locale));
 			return *facet;
 		}
 	};

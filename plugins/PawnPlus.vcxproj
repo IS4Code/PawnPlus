@@ -215,6 +215,7 @@
     <ClInclude Include="src\context.h" />
     <ClInclude Include="src\errors.h" />
     <ClInclude Include="src\exec.h" />
+    <ClInclude Include="src\fixes\char8_t.h" />
     <ClInclude Include="src\fixes\int_regex.h" />
     <ClInclude Include="src\fixes\int_string.h" />
     <ClInclude Include="src\fixes\linux.h" />
