@@ -4,11 +4,22 @@
 #include <locale>
 #include <type_traits>
 #include <algorithm>
+#include <tuple>
 
 namespace impl
 {
+	class ctype_base :
+		public std::ctype_base,
+		public std::conditional<
+			std::is_base_of<std::locale::facet, std::ctype_base>::value,
+			std::tuple<>, std::locale::facet
+		>::type
+	{
+
+	};
+
 	template <class CharType>
-	class ctype : public std::locale::facet
+	class ctype : public ctype_base
 	{
 		const std::ctype_base *base_ptr;
 		enum
@@ -85,22 +96,6 @@ namespace impl
 
 	public:
 		typedef CharType char_type;
-
-		enum
-		{
-			alnum = std::ctype_base::alnum,
-			alpha = std::ctype_base::alpha,
-			cntrl = std::ctype_base::cntrl,
-			digit = std::ctype_base::digit,
-			graph = std::ctype_base::graph,
-			lower = std::ctype_base::lower,
-			print = std::ctype_base::print,
-			punct = std::ctype_base::punct,
-			space = std::ctype_base::space,
-			upper = std::ctype_base::upper,
-			xdigit = std::ctype_base::xdigit
-		};
-		typedef std::ctype_base::mask mask;
 
 		static std::locale::id id;
 
