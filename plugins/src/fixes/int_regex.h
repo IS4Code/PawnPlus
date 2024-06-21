@@ -15,7 +15,7 @@ namespace impl
 	{
 		void cache_locale()
 		{
-			_ctype = &std::use_facet<std::ctype<cell>>(_locale);
+			_ctype = &std::use_facet<std::ctype<CharType>>(_locale);
 		}
 
 		const std::ctype<CharType> *_ctype;
