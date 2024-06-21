@@ -187,17 +187,27 @@ std::locale strings::find_locale(char *spec)
 	return std::locale(spec);
 }
 
-void strings::set_locale(const std::locale &loc, cell category)
+static void set_global_locale(const std::locale &loc, const std::ctype<cell> *ctype)
+{
+	std::locale::global(custom_locale = std::locale(loc, ctype));
+}
+
+void strings::set_locale(const std::locale &loc, cell category, bool is_wide)
 {
 	auto cat = get_category(category);
 	auto ctype = new std::ctype<cell>();
 	if(cat == std::locale::all)
 	{
-		std::locale::global(custom_locale = std::locale(loc, ctype));
+		set_global_locale(loc, ctype);
 	}else{
-		std::locale::global(custom_locale = std::locale(std::locale(custom_locale, loc, cat), ctype));
+		set_global_locale(std::locale(custom_locale, loc, cat), ctype);
 	}
-	ctype->set_base(std::use_facet<std::ctype<char>>(custom_locale));
+	if(is_wide)
+	{
+		ctype->set_base(std::use_facet<std::ctype<wchar_t>>(custom_locale));
+	}else{
+		ctype->set_base(std::use_facet<std::ctype<char>>(custom_locale));
+	}
 	custom_locale_name = loc.name();
 }
 

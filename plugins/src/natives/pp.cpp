@@ -387,13 +387,13 @@ namespace Natives
 		});
 	}
 
-	// native pp_locale(const locale[], locale_category:category = locale_all);
+	// native pp_locale(const locale[], locale_category:category = locale_all, bool:is_unicode = false);
 	AMX_DEFINE_NATIVE_TAG(pp_locale, 1, cell)
 	{
 		char *locale;
 		amx_StrParam(amx, params[1], locale);
 		try{
-			strings::set_locale(strings::find_locale(locale), optparam(2, -1));
+			strings::set_locale(strings::find_locale(locale), optparam(2, -1), optparam(3, 0));
 			return 1;
 		}catch(const std::runtime_error &)
 		{

@@ -38,7 +38,7 @@ PLUGIN_EXPORT bool PLUGIN_CALL Load(void **ppData) noexcept
 	logprintf = (logprintf_t)ppData[PLUGIN_DATA_LOGPRINTF];
 	is_main_thread = true;
 
-	strings::set_locale(std::locale::classic(), -1);
+	strings::set_locale(std::locale::classic(), -1, false);
 
 	if(!isenv("PAWNPLUS_NO_AMX_HOOKS"))
 	{

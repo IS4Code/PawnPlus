@@ -302,7 +302,7 @@ namespace strings
 	bool clamp_pos(const cell_string &str, cell &pos);
 
 	std::locale find_locale(char *spec);
-	void set_locale(const std::locale &loc, cell category);
+	void set_locale(const std::locale &loc, cell category, bool is_wide);
 	void reset_locale();
 	const std::string &locale_name();
 
