@@ -22,7 +22,27 @@ public:
 
 	}
 
-	explicit operator unsigned char() const noexcept
+	constexpr explicit char8_t(char value) noexcept : value(value)
+	{
+
+	}
+
+	constexpr explicit char8_t(wchar_t value) noexcept : value(static_cast<unsigned char>(value))
+	{
+
+	}
+
+	constexpr explicit operator unsigned char() const noexcept
+	{
+		return value;
+	}
+
+	constexpr explicit operator char() const noexcept
+	{
+		return value;
+	}
+
+	constexpr explicit operator wchar_t() const noexcept
 	{
 		return value;
 	}

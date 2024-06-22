@@ -42,6 +42,7 @@ namespace impl
 		{
 			base_char,
 			base_wchar_t,
+			base_char8_t,
 			base_char16_t,
 			base_char32_t
 		} base_type;
@@ -56,6 +57,8 @@ namespace impl
 					return func(static_cast<const std::ctype<char>&>(base()));
 				case base_wchar_t:
 					return func(static_cast<const std::ctype<wchar_t>&>(base()));
+				case base_char8_t:
+					return func(static_cast<const std::ctype<char8_t>&>(base()));
 				case base_char16_t:
 					return func(static_cast<const std::ctype<char16_t>&>(base()));
 				case base_char32_t:
@@ -100,6 +103,13 @@ namespace impl
 		{
 			wrapper_ctype::set_base<wchar_t>(locale);
 			base_type = base_wchar_t;
+		}
+
+		template <>
+		void set_base<char8_t>(std::locale locale)
+		{
+			wrapper_ctype::set_base<char8_t>(locale);
+			base_type = base_char8_t;
 		}
 
 		template <>
@@ -273,12 +283,12 @@ namespace impl
 	public:
 		static bool can_cast_to_wchar(char8_t ch)
 		{
-			return ch <= 0x7F;
+			return ch <= '\x7F';
 		}
 
 		static bool can_cast_from_wchar(wchar_t ch)
 		{
-			return ch <= 0x7F;
+			return ch <= L'\x7F';
 		}
 	};
 
@@ -325,6 +335,8 @@ namespace impl
 	template <class CharType, class Traits = wchar_traits<CharType>>
 	class char_ctype : public wrapper_ctype<std::ctype<wchar_t>>
 	{
+		using ctype_transform = wchar_t(std::ctype<wchar_t>::*)(wchar_t) const;
+
 	protected:
 		char_ctype()
 		{
@@ -388,14 +400,15 @@ namespace impl
 			}
 		}
 
-		char_type tolower(char_type ch) const
+		template <ctype_transform Transform>
+		char_type transform(char_type ch) const
 		{
 			if(!Traits::can_cast_to_wchar(ch))
 			{
 				return ch;
 			}
 
-			auto result = base().tolower(static_cast<wchar_t>(ch));
+			auto result = (base().*Transform)(static_cast<wchar_t>(ch));
 
 			if(!Traits::can_cast_from_wchar(result))
 			{
@@ -405,21 +418,14 @@ namespace impl
 			return static_cast<char_type>(result);
 		}
 
+		char_type tolower(char_type ch) const
+		{
+			return transform<static_cast<ctype_transform>(&std::ctype<wchar_t>::tolower)>(ch);
+		}
+
 		char_type toupper(char_type ch) const
 		{
-			if(!Traits::can_cast_to_wchar(ch))
-			{
-				return ch;
-			}
-
-			auto result = base().toupper(static_cast<wchar_t>(ch));
-
-			if(!Traits::can_cast_from_wchar(result))
-			{
-				return ch;
-			}
-
-			return static_cast<char_type>(result);
+			return transform<static_cast<ctype_transform>(&std::ctype<wchar_t>::toupper)>(ch);
 		}
 	};
 }
