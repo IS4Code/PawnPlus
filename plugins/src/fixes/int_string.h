@@ -6,24 +6,38 @@
 #include <type_traits>
 #include <algorithm>
 #include <tuple>
-#include <clocale>
 
 namespace impl
 {
-	class ctype_base :
+	template <class BaseCType>
+	class wrapper_ctype :
 		public std::ctype_base,
 		public std::conditional<
 			std::is_base_of<std::locale::facet, std::ctype_base>::value,
 			std::tuple<>, std::locale::facet
 		>::type
 	{
+		const BaseCType *base_ptr;
 
+	protected:
+		std::locale base_locale{std::locale::classic()};
+
+		template <class BaseCharType>
+		void set_base(std::locale locale)
+		{
+			base_locale = std::move(locale);
+			base_ptr = &std::use_facet<std::ctype<BaseCharType>>(base_locale);
+		}
+
+		const BaseCType &base() const
+		{
+			return *base_ptr;
+		}
 	};
 
 	template <class CharType>
-	class int_ctype : public ctype_base
+	class int_ctype : public wrapper_ctype<std::ctype_base>
 	{
-		const std::ctype_base *base_ptr;
 		enum
 		{
 			base_char,
@@ -34,18 +48,18 @@ namespace impl
 		bool treat_as_truncated;
 
 		template <class Func>
-		auto get_base(Func func) const -> decltype(func(*static_cast<const std::ctype<char>*>(base_ptr)))
+		auto get_base(Func func) const -> decltype(func(static_cast<const std::ctype<char>&>(base())))
 		{
 			switch(base_type)
 			{
 				case base_char:
-					return func(*static_cast<const std::ctype<char>*>(base_ptr));
+					return func(static_cast<const std::ctype<char>&>(base()));
 				case base_wchar_t:
-					return func(*static_cast<const std::ctype<wchar_t>*>(base_ptr));
+					return func(static_cast<const std::ctype<wchar_t>&>(base()));
 				case base_char16_t:
-					return func(*static_cast<const std::ctype<char16_t>*>(base_ptr));
+					return func(static_cast<const std::ctype<char16_t>&>(base()));
 				case base_char32_t:
-					return func(*static_cast<const std::ctype<char32_t>*>(base_ptr));
+					return func(static_cast<const std::ctype<char32_t>&>(base()));
 				default:
 					throw std::logic_error("Unrecognized base character type.");
 			}
@@ -69,28 +83,36 @@ namespace impl
 
 		template <class BaseCharType>
 		using ctype_transform = BaseCharType(std::ctype<BaseCharType>::*)(BaseCharType) const;
+
 	protected:
-		void set_base(const std::ctype<char> &base_facet)
+		template <class BaseCharType>
+		void set_base(std::locale locale);
+
+		template <>
+		void set_base<char>(std::locale locale)
 		{
-			base_ptr = &base_facet;
+			wrapper_ctype::set_base<char>(locale);
 			base_type = base_char;
 		}
 
-		void set_base(const std::ctype<wchar_t> &base_facet)
+		template <>
+		void set_base<wchar_t>(std::locale locale)
 		{
-			base_ptr = &base_facet;
+			wrapper_ctype::set_base<wchar_t>(locale);
 			base_type = base_wchar_t;
 		}
 
-		void set_base(const std::ctype<char16_t> &base_facet)
+		template <>
+		void set_base<char16_t>(std::locale locale)
 		{
-			base_ptr = &base_facet;
+			wrapper_ctype::set_base<char16_t>(locale);
 			base_type = base_char16_t;
 		}
 
-		void set_base(const std::ctype<char32_t> &base_facet)
+		template <>
+		void set_base<char32_t>(std::locale locale)
 		{
-			base_ptr = &base_facet;
+			wrapper_ctype::set_base<char32_t>(locale);
 			base_type = base_char32_t;
 		}
 
@@ -301,16 +323,9 @@ namespace impl
 	};
 
 	template <class CharType, class Traits = wchar_traits<CharType>>
-	class char_ctype : public ::impl::ctype_base
+	class char_ctype : public wrapper_ctype<std::ctype<wchar_t>>
 	{
-		const std::ctype<wchar_t> *base;
-
 	protected:
-		void set_base(const std::ctype<wchar_t> &base_facet)
-		{
-			base = &base_facet;
-		}
-
 		char_ctype()
 		{
 
@@ -327,7 +342,7 @@ namespace impl
 			{
 				return false;
 			}
-			return base->is(mask, static_cast<wchar_t>(ch));
+			return base().is(mask, static_cast<wchar_t>(ch));
 		}
 
 		char narrow(char_type ch, char dflt = '\0') const
@@ -336,14 +351,14 @@ namespace impl
 			{
 				return dflt;
 			}
-			return base->narrow(static_cast<wchar_t>(ch), dflt);
+			return base().narrow(static_cast<wchar_t>(ch), dflt);
 		}
 
 		const char_type *narrow(const char_type *first, const char_type *last, char dflt, char *dest) const
 		{
 			if(sizeof(char_type) == sizeof(wchar_t))
 			{
-				return reinterpret_cast<const char_type*>(base->narrow(reinterpret_cast<const wchar_t*>(first), reinterpret_cast<const wchar_t*>(last), dflt, dest));
+				return reinterpret_cast<const char_type*>(base().narrow(reinterpret_cast<const wchar_t*>(first), reinterpret_cast<const wchar_t*>(last), dflt, dest));
 			}else{
 				std::transform(first, last, dest, [&](char_type c) { return narrow(c, dflt); });
 				return last;
@@ -352,7 +367,7 @@ namespace impl
 
 		char_type widen(char c) const
 		{
-			auto result = base->widen(c);
+			auto result = base().widen(c);
 
 			if(!Traits::can_cast_from_wchar(result))
 			{
@@ -366,7 +381,7 @@ namespace impl
 		{
 			if(sizeof(char_type) == sizeof(wchar_t))
 			{
-				return base->widen(first, last, reinterpret_cast<wchar_t*>(dest));
+				return base().widen(first, last, reinterpret_cast<wchar_t*>(dest));
 			}else{
 				std::transform(first, last, dest, [&](char_type c) { return widen(c); });
 				return last;
@@ -380,7 +395,7 @@ namespace impl
 				return ch;
 			}
 
-			auto result = base->tolower(static_cast<wchar_t>(ch));
+			auto result = base().tolower(static_cast<wchar_t>(ch));
 
 			if(!Traits::can_cast_from_wchar(result))
 			{
@@ -397,7 +412,7 @@ namespace impl
 				return ch;
 			}
 
-			auto result = base->toupper(static_cast<wchar_t>(ch));
+			auto result = base().toupper(static_cast<wchar_t>(ch));
 
 			if(!Traits::can_cast_from_wchar(result))
 			{
@@ -426,7 +441,7 @@ namespace std
 		{
 			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
-			facet->set_base(std::use_facet<std::ctype<BaseCharType>>(locale));
+			facet->set_base<BaseCharType>(locale);
 			return *facet;
 		}
 	};
@@ -446,7 +461,7 @@ namespace std
 		{
 			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
-			facet->set_base(std::use_facet<std::ctype<wchar_t>>(locale));
+			facet->set_base<wchar_t>(locale);
 			return *facet;
 		}
 	};
@@ -466,7 +481,7 @@ namespace std
 		{
 			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
-			facet->set_base(std::use_facet<std::ctype<wchar_t>>(locale));
+			facet->set_base<wchar_t>(locale);
 			return *facet;
 		}
 	};
@@ -486,7 +501,7 @@ namespace std
 		{
 			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
-			facet->set_base(std::use_facet<std::ctype<wchar_t>>(locale));
+			facet->set_base<wchar_t>(locale);
 			return *facet;
 		}
 	};
