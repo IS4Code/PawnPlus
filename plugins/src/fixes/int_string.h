@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <algorithm>
 #include <tuple>
+#include <clocale>
 
 namespace impl
 {
@@ -30,6 +31,7 @@ namespace impl
 			base_char16_t,
 			base_char32_t
 		} base_type;
+		bool treat_as_truncated;
 
 		template <class Func>
 		auto get_base(Func func) const -> decltype(func(*static_cast<const std::ctype<char>*>(base_ptr)))
@@ -65,6 +67,8 @@ namespace impl
 			return static_cast<unsigned_type>(ch) <= std::numeric_limits<BaseCharType>::max();
 		}
 
+		template <class BaseCharType>
+		using ctype_transform = BaseCharType(std::ctype<BaseCharType>::*)(BaseCharType) const;
 	protected:
 		void set_base(const std::ctype<char> &base_facet)
 		{
@@ -90,7 +94,12 @@ namespace impl
 			base_type = base_char32_t;
 		}
 
-		int_ctype()
+		int_ctype() : treat_as_truncated(false)
+		{
+
+		}
+
+		int_ctype(bool treat_as_truncated) : treat_as_truncated(treat_as_truncated)
 		{
 
 		}
@@ -106,11 +115,11 @@ namespace impl
 			{
 				using unsigned_char = unsigned_ctype_char_type<decltype(base)>;
 
-				if(!char_in_range<unsigned_char>(ch))
+				if(treat_as_truncated || char_in_range<unsigned_char>(ch))
 				{
-					return false;
+					return base.is(mask, static_cast<unsigned_char>(ch));
 				}
-				return base.is(mask, static_cast<unsigned_char>(ch));
+				return false;
 			});
 		}
 
@@ -119,11 +128,11 @@ namespace impl
 		{
 			using unsigned_char = unsigned_ctype_char_type<decltype(base)>;
 
-			if(!char_in_range<unsigned_char>(ch))
+			if(treat_as_truncated || char_in_range<unsigned_char>(ch))
 			{
-				return dflt;
+				return base.narrow(static_cast<unsigned_char>(ch), dflt);
 			}
-			return base.narrow(static_cast<unsigned_char>(ch), dflt);
+			return dflt;
 		}
 
 		char narrow(char_type ch, char dflt = '\0') const
@@ -168,16 +177,30 @@ namespace impl
 			});
 		}
 
-		template <class BaseCharType>
-		char_type tolower(char_type ch, const std::ctype<BaseCharType> &base) const
+		template <class BaseCharType, ctype_transform<BaseCharType> Transform>
+		char_type transform(char_type ch, const std::ctype<BaseCharType> &base) const
 		{
 			using unsigned_char = unsigned_ctype_char_type<decltype(base)>;
 
-			if(!char_in_range<unsigned_char>(ch))
+			if(char_in_range<unsigned_char>(ch))
+			{
+				return static_cast<unsigned_char>((base.*Transform)(static_cast<unsigned_char>(ch)));
+			}
+
+			if(!treat_as_truncated)
 			{
 				return ch;
 			}
-			return static_cast<unsigned_char>(base.tolower(static_cast<unsigned_char>(ch)));
+
+			char_type excess = ch ^ static_cast<unsigned_char>(ch);
+			char_type result = static_cast<unsigned_char>((base.*Transform)(static_cast<unsigned_char>(ch)));
+			return result | excess;
+		}
+
+		template <class BaseCharType>
+		char_type tolower(char_type ch, const std::ctype<BaseCharType> &base) const
+		{
+			return transform<BaseCharType, static_cast<ctype_transform<BaseCharType>>(&std::ctype<BaseCharType>::tolower)>(ch, base);
 		}
 
 		char_type tolower(char_type ch) const
@@ -199,13 +222,7 @@ namespace impl
 		template <class BaseCharType>
 		char_type toupper(char_type ch, const std::ctype<BaseCharType> &base) const
 		{
-			using unsigned_char = unsigned_ctype_char_type<decltype(base)>;
-
-			if(!char_in_range<unsigned_char>(ch))
-			{
-				return ch;
-			}
-			return static_cast<unsigned_char>(base.toupper(static_cast<unsigned_char>(ch)));
+			return transform<BaseCharType, static_cast<ctype_transform<BaseCharType>>(&std::ctype<BaseCharType>::toupper)>(ch, base);
 		}
 
 		char_type toupper(char_type ch) const
@@ -397,11 +414,17 @@ namespace std
 	template <>
 	class ctype<std::int32_t> : public ::impl::int_ctype<std::int32_t>
 	{
-	public:
-		template <class BaseCharType>
-		static const ctype<char_type> &install(std::locale &locale)
+		template <class... Args>
+		ctype(Args&&... args) : int_ctype(std::forward<Args>(args)...)
 		{
-			auto facet = new ctype<char_type>();
+
+		}
+
+	public:
+		template <class BaseCharType, class... Args>
+		static const ctype<char_type> &install(std::locale &locale, Args&&... args)
+		{
+			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
 			facet->set_base(std::use_facet<std::ctype<BaseCharType>>(locale));
 			return *facet;
@@ -411,10 +434,17 @@ namespace std
 	template <>
 	class ctype<char8_t> : public ::impl::char_ctype<char8_t>
 	{
-	public:
-		static const ctype<char_type> &install(std::locale &locale)
+		template <class... Args>
+		ctype(Args&&... args) : char_ctype(std::forward<Args>(args)...)
 		{
-			auto facet = new ctype<char_type>();
+
+		}
+
+	public:
+		template <class... Args>
+		static const ctype<char_type> &install(std::locale &locale, Args&&... args)
+		{
+			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
 			facet->set_base(std::use_facet<std::ctype<wchar_t>>(locale));
 			return *facet;
@@ -424,10 +454,17 @@ namespace std
 	template <>
 	class ctype<char16_t> : public ::impl::char_ctype<char16_t>
 	{
+		template <class... Args>
+		ctype(Args&&... args) : char_ctype(std::forward<Args>(args)...)
+		{
+
+		}
+
 	public:
+		template <class... Args>
 		static const ctype<char_type> &install(std::locale &locale)
 		{
-			auto facet = new ctype<char_type>();
+			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
 			facet->set_base(std::use_facet<std::ctype<wchar_t>>(locale));
 			return *facet;
@@ -437,10 +474,17 @@ namespace std
 	template <>
 	class ctype<char32_t> : public ::impl::char_ctype<char32_t>
 	{
+		template <class... Args>
+		ctype(Args&&... args) : char_ctype(std::forward<Args>(args)...)
+		{
+
+		}
+
 	public:
+		template <class... Args>
 		static const ctype<char_type> &install(std::locale &locale)
 		{
-			auto facet = new ctype<char_type>();
+			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
 			facet->set_base(std::use_facet<std::ctype<wchar_t>>(locale));
 			return *facet;
