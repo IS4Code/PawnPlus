@@ -18,9 +18,20 @@ namespace impl
 		>::type
 	{
 		const BaseCType *base_ptr;
+		std::locale base_locale{std::locale::classic()};
 
 	protected:
-		std::locale base_locale{std::locale::classic()};
+		wrapper_ctype() = default;
+
+		wrapper_ctype(const wrapper_ctype<BaseCType> &obj) : base_ptr(obj.base_ptr), base_locale(obj.base_locale)
+		{
+
+		}
+
+		wrapper_ctype(wrapper_ctype<BaseCType> &&obj) : base_ptr(obj.base_ptr), base_locale(std::move(obj.base_locale))
+		{
+
+		}
 
 		template <class BaseCharType>
 		void set_base(std::locale locale)
@@ -89,41 +100,49 @@ namespace impl
 
 	protected:
 		template <class BaseCharType>
-		void set_base(std::locale locale);
+		void set_base(const std::locale &locale);
 
 		template <>
-		void set_base<char>(std::locale locale)
+		void set_base<char>(const std::locale &locale)
 		{
 			wrapper_ctype::set_base<char>(locale);
 			base_type = base_char;
 		}
 
 		template <>
-		void set_base<wchar_t>(std::locale locale)
+		void set_base<wchar_t>(const std::locale &locale)
 		{
 			wrapper_ctype::set_base<wchar_t>(locale);
 			base_type = base_wchar_t;
 		}
 
 		template <>
-		void set_base<char8_t>(std::locale locale)
+		void set_base<char8_t>(const std::locale &locale)
 		{
 			wrapper_ctype::set_base<char8_t>(locale);
 			base_type = base_char8_t;
 		}
 
 		template <>
-		void set_base<char16_t>(std::locale locale)
+		void set_base<char16_t>(const std::locale &locale)
 		{
 			wrapper_ctype::set_base<char16_t>(locale);
 			base_type = base_char16_t;
 		}
 
 		template <>
-		void set_base<char32_t>(std::locale locale)
+		void set_base<char32_t>(const std::locale &locale)
 		{
 			wrapper_ctype::set_base<char32_t>(locale);
 			base_type = base_char32_t;
+		}
+
+		void change_base(const std::locale &locale)
+		{
+			return get_base([&](const auto &base)
+			{
+				wrapper_ctype::set_base<ctype_char_type<decltype(base)>>(locale);
+			});
 		}
 
 		int_ctype() : treat_as_truncated(false)
@@ -450,6 +469,14 @@ namespace std
 			facet->set_base<BaseCharType>(locale);
 			return *facet;
 		}
+
+		static const ctype<char_type> &install(std::locale &locale, const ctype<char_type> &obj)
+		{
+			auto facet = new ctype<char_type>(obj);
+			locale = std::locale(locale, facet);
+			facet->change_base(locale);
+			return *facet;
+		}
 	};
 
 	template <>
@@ -483,7 +510,7 @@ namespace std
 
 	public:
 		template <class... Args>
-		static const ctype<char_type> &install(std::locale &locale)
+		static const ctype<char_type> &install(std::locale &locale, Args&&... args)
 		{
 			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
@@ -503,7 +530,7 @@ namespace std
 
 	public:
 		template <class... Args>
-		static const ctype<char_type> &install(std::locale &locale)
+		static const ctype<char_type> &install(std::locale &locale, Args&&... args)
 		{
 			auto facet = new ctype<char_type>(std::forward<Args>(args)...);
 			locale = std::locale(locale, facet);
