@@ -759,7 +759,7 @@ namespace Natives
 		amx_OptStrParam(amx, 2, encoding, nullptr);
 
 		auto str2 = *str;
-		strings::to_lower(str2, strings::find_encoding(encoding));
+		strings::to_lower(str2, strings::find_encoding(encoding, false));
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
@@ -777,7 +777,7 @@ namespace Natives
 		amx_OptStrParam(amx, 2, encoding, nullptr);
 
 		auto str2 = *str;
-		strings::to_upper(str2, strings::find_encoding(encoding));
+		strings::to_upper(str2, strings::find_encoding(encoding, false));
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
@@ -792,7 +792,7 @@ namespace Natives
 
 		if(str != nullptr)
 		{
-			strings::to_lower(*str, strings::find_encoding(encoding));
+			strings::to_lower(*str, strings::find_encoding(encoding, false));
 		}
 		return params[1];
 	}
@@ -808,7 +808,7 @@ namespace Natives
 
 		if(str != nullptr)
 		{
-			strings::to_upper(*str, strings::find_encoding(encoding));
+			strings::to_upper(*str, strings::find_encoding(encoding, false));
 		}
 		return params[1];
 	}

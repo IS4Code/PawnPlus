@@ -167,47 +167,174 @@ char *split_locale(char *str)
 	return pos;
 }
 
-std::locale strings::find_locale(char *spec)
+#ifndef _WIN32
+#define _stricmp strcasecmp
+#endif
+
+decltype(encoding::type) parse_encoding_type(char *&spec)
 {
+	auto pos = std::strstr(spec, "+");
+	if(pos)
+	{
+		pos[0] = '\0';
+	}
+
+	auto found = [&](decltype(encoding::type) type)
+	{
+		spec = pos ? pos + 1 : "";
+		return type;
+	};
+
+	if(!_stricmp(spec, "ansi"))
+	{
+		return found(encoding::ansi);
+	}
+	if(!_stricmp(spec, "unicode"))
+	{
+		return found(encoding::unicode);
+	}
+	if(!_stricmp(spec, "utf"))
+	{
+		auto utf = spec + 3;
+		if(utf[0] == '-')
+		{
+			++utf;
+		}
+		if(!_stricmp(utf, "8"))
+		{
+			return found(encoding::utf8);
+		}
+		if(!_stricmp(utf, "16"))
+		{
+			return found(encoding::utf16);
+		}
+		if(!_stricmp(utf, "32"))
+		{
+			return found(encoding::utf32);
+		}
+	}
+
+	if(pos)
+	{
+		pos[0] = '+';
+	}
+	return encoding::ansi;
+}
+
+encoding strings::find_encoding(char *spec, bool default_if_empty)
+{
+	auto make_encoding = [&](char *name, decltype(encoding::type) type) -> encoding
+	{
+		if(name[0] == '\0' && !default_if_empty)
+		{
+			return {std::locale(), type};
+		}
+		return {std::locale(name), type};
+	};
+
 	if(!spec)
 	{
-		return std::locale("");
+		return make_encoding("", default_if_empty ? encoding::ansi : encoding::unspecified);
 	}
 	char *nextspec;
 	while(nextspec = split_locale(spec))
 	{
+		auto type = parse_encoding_type(spec);
 		try{
-			return std::locale(spec);
+			return make_encoding(spec, type);
 		}catch(const std::runtime_error &)
 		{
 
 		}
 		spec = nextspec;
 	}
-	return std::locale(spec);
+	auto type = parse_encoding_type(spec);
+	return make_encoding(spec, type);
 }
 
-static void set_global_locale(std::locale loc, bool is_wide)
+template <class Facet, class... Args>
+void add_facet(std::locale &target, Args&&... args)
 {
-	if(is_wide)
+	if(!std::has_facet<Facet>(target))
 	{
-		std::ctype<cell>::install<wchar_t>(loc);
-	}else{
-		std::ctype<cell>::install<char>(loc);
+		Facet::install(target, std::forward<Args>(args)...);
 	}
-	std::locale::global(custom_locale = loc);
 }
 
-void strings::set_locale(const std::locale &loc, cell category, bool is_wide)
+template <class Facet>
+void copy_facet(std::locale &target, const std::locale &source)
 {
+	if(std::has_facet<Facet>(source))
+	{
+		Facet::install(target, std::use_facet<Facet>(source));
+	}
+}
+
+static std::locale merge_locale(const std::locale &base, const std::locale &specific, std::locale::category cat)
+{
+	std::locale result(base, specific, cat);
+	copy_facet<std::ctype<char8_t>>(result, specific);
+	copy_facet<std::ctype<char16_t>>(result, specific);
+	copy_facet<std::ctype<char32_t>>(result, specific);
+	copy_facet<std::ctype<cell>>(result, specific);
+	return result;
+}
+
+std::locale encoding::install() const
+{
+	std::locale result = locale;
+	switch(type)
+	{
+		case ansi:
+			std::ctype<cell>::install<char>(result);
+			break;
+		case unicode:
+			std::ctype<cell>::install<wchar_t>(result);
+			break;
+		case utf8:
+			add_facet<std::ctype<char8_t>>(result);
+			std::ctype<cell>::install<char8_t>(result);
+			break;
+		case utf16:
+			if(sizeof(char16_t) == sizeof(wchar_t))
+			{
+				std::ctype<cell>::install<wchar_t>(result);
+			}else{
+				add_facet<std::ctype<char16_t>>(result);
+				std::ctype<cell>::install<char16_t>(result);
+			}
+			break;
+		case utf32:
+			if(sizeof(char32_t) == sizeof(wchar_t))
+			{
+				std::ctype<cell>::install<wchar_t>(result);
+			}else{
+				add_facet<std::ctype<char32_t>>(result);
+				std::ctype<cell>::install<char32_t>(result);
+			}
+			break;
+	}
+	return result;
+}
+
+void strings::set_encoding(const encoding &enc, cell category)
+{
+	auto set_global = [](std::locale loc)
+	{
+		std::locale::global(custom_locale = std::move(loc));
+	};
+
 	auto cat = get_category(category);
-	if(cat == std::locale::all)
+	if((cat & std::locale::all) == std::locale::all)
 	{
-		set_global_locale(loc, is_wide);
+		set_global(enc.install());
+	}else if(cat & std::locale::ctype)
+	{
+		set_global(merge_locale(custom_locale, enc.install(), cat));
 	}else{
-		set_global_locale(std::locale(custom_locale, loc, cat), is_wide);
+		set_global(std::locale(custom_locale, enc.locale, cat));
 	}
-	custom_locale_name = loc.name();
+	custom_locale_name = enc.locale.name();
 }
 
 void strings::reset_locale()
@@ -220,18 +347,22 @@ const std::string &strings::locale_name()
 	return custom_locale_name;
 }
 
-encoding strings::find_encoding(char *spec)
+using ctype_transform = const cell*(std::ctype<cell>::*)(cell*, const cell*) const;
+
+template <ctype_transform Transform>
+void transform_string(cell_string &str, const encoding &enc)
 {
-	auto locale = spec ? find_locale(spec) : std::locale();
-	return {locale};
+	std::locale locale = enc.install();
+	const auto &facet = std::use_facet<std::ctype<cell>>(locale);
+	(facet.*Transform)(&str[0], &str[str.size()]);
 }
 
 void strings::to_lower(cell_string &str, const encoding &enc)
 {
-	enc.ctype().tolower(&str[0], &str[str.size()]);
+	transform_string<static_cast<ctype_transform>(&std::ctype<cell>::tolower)>(str, enc);
 }
 
 void strings::to_upper(cell_string &str, const encoding &enc)
 {
-	enc.ctype().toupper(&str[0], &str[str.size()]);
+	transform_string<static_cast<ctype_transform>(&std::ctype<cell>::toupper)>(str, enc);
 }

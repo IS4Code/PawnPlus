@@ -182,7 +182,7 @@ enum locale_category (<<= 1)
     locale_all = -1,
 }
 
-native unit:pp_locale(const locale[], locale_category:category=locale_all, bool:is_unicode=false);
+native unit:pp_locale(const locale[], locale_category:category=locale_all);
 native pp_locale_name(locale[], size=sizeof locale);
 native String:pp_locale_name_s();
 
