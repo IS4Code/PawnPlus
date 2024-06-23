@@ -139,11 +139,11 @@ static func_ptr main_functions[] = {
 		}
 		return obj->dbg.get();
 	},
-	+[]/*serialize*/(cell value, void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie) -> cell
+	+[]/*serialize*/(cell value, const void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie) -> cell
 	{
 		return serialize_value(value, static_cast<tag_ptr>(tag), binary_writer, binary_writer_cookie, object_writer, object_writer_cookie);
 	},
-	+[]/*deserialize*/(cell *value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie) -> cell
+	+[]/*deserialize*/(cell *value, const void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie) -> cell
 	{
 		return deserialize_value(*value, static_cast<tag_ptr>(tag), binary_reader, binary_reader_cookie, object_reader, object_reader_cookie);
 	},
@@ -346,6 +346,10 @@ static func_ptr list_functions[] = {
 			ptr->resize(newsize, *static_cast<const dyn_object*>(obj));
 		}
 	},
+	+[]/*list_get_const*/(const void *list, cell index) -> const void*
+	{
+		return &((*static_cast<const list_t*>(list))[index]);
+	},
 	nullptr
 };
 
@@ -399,6 +403,10 @@ static func_ptr linked_list_functions[] = {
 			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
+	},
+	+[]/*linked_list_get_const*/(const void *linked_list, cell index) -> const void*
+	{
+		return &((*static_cast<const linked_list_t*>(linked_list))[index]);
 	},
 	nullptr
 };
@@ -455,9 +463,9 @@ static func_ptr map_functions[] = {
 	{
 		static_cast<map_t*>(map)->clear();
 	},
-	+[]/*map_is_ordered*/(void *map) -> cell
+	+[]/*map_is_ordered*/(const void *map) -> cell
 	{
-		return static_cast<map_t*>(map)->ordered();
+		return static_cast<const map_t*>(map)->ordered();
 	},
 	+[]/*map_set_ordered*/(void *map, cell ordered) -> void
 	{
@@ -483,6 +491,16 @@ static func_ptr map_functions[] = {
 	+[]/*map_reserve*/(void *map, cell capacity) -> void
 	{
 		return static_cast<map_t*>(map)->reserve(capacity);
+	},
+	+[]/*map_find_const*/(const void *map, const void *key) -> const void*
+	{
+		const map_t &mapobj = *static_cast<const map_t*>(map);
+		auto it = mapobj.find(*static_cast<const dyn_object*>(key));
+		if(it != mapobj.cend())
+		{
+			return &it->second;
+		}
+		return nullptr;
 	},
 	nullptr
 };
@@ -567,6 +585,10 @@ static func_ptr pool_functions[] = {
 	{
 		static_cast<pool_t*>(pool)->reserve(capacity);
 	},
+	+[]/*pool_get_const*/(const void *pool, cell index) -> const void*
+	{
+		return &((*static_cast<const pool_t*>(pool))[index]);
+	},
 	nullptr
 };
 
@@ -628,6 +650,10 @@ static func_ptr string_functions[] = {
 			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
+	},
+	+[]/*string_get_data_const*/(const void *str) -> const cell*
+	{
+		return &(**static_cast<const_string_ptr>(str))[0];
 	},
 	nullptr
 };
@@ -737,7 +763,7 @@ static func_ptr task_functions[] = {
 	{
 		static_cast<tasks::task*>(task)->keep(keep);
 	},
-	+[]/*task_set_completed*/(void *task, void *result) -> cell
+	+[]/*task_set_completed_move*/(void *task, void *result) -> cell
 	{
 		return static_cast<tasks::task*>(task)->set_completed(std::move(*static_cast<dyn_object*>(result)));
 	},
@@ -778,6 +804,11 @@ static func_ptr task_functions[] = {
 			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
+	},
+	+[]/*task_set_completed_copy*/(void *task, const void *result) -> cell
+	{
+		dyn_object obj = *static_cast<const dyn_object*>(result);
+		return static_cast<tasks::task*>(task)->set_completed(std::move(obj));
 	},
 	nullptr
 };

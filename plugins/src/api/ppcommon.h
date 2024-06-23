@@ -110,14 +110,14 @@ namespace pp
 			return get<void*()>(13)();
 		}
 
-		bool serialize_value(cell value, void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie) const
+		bool serialize_value(cell value, const void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie) const
 		{
-			return get<cell(cell value, void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie)>(14)(value, tag, binary_writer, binary_writer_cookie, object_writer, object_writer_cookie);
+			return get<cell(cell value, const void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie)>(14)(value, tag, binary_writer, binary_writer_cookie, object_writer, object_writer_cookie);
 		}
 
-		bool deserialize_value(cell &value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie) const
+		bool deserialize_value(cell &value, const void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie) const
 		{
-			return get<cell(cell *value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie)>(15)(&value, tag, binary_reader, binary_reader_cookie, object_reader, object_reader_cookie);
+			return get<cell(cell *value, const void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie)>(15)(&value, tag, binary_reader, binary_reader_cookie, object_reader, object_reader_cookie);
 		}
 
 		unsigned char *mem_alloc(size_t size) const
@@ -339,6 +339,11 @@ namespace pp
 		{
 			return get<void(void *list, cell snewsize, const void *obj)>(12)(list, newsize, obj);
 		}
+
+		const void *item(const void *list, cell index) const
+		{
+			return get<const void*(const void *list, cell index)>(13)(list, index);
+		}
 	};
 
 	class linked_list_table : public api_table
@@ -393,6 +398,11 @@ namespace pp
 		{
 			return get<void*(void *linked_list)>(9)(linked_list);
 		}
+
+		const void *item(const void *linked_list, cell index) const
+		{
+			return get<const void*(const void *linked_list, cell index)>(10)(linked_list, index);
+		}
 	};
 
 	class map_table : public api_table
@@ -443,9 +453,9 @@ namespace pp
 			return get<void(void *map)>(9)(map);
 		}
 		
-		bool is_ordered(void *map) const
+		bool is_ordered(const void *map) const
 		{
-			return get<cell(void *map)>(10)(map);
+			return get<cell(const void *map)>(10)(map);
 		}
 
 		void set_ordered(void *map, bool ordered) const
@@ -471,6 +481,11 @@ namespace pp
 		void reserve(void *map, size_t capacity) const
 		{
 			return get<void(void *map, cell capacity)>(15)(map, capacity);
+		}
+
+		const void *find(const void *map, const void *key) const
+		{
+			return get<const void*(const void *map, const void *key)>(16)(map, key);
 		}
 	};
 
@@ -561,6 +576,11 @@ namespace pp
 		{
 			return get<void(void *pool, cell capacity)>(16)(pool, capacity);
 		}
+
+		const void *item(const void *pool, cell index) const
+		{
+			return get<const void*(const void *pool, cell index)>(17)(pool, index);
+		}
 	};
 
 	class string_table : public api_table
@@ -619,6 +639,11 @@ namespace pp
 		void *get_handle(void *str) const
 		{
 			return get<void*(void *str)>(10)(str);
+		}
+
+		const cell *get_data(const void *str) const
+		{
+			return get<const cell*(const void *str)>(11)(str);
 		}
 	};
 	
@@ -729,7 +754,7 @@ namespace pp
 			return get<void(void *task, cell keep)>(10)(task, keep);
 		}
 
-		cell set_completed(void *task, void *result) const
+		cell set_completed_move(void *task, void *result) const
 		{
 			return get<cell(void *task, void *result)>(11)(task, result);
 		}
@@ -762,6 +787,11 @@ namespace pp
 		void *get_handle(void *task) const
 		{
 			return get<void*(void *task)>(17)(task);
+		}
+
+		cell set_completed_copy(void *task, const void *result) const
+		{
+			return get<cell(void *task, const void *result)>(18)(task, result);
 		}
 	};
 

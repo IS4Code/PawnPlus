@@ -189,6 +189,7 @@ public:
 	std::pair<iterator, bool> insert(dyn_object &&key, const dyn_object &value);
 	std::pair<iterator, bool> insert(dyn_object &&key, dyn_object &&value);
 	iterator find(const dyn_object &key);
+	const_iterator find(const dyn_object &key) const;
 	size_t erase(const dyn_object &key);
 	iterator erase(iterator position);
 	bool insert_dyn(iterator position, const std::type_info &type, void *value, iterator &result);
@@ -230,6 +231,7 @@ class linked_list_t : public collection_base<std::list<std::shared_ptr<dyn_objec
 {
 public:
 	dyn_object &operator[](size_t index);
+	const dyn_object &operator[](size_t index) const;
 	void push_back(dyn_object &&value);
 	void push_back(const dyn_object &value);
 	iterator insert(iterator position, dyn_object &&value);

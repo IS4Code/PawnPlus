@@ -162,6 +162,11 @@ auto map_t::find(const dyn_object &key) -> iterator
 	return data.find(key);
 }
 
+auto map_t::find(const dyn_object &key) const -> const_iterator
+{
+	return data.find(key);
+}
+
 size_t map_t::erase(const dyn_object &key)
 {
 	size_t size = data.erase(key);
@@ -187,6 +192,13 @@ bool map_t::insert_dyn(iterator position, const std::type_info &type, const void
 
 
 dyn_object &linked_list_t::operator[](size_t index)
+{
+	auto it = data.begin();
+	std::advance(it, index);
+	return **it;
+}
+
+const dyn_object &linked_list_t::operator[](size_t index) const
 {
 	auto it = data.begin();
 	std::advance(it, index);
