@@ -119,6 +119,16 @@ namespace pp
 		{
 			return get<cell(cell *value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie)>(15)(&value, tag, binary_reader, binary_reader_cookie, object_reader, object_reader_cookie);
 		}
+
+		unsigned char *mem_alloc(size_t size)
+		{
+			return get<unsigned char*(cell)>(16)(static_cast<cell>(size));
+		}
+
+		void mem_free(unsigned char *ptr)
+		{
+			return get<void(unsigned char*)>(17)(ptr);
+		}
 	};
 
 	class tag_table : public api_table

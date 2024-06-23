@@ -147,6 +147,14 @@ static func_ptr main_functions[] = {
 	{
 		return deserialize_value(*value, static_cast<tag_ptr>(tag), binary_reader, binary_reader_cookie, object_reader, object_reader_cookie);
 	},
+	+[]/*mem_alloc*/(cell size) -> unsigned char*
+	{
+		return new unsigned char[static_cast<size_t>(size)];
+	},
+	+[]/*mem_free*/(unsigned char *ptr) -> void
+	{
+		delete[] ptr;
+	},
 	nullptr
 };
 
