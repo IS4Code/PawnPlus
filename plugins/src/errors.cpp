@@ -19,7 +19,7 @@ namespace errors
 	error invalid_format = "invalid format string: %s";
 	error invalid_expression = "invalid expression: %s";
 	error inner_error_msg = "%s function '%s' has raised an error: %s";
-	error unhandled_system_exception = "unhandled system exception 0x%X: %s (possibly corrupted memory)";
+	error unhandled_system_exception = "unhandled system exception 0x%X: %s%s";
 	error feature_disabled = "this function cannot be used because the corresponding feature has been disabled (use %s to enable it)";
 	error locale_not_found = "no locales could be found matching the locale identifier '%s'";
 }

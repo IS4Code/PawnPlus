@@ -164,6 +164,8 @@ size_t amx::num_natives(AMX *amx)
 
 namespace
 {
+	constexpr const char *corrupted_error = " (possibly corrupted memory)";
+
 #ifdef _WIN32
 	struct local_deleter
 	{
@@ -182,10 +184,23 @@ namespace
 		return {buffer, local_deleter()};
 	}
 
+	bool is_fatal(DWORD code)
+	{
+		switch(code)
+		{
+			case EXCEPTION_ACCESS_VIOLATION:
+			case EXCEPTION_ILLEGAL_INSTRUCTION:
+			case EXCEPTION_STACK_OVERFLOW:
+				return true;
+			default:
+				return false;
+		}
+	}
+
 	[[noreturn]] void status_error(LONG status)
 	{
 		auto message = status_message(status);
-		amx_LogicError(errors::unhandled_system_exception, status, message.get());
+		amx_LogicError(errors::unhandled_system_exception, status, message.get(), is_fatal(status) ? corrupted_error : "");
 	}
 
 	bool filter_exception(DWORD code)
@@ -248,6 +263,18 @@ namespace
 		}
 	};
 
+	bool is_fatal(int signal)
+	{
+		switch(signal)
+		{
+			case SIGILL:
+			case SIGSEGV:
+				return true;
+			default:
+				return false;
+		}
+	}
+
 #endif
 
 	cell call_external_native(AMX *amx, AMX_NATIVE native, cell *params)
@@ -274,7 +301,7 @@ namespace
 		int error = sigsetjmp(jmp, true);
 		if(error)
 		{
-			amx_LogicError(errors::unhandled_system_exception, error, sigdescr_np(error));
+			amx_LogicError(errors::unhandled_system_exception, error, sigdescr_np(error), is_fatal(error) ? corrupted_error : "");
 		}
 		signals_guard guard;
 		return native(amx, params);
