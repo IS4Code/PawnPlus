@@ -60,72 +60,72 @@ namespace pp
 			return get<void(void *id)>(3)(id);
 		}
 
-		cell add_addon(const char *name, void *ptr)
+		cell add_addon(const char *name, void *ptr) const
 		{
 			return get<cell(const char *name, void *ptr)>(4)(name, ptr);
 		}
 
-		cell remove_addon(const char *name)
+		cell remove_addon(const char *name) const
 		{
 			return get<cell(const char *name)>(5)(name);
 		}
 
-		void *get_addon(const char *name)
+		void *get_addon(const char *name) const
 		{
 			return get<void*(const char *name)>(6)(name);
 		}
 
-		void handle_delete(void *handle)
+		void handle_delete(void *handle) const
 		{
 			return get<void(void *handle)>(7)(handle);
 		}
 
-		bool handle_alive(const void *handle)
+		bool handle_alive(const void *handle) const
 		{
 			return get<cell(const void *handle)>(8)(handle);
 		}
 
-		const void *handle_get(const void *handle)
+		const void *handle_get(const void *handle) const
 		{
 			return get<const void*(const void *handle)>(9)(handle);
 		}
 
-		const char *get_error(int index)
+		const char *get_error(int index) const
 		{
 			return get<const char*(cell index)>(10)(index);
 		}
 
-		cell raise_error(AMX *amx, const cell *params, const char *native, int level, const char *message)
+		cell raise_error(AMX *amx, const cell *params, const char *native, int level, const char *message) const
 		{
 			return get<cell(AMX *amx, const cell *params, const char *native, cell level, const char *message)>(11)(amx, params, native, level, message);
 		}
 
-		cell raise_error(AMX *amx, const cell *params, const char *native, const cell *argbase, size_t required)
+		cell raise_error(AMX *amx, const cell *params, const char *native, const cell *argbase, size_t required) const
 		{
 			return get<cell(AMX *amx, const cell *params, const char *native, const cell *argbase, cell required)>(12)(amx, params, native, argbase, required);
 		}
 
-		void *get_debug()
+		void *get_debug() const
 		{
 			return get<void*()>(13)();
 		}
 
-		bool serialize_value(cell value, void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie)
+		bool serialize_value(cell value, void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie) const
 		{
 			return get<cell(cell value, void *tag, void(*binary_writer)(void*, const char*, cell), void *binary_writer_cookie, void(*object_writer)(void*, const void*), void *object_writer_cookie)>(14)(value, tag, binary_writer, binary_writer_cookie, object_writer, object_writer_cookie);
 		}
 
-		bool deserialize_value(cell &value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie)
+		bool deserialize_value(cell &value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie) const
 		{
 			return get<cell(cell *value, void *tag, cell(*binary_reader)(void*, char*, cell), void *binary_reader_cookie, void*(*object_reader)(void*), void *object_reader_cookie)>(15)(&value, tag, binary_reader, binary_reader_cookie, object_reader, object_reader_cookie);
 		}
 
-		unsigned char *mem_alloc(size_t size)
+		unsigned char *mem_alloc(size_t size) const
 		{
 			return get<unsigned char*(cell)>(16)(static_cast<cell>(size));
 		}
 
-		void mem_free(unsigned char *ptr)
+		void mem_free(unsigned char *ptr) const
 		{
 			return get<void(unsigned char*)>(17)(ptr);
 		}
@@ -566,52 +566,52 @@ namespace pp
 	class string_table : public api_table
 	{
 	public:
-		void *create()
+		void *create() const
 		{
 			return get<void*()>(0)();
 		}
 		
-		void remove(void *str)
+		void remove(void *str) const
 		{
 			return get<void(void *str)>(1)(str);
 		}
 
-		cell get_id(void *str)
+		cell get_id(void *str) const
 		{
 			return get<cell(void *str)>(2)(str);
 		}
 
-		void *from_id(cell id)
+		void *from_id(cell id) const
 		{
 			return get<void*(cell id)>(3)(id);
 		}
 
-		bool acquire(void *str)
+		bool acquire(void *str) const
 		{
 			return get<cell(void *str)>(4)(str);
 		}
 
-		bool release(void *str)
+		bool release(void *str) const
 		{
 			return get<cell(void *str)>(5)(str);
 		}
 
-		cell get_size(const void *str)
+		cell get_size(const void *str) const
 		{
 			return get<cell(const void *str)>(6)(str);
 		}
 
-		cell *get_data(void *str)
+		cell *get_data(void *str) const
 		{
 			return get<cell*(void *str)>(7)(str);
 		}
 
-		cell create(const char *c, cell len)
+		cell create(const char *c, cell len) const
 		{
 			return get<cell(const char *c, cell len)>(8)(c, len);
 		}
 
-		void append(void *str, const cell *data, cell len)
+		void append(void *str, const cell *data, cell len) const
 		{
 			return get<void(void *str, const cell *data, cell len)>(9)(str, data, len);
 		}
@@ -625,42 +625,42 @@ namespace pp
 	class variant_table : public api_table
 	{
 	public:
-		void *create()
+		void *create() const
 		{
 			return get<void*()>(0)();
 		}
 
-		void remove(void *var)
+		void remove(void *var) const
 		{
 			return get<void(void *var)>(1)(var);
 		}
 
-		cell get_id(void *var)
+		cell get_id(void *var) const
 		{
 			return get<cell(void *var)>(2)(var);
 		}
 
-		void *from_id(cell id)
+		void *from_id(cell id) const
 		{
 			return get<void*(cell id)>(3)(id);
 		}
 
-		bool acquire(void *var)
+		bool acquire(void *var) const
 		{
 			return get<cell(void *var)>(4)(var);
 		}
 
-		bool release(void *var)
+		bool release(void *var) const
 		{
 			return get<cell(void *var)>(5)(var);
 		}
 
-		cell get_size(const void *var)
+		cell get_size(const void *var) const
 		{
 			return get<cell(const void *var)>(6)(var);
 		}
 
-		void *get_object(void *var)
+		void *get_object(void *var) const
 		{
 			return get<void*(void *var)>(7)(var);
 		}
@@ -674,87 +674,87 @@ namespace pp
 	class task_table : public api_table
 	{
 	public:
-		void *create()
+		void *create() const
 		{
 			return get<void*()>(0)();
 		}
 
-		void remove(void *task)
+		void remove(void *task) const
 		{
 			return get<void(void *task)>(1)(task);
 		}
 
-		cell get_id(void *task)
+		cell get_id(void *task) const
 		{
 			return get<cell(void *task)>(2)(task);
 		}
 
-		void *from_id(cell id)
+		void *from_id(cell id) const
 		{
 			return get<void*(cell id)>(3)(id);
 		}
 
-		cell state(const void *task)
+		cell state(const void *task) const
 		{
 			return get<cell(const void *task)>(4)(task);
 		}
 
-		bool completed(const void *task)
+		bool completed(const void *task) const
 		{
 			return get<cell(const void *task)>(5)(task);
 		}
 
-		bool faulted(const void *task)
+		bool faulted(const void *task) const
 		{
 			return get<cell(const void *task)>(6)(task);
 		}
 
-		void *result(const void *task)
+		void *result(const void *task) const
 		{
 			return get<void*(const void *task)>(7)(task);
 		}
 
-		cell error(const void *task)
+		cell error(const void *task) const
 		{
 			return get<cell(const void *task)>(8)(task);
 		}
 
-		void reset(void *task)
+		void reset(void *task) const
 		{
 			return get<void(void *task)>(9)(task);
 		}
 
-		void keep(void *task, bool keep)
+		void keep(void *task, bool keep) const
 		{
 			return get<void(void *task, cell keep)>(10)(task, keep);
 		}
 
-		cell set_completed(void *task, void *result)
+		cell set_completed(void *task, void *result) const
 		{
 			return get<cell(void *task, void *result)>(11)(task, result);
 		}
 
-		cell set_faulted(void *task, cell error)
+		cell set_faulted(void *task, cell error) const
 		{
 			return get<cell(void *task, cell error)>(12)(task, error);
 		}
 
-		void register_handler(void *task, cell(*handler)(void *task, void *cookie), void *cookie)
+		void register_handler(void *task, cell(*handler)(void *task, void *cookie), void *cookie) const
 		{
 			return get<void(void *task, cell(*handler)(void *task, void *cookie), void *cookie)>(13)(task, handler, cookie);
 		}
 
-		void *task_register_handler_iter(void *task, cell(*handler)(void *task, void *cookie), void *cookie)
+		void *task_register_handler_iter(void *task, cell(*handler)(void *task, void *cookie), void *cookie) const
 		{
 			return get<void*(void *task, cell(*handler)(void *task, void *cookie), void *cookie)>(14)(task, handler, cookie);
 		}
 
-		void free_iter(void *iter)
+		void free_iter(void *iter) const
 		{
 			return get<void(void *iter)>(15)(iter);
 		}
 
-		void unregister_handler(void *task, void *iter)
+		void unregister_handler(void *task, void *iter) const
 		{
 			return get<void(void *task, void *iter)>(16)(task, iter);
 		}
