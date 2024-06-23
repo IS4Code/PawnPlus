@@ -18,7 +18,7 @@ namespace pp
 		void **_ptr;
 		size_t _size;
 
-		void load(void **ptr);
+		bool load(void **ptr);
 
 		friend bool pp::load();
 
@@ -324,6 +324,21 @@ namespace pp
 		{
 			return get<void*(void *list)>(9)(list);
 		}
+
+		size_t get_capacity(const void *list) const
+		{
+			return get<cell(const void *list)>(10)(list);
+		}
+
+		void reserve(void *list, size_t capacity) const
+		{
+			return get<void(void *list, cell capacity)>(11)(list, capacity);
+		}
+
+		void resize(void *list, size_t newsize, const void *obj) const
+		{
+			return get<void(void *list, cell snewsize, const void *obj)>(12)(list, newsize, obj);
+		}
 	};
 
 	class linked_list_table : public api_table
@@ -383,11 +398,6 @@ namespace pp
 	class map_table : public api_table
 	{
 	public:
-		void *create() const
-		{
-			return get<void*()>(0)();
-		}
-
 		void remove(void *map) const
 		{
 			return get<void(void *map)>(1)(map);
@@ -446,6 +456,110 @@ namespace pp
 		void *get_handle(void *map) const
 		{
 			return get<void*(void *map)>(12)(map);
+		}
+
+		void *create(bool ordered = false) const
+		{
+			return get<void*()>(ordered ? 13 : 0)();
+		}
+
+		size_t get_capacity(const void *map) const
+		{
+			return get<cell(const void *map)>(14)(map);
+		}
+
+		void reserve(void *map, size_t capacity) const
+		{
+			return get<void(void *map, cell capacity)>(15)(map, capacity);
+		}
+	};
+
+	class pool_table : public api_table
+	{
+	public:
+		void *create(bool ordered = false) const
+		{
+			return get<void*(cell)>(0)(ordered);
+		}
+
+		void remove(void *pool) const
+		{
+			return get<void(void *pool)>(1)(pool);
+		}
+
+		cell get_id(void *pool) const
+		{
+			return get<cell(void *pool)>(2)(pool);
+		}
+
+		void *from_id(cell id) const
+		{
+			return get<void*(cell id)>(3)(id);
+		}
+
+		size_t get_size(const void *pool) const
+		{
+			return get<cell(const void *pool)>(4)(pool);
+		}
+
+		void *item(void *pool, cell index) const
+		{
+			return get<void*(void *pool, cell index)>(5)(pool, index);
+		}
+
+		cell add_copy(void *pool, const void *obj) const
+		{
+			return get<cell(void *pool, const void *obj)>(6)(pool, obj);
+		}
+
+		cell add_move(void *pool, void *obj) const
+		{
+			return get<cell(void *pool, void *obj)>(7)(pool, obj);
+		}
+
+		void clear(void *pool) const
+		{
+			return get<void(void *pool)>(8)(pool);
+		}
+
+		void *get_handle(void *pool) const
+		{
+			return get<void*(void *pool)>(9)(pool);
+		}
+
+		void set_copy(void *pool, cell index, const void *obj) const
+		{
+			return get<void(void *pool, cell index, const void *obj)>(10)(pool, index, obj);
+		}
+
+		void set_move(void *pool, cell index, void *obj) const
+		{
+			return get<void(void *pool, cell index, void *obj)>(11)(pool, index, obj);
+		}
+
+		void set_ordered(void *pool, bool ordered) const
+		{
+			return get<void(void *pool, cell ordered)>(12)(pool, ordered);
+		}
+
+		size_t get_capacity(const void *pool) const
+		{
+			return get<cell(const void *pool)>(13)(pool);
+		}
+
+		void resize(void *pool, size_t size) const
+		{
+			return get<void(const void *pool, cell size)>(14)(pool, size);
+		}
+
+		bool is_ordered(const void *pool) const
+		{
+			return get<cell(const void *pool)>(15)(pool);
+		}
+
+		void reserve(void *pool, size_t capacity) const
+		{
+			return get<void(void *pool, cell capacity)>(16)(pool, capacity);
 		}
 	};
 
@@ -660,6 +774,7 @@ namespace pp
 	extern string_table string;
 	extern variant_table variant;
 	extern task_table task;
+	extern pool_table pool;
 }
 
 #endif

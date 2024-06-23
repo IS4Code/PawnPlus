@@ -327,6 +327,25 @@ static func_ptr list_functions[] = {
 		}
 		return nullptr;
 	},
+	+[]/*list_get_capacity*/(const void *list) -> cell
+	{
+		return static_cast<const list_t*>(list)->capacity();
+	},
+	+[]/*list_reserve*/(void *list, cell capacity) -> void
+	{
+		return static_cast<list_t*>(list)->reserve(capacity);
+	},
+	+[]/*list_resize*/(void *list, cell snewsize, const void *obj) -> void
+	{
+		auto ptr = static_cast<list_t*>(list);
+		ucell newsize = static_cast<ucell>(snewsize);
+		if(ptr->size() >= newsize)
+		{
+			ptr->resize(newsize);
+		}else{
+			ptr->resize(newsize, *static_cast<const dyn_object*>(obj));
+		}
+	},
 	nullptr
 };
 
@@ -452,6 +471,101 @@ static func_ptr map_functions[] = {
 			return new std::weak_ptr<const void>(ptr);
 		}
 		return nullptr;
+	},
+	+[]/*new_map_ordered*/() -> void*
+	{
+		return &*map_pool.emplace(true);
+	},
+	+[]/*map_get_capacity*/(const void *map) -> cell
+	{
+		return static_cast<const map_t*>(map)->capacity();
+	},
+	+[]/*map_reserve*/(void *map, cell capacity) -> void
+	{
+		return static_cast<map_t*>(map)->reserve(capacity);
+	},
+	nullptr
+};
+
+static func_ptr pool_functions[] = {
+	+[]/*new_pool*/(cell ordered) -> void*
+	{
+		return &*pool_pool.emplace(static_cast<bool>(ordered));
+	},
+	+[]/*delete_pool*/(void *pool) -> void
+	{
+		pool_pool.remove(static_cast<pool_t*>(pool));
+	},
+	+[]/*pool_get_id*/(void *pool) -> cell
+	{
+		return pool_pool.get_id(static_cast<pool_t*>(pool));
+	},
+	+[]/*pool_from_id*/(cell id) -> void*
+	{
+		pool_t *ptr;
+		if(pool_pool.get_by_id(id, ptr))
+		{
+			return ptr;
+		}
+		return nullptr;
+	},
+	+[]/*pool_get_size*/(const void *pool) -> cell
+	{
+		return static_cast<const pool_t*>(pool)->num_elements();
+	},
+	+[]/*pool_get*/(void *pool, cell index) -> void*
+	{
+		return &((*static_cast<pool_t*>(pool))[index]);
+	},
+	+[]/*pool_add_copy*/(void *pool, const void *obj) -> cell
+	{
+		return static_cast<pool_t*>(pool)->push_back(*static_cast<const dyn_object*>(obj));
+	},
+	+[]/*pool_add_move*/(void *pool, void *obj) -> cell
+	{
+		return static_cast<pool_t*>(pool)->push_back(std::move(*static_cast<dyn_object*>(obj)));
+	},
+	+[]/*pool_clear*/(void *pool) -> void
+	{
+		pool_t(static_cast<pool_t*>(pool)->ordered()).swap(*static_cast<pool_t*>(pool));
+	},
+	+[]/*pool_get_handle*/(void *pool) -> void*
+	{
+		auto ptr = pool_pool.get(static_cast<pool_t*>(pool));
+		if(ptr)
+		{
+			return new std::weak_ptr<const void>(ptr);
+		}
+		return nullptr;
+	},
+	+[]/*pool_set_copy*/(void *pool, cell index, const void *obj) -> void
+	{
+		dyn_object value = *static_cast<const dyn_object*>(obj);
+		static_cast<pool_t*>(pool)->insert_or_set(index, std::move(value));
+	},
+	+[]/*pool_set_move*/(void *pool, cell index, void *obj) -> void
+	{
+		static_cast<pool_t*>(pool)->insert_or_set(index, std::move(*static_cast<dyn_object*>(obj)));
+	},
+	+[]/*pool_set_ordered*/(void *pool, cell ordered) -> void
+	{
+		static_cast<pool_t*>(pool)->set_ordered(ordered);
+	},
+	+[]/*pool_get_capacity*/(const void *pool) -> cell
+	{
+		return static_cast<const pool_t*>(pool)->size();
+	},
+	+[]/*pool_resize*/(void *pool, cell size) -> void
+	{
+		static_cast<pool_t*>(pool)->resize(size);
+	},
+	+[]/*pool_is_ordered*/(const void *pool) -> cell
+	{
+		return static_cast<const pool_t*>(pool)->ordered();
+	},
+	+[]/*pool_reserve*/(void *pool, cell capacity) -> void
+	{
+		static_cast<pool_t*>(pool)->reserve(capacity);
 	},
 	nullptr
 };
@@ -678,6 +792,7 @@ static void *func_table[] = {
 	&string_functions,
 	&variant_functions,
 	&task_functions,
+	&pool_functions,
 	nullptr
 };
 

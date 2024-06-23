@@ -21,6 +21,7 @@ namespace pp
 	string_table string;
 	variant_table variant;
 	task_table task;
+	pool_table pool;
 }
 
 bool pp::load()
@@ -45,13 +46,20 @@ bool pp::load()
 		string.load(table[6]);
 		variant.load(table[7]);
 		task.load(table[8]);
+		pool.load(table[9]);
 		return true;
 	}
 	return false;
 }
 
-void pp::api_table::load(void **ptr)
+bool pp::api_table::load(void **ptr)
 {
 	_ptr = ptr;
+	if(!ptr)
+	{
+		_size = 0;
+		return false;
+	}
 	for(_size = 0; ptr[_size]; _size++);
+	return true;
 }
