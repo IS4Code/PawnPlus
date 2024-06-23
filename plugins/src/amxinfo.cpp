@@ -235,7 +235,7 @@ namespace
 		siglongjmp(jmp, signal);
 	}
 
-	static int checked_signals[] = {SIGILL, SIGABRT, SIGFPE, SIGSEGV, SIGPIPE};
+	static int checked_signals[] = {SIGILL, SIGABRT, SIGFPE, SIGSEGV, SIGBUS, SIGPIPE};
 	constexpr const int num_checked_signals = sizeof(checked_signals) / sizeof(int);
 
 	class signals_guard
@@ -269,6 +269,7 @@ namespace
 		{
 			case SIGILL:
 			case SIGSEGV:
+			case SIGBUS:
 				return true;
 			default:
 				return false;
