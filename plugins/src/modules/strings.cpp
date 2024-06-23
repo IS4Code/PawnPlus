@@ -169,6 +169,7 @@ char *split_locale(char *str)
 
 #ifndef _WIN32
 #define _stricmp strcasecmp
+#define _strnicmp strncasecmp
 #endif
 
 decltype(encoding::type) parse_encoding_type(char *&spec)
@@ -193,7 +194,7 @@ decltype(encoding::type) parse_encoding_type(char *&spec)
 	{
 		return found(encoding::unicode);
 	}
-	if(!_stricmp(spec, "utf"))
+	if(!_strnicmp(spec, "utf", 3))
 	{
 		auto utf = spec + 3;
 		if(utf[0] == '-')
