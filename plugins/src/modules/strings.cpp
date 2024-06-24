@@ -475,12 +475,21 @@ void encode_buffer(const std::codecvt_base &cvt, std::mbstate_t &state, const In
 		) \
 	>
 
+#define CODECVT_CLASS template <class, unsigned long, std::codecvt_mode> class
+
 // std::codecvt cache
-template <template <class, unsigned long, std::codecvt_mode> class CodeCvt, class CharType>
+template <CODECVT_CLASS CodeCvtType, class CharType>
 const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt()
 {
-	static const CodeCvt<CharType, 0x10FFFF, std::codecvt_mode::consume_header> cvt{};
+	static const CodeCvtType<CharType, 0x10FFFF, std::codecvt_mode::consume_header> cvt{};
 	return cvt;
+}
+
+const std::codecvt<wchar_t, char, std::mbstate_t> &get_wchar_t_codecvt()
+{
+	return sizeof(wchar_t) == sizeof(char16_t) ?
+		get_codecvt<std::codecvt_utf8_utf16, wchar_t>() :
+		get_codecvt<std::codecvt_utf8, wchar_t>();
 }
 
 template <template <class> class WCharDecoder>
@@ -494,7 +503,7 @@ struct encoder_from_wchar_t
 		template <class... Args>
 		void operator()(U8CharReceiver receiver, const encoding &output_enc, Args&&... args) const
 		{
-			const auto &cvt = get_codecvt<std::codecvt_utf8, wchar_t>();
+			const auto &cvt = get_wchar_t_codecvt();
 			char buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -513,7 +522,7 @@ struct encoder_from_wchar_t
 		}
 	};
 
-	template <class CharType>
+	template <CODECVT_CLASS CodeCvtType, class CharType>
 	struct through_utf8
 	{
 		// Conversion to CharType (UTF-16 / UTF-32) from UTF-8
@@ -525,7 +534,7 @@ struct encoder_from_wchar_t
 			template <class... Args>
 			void operator()(CharReceiver receiver, const encoding &output_enc, Args&&... args) const
 			{
-				const auto &cvt = get_codecvt<std::codecvt_utf8, char_type>();
+				const auto &cvt = get_codecvt<CodeCvtType, char_type>();
 				char_type buffer[buffer_size];
 				std::mbstate_t state{};
 
@@ -558,10 +567,10 @@ struct encoder_from_wchar_t
 				return call_coder<WCharDecoder>(output_appender{output}, std::forward<Args>(args)...);
 			case encoding::utf16:
 				// Append to output as UTF-16
-				return call_coder<through_utf8<char16_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
+				return call_coder<through_utf8<std::codecvt_utf8_utf16, char16_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
 			case encoding::utf32:
 				// Append to output as UTF-32
-				return call_coder<through_utf8<char32_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
+				return call_coder<through_utf8<std::codecvt_utf8, char32_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
 		}
 
 		// Conversion to ANSI
@@ -594,7 +603,7 @@ struct encoder_from_utf8
 		template <class... Args>
 		void operator()(WCharReceiver receiver, Args&&... args) const
 		{
-			const auto &cvt = get_codecvt<std::codecvt_utf8, wchar_t>();
+			const auto &cvt = get_wchar_t_codecvt();
 			wchar_t buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -610,7 +619,7 @@ struct encoder_from_utf8
 		}
 	};
 
-	template <class CharType>
+	template <CODECVT_CLASS CodeCvtType, class CharType>
 	struct using_char_type
 	{
 		// Conversion to CharType (UTF-16 / UTF-32)
@@ -622,7 +631,7 @@ struct encoder_from_utf8
 			template <class... Args>
 			void operator()(CharReceiver receiver, Args&&... args) const
 			{
-				const auto &cvt = get_codecvt<std::codecvt_utf8, char_type>();
+				const auto &cvt = get_codecvt<CodeCvtType, char_type>();
 				char_type buffer[buffer_size];
 				std::mbstate_t state{};
 
@@ -652,10 +661,10 @@ struct encoder_from_utf8
 				return call_coder<through_wchar_t>(output_appender{output}, std::forward<Args>(args)...);
 			case encoding::utf16:
 				// Convert to UTF-16 and append
-				return call_coder<using_char_type<char16_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
+				return call_coder<using_char_type<std::codecvt_utf8_utf16, char16_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
 			case encoding::utf32:
 				// Convert to UTF-32 and append
-				return call_coder<using_char_type<char32_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
+				return call_coder<using_char_type<std::codecvt_utf8, char32_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
 		}
 
 		// Wrong initial choice of UTF-8 - should have been wchar_t
@@ -756,7 +765,7 @@ struct decoder_from_utf8_decoder
 
 		void operator()(WCharReceiver receiver, const cell_string &input) const
 		{
-			const auto &cvt = get_codecvt<std::codecvt_utf8, wchar_t>();
+			const auto &cvt = get_wchar_t_codecvt();
 			wchar_t wchar_buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -773,7 +782,7 @@ struct decoder_from_utf8_decoder
 	};
 };
 
-template <class CharType>
+template <CODECVT_CLASS CodeCvtType, class CharType>
 struct decoder_from_char_type
 {
 	// Converts from CharType (UTF-16 / UTF-32)
@@ -788,7 +797,7 @@ struct decoder_from_char_type
 
 		void operator()(U8CharReceiver receiver, const cell_string &input) const
 		{
-			const auto &cvt = get_codecvt<std::codecvt_utf8, char_type>();
+			const auto &cvt = get_codecvt<CodeCvtType, char_type>();
 			unsigned_char_type char_buffer[buffer_size];
 			u8char utf8_buffer[buffer_size];
 			std::mbstate_t state{};
@@ -851,9 +860,9 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 				case encoding::utf8:
 					return encoder_from_utf8<decoder_to_char_type<u8char>::template from_raw>()(output, output_enc, input);
 				case encoding::utf16:
-					return encoder_from_utf8<decoder_from_char_type<char16_t>::template through_utf8>()(output, output_enc, input);
+					return encoder_from_utf8<decoder_from_char_type<std::codecvt_utf8_utf16, char16_t>::template through_utf8>()(output, output_enc, input);
 				case encoding::utf32:
-					return encoder_from_utf8<decoder_from_char_type<char32_t>::template through_utf8>()(output, output_enc, input);
+					return encoder_from_utf8<decoder_from_char_type<std::codecvt_utf8, char32_t>::template through_utf8>()(output, output_enc, input);
 			}
 		}else{
 			// Through as wchar_t
@@ -862,9 +871,9 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 				case encoding::utf8:
 					return encoder_from_wchar_t<decoder_from_utf8_decoder<decoder_to_char_type<u8char>::template from_raw>::template through_wchar_t>()(output, output_enc, input);
 				case encoding::utf16:
-					return encoder_from_wchar_t<decoder_from_char_type<char16_t>::template through_wchar_t>()(output, output_enc, input);
+					return encoder_from_wchar_t<decoder_from_char_type<std::codecvt_utf8_utf16, char16_t>::template through_wchar_t>()(output, output_enc, input);
 				case encoding::utf32:
-					return encoder_from_wchar_t<decoder_from_char_type<char32_t>::template through_wchar_t>()(output, output_enc, input);
+					return encoder_from_wchar_t<decoder_from_char_type<std::codecvt_utf8, char32_t>::template through_wchar_t>()(output, output_enc, input);
 			}
 		}
 	}
