@@ -548,25 +548,20 @@ struct encoder_from_wchar_t
 	template <class... Args>
 	void operator()(cell_string &output, const encoding &output_enc, Args&&... args) const
 	{
-		if(output_enc.is_unicode())
+		switch(output_enc.type)
 		{
-			if(output_enc.char_size() == sizeof(wchar_t))
-			{
-				// Append to output
+			case encoding::utf8:
+				// Append to output as UTF-8
+				return call_coder<to_utf8>(output_appender{output}, output_enc, std::forward<Args>(args)...);
+			case encoding::unicode:
+				// Append to output directly
 				return call_coder<WCharDecoder>(output_appender{output}, std::forward<Args>(args)...);
-			}
-			switch(output_enc.type)
-			{
-				case encoding::utf8:
-					// Append to output as UTF-8
-					return call_coder<to_utf8>(output_appender{output}, output_enc, std::forward<Args>(args)...);
-				case encoding::utf16:
-					// Append to output as UTF-16
-					return call_coder<through_utf8<char16_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
-				case encoding::utf32:
-					// Append to output as UTF-32
-					return call_coder<through_utf8<char32_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
-			}
+			case encoding::utf16:
+				// Append to output as UTF-16
+				return call_coder<through_utf8<char16_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
+			case encoding::utf32:
+				// Append to output as UTF-32
+				return call_coder<through_utf8<char32_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
 		}
 
 		// Conversion to ANSI
@@ -647,26 +642,20 @@ struct encoder_from_utf8
 	template <class... Args>
 	void operator()(cell_string &output, const encoding &output_enc, Args&&... args) const
 	{
-		if(output_enc.is_unicode())
+		switch(output_enc.type)
 		{
-			// Should be always true - no point converting to ANSI through UTF-8
-			if(output_enc.char_size() == sizeof(wchar_t))
-			{
-				// Convert to wchar_t and append to output
+			case encoding::utf8:
+				// Append to output directly
+				return call_coder<U8CharDecoder>(output_appender{output}, std::forward<Args>(args)...);
+			case encoding::unicode:
+				// Convert to wchar_t and append
 				return call_coder<through_wchar_t>(output_appender{output}, std::forward<Args>(args)...);
-			}
-			switch(output_enc.type)
-			{
-				case encoding::utf8:
-					// Append to output directly
-					return call_coder<U8CharDecoder>(output_appender{output}, std::forward<Args>(args)...);
-				case encoding::utf16:
-					// Convert to UTF-16 and append
-					return call_coder<using_char_type<char16_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
-				case encoding::utf32:
-					// Convert to UTF-32 and append
-					return call_coder<using_char_type<char32_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
-			}
+			case encoding::utf16:
+				// Convert to UTF-16 and append
+				return call_coder<using_char_type<char16_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
+			case encoding::utf32:
+				// Convert to UTF-32 and append
+				return call_coder<using_char_type<char32_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
 		}
 
 		// Wrong initial choice of UTF-8 - should have been wchar_t
@@ -843,14 +832,13 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 {
 	if(input_enc.is_unicode())
 	{
-		size_t char_size = input_enc.char_size();
-		if(output_enc.is_unicode() && char_size == output_enc.char_size())
+		if(output_enc.is_unicode() && input_enc.char_size() == output_enc.char_size())
 		{
 			// No conversion involved
 			output = input;
 			return;
 		}
-		if(char_size == sizeof(wchar_t))
+		if(input_enc.type == encoding::unicode)
 		{
 			// Treat as raw wchar_t and convert directly
 			return encoder_from_wchar_t<decoder_to_char_type<wchar_t>::template from_raw>()(output, output_enc, input);
@@ -876,7 +864,7 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 				case encoding::utf16:
 					return encoder_from_wchar_t<decoder_from_char_type<char16_t>::template through_wchar_t>()(output, output_enc, input);
 				case encoding::utf32:
-					return encoder_from_wchar_t<decoder_from_char_type<char16_t>::template through_wchar_t>()(output, output_enc, input);
+					return encoder_from_wchar_t<decoder_from_char_type<char32_t>::template through_wchar_t>()(output, output_enc, input);
 			}
 		}
 	}
