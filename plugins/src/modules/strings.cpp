@@ -475,11 +475,11 @@ void encode_buffer(const std::codecvt_base &cvt, std::mbstate_t &state, const In
 		) \
 	>
 
-// std::codecvt_utf8 cache
-template <class CharType>
-const std::codecvt_utf8<CharType> &get_utf8()
+// std::codecvt cache
+template <template <class, unsigned long, std::codecvt_mode> class CodeCvt, class CharType>
+const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt()
 {
-	static const std::codecvt_utf8<CharType> cvt{};
+	static const CodeCvt<CharType, 0x10FFFF, std::codecvt_mode::consume_header> cvt{};
 	return cvt;
 }
 
@@ -494,7 +494,7 @@ struct encoder_from_wchar_t
 		template <class... Args>
 		void operator()(U8CharReceiver receiver, const encoding &output_enc, Args&&... args) const
 		{
-			const auto &cvt = get_utf8<wchar_t>();
+			const auto &cvt = get_codecvt<std::codecvt_utf8, wchar_t>();
 			char buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -525,7 +525,7 @@ struct encoder_from_wchar_t
 			template <class... Args>
 			void operator()(CharReceiver receiver, const encoding &output_enc, Args&&... args) const
 			{
-				const auto &cvt = get_utf8<char_type>();
+				const auto &cvt = get_codecvt<std::codecvt_utf8, char_type>();
 				char_type buffer[buffer_size];
 				std::mbstate_t state{};
 
@@ -599,7 +599,7 @@ struct encoder_from_utf8
 		template <class... Args>
 		void operator()(WCharReceiver receiver, Args&&... args) const
 		{
-			const auto &cvt = get_utf8<wchar_t>();
+			const auto &cvt = get_codecvt<std::codecvt_utf8, wchar_t>();
 			wchar_t buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -627,7 +627,7 @@ struct encoder_from_utf8
 			template <class... Args>
 			void operator()(CharReceiver receiver, Args&&... args) const
 			{
-				const auto &cvt = get_utf8<char_type>();
+				const auto &cvt = get_codecvt<std::codecvt_utf8, char_type>();
 				char_type buffer[buffer_size];
 				std::mbstate_t state{};
 
@@ -767,7 +767,7 @@ struct decoder_from_utf8_decoder
 
 		void operator()(WCharReceiver receiver, const cell_string &input) const
 		{
-			const auto &cvt = get_utf8<wchar_t>();
+			const auto &cvt = get_codecvt<std::codecvt_utf8, wchar_t>();
 			wchar_t wchar_buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -799,7 +799,7 @@ struct decoder_from_char_type
 
 		void operator()(U8CharReceiver receiver, const cell_string &input) const
 		{
-			const auto &cvt = get_utf8<char_type>();
+			const auto &cvt = get_codecvt<std::codecvt_utf8, char_type>();
 			unsigned_char_type char_buffer[buffer_size];
 			u8char utf8_buffer[buffer_size];
 			std::mbstate_t state{};
