@@ -314,6 +314,38 @@ namespace strings
 		} type;
 
 		std::locale install() const;
+
+		bool is_unicode() const
+		{
+			switch(type)
+			{
+				case encoding::unicode:
+				case encoding::utf8:
+				case encoding::utf16:
+				case encoding::utf32:
+					return true;
+			}
+			return false;
+		}
+
+		std::size_t char_size() const
+		{
+			switch(type)
+			{
+				case encoding::ansi:
+					return sizeof(char);
+				case encoding::unicode:
+					return sizeof(wchar_t);
+				case encoding::utf8:
+					return sizeof(char8_t);
+				case encoding::utf16:
+					return sizeof(char16_t);
+				case encoding::utf32:
+					return sizeof(char32_t);
+				default:
+					return 0;
+			}
+		}
 	};
 
 	encoding find_encoding(char *spec, bool default_if_empty);
@@ -323,6 +355,7 @@ namespace strings
 
 	void to_lower(cell_string &str, const encoding &enc);
 	void to_upper(cell_string &str, const encoding &enc);
+	void change_encoding(const cell_string &input, const encoding &input_enc, cell_string &output, const encoding &output_enc);
 }
 
 namespace std

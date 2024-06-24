@@ -781,6 +781,25 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
+	// native String:str_convert(StringTag:str, const from_encoding[], const to_encoding[]);
+	AMX_DEFINE_NATIVE_TAG(str_convert, 3, string)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str == nullptr)
+		{
+			return strings::pool.get_id(strings::pool.add());
+		}
+
+		char *from_encoding, *to_encoding;
+		amx_StrParam(amx, params[2], from_encoding);
+		amx_StrParam(amx, params[3], to_encoding);
+
+		cell_string out;
+		strings::change_encoding(*str, strings::find_encoding(from_encoding, false), out, strings::find_encoding(to_encoding, false));
+		return strings::pool.get_id(strings::pool.add(std::move(out)));
+	}
+
 	// native String:str_set_to_lower(StringTag:str, const encoding[]="");
 	AMX_DEFINE_NATIVE_TAG(str_set_to_lower, 1, string)
 	{
@@ -809,6 +828,25 @@ namespace Natives
 		if(str != nullptr)
 		{
 			strings::to_upper(*str, strings::find_encoding(encoding, false));
+		}
+		return params[1];
+	}
+
+	// native String:str_set_convert(StringTag:str, const from_encoding[], const to_encoding[]);
+	AMX_DEFINE_NATIVE_TAG(str_set_convert, 3, string)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+
+		char *from_encoding, *to_encoding;
+		amx_StrParam(amx, params[2], from_encoding);
+		amx_StrParam(amx, params[3], to_encoding);
+
+		if(str != nullptr)
+		{
+			cell_string out;
+			strings::change_encoding(*str, strings::find_encoding(from_encoding, false), out, strings::find_encoding(to_encoding, false));
+			std::swap(*str, out);
 		}
 		return params[1];
 	}
@@ -1484,6 +1522,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_join_s),
 	AMX_DECLARE_NATIVE(str_to_lower),
 	AMX_DECLARE_NATIVE(str_to_upper),
+	AMX_DECLARE_NATIVE(str_convert),
 
 	AMX_DECLARE_NATIVE(str_set),
 	AMX_DECLARE_NATIVE(str_append),
@@ -1494,6 +1533,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_reserve),
 	AMX_DECLARE_NATIVE(str_set_to_lower),
 	AMX_DECLARE_NATIVE(str_set_to_upper),
+	AMX_DECLARE_NATIVE(str_set_convert),
 
 	AMX_DECLARE_NATIVE(str_format),
 	AMX_DECLARE_NATIVE(str_format_s),
