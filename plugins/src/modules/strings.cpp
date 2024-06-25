@@ -440,7 +440,7 @@ void encode_buffer(const std::codecvt_base &cvt, std::mbstate_t &state, const In
 			msg += " to ";
 			msg += typeid(Output).name();
 			msg += " is not supported.";
-			throw std::logic_error(msg);
+			throw std::invalid_argument(msg);
 		}
 
 		receiver(
@@ -479,17 +479,18 @@ void encode_buffer(const std::codecvt_base &cvt, std::mbstate_t &state, const In
 
 // std::codecvt cache
 template <CODECVT_CLASS CodeCvtType, class CharType>
-const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt()
+const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt(const encoding &enc)
 {
 	static const CodeCvtType<CharType, 0x10FFFF, std::codecvt_mode::consume_header> cvt{};
 	return cvt;
 }
 
-const std::codecvt<wchar_t, char, std::mbstate_t> &get_wchar_t_codecvt()
+template <class CharType>
+const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt_utf8(const encoding &enc)
 {
-	return sizeof(wchar_t) == sizeof(char16_t) ?
-		get_codecvt<std::codecvt_utf8_utf16, wchar_t>() :
-		get_codecvt<std::codecvt_utf8, wchar_t>();
+	return sizeof(CharType) == sizeof(char16_t) ?
+		get_codecvt<std::codecvt_utf8_utf16, CharType>(enc) :
+		get_codecvt<std::codecvt_utf8, CharType>(enc);
 }
 
 template <template <class> class WCharDecoder>
@@ -503,7 +504,7 @@ struct encoder_from_wchar_t
 		template <class... Args>
 		void operator()(U8CharReceiver receiver, const encoding &output_enc, Args&&... args) const
 		{
-			const auto &cvt = get_wchar_t_codecvt();
+			const auto &cvt = get_codecvt_utf8<wchar_t>(output_enc);
 			char buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -522,7 +523,7 @@ struct encoder_from_wchar_t
 		}
 	};
 
-	template <CODECVT_CLASS CodeCvtType, class CharType>
+	template <class CharType>
 	struct through_utf8
 	{
 		// Conversion to CharType (UTF-16 / UTF-32) from UTF-8
@@ -534,7 +535,7 @@ struct encoder_from_wchar_t
 			template <class... Args>
 			void operator()(CharReceiver receiver, const encoding &output_enc, Args&&... args) const
 			{
-				const auto &cvt = get_codecvt<CodeCvtType, char_type>();
+				const auto &cvt = get_codecvt_utf8<char_type>(output_enc);
 				char_type buffer[buffer_size];
 				std::mbstate_t state{};
 
@@ -567,10 +568,10 @@ struct encoder_from_wchar_t
 				return call_coder<WCharDecoder>(output_appender{output}, std::forward<Args>(args)...);
 			case encoding::utf16:
 				// Append to output as UTF-16
-				return call_coder<through_utf8<std::codecvt_utf8_utf16, char16_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
+				return call_coder<through_utf8<char16_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
 			case encoding::utf32:
 				// Append to output as UTF-32
-				return call_coder<through_utf8<std::codecvt_utf8, char32_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
+				return call_coder<through_utf8<char32_t>::template to_char_type>(output_appender{output}, output_enc, std::forward<Args>(args)...);
 		}
 
 		// Conversion to ANSI
@@ -601,9 +602,9 @@ struct encoder_from_utf8
 	{
 		// Conversion to wchar_t
 		template <class... Args>
-		void operator()(WCharReceiver receiver, Args&&... args) const
+		void operator()(WCharReceiver receiver, const encoding &output_enc, Args&&... args) const
 		{
-			const auto &cvt = get_wchar_t_codecvt();
+			const auto &cvt = get_codecvt_utf8<wchar_t>(output_enc);
 			wchar_t buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -619,7 +620,7 @@ struct encoder_from_utf8
 		}
 	};
 
-	template <CODECVT_CLASS CodeCvtType, class CharType>
+	template <class CharType>
 	struct using_char_type
 	{
 		// Conversion to CharType (UTF-16 / UTF-32)
@@ -629,9 +630,9 @@ struct encoder_from_utf8
 		struct to_output
 		{
 			template <class... Args>
-			void operator()(CharReceiver receiver, Args&&... args) const
+			void operator()(CharReceiver receiver, const encoding &output_enc, Args&&... args) const
 			{
-				const auto &cvt = get_codecvt<CodeCvtType, char_type>();
+				const auto &cvt = get_codecvt_utf8<char_type>(output_enc);
 				char_type buffer[buffer_size];
 				std::mbstate_t state{};
 
@@ -658,17 +659,17 @@ struct encoder_from_utf8
 				return call_coder<U8CharDecoder>(output_appender{output}, std::forward<Args>(args)...);
 			case encoding::unicode:
 				// Convert to wchar_t and append
-				return call_coder<through_wchar_t>(output_appender{output}, std::forward<Args>(args)...);
+				return call_coder<through_wchar_t>(output_appender{output}, output_enc, std::forward<Args>(args)...);
 			case encoding::utf16:
 				// Convert to UTF-16 and append
-				return call_coder<using_char_type<std::codecvt_utf8_utf16, char16_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
+				return call_coder<using_char_type<char16_t>::template to_output>(output_appender{output}, output_enc, std::forward<Args>(args)...);
 			case encoding::utf32:
 				// Convert to UTF-32 and append
-				return call_coder<using_char_type<std::codecvt_utf8, char32_t>::template to_output>(output_appender{output}, std::forward<Args>(args)...);
+				return call_coder<using_char_type<char32_t>::template to_output>(output_appender{output}, output_enc, std::forward<Args>(args)...);
 		}
 
 		// Wrong initial choice of UTF-8 - should have been wchar_t
-		return encoder_from_wchar_t<through_wchar_t>()(output, output_enc, std::forward<Args>(args)...);
+		return encoder_from_wchar_t<through_wchar_t>()(output, output_enc, output_enc, std::forward<Args>(args)...);
 	}
 };
 
@@ -763,9 +764,10 @@ struct decoder_from_utf8_decoder
 	{
 		// Conversion to wchar_t
 
-		void operator()(WCharReceiver receiver, const cell_string &input) const
+		template <class... Args>
+		void operator()(WCharReceiver receiver, const encoding &input_enc, Args&&... args) const
 		{
-			const auto &cvt = get_wchar_t_codecvt();
+			const auto &cvt = get_codecvt_utf8<wchar_t>(input_enc);
 			wchar_t wchar_buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -777,12 +779,12 @@ struct decoder_from_utf8_decoder
 				{
 					return receiver(begin, end);
 				});
-			}, input);
+			}, std::forward<Args>(args)...);
 		}
 	};
 };
 
-template <CODECVT_CLASS CodeCvtType, class CharType>
+template <class CharType>
 struct decoder_from_char_type
 {
 	// Converts from CharType (UTF-16 / UTF-32)
@@ -795,9 +797,9 @@ struct decoder_from_char_type
 	{
 		// Conversion to UTF-8
 
-		void operator()(U8CharReceiver receiver, const cell_string &input) const
+		void operator()(U8CharReceiver receiver, const cell_string &input, const encoding &input_enc) const
 		{
-			const auto &cvt = get_codecvt<CodeCvtType, char_type>();
+			const auto &cvt = get_codecvt_utf8<char_type>(input_enc);
 			unsigned_char_type char_buffer[buffer_size];
 			u8char utf8_buffer[buffer_size];
 			std::mbstate_t state{};
@@ -860,20 +862,20 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 				case encoding::utf8:
 					return encoder_from_utf8<decoder_to_char_type<u8char>::template from_raw>()(output, output_enc, input);
 				case encoding::utf16:
-					return encoder_from_utf8<decoder_from_char_type<std::codecvt_utf8_utf16, char16_t>::template through_utf8>()(output, output_enc, input);
+					return encoder_from_utf8<decoder_from_char_type<char16_t>::template through_utf8>()(output, output_enc, input, input_enc);
 				case encoding::utf32:
-					return encoder_from_utf8<decoder_from_char_type<std::codecvt_utf8, char32_t>::template through_utf8>()(output, output_enc, input);
+					return encoder_from_utf8<decoder_from_char_type<char32_t>::template through_utf8>()(output, output_enc, input, input_enc);
 			}
 		}else{
 			// Through as wchar_t
 			switch(input_enc.type)
 			{
 				case encoding::utf8:
-					return encoder_from_wchar_t<decoder_from_utf8_decoder<decoder_to_char_type<u8char>::template from_raw>::template through_wchar_t>()(output, output_enc, input);
+					return encoder_from_wchar_t<decoder_from_utf8_decoder<decoder_to_char_type<u8char>::template from_raw>::template through_wchar_t>()(output, output_enc, input_enc, input);
 				case encoding::utf16:
-					return encoder_from_wchar_t<decoder_from_char_type<std::codecvt_utf8_utf16, char16_t>::template through_wchar_t>()(output, output_enc, input);
+					return encoder_from_wchar_t<decoder_from_char_type<char16_t>::template through_wchar_t>()(output, output_enc, input_enc, input, input_enc);
 				case encoding::utf32:
-					return encoder_from_wchar_t<decoder_from_char_type<std::codecvt_utf8, char32_t>::template through_wchar_t>()(output, output_enc, input);
+					return encoder_from_wchar_t<decoder_from_char_type<char32_t>::template through_wchar_t>()(output, output_enc, input_enc, input, input_enc);
 			}
 		}
 	}
