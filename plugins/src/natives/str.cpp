@@ -745,6 +745,17 @@ namespace Natives
 		return params[1];
 	}
 
+	template <class... Args>
+	strings::encoding find_encoding(char *locale, Args&&... args)
+	{
+		try{
+			return strings::find_encoding(locale, std::forward<Args>(args)...);
+		}catch(const std::runtime_error &)
+		{
+			amx_LogicError(errors::locale_not_found, locale);
+		}
+	}
+
 	// native String:str_to_lower(StringTag:str, const encoding[]="");
 	AMX_DEFINE_NATIVE_TAG(str_to_lower, 1, string)
 	{
@@ -759,7 +770,7 @@ namespace Natives
 		amx_OptStrParam(amx, 2, encoding, nullptr);
 
 		auto str2 = *str;
-		strings::to_lower(str2, strings::find_encoding(encoding, false));
+		strings::to_lower(str2, find_encoding(encoding, false));
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
@@ -777,7 +788,7 @@ namespace Natives
 		amx_OptStrParam(amx, 2, encoding, nullptr);
 
 		auto str2 = *str;
-		strings::to_upper(str2, strings::find_encoding(encoding, false));
+		strings::to_upper(str2, find_encoding(encoding, false));
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
@@ -796,7 +807,7 @@ namespace Natives
 		amx_StrParam(amx, params[3], to_encoding);
 
 		cell_string out;
-		strings::change_encoding(*str, strings::find_encoding(from_encoding, false), out, strings::find_encoding(to_encoding, false));
+		strings::change_encoding(*str, find_encoding(from_encoding, false), out, find_encoding(to_encoding, false));
 		return strings::pool.get_id(strings::pool.add(std::move(out)));
 	}
 
@@ -811,7 +822,7 @@ namespace Natives
 
 		if(str != nullptr)
 		{
-			strings::to_lower(*str, strings::find_encoding(encoding, false));
+			strings::to_lower(*str, find_encoding(encoding, false));
 		}
 		return params[1];
 	}
@@ -827,7 +838,7 @@ namespace Natives
 
 		if(str != nullptr)
 		{
-			strings::to_upper(*str, strings::find_encoding(encoding, false));
+			strings::to_upper(*str, find_encoding(encoding, false));
 		}
 		return params[1];
 	}
@@ -845,7 +856,7 @@ namespace Natives
 		if(str != nullptr)
 		{
 			cell_string out;
-			strings::change_encoding(*str, strings::find_encoding(from_encoding, false), out, strings::find_encoding(to_encoding, false));
+			strings::change_encoding(*str, find_encoding(from_encoding, false), out, find_encoding(to_encoding, false));
 			std::swap(*str, out);
 		}
 		return params[1];
