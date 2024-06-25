@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <algorithm>
 #include <tuple>
+#include <utility>
 
 namespace impl
 {
@@ -60,7 +61,7 @@ namespace impl
 		bool treat_as_truncated;
 
 		template <class Func>
-		auto get_base(Func func) const -> decltype(func(static_cast<const std::ctype<char>&>(base())))
+		auto get_base(Func func) const -> decltype(func(std::declval<const std::ctype<char>>()))
 		{
 			switch(base_type)
 			{

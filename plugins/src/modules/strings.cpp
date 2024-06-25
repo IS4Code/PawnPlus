@@ -123,135 +123,227 @@ bool strings::clamp_pos(const cell_string &str, cell &pos)
 	return true;
 }
 
-std::locale custom_locale;
-std::string custom_locale_name;
 
-std::locale::category get_category(cell category)
+template <class Locale>
+using flags_type_of = typename std::remove_reference<decltype((std::declval<encoding_info<Locale>>().flags))>::type;
+
+template <class Locale>
+using flags_int_type_of = typename std::underlying_type<flags_type_of<Locale>>::type;
+
+static_assert(std::is_same_v<flags_type_of<std::locale>, decltype(encoding_info<std::locale>::flags)>, "Test");
+
+template <class Locale>
+flags_type_of<Locale> operator~(flags_type_of<Locale> a)
 {
-	if(category == -1) return std::locale::all;
-	std::locale::category cat = std::locale::none;
-	if(category & 1)
-	{
-		cat |= std::locale::collate;
-	}
-	if(category & 2)
-	{
-		cat |= std::locale::ctype;
-	}
-	if(category & 4)
-	{
-		cat |= std::locale::monetary;
-	}
-	if(category & 8)
-	{
-		cat |= std::locale::numeric;
-	}
-	if(category & 16)
-	{
-		cat |= std::locale::time;
-	}
-	if(category & 32)
-	{
-		cat |= std::locale::messages;
-	}
-	return cat;
+	return (flags_type_of<Locale>)(~(flags_int_type_of<Locale>)a);
+}
+template <class Locale>
+flags_type_of<Locale> operator|(flags_type_of<Locale> a, flags_type_of<Locale> b)
+{
+	return (flags_type_of<Locale>)((flags_int_type_of<Locale>)a | (flags_int_type_of<Locale>)b);
+}
+template <class Locale>
+flags_type_of<Locale> operator&(flags_type_of<Locale> a, flags_type_of<Locale> b)
+{
+	return (flags_type_of<Locale>)((flags_int_type_of<Locale>)a & (flags_int_type_of<Locale>)b);
+}
+template <class Locale>
+flags_type_of<Locale> operator^(flags_type_of<Locale> a, flags_type_of<Locale> b)
+{
+	return (flags_type_of<Locale>)((flags_int_type_of<Locale>)a ^ (flags_int_type_of<Locale>)b);
+}
+flags_type_of<const char*>& operator|=(flags_type_of<const char*>& a, flags_type_of<const char*> b)
+{
+	return (flags_type_of<const char*>&)((flags_int_type_of<const char*>&)a |= (flags_int_type_of<const char*>)b);
+}
+template <class Locale>
+flags_type_of<Locale>& operator&=(flags_type_of<Locale>& a, flags_type_of<Locale> b)
+{
+	return (flags_type_of<Locale>&)((flags_int_type_of<Locale>&)a &= (flags_int_type_of<Locale>)b);
+}
+template <class Locale>
+flags_type_of<Locale>& operator^=(flags_type_of<Locale>& a, flags_type_of<Locale> b)
+{
+	return (flags_type_of<Locale>&)((flags_int_type_of<Locale>&)a ^= (flags_int_type_of<Locale>)b);
 }
 
-char *split_locale(char *str)
+namespace
 {
-	auto pos = std::strstr(str, "|");
-	if(pos)
+	std::locale custom_locale;
+	std::string custom_locale_name;
+
+	std::locale::category get_category(cell category)
 	{
-		*pos = '\0';
-		++pos;
+		if(category == -1) return std::locale::all;
+		std::locale::category cat = std::locale::none;
+		if(category & 1)
+		{
+			cat |= std::locale::collate;
+		}
+		if(category & 2)
+		{
+			cat |= std::locale::ctype;
+		}
+		if(category & 4)
+		{
+			cat |= std::locale::monetary;
+		}
+		if(category & 8)
+		{
+			cat |= std::locale::numeric;
+		}
+		if(category & 16)
+		{
+			cat |= std::locale::time;
+		}
+		if(category & 32)
+		{
+			cat |= std::locale::messages;
+		}
+		return cat;
 	}
-	return pos;
-}
+
+	char *split_locale(char *str)
+	{
+		auto pos = std::strchr(str, '|');
+		if(pos)
+		{
+			*pos = '\0';
+			++pos;
+		}
+		return pos;
+	}
 
 #ifndef _WIN32
 #define _stricmp strcasecmp
 #define _strnicmp strncasecmp
 #endif
 
-decltype(encoding::type) parse_encoding_type(char *&spec)
-{
-	auto pos = std::strstr(spec, "+");
-	if(pos)
+	using encoding_data = encoding_info<const char*>;
+	using encoding_type = decltype(encoding_data::type);
+	using encoding_flags = decltype(encoding_data::flags);
+
+	encoding_type parse_encoding_type(char *&spec)
 	{
-		pos[0] = '\0';
+		auto pos = std::strchr(spec, '+');
+		if(pos)
+		{
+			pos[0] = '\0';
+		}
+
+		auto found = [&](encoding_type type)
+		{
+			spec = pos ? pos + 1 : "";
+			return type;
+		};
+
+		if(!_stricmp(spec, "ansi"))
+		{
+			return found(encoding_data::ansi);
+		}
+		if(!_stricmp(spec, "unicode"))
+		{
+			return found(encoding_data::unicode);
+		}
+		if(!_strnicmp(spec, "utf", 3))
+		{
+			auto utf = spec + 3;
+			if(utf[0] == '-')
+			{
+				++utf;
+			}
+			if(!_stricmp(utf, "8"))
+			{
+				return found(encoding_data::utf8);
+			}
+			if(!_stricmp(utf, "16"))
+			{
+				return found(encoding_data::utf16);
+			}
+			if(!_stricmp(utf, "32"))
+			{
+				return found(encoding_data::utf32);
+			}
+		}
+
+		if(pos)
+		{
+			pos[0] = '+';
+		}
+		return encoding_data::ansi;
 	}
 
-	auto found = [&](decltype(encoding::type) type)
+	void parse_encoding_flags(encoding_data &data, char *spec, char *spec_end)
 	{
-		spec = pos ? pos + 1 : "";
-		return type;
-	};
+		using it = std::reverse_iterator<char*>;
+		it begin{spec_end}, end{spec};
 
-	if(!_stricmp(spec, "ansi"))
-	{
-		return found(encoding::ansi);
-	}
-	if(!_stricmp(spec, "unicode"))
-	{
-		return found(encoding::unicode);
-	}
-	if(!_strnicmp(spec, "utf", 3))
-	{
-		auto utf = spec + 3;
-		if(utf[0] == '-')
+		it start;
+		while((start = std::find(begin, end, ';')) != end)
 		{
-			++utf;
-		}
-		if(!_stricmp(utf, "8"))
-		{
-			return found(encoding::utf8);
-		}
-		if(!_stricmp(utf, "16"))
-		{
-			return found(encoding::utf16);
-		}
-		if(!_stricmp(utf, "32"))
-		{
-			return found(encoding::utf32);
+			char *param = start.base();
+			if(!_stricmp(param, "trunc"))
+			{
+				data.flags |= encoding_data::truncated_cells;
+			}else if(!_stricmp(param, "ucs"))
+			{
+				data.flags |= encoding_data::unicode_ucs;
+			}else if(!_stricmp(param, "bom"))
+			{
+				data.flags |= encoding_data::unicode_use_header;
+			}else if(!_stricmp(param, "maxrange"))
+			{
+				data.flags |= encoding_data::unicode_extended;
+			}else if(param + 9 == spec_end && !_strnicmp(param, "default=", 8))
+			{
+				data.unknown_char = param[8];
+			}else{
+				// no recognized param
+				break;
+			}
+			*start = '\0';
+			++start;
+			spec_end = start.base();
 		}
 	}
 
-	if(pos)
+	encoding_data parse_encoding(char *&spec)
 	{
-		pos[0] = '+';
+		encoding_data data{spec};
+		parse_encoding_flags(data, spec, spec + std::strlen(spec));
+		data.type = parse_encoding_type(const_cast<char*&>(data.locale));
+		return data;
 	}
-	return encoding::ansi;
 }
 
-encoding strings::find_encoding(char *spec, bool default_if_empty)
+encoding strings::find_encoding(char *&spec, bool default_if_empty)
 {
-	auto make_encoding = [&](char *name, decltype(encoding::type) type) -> encoding
+	auto make_encoding = [&](const encoding_data &data) -> encoding
 	{
-		if(name[0] == '\0' && !default_if_empty)
+		if(data.locale[0] == '\0' && !default_if_empty)
 		{
-			return {std::locale(), type};
+			return {std::locale(), data};
 		}
-		return {std::locale(name), type};
+		return {std::locale(data.locale), data};
 	};
 
 	if(!spec)
 	{
-		return make_encoding("", default_if_empty ? encoding::ansi : encoding::unspecified);
+		return make_encoding(encoding_data(""));
 	}
 	char *nextspec;
 	while(nextspec = split_locale(spec))
 	{
-		auto type = parse_encoding_type(spec);
+		auto data = parse_encoding(spec);
 		try{
-			return make_encoding(spec, type);
+			return make_encoding(data);
 		}catch(const std::runtime_error &)
 		{
 
 		}
 		spec = nextspec;
 	}
-	auto type = parse_encoding_type(spec);
-	return make_encoding(spec, type);
+	return make_encoding(parse_encoding(spec));
 }
 
 template <class Facet, class... Args>
@@ -282,7 +374,11 @@ static std::locale merge_locale(const std::locale &base, const std::locale &spec
 	return result;
 }
 
-std::locale encoding::install() const
+template <class Locale>
+typename encoding_info<Locale>::make_value<Locale>::type encoding_info<Locale>::install() const;
+
+template <>
+std::locale encoding_info<std::locale>::install() const
 {
 	std::locale result = locale;
 	switch(type)
@@ -312,7 +408,7 @@ std::locale encoding::install() const
 				std::ctype<cell>::install<wchar_t>(result);
 			}else{
 				add_facet<std::ctype<char32_t>>(result);
-std::ctype<cell>::install<char32_t>(result);
+				std::ctype<cell>::install<char32_t>(result);
 			}
 			break;
 	}
@@ -330,10 +426,10 @@ void strings::set_encoding(const encoding &enc, cell category)
 	if((cat & std::locale::all) == std::locale::all)
 	{
 		set_global(enc.install());
-	} else if(cat & std::locale::ctype)
+	}else if(cat & std::locale::ctype)
 	{
 		set_global(merge_locale(custom_locale, enc.install(), cat));
-	} else {
+	}else {
 		set_global(std::locale(custom_locale, enc.locale, cat));
 	}
 	custom_locale_name = enc.locale.name();
@@ -418,12 +514,9 @@ using remove_cvref_t = typename std::remove_cv<typename std::remove_reference<Ty
 template <class Input, class Output>
 using codecvt_process = std::codecvt_base::result(std::codecvt_base::*)(std::mbstate_t&, const Input*, const Input*, const Input*&, Output*, Output*, Output*&) const;
 
-// Used when encoding encounters an unknown character or a character that cannot be represented
-constexpr const char unknown_char = '?';
-
 // Repeatedly calls Conversion until all input is converted and received
 template <class Input, class Output, codecvt_process<Input, Output> Conversion, class Receiver>
-void encode_buffer(const std::codecvt_base &cvt, std::mbstate_t &state, const Input *input_begin, const Input *input_end, Output *buffer_begin, Output *buffer_end, Receiver receiver)
+void encode_buffer(const std::codecvt_base &cvt, const encoding &enc, std::mbstate_t &state, const Input *input_begin, const Input *input_end, Output *buffer_begin, Output *buffer_end, Receiver receiver)
 {
 	const Input *input_next = input_begin;
 	Output *buffer_next = buffer_begin;
@@ -452,7 +545,7 @@ void encode_buffer(const std::codecvt_base &cvt, std::mbstate_t &state, const In
 		{
 			case std::codecvt_base::error:
 			{
-				static const Output unknown[1] = {unknown_char};
+				const Output unknown[1] = {static_cast<Output>(static_cast<unsigned char>(enc.unknown_char))};
 				receiver(unknown, unknown + 1);
 				++input_next;
 			}
@@ -478,18 +571,39 @@ void encode_buffer(const std::codecvt_base &cvt, std::mbstate_t &state, const In
 #define CODECVT_CLASS template <class, unsigned long, std::codecvt_mode> class
 
 // std::codecvt cache
+template <CODECVT_CLASS CodeCvtType, class CharType, unsigned long Maxcode, std::codecvt_mode Mode>
+const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt()
+{
+	static const CodeCvtType<CharType, Maxcode, Mode> cvt{};
+	return cvt;
+}
+
+template <CODECVT_CLASS CodeCvtType, class CharType, unsigned long Maxcode>
+const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt(const encoding &enc)
+{
+	using mode = std::codecvt_mode;
+	using mode_int = typename std::underlying_type<mode>::type;
+
+	return (enc.flags & encoding::unicode_use_header) ?
+		get_codecvt<CodeCvtType, CharType, Maxcode, static_cast<mode>(static_cast<mode_int>(mode::consume_header) | static_cast<mode_int>(mode::generate_header))>() :
+		get_codecvt<CodeCvtType, CharType, Maxcode, mode{}>();
+}
+
 template <CODECVT_CLASS CodeCvtType, class CharType>
 const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt(const encoding &enc)
 {
-	static const CodeCvtType<CharType, 0x10FFFF, std::codecvt_mode::consume_header> cvt{};
-	return cvt;
+	return (enc.flags & encoding::unicode_extended) ?
+		get_codecvt<CodeCvtType, CharType, std::numeric_limits<unsigned long>::max()>(enc) :
+		get_codecvt<CodeCvtType, CharType, 0x10FFFF>(enc);
 }
 
 template <class CharType>
 const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt_utf8(const encoding &enc)
 {
-	return sizeof(CharType) == sizeof(char16_t) ?
+	return (sizeof(CharType) == sizeof(char16_t)) != static_cast<bool>(enc.flags & encoding::unicode_ucs) ?
+		// is 16-bit and not UCS mode, or is 32-bit and UCS mode
 		get_codecvt<std::codecvt_utf8_utf16, CharType>(enc) :
+		// is 16-bit and UCS mode, or is 32-bit and not UCS mode
 		get_codecvt<std::codecvt_utf8, CharType>(enc);
 }
 
@@ -512,7 +626,7 @@ struct encoder_from_wchar_t
 			return call_coder<WCharDecoder>([&](const wchar_t *input_begin, const wchar_t *input_end)
 			{
 				// Encodes wchar_t to UTF-8 (out)
-				return encode_buffer_f(wchar_t, char, cvt, out)(cvt, state, input_begin, input_end, buffer, buffer + buffer_size, [&](const char *begin, const char *end)
+				return encode_buffer_f(wchar_t, char, cvt, out)(cvt, output_enc, state, input_begin, input_end, buffer, buffer + buffer_size, [&](const char *begin, const char *end)
 				{
 					return receiver(
 						reinterpret_cast<const u8char*>(begin),
@@ -543,7 +657,7 @@ struct encoder_from_wchar_t
 				return call_coder<to_utf8>([&](const u8char *input_begin, const u8char *input_end)
 				{
 					// Encodes UTF-8 to CharType (in)
-					return encode_buffer_f(u8char, char_type, cvt, in)(cvt, state, input_begin, input_end, buffer, buffer + buffer_size, [&](const char_type *begin, const char_type *end)
+					return encode_buffer_f(u8char, char_type, cvt, in)(cvt, output_enc, state, input_begin, input_end, buffer, buffer + buffer_size, [&](const char_type *begin, const char_type *end)
 					{
 						return receiver(
 							reinterpret_cast<const CharType*>(begin),
@@ -584,7 +698,7 @@ struct encoder_from_wchar_t
 		return call_coder<WCharDecoder>([&](const wchar_t *input_begin, const wchar_t *input_end)
 		{
 			ptrdiff_t size = input_end - input_begin;
-			wchar_facet.narrow(input_begin, input_end, unknown_char, char_buffer);
+			wchar_facet.narrow(input_begin, input_end, output_enc.unknown_char, char_buffer);
 
 			size_t pos = output.size();
 			output.resize(pos + size, 0);
@@ -612,7 +726,7 @@ struct encoder_from_utf8
 			return call_coder<U8CharDecoder>([&](const u8char *input_begin, const u8char *input_end)
 			{
 				// Encodes UTF-8 to wchar_t (in)
-				return encode_buffer_f(char, wchar_t, cvt, in)(cvt, state, reinterpret_cast<const char*>(input_begin), reinterpret_cast<const char*>(input_end), buffer, buffer + buffer_size, [&](const wchar_t *begin, const wchar_t *end)
+				return encode_buffer_f(char, wchar_t, cvt, in)(cvt, output_enc, state, reinterpret_cast<const char*>(input_begin), reinterpret_cast<const char*>(input_end), buffer, buffer + buffer_size, [&](const wchar_t *begin, const wchar_t *end)
 				{
 					return receiver(begin, end);
 				});
@@ -640,7 +754,7 @@ struct encoder_from_utf8
 				return call_coder<U8CharDecoder>([&](const u8char *input_begin, const u8char *input_end)
 				{
 					// Encodes UTF-8 to CharType (in)
-					return encode_buffer_f(u8char, char_type, cvt, in)(cvt, state, input_begin, input_end, buffer, buffer + buffer_size, [&](const char_type *begin, const char_type *end)
+					return encode_buffer_f(u8char, char_type, cvt, in)(cvt, output_enc, state, input_begin, input_end, buffer, buffer + buffer_size, [&](const char_type *begin, const char_type *end)
 					{
 						return receiver(begin, end);
 					});
@@ -730,7 +844,7 @@ struct decoder_from_ansi_to_wchar_t
 		auto pointer = &input[0];
 		while(remaining > buffer_size)
 		{
-			cell_facet.narrow(pointer, pointer + buffer_size, unknown_char, char_buffer);
+			cell_facet.narrow(pointer, pointer + buffer_size, input_enc.unknown_char, char_buffer);
 			wchar_facet.widen(char_buffer, char_buffer + buffer_size, wchar_buffer);
 
 			receiver(
@@ -743,7 +857,7 @@ struct decoder_from_ansi_to_wchar_t
 		}
 		if(remaining > 0)
 		{
-			cell_facet.narrow(pointer, pointer + remaining, unknown_char, char_buffer);
+			cell_facet.narrow(pointer, pointer + remaining, input_enc.unknown_char, char_buffer);
 			wchar_facet.widen(char_buffer, char_buffer + remaining, wchar_buffer);
 
 			receiver(
@@ -775,7 +889,7 @@ struct decoder_from_utf8_decoder
 			return call_coder<U8CharDecoder>([&](const u8char *begin, const u8char *end)
 			{
 				// Encode UTF-8 to wchar_t
-				encode_buffer_f(char, wchar_t, cvt, in)(cvt, state, reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end), wchar_buffer, wchar_buffer + buffer_size, [&](const wchar_t *begin, const wchar_t *end)
+				encode_buffer_f(char, wchar_t, cvt, in)(cvt, input_enc, state, reinterpret_cast<const char*>(begin), reinterpret_cast<const char*>(end), wchar_buffer, wchar_buffer + buffer_size, [&](const wchar_t *begin, const wchar_t *end)
 				{
 					return receiver(begin, end);
 				});
@@ -811,7 +925,7 @@ struct decoder_from_char_type
 				std::copy(pointer, pointer + buffer_size, char_buffer);
 
 				// Encode from CharType to UTF-8
-				encode_buffer_f(char_type, u8char, cvt, out)(cvt, state, reinterpret_cast<const char_type*>(char_buffer), reinterpret_cast<const char_type*>(char_buffer + buffer_size), utf8_buffer, utf8_buffer + buffer_size, [&](const u8char *begin, const u8char *end)
+				encode_buffer_f(char_type, u8char, cvt, out)(cvt, input_enc, state, reinterpret_cast<const char_type*>(char_buffer), reinterpret_cast<const char_type*>(char_buffer + buffer_size), utf8_buffer, utf8_buffer + buffer_size, [&](const u8char *begin, const u8char *end)
 				{
 					return receiver(begin, end);
 				});
@@ -824,7 +938,7 @@ struct decoder_from_char_type
 				std::copy(pointer, pointer + remaining, char_buffer);
 
 				// Encode from CharType to UTF-8
-				encode_buffer_f(char_type, u8char, cvt, out)(cvt, state, reinterpret_cast<const char_type*>(char_buffer), reinterpret_cast<const char_type*>(char_buffer + remaining), utf8_buffer, utf8_buffer + buffer_size, [&](const u8char *begin, const u8char *end)
+				encode_buffer_f(char_type, u8char, cvt, out)(cvt, input_enc, state, reinterpret_cast<const char_type*>(char_buffer), reinterpret_cast<const char_type*>(char_buffer + remaining), utf8_buffer, utf8_buffer + buffer_size, [&](const u8char *begin, const u8char *end)
 				{
 					return receiver(begin, end);
 				});

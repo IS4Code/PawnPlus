@@ -301,10 +301,11 @@ namespace strings
 	bool clamp_range(const cell_string &str, cell &start, cell &end);
 	bool clamp_pos(const cell_string &str, cell &pos);
 
-	struct encoding
+	template <class Locale>
+	struct encoding_info
 	{
-		std::locale locale;
-		enum {
+		Locale locale;
+		enum : unsigned char {
 			unspecified,
 			ansi,
 			unicode,
@@ -312,17 +313,78 @@ namespace strings
 			utf16,
 			utf32
 		} type;
+		enum : unsigned char {
+			truncated_cells = 1,
+			unicode_ucs = 2,
+			unicode_extended = 4,
+			unicode_use_header = 8
+		} flags;
+		char unknown_char;
 
-		std::locale install() const;
+	private:
+		template <class LocaleRef>
+		encoding_info(std::nullptr_t, LocaleRef &&locale) : locale(std::forward<LocaleRef>(locale)), type{}, flags{}, unknown_char{'?'}
+		{
+
+		}
+
+		template <class LocaleRef, class OtherLocale>
+		encoding_info(std::nullptr_t, LocaleRef &&locale, const encoding_info<OtherLocale> &enc) : locale(std::forward<LocaleRef>(locale)), type{static_cast<decltype(type)>(enc.type)}, flags{static_cast<decltype(flags)>(enc.flags)}, unknown_char{enc.unknown_char}
+		{
+
+		}
+
+		template <class Type>
+		struct make_value
+		{
+			using type = Type;
+		};
+
+		template <class Obj>
+		struct make_value<Obj*>
+		{
+			using type = std::basic_string<Obj>;
+		};
+
+		template <class Obj>
+		struct make_value<const Obj*>
+		{
+			using type = std::basic_string<Obj>;
+		};
+
+	public:
+		encoding_info(const Locale &locale) : encoding_info(nullptr, locale)
+		{
+
+		}
+
+		encoding_info(Locale &&locale) : encoding_info(nullptr, std::move(locale))
+		{
+
+		}
+
+		template <class OtherLocale>
+		encoding_info(const Locale &locale, const encoding_info<OtherLocale> &enc) : encoding_info(nullptr, locale, enc)
+		{
+
+		}
+
+		template <class OtherLocale>
+		encoding_info(Locale &&locale, const encoding_info<OtherLocale> &enc) : encoding_info(nullptr, std::move(locale), enc)
+		{
+
+		}
+
+		typename make_value<Locale>::type install() const;
 
 		bool is_unicode() const
 		{
 			switch(type)
 			{
-				case encoding::unicode:
-				case encoding::utf8:
-				case encoding::utf16:
-				case encoding::utf32:
+				case encoding_info::unicode:
+				case encoding_info::utf8:
+				case encoding_info::utf16:
+				case encoding_info::utf32:
 					return true;
 			}
 			return false;
@@ -332,15 +394,15 @@ namespace strings
 		{
 			switch(type)
 			{
-				case encoding::ansi:
+				case encoding_info::ansi:
 					return sizeof(char);
-				case encoding::unicode:
+				case encoding_info::unicode:
 					return sizeof(wchar_t);
-				case encoding::utf8:
+				case encoding_info::utf8:
 					return sizeof(char8_t);
-				case encoding::utf16:
+				case encoding_info::utf16:
 					return sizeof(char16_t);
-				case encoding::utf32:
+				case encoding_info::utf32:
 					return sizeof(char32_t);
 				default:
 					return 0;
@@ -348,7 +410,9 @@ namespace strings
 		}
 	};
 
-	encoding find_encoding(char *spec, bool default_if_empty);
+	using encoding = encoding_info<std::locale>;
+
+	encoding find_encoding(char *&spec, bool default_if_empty);
 	void set_encoding(const encoding &enc, cell category);
 	void reset_locale();
 	const std::string &locale_name();
