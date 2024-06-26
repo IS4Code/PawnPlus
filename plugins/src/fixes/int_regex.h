@@ -24,8 +24,8 @@ namespace impl
 		template <std::size_t Size>
 		static std::basic_string<CharType> get_str(const char(&source)[Size])
 		{
-			std::basic_string<CharType> result(Size, CharType());
-			std::copy(std::begin(source), std::end(source), result.begin());
+			std::basic_string<CharType> result(Size - 1, CharType());
+			std::copy(std::begin(source), std::prev(std::end(source)), result.begin());
 			return result;
 		}
 
