@@ -452,6 +452,21 @@ namespace impl
 
 namespace std
 {
+	template <class Type>
+	struct hash<std::basic_string<Type>>
+	{
+		size_t operator()(const std::basic_string<Type> &obj) const
+		{
+			std::hash<Type> hasher;
+			size_t seed = 0;
+			for(const auto &c : obj)
+			{
+				seed ^= hasher(c) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+			}
+			return seed;
+		}
+	};
+
 	template <>
 	class ctype<std::int32_t> : public ::impl::int_ctype<std::int32_t>
 	{
