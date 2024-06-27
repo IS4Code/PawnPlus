@@ -302,7 +302,7 @@ namespace
 		int error = sigsetjmp(jmp, true);
 		if(error)
 		{
-			amx_LogicError(errors::unhandled_system_exception, error, sigdescr_np(error), is_fatal(error) ? corrupted_error : "");
+			amx_LogicError(errors::unhandled_system_exception, error, sys_siglist[error], is_fatal(error) ? corrupted_error : "");
 		}
 		signals_guard guard;
 		return native(amx, params);

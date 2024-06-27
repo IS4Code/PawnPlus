@@ -1,4 +1,4 @@
-GPP = g++ -D _GLIBCXX_USE_CXX11_ABI=0 -m32 -std=c++11 -Ilib -Isrc -fno-stack-protector
+GPP = g++ -D _GLIBCXX_USE_CXX11_ABI=0 -m32 -std=c++14 -Ilib -Isrc -fno-stack-protector
 GCC = gcc -D _GLIBCXX_USE_CXX11_ABI=0 -m32 -Ilib -Isrc -fno-stack-protector
 LINK = $(GPP) -lstdc++
 PP_OUTFILE = "./PawnPlus.so"
@@ -12,7 +12,7 @@ all: PawnPlus
 clean:
 	-rm -f *~ *.o *.so
   
-static: GPP = g++ -D _GLIBCXX_USE_CXX11_ABI=0 -m32 -std=c++11 -Ilib -Isrc -fno-stack-protector -static-libgcc -static-libstdc++
+static: GPP = g++ -D _GLIBCXX_USE_CXX11_ABI=0 -m32 -std=c++14 -Ilib -Isrc -fno-stack-protector -static-libgcc -static-libstdc++
 static: GCC = gcc -D _GLIBCXX_USE_CXX11_ABI=0 -m32 -Ilib -Isrc -fno-stack-protector -static-libgcc -static-libstdc++
 static: LINK = $(GPP)
 static: all

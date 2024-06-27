@@ -8,6 +8,21 @@
 #include <tuple>
 #include <utility>
 
+namespace std
+{
+	template <>
+	class ctype<std::int32_t>;
+
+	template <>
+	class ctype<char8_t>;
+
+	template <>
+	class ctype<char16_t>;
+
+	template <>
+	class ctype<char32_t>;
+}
+
 namespace impl
 {
 	template <class BaseCType>
@@ -41,14 +56,37 @@ namespace impl
 			base_ptr = &std::use_facet<std::ctype<BaseCharType>>(base_locale);
 		}
 
-		const BaseCType &base() const
+		typename std::add_lvalue_reference<const BaseCType>::type base() const
 		{
 			return *base_ptr;
+		}
+
+		template <class CharType>
+		const std::ctype<CharType> &base_derived() const
+		{
+			return *static_cast<const std::ctype<CharType>*>(base_ptr);
 		}
 	};
 
 	template <class CharType>
-	class int_ctype : public wrapper_ctype<std::ctype_base>
+	struct transform_helper
+	{
+		static CharType tolower(const std::ctype<CharType> &obj, CharType ch)
+		{
+			return obj.tolower(ch);
+		}
+
+		static CharType toupper(const std::ctype<CharType> &obj, CharType ch)
+		{
+			return obj.toupper(ch);
+		}
+	};
+
+	template <class CharType>
+	struct ctype_convert;
+
+	template <class CharType>
+	class int_ctype : public wrapper_ctype<void>
 	{
 		enum
 		{
@@ -66,15 +104,15 @@ namespace impl
 			switch(base_type)
 			{
 				case base_char:
-					return func(static_cast<const std::ctype<char>&>(base()));
+					return func(base_derived<char>());
 				case base_wchar_t:
-					return func(static_cast<const std::ctype<wchar_t>&>(base()));
+					return func(base_derived<wchar_t>());
 				case base_char8_t:
-					return func(static_cast<const std::ctype<char8_t>&>(base()));
+					return func(base_derived<char8_t>());
 				case base_char16_t:
-					return func(static_cast<const std::ctype<char16_t>&>(base()));
+					return func(base_derived<char16_t>());
 				case base_char32_t:
-					return func(static_cast<const std::ctype<char32_t>&>(base()));
+					return func(base_derived<char32_t>());
 				default:
 					throw std::logic_error("Unrecognized base character type.");
 			}
@@ -97,52 +135,53 @@ namespace impl
 		}
 
 		template <class BaseCharType>
-		using ctype_transform = BaseCharType(std::ctype<BaseCharType>::*)(BaseCharType) const;
+		using ctype_transform = BaseCharType(*)(const std::ctype<BaseCharType>&, BaseCharType);
+
+		template <class BaseCharType>
+		struct empty
+		{
+
+		};
+
+		decltype(base_type) base_type_from_param(empty<char>&&)
+		{
+			return base_char;
+		}
+
+		decltype(base_type) base_type_from_param(empty<wchar_t>&&)
+		{
+			return base_wchar_t;
+		}
+
+		decltype(base_type) base_type_from_param(empty<char8_t>&&)
+		{
+			return base_char8_t;
+		}
+
+		decltype(base_type) base_type_from_param(empty<char16_t>&&)
+		{
+			return base_char16_t;
+		}
+
+		decltype(base_type) base_type_from_param(empty<char32_t>&&)
+		{
+			return base_char32_t;
+		}
 
 	protected:
 		template <class BaseCharType>
-		void set_base(const std::locale &locale);
-
-		template <>
-		void set_base<char>(const std::locale &locale)
+		void set_base(const std::locale &locale)
 		{
-			wrapper_ctype::set_base<char>(locale);
-			base_type = base_char;
-		}
-
-		template <>
-		void set_base<wchar_t>(const std::locale &locale)
-		{
-			wrapper_ctype::set_base<wchar_t>(locale);
-			base_type = base_wchar_t;
-		}
-
-		template <>
-		void set_base<char8_t>(const std::locale &locale)
-		{
-			wrapper_ctype::set_base<char8_t>(locale);
-			base_type = base_char8_t;
-		}
-
-		template <>
-		void set_base<char16_t>(const std::locale &locale)
-		{
-			wrapper_ctype::set_base<char16_t>(locale);
-			base_type = base_char16_t;
-		}
-
-		template <>
-		void set_base<char32_t>(const std::locale &locale)
-		{
-			wrapper_ctype::set_base<char32_t>(locale);
-			base_type = base_char32_t;
+			wrapper_ctype::set_base<BaseCharType>(locale);
+			base_type = base_type_from_param(empty<BaseCharType>());
 		}
 
 		void change_base(const std::locale &locale)
 		{
-			return get_base([&](const auto &base)
+			get_base([&](const auto &base)
 			{
 				wrapper_ctype::set_base<ctype_char_type<decltype(base)>>(locale);
+				return nullptr;
 			});
 		}
 
@@ -236,7 +275,7 @@ namespace impl
 
 			if(char_in_range<unsigned_char>(ch))
 			{
-				return static_cast<unsigned_char>((base.*Transform)(static_cast<unsigned_char>(ch)));
+				return static_cast<unsigned_char>(Transform(base, static_cast<unsigned_char>(ch)));
 			}
 
 			if(!treat_as_truncated)
@@ -245,14 +284,14 @@ namespace impl
 			}
 
 			char_type excess = ch ^ static_cast<unsigned_char>(ch);
-			char_type result = static_cast<unsigned_char>((base.*Transform)(static_cast<unsigned_char>(ch)));
+			char_type result = static_cast<unsigned_char>(Transform(base, static_cast<unsigned_char>(ch)));
 			return result | excess;
 		}
 
 		template <class BaseCharType>
 		char_type tolower(char_type ch, const std::ctype<BaseCharType> &base) const
 		{
-			return transform<BaseCharType, static_cast<ctype_transform<BaseCharType>>(&std::ctype<BaseCharType>::tolower)>(ch, base);
+			return transform<BaseCharType, &transform_helper<BaseCharType>::tolower>(ch, base);
 		}
 
 		char_type tolower(char_type ch) const
@@ -274,7 +313,7 @@ namespace impl
 		template <class BaseCharType>
 		char_type toupper(char_type ch, const std::ctype<BaseCharType> &base) const
 		{
-			return transform<BaseCharType, static_cast<ctype_transform<BaseCharType>>(&std::ctype<BaseCharType>::toupper)>(ch, base);
+			return transform<BaseCharType, &transform_helper<BaseCharType>::toupper>(ch, base);
 		}
 
 		char_type toupper(char_type ch) const
@@ -355,7 +394,7 @@ namespace impl
 	template <class CharType, class Traits = wchar_traits<CharType>>
 	class char_ctype : public wrapper_ctype<std::ctype<wchar_t>>
 	{
-		using ctype_transform = wchar_t(std::ctype<wchar_t>::*)(wchar_t) const;
+		using ctype_transform = wchar_t(*)(const std::ctype<wchar_t>&, wchar_t);
 
 	protected:
 		char_ctype()
@@ -428,7 +467,7 @@ namespace impl
 				return ch;
 			}
 
-			auto result = (base().*Transform)(static_cast<wchar_t>(ch));
+			auto result = Transform(base(), static_cast<wchar_t>(ch));
 
 			if(!Traits::can_cast_from_wchar(result))
 			{
@@ -440,12 +479,12 @@ namespace impl
 
 		char_type tolower(char_type ch) const
 		{
-			return transform<static_cast<ctype_transform>(&std::ctype<wchar_t>::tolower)>(ch);
+			return transform<&transform_helper<wchar_t>::tolower>(ch);
 		}
 
 		char_type toupper(char_type ch) const
 		{
-			return transform<static_cast<ctype_transform>(&std::ctype<wchar_t>::toupper)>(ch);
+			return transform<&transform_helper<wchar_t>::toupper>(ch);
 		}
 	};
 }

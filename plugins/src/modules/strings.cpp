@@ -130,8 +130,6 @@ using flags_type_of = typename std::remove_reference<decltype((std::declval<enco
 template <class Locale>
 using flags_int_type_of = typename std::underlying_type<flags_type_of<Locale>>::type;
 
-static_assert(std::is_same_v<flags_type_of<std::locale>, decltype(encoding_info<std::locale>::flags)>, "Test");
-
 template <class Locale>
 flags_type_of<Locale> operator~(flags_type_of<Locale> a)
 {
@@ -233,7 +231,8 @@ namespace
 
 		auto found = [&](encoding_type type)
 		{
-			spec = pos ? pos + 1 : "";
+			static char empty[1] = {'\0'};
+			spec = pos ? pos + 1 : empty;
 			return type;
 		};
 
@@ -374,8 +373,17 @@ static std::locale merge_locale(const std::locale &base, const std::locale &spec
 	return result;
 }
 
+template <class T>
+struct false_dep
+{
+	static constexpr const bool value = false;
+};
+
 template <class Locale>
-typename encoding_info<Locale>::make_value<Locale>::type encoding_info<Locale>::install() const;
+typename encoding_info<Locale>::template make_value<Locale>::type encoding_info<Locale>::install() const
+{
+	static_assert(false_dep<Locale>::value, "This function is not implemented.");
+}
 
 template <>
 std::locale encoding_info<std::locale>::install() const
@@ -445,24 +453,37 @@ const std::string &strings::locale_name()
 	return custom_locale_name;
 }
 
-using ctype_transform = const cell*(std::ctype<cell>::*)(cell*, const cell*) const;
+using ctype_transform = const cell*(*)(const std::ctype<cell> &obj, cell*, const cell*);
+
+struct ctype_transform_helper
+{
+	static const cell *tolower(const std::ctype<cell> &obj, cell *begin, const cell *end)
+	{
+		return obj.tolower(begin, end);
+	}
+
+	static const cell *toupper(const std::ctype<cell> &obj, cell *begin, const cell *end)
+	{
+		return obj.toupper(begin, end);
+	}
+};
 
 template <ctype_transform Transform>
 void transform_string(cell_string &str, const encoding &enc)
 {
 	std::locale locale = enc.install();
 	const auto &facet = std::use_facet<std::ctype<cell>>(locale);
-	(facet.*Transform)(&str[0], &str[str.size()]);
+	Transform(facet, &str[0], &str[str.size()]);
 }
 
 void strings::to_lower(cell_string &str, const encoding &enc)
 {
-	transform_string<static_cast<ctype_transform>(&std::ctype<cell>::tolower)>(str, enc);
+	transform_string<&ctype_transform_helper::tolower>(str, enc);
 }
 
 void strings::to_upper(cell_string &str, const encoding &enc)
 {
-	transform_string<static_cast<ctype_transform>(&std::ctype<cell>::toupper)>(str, enc);
+	transform_string<&ctype_transform_helper::toupper>(str, enc);
 }
 
 constexpr const size_t buffer_size = 16;
@@ -489,7 +510,7 @@ struct output_appender
 	template <class Element>
 	void operator()(const Element *input_begin, const Element *input_end) const
 	{
-		using unsigned_element = std::make_unsigned<Element>::type;
+		using unsigned_element = typename std::make_unsigned<Element>::type;
 
 		ptrdiff_t size = input_end - input_begin;
 		size_t pos = output.size();
@@ -512,7 +533,7 @@ using remove_cvref_t = typename std::remove_cv<typename std::remove_reference<Ty
 
 // The type of std::codecvt::in or std::codecvt::out
 template <class Input, class Output>
-using codecvt_process = std::codecvt_base::result(std::codecvt_base::*)(std::mbstate_t&, const Input*, const Input*, const Input*&, Output*, Output*, Output*&) const;
+using codecvt_process = std::codecvt_base::result(*)(const std::codecvt_base &obj, std::mbstate_t&, const Input*, const Input*, const Input*&, Output*, Output*, Output*&);
 
 // Repeatedly calls Conversion until all input is converted and received
 template <class Input, class Output, codecvt_process<Input, Output> Conversion, class Receiver>
@@ -524,7 +545,7 @@ void encode_buffer(const std::codecvt_base &cvt, const encoding &enc, std::mbsta
 	// Convert until characters remain
 	while(input_begin < input_end)
 	{
-		std::codecvt_base::result result = (cvt.*Conversion)(state, input_begin, input_end, input_next, buffer_begin, buffer_end, buffer_next);
+		std::codecvt_base::result result = Conversion(cvt, state, input_begin, input_end, input_next, buffer_begin, buffer_end, buffer_next);
 
 		if(result == std::codecvt_base::noconv)
 		{
@@ -559,13 +580,32 @@ void encode_buffer(const std::codecvt_base &cvt, const encoding &enc, std::mbsta
 	}
 }
 
+template <class CodeCvt, class Input, class Output>
+struct encode_buffer_helper;
+
+template <class Input, class Output>
+struct encode_buffer_helper<std::codecvt<Input, Output, std::mbstate_t>, Input, Output>
+{
+	static std::codecvt_base::result out(const std::codecvt_base &obj, std::mbstate_t &state, const Input *input_begin, const Input *input_end, const Input *&input_next, Output *output_begin, Output *output_end, Output *&output_next)
+	{
+		return static_cast<const std::codecvt<Input, Output, std::mbstate_t>&>(obj).out(state, input_begin, input_end, input_next, output_begin, output_end, output_next);
+	}
+};
+
+template <class Input, class Output>
+struct encode_buffer_helper<std::codecvt<Output, Input, std::mbstate_t>, Input, Output>
+{
+	static std::codecvt_base::result in(const std::codecvt_base &obj, std::mbstate_t &state, const Input *input_begin, const Input *input_end, const Input *&input_next, Output *output_begin, Output *output_end, Output *&output_next)
+	{
+		return static_cast<const std::codecvt<Output, Input, std::mbstate_t>&>(obj).in(state, input_begin, input_end, input_next, output_begin, output_end, output_next);
+	}
+};
+
 // Specializes encode_buffer for cvt::func
 #define encode_buffer_f(from_type, to_type, cvt, func) \
 	encode_buffer< \
 		from_type, to_type, \
-		static_cast<codecvt_process<from_type, to_type>>( \
-			&remove_cvref_t<decltype(cvt)>::func \
-		) \
+		&encode_buffer_helper<remove_cvref_t<decltype(cvt)>, from_type, to_type>::func \
 	>
 
 #define CODECVT_CLASS template <class, unsigned long, std::codecvt_mode> class

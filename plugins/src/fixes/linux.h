@@ -1,7 +1,7 @@
 #ifndef LINUX_H_INCLUDED
 #define LINUX_H_INCLUDED
 
-#ifndef _WIN32
+#if !defined(_MSC_VER) && __cplusplus <= 201103L 
 #include <cstddef>
 #include <memory>
 #include <type_traits>

@@ -47,10 +47,10 @@ public:
 		return value;
 	}
 
-	constexpr char8_t(const char8_t &other) = default;
-	constexpr char8_t(char8_t &&other) = default;
-	constexpr char8_t &operator=(const char8_t &other) = default;
-	constexpr char8_t &operator=(char8_t &&other) = default;
+	char8_t(const char8_t &other) = default;
+	char8_t(char8_t &&other) = default;
+	char8_t &operator=(const char8_t &other) = default;
+	char8_t &operator=(char8_t &&other) = default;
 
 	constexpr bool operator==(char8_t c) const noexcept
 	{
@@ -107,31 +107,31 @@ public:
 		return value % c.value;
 	}
 
-	constexpr char8_t &operator+=(char8_t c) noexcept
+	char8_t &operator+=(char8_t c) noexcept
 	{
 		value += c.value;
 		return *this;
 	}
 
-	constexpr char8_t &operator-=(char8_t c) noexcept
+	char8_t &operator-=(char8_t c) noexcept
 	{
 		value -= c.value;
 		return *this;
 	}
 
-	constexpr char8_t &operator*=(char8_t c) noexcept
+	char8_t &operator*=(char8_t c) noexcept
 	{
 		value *= c.value;
 		return *this;
 	}
 
-	constexpr char8_t &operator/=(char8_t c) noexcept
+	char8_t &operator/=(char8_t c) noexcept
 	{
 		value /= c.value;
 		return *this;
 	}
 
-	constexpr char8_t &operator%=(char8_t c) noexcept
+	char8_t &operator%=(char8_t c) noexcept
 	{
 		value %= c.value;
 		return *this;
