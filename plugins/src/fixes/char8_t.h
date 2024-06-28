@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <type_traits>
+#include <string>
 
 #ifndef __cpp_char8_t
 struct alignas(unsigned char) char8_t

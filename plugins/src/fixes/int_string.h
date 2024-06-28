@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <tuple>
 #include <utility>
+#include <string>
 
 namespace std
 {
@@ -454,7 +455,7 @@ namespace impl
 			{
 				return base().widen(first, last, reinterpret_cast<wchar_t*>(dest));
 			}else{
-				std::transform(first, last, dest, [&](char_type c) { return widen(c); });
+				std::transform(first, last, dest, [&](char c) { return widen(c); });
 				return last;
 			}
 		}
