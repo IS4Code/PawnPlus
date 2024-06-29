@@ -407,7 +407,7 @@ std::locale encoding_info<std::locale>::install() const
 			{
 				std::ctype<cell>::install<wchar_t>(result, treat_as_truncated);
 			}else{
-				add_facet<std::ctype<char16_t>>(result);
+				add_facet<std::ctype<char16_t>>(result, static_cast<bool>(flags & unicode_ucs));
 				std::ctype<cell>::install<char16_t>(result, treat_as_truncated);
 			}
 			break;
@@ -416,7 +416,7 @@ std::locale encoding_info<std::locale>::install() const
 			{
 				std::ctype<cell>::install<wchar_t>(result, treat_as_truncated);
 			}else{
-				add_facet<std::ctype<char32_t>>(result);
+				add_facet<std::ctype<char32_t>>(result, static_cast<bool>(flags & unicode_ucs));
 				std::ctype<cell>::install<char32_t>(result, treat_as_truncated);
 			}
 			break;

@@ -341,12 +341,12 @@ namespace impl
 	class wchar_traits<char8_t>
 	{
 	public:
-		static bool can_cast_to_wchar(char8_t ch)
+		static bool can_cast_to_wchar(char8_t ch, bool)
 		{
 			return ch <= '\x7F';
 		}
 
-		static bool can_cast_from_wchar(wchar_t ch)
+		static bool can_cast_from_wchar(wchar_t ch, bool)
 		{
 			return ch <= L'\x7F';
 		}
@@ -361,12 +361,12 @@ namespace impl
 		}
 
 	public:
-		static bool can_cast_to_wchar(char16_t ch)
+		static bool can_cast_to_wchar(char16_t ch, bool allow_surrogates)
 		{
-			return sizeof(char16_t) == sizeof(wchar_t) || !is_surrogate(ch);
+			return sizeof(char16_t) == sizeof(wchar_t) || allow_surrogates || !is_surrogate(ch);
 		}
 
-		static bool can_cast_from_wchar(wchar_t ch)
+		static bool can_cast_from_wchar(wchar_t ch, bool)
 		{
 			return ch <= std::numeric_limits<char16_t>::max();
 		}
@@ -381,14 +381,14 @@ namespace impl
 		}
 
 	public:
-		static bool can_cast_to_wchar(char32_t ch)
+		static bool can_cast_to_wchar(char32_t ch, bool)
 		{
 			return ch <= std::numeric_limits<wchar_t>::max();
 		}
 
-		static bool can_cast_from_wchar(wchar_t ch)
+		static bool can_cast_from_wchar(wchar_t ch, bool allow_surrogates)
 		{
-			return sizeof(wchar_t) == sizeof(char32_t) || !is_surrogate(ch);
+			return sizeof(wchar_t) == sizeof(char32_t) || allow_surrogates || !is_surrogate(ch);
 		}
 	};
 
@@ -397,8 +397,15 @@ namespace impl
 	{
 		using ctype_transform = wchar_t(*)(const std::ctype<wchar_t>&, wchar_t);
 
+		bool flag;
+
 	protected:
-		char_ctype()
+		char_ctype() : flag(false)
+		{
+
+		}
+
+		char_ctype(bool flag) : flag(flag)
 		{
 
 		}
@@ -410,7 +417,7 @@ namespace impl
 
 		bool is(mask mask, char_type ch) const
 		{
-			if(!Traits::can_cast_to_wchar(ch))
+			if(!Traits::can_cast_to_wchar(ch, flag))
 			{
 				return false;
 			}
@@ -419,7 +426,7 @@ namespace impl
 
 		char narrow(char_type ch, char dflt = '\0') const
 		{
-			if(!Traits::can_cast_to_wchar(ch))
+			if(!Traits::can_cast_to_wchar(ch, flag))
 			{
 				return dflt;
 			}
@@ -441,7 +448,7 @@ namespace impl
 		{
 			auto result = base().widen(c);
 
-			if(!Traits::can_cast_from_wchar(result))
+			if(!Traits::can_cast_from_wchar(result, flag))
 			{
 				return -1;
 			}
@@ -463,14 +470,14 @@ namespace impl
 		template <ctype_transform Transform>
 		char_type transform(char_type ch) const
 		{
-			if(!Traits::can_cast_to_wchar(ch))
+			if(!Traits::can_cast_to_wchar(ch, flag))
 			{
 				return ch;
 			}
 
 			auto result = Transform(base(), static_cast<wchar_t>(ch));
 
-			if(!Traits::can_cast_from_wchar(result))
+			if(!Traits::can_cast_from_wchar(result, flag))
 			{
 				return ch;
 			}
