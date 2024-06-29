@@ -293,9 +293,9 @@ namespace
 			}else if(!_stricmp(param, "maxrange"))
 			{
 				data.flags |= encoding_data::unicode_extended;
-			}else if(param + 9 == spec_end && !_strnicmp(param, "default=", 8))
+			}else if(param + 10 == spec_end && !_strnicmp(param, "fallback=", 9))
 			{
-				data.unknown_char = param[8];
+				data.unknown_char = param[9];
 			}else{
 				// no recognized param
 				break;
