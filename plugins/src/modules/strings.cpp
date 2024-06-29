@@ -389,34 +389,35 @@ template <>
 std::locale encoding_info<std::locale>::install() const
 {
 	std::locale result = locale;
+	bool treat_as_truncated = static_cast<bool>(flags & truncated_cells);
 	switch(type)
 	{
 		case ansi:
-			std::ctype<cell>::install<char>(result);
+			std::ctype<cell>::install<char>(result, treat_as_truncated);
 			break;
 		case unicode:
-			std::ctype<cell>::install<wchar_t>(result);
+			std::ctype<cell>::install<wchar_t>(result, treat_as_truncated);
 			break;
 		case utf8:
 			add_facet<std::ctype<char8_t>>(result);
-			std::ctype<cell>::install<char8_t>(result);
+			std::ctype<cell>::install<char8_t>(result, treat_as_truncated);
 			break;
 		case utf16:
 			if(sizeof(char16_t) == sizeof(wchar_t))
 			{
-				std::ctype<cell>::install<wchar_t>(result);
+				std::ctype<cell>::install<wchar_t>(result, treat_as_truncated);
 			}else{
 				add_facet<std::ctype<char16_t>>(result);
-				std::ctype<cell>::install<char16_t>(result);
+				std::ctype<cell>::install<char16_t>(result, treat_as_truncated);
 			}
 			break;
 		case utf32:
 			if(sizeof(char32_t) == sizeof(wchar_t))
 			{
-				std::ctype<cell>::install<wchar_t>(result);
+				std::ctype<cell>::install<wchar_t>(result, treat_as_truncated);
 			}else{
 				add_facet<std::ctype<char32_t>>(result);
-				std::ctype<cell>::install<char32_t>(result);
+				std::ctype<cell>::install<char32_t>(result, treat_as_truncated);
 			}
 			break;
 	}
