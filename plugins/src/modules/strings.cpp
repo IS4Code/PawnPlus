@@ -315,13 +315,18 @@ namespace
 	}
 }
 
+template <>
+void encoding_info<std::locale>::fill_from_locale();
+
 encoding strings::find_encoding(char *&spec, bool default_if_empty)
 {
 	auto make_encoding = [&](const encoding_data &data) -> encoding
 	{
 		if(data.locale[0] == '\0' && !default_if_empty)
 		{
-			return {std::locale(), data};
+			encoding defaulted{std::locale(), data};
+			defaulted.fill_from_locale();
+			return defaulted;
 		}
 		return {std::locale(data.locale), data};
 	};
@@ -422,6 +427,90 @@ std::locale encoding_info<std::locale>::install() const
 			break;
 	}
 	return result;
+}
+
+template <class Locale>
+void encoding_info<Locale>::fill_from_locale()
+{
+	static_assert(false_dep<Locale>::value, "This function is not implemented.");
+}
+
+template <>
+void encoding_info<std::locale>::fill_from_locale()
+{
+	if(type == unspecified || !(flags & truncated_cells))
+	{
+		if(std::has_facet<std::ctype<cell>>(locale))
+		{
+			const auto &ctype = std::use_facet<std::ctype<cell>>(locale);
+			if(type == unspecified)
+			{
+				const auto &base_type = ctype.underlying_char_type();
+				if(base_type == typeid(char))
+				{
+					type = ansi;
+				}else if(base_type == typeid(wchar_t))
+				{
+					type = unicode;
+				}else if(base_type == typeid(char8_t))
+				{
+					type = utf8;
+				}else if(base_type == typeid(char16_t))
+				{
+					type = utf16;
+				}else if(base_type == typeid(char32_t))
+				{
+					type = utf32;
+				}
+			}
+			if(!(flags & truncated_cells))
+			{
+				if(ctype.truncates_cells())
+				{
+					flags = static_cast<decltype(flags)>(flags | truncated_cells);
+				}
+			}
+		}
+	}
+	if(!(flags & unicode_ucs))
+	{
+		auto utf_type = type;
+		if(utf_type == unicode)
+		{
+			switch(sizeof(wchar_t))
+			{
+				case sizeof(char16_t):
+					utf_type = utf16;
+					break;
+				case sizeof(char32_t):
+					utf_type = utf32;
+					break;
+			}
+		}
+		switch(utf_type)
+		{
+			case utf16:
+				if(std::has_facet<std::ctype<char16_t>>(locale))
+				{
+					const auto &ctype = std::use_facet<std::ctype<char16_t>>(locale);
+					if(ctype.get_flag())
+					{
+						flags = static_cast<decltype(flags)>(flags | unicode_ucs);
+					}
+				}
+				break;
+			case utf32:
+				if(std::has_facet<std::ctype<char32_t>>(locale))
+				{
+					const auto &ctype = std::use_facet<std::ctype<char32_t>>(locale);
+					if(ctype.get_flag())
+					{
+						flags = static_cast<decltype(flags)>(flags | unicode_ucs);
+					}
+				}
+				break;
+		}
+	}
 }
 
 void strings::set_encoding(const encoding &enc, cell category)

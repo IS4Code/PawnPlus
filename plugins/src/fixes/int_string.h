@@ -4,6 +4,7 @@
 #include "char8_t.h"
 #include <locale>
 #include <type_traits>
+#include <typeinfo>
 #include <algorithm>
 #include <tuple>
 #include <utility>
@@ -332,6 +333,19 @@ namespace impl
 				return std::transform(first, const_cast<char_type*>(last), first, [&](char_type c) { return toupper(c, base); });
 			});
 		}
+
+		const std::type_info &underlying_char_type() const
+		{
+			return get_base([&](const auto &base) -> const std::type_info&
+			{
+				return typeid(ctype_char_type<decltype(base)>);
+			});
+		}
+
+		bool truncates_cells() const
+		{
+			return treat_as_truncated;
+		}
 	};
 
 	template <class CharType>
@@ -493,6 +507,11 @@ namespace impl
 		char_type toupper(char_type ch) const
 		{
 			return transform<&transform_helper<wchar_t>::toupper>(ch);
+		}
+
+		bool get_flag() const
+		{
+			return flag;
 		}
 	};
 }

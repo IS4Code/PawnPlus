@@ -377,6 +377,8 @@ namespace strings
 
 		typename make_value<Locale>::type install() const;
 
+		void fill_from_locale();
+
 		bool is_unicode() const
 		{
 			switch(type)
