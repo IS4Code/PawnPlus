@@ -659,6 +659,7 @@ void encode_buffer(const std::codecvt_base &cvt, const encoding &enc, std::mbsta
 				const Output unknown[1] = {static_cast<Output>(static_cast<unsigned char>(enc.unknown_char))};
 				receiver(unknown, unknown + 1);
 				++input_next;
+				state = {};
 			}
 			break;
 			case std::codecvt_base::partial:
