@@ -930,6 +930,26 @@ struct encoder_from_utf8
 };
 
 template <class CharType>
+void copy_narrow(const cell *begin, const cell *end, CharType *dest, const encoding &enc)
+{
+	using unsigned_char = typename std::make_unsigned<CharType>::type;
+
+	if(enc.flags & encoding::truncated_cells)
+	{
+		std::copy(begin, end, reinterpret_cast<unsigned_char*>(dest));
+	}else{
+		std::transform(begin, end, dest, [&](cell c)
+		{
+			if(static_cast<ucell>(c) > std::numeric_limits<unsigned_char>::max())
+			{
+				c = static_cast<unsigned char>(enc.unknown_char);
+			}
+			return static_cast<unsigned_char>(c);
+		});
+	}
+}
+
+template <class CharType>
 struct decoder_to_char_type
 {
 	// Outputs CharType (UTF-16 / UTF-32) directly from input
@@ -937,7 +957,7 @@ struct decoder_to_char_type
 	template <class Receiver>
 	struct from_raw
 	{
-		void operator()(Receiver receiver, const cell_string &input) const
+		void operator()(Receiver receiver, const cell_string &input, const encoding &input_enc) const
 		{
 			CharType char_buffer[buffer_size];
 
@@ -945,7 +965,7 @@ struct decoder_to_char_type
 			auto pointer = &input[0];
 			while(remaining > buffer_size)
 			{
-				std::copy(pointer, pointer + buffer_size, char_buffer);
+				copy_narrow(pointer, pointer + buffer_size, char_buffer, input_enc);
 
 				receiver(
 					static_cast<const CharType*>(char_buffer),
@@ -957,7 +977,7 @@ struct decoder_to_char_type
 			}
 			if(remaining > 0)
 			{
-				std::copy(pointer, pointer + remaining, char_buffer);
+				copy_narrow(pointer, pointer + remaining, char_buffer, input_enc);
 
 				receiver(
 					static_cast<const CharType*>(char_buffer),
@@ -1045,7 +1065,6 @@ struct decoder_from_char_type
 	// Converts from CharType (UTF-16 / UTF-32)
 
 	using char_type = make_char_t<CharType>;
-	using unsigned_char_type = typename std::make_unsigned<char_type>::type;
 
 	template <class U8CharReceiver>
 	struct through_utf8
@@ -1055,7 +1074,7 @@ struct decoder_from_char_type
 		void operator()(U8CharReceiver receiver, const cell_string &input, const encoding &input_enc) const
 		{
 			const auto &cvt = get_codecvt_utf8<char_type>(input_enc);
-			unsigned_char_type char_buffer[buffer_size];
+			char_type char_buffer[buffer_size];
 			u8char utf8_buffer[buffer_size];
 			std::mbstate_t state{};
 
@@ -1063,10 +1082,10 @@ struct decoder_from_char_type
 			auto pointer = &input[0];
 			while(remaining > buffer_size)
 			{
-				std::copy(pointer, pointer + buffer_size, char_buffer);
+				copy_narrow(pointer, pointer + buffer_size, char_buffer, input_enc);
 
 				// Encode from CharType to UTF-8
-				encode_buffer_f(char_type, u8char, cvt, out)(cvt, input_enc, state, reinterpret_cast<const char_type*>(char_buffer), reinterpret_cast<const char_type*>(char_buffer + buffer_size), utf8_buffer, utf8_buffer + buffer_size, [&](const u8char *begin, const u8char *end)
+				encode_buffer_f(char_type, u8char, cvt, out)(cvt, input_enc, state, char_buffer, char_buffer + buffer_size, utf8_buffer, utf8_buffer + buffer_size, [&](const u8char *begin, const u8char *end)
 				{
 					return receiver(begin, end);
 				});
@@ -1076,10 +1095,10 @@ struct decoder_from_char_type
 			}
 			if(remaining > 0)
 			{
-				std::copy(pointer, pointer + remaining, char_buffer);
+				copy_narrow(pointer, pointer + remaining, char_buffer, input_enc);
 
 				// Encode from CharType to UTF-8
-				encode_buffer_f(char_type, u8char, cvt, out)(cvt, input_enc, state, reinterpret_cast<const char_type*>(char_buffer), reinterpret_cast<const char_type*>(char_buffer + remaining), utf8_buffer, utf8_buffer + buffer_size, [&](const u8char *begin, const u8char *end)
+				encode_buffer_f(char_type, u8char, cvt, out)(cvt, input_enc, state, char_buffer, char_buffer + remaining, utf8_buffer, utf8_buffer + buffer_size, [&](const u8char *begin, const u8char *end)
 				{
 					return receiver(begin, end);
 				});
@@ -1107,7 +1126,7 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 		if(input_enc.type == encoding::unicode)
 		{
 			// Treat as raw wchar_t and convert directly
-			return encoder_from_wchar_t<decoder_to_char_type<wchar_t>::template from_raw>()(output, output_enc, input);
+			return encoder_from_wchar_t<decoder_to_char_type<wchar_t>::template from_raw>()(output, output_enc, input, input_enc);
 		}
 		if(output_enc.is_unicode())
 		{
@@ -1115,7 +1134,7 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 			switch(input_enc.type)
 			{
 				case encoding::utf8:
-					return encoder_from_utf8<decoder_to_char_type<u8char>::template from_raw>()(output, output_enc, input);
+					return encoder_from_utf8<decoder_to_char_type<u8char>::template from_raw>()(output, output_enc, input, input_enc);
 				case encoding::utf16:
 					return encoder_from_utf8<decoder_from_char_type<char16_t>::template through_utf8>()(output, output_enc, input, input_enc);
 				case encoding::utf32:
@@ -1126,7 +1145,7 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 			switch(input_enc.type)
 			{
 				case encoding::utf8:
-					return encoder_from_wchar_t<decoder_from_utf8_decoder<decoder_to_char_type<u8char>::template from_raw>::template through_wchar_t>()(output, output_enc, input_enc, input);
+					return encoder_from_wchar_t<decoder_from_utf8_decoder<decoder_to_char_type<u8char>::template from_raw>::template through_wchar_t>()(output, output_enc, input_enc, input, input_enc);
 				case encoding::utf16:
 					return encoder_from_wchar_t<decoder_from_char_type<char16_t>::template through_wchar_t>()(output, output_enc, input_enc, input, input_enc);
 				case encoding::utf32:
