@@ -664,8 +664,15 @@ void encode_buffer(const std::codecvt_base &cvt, const encoding &enc, std::mbsta
 			case std::codecvt_base::partial:
 				// state hopefully prepared for the next chunk
 				return;
+			case std::codecvt_base::ok:
+				// all good
+				break;
 		}
 
+		if(input_next == input_begin)
+		{
+			throw std::logic_error("std::codecvt: No characters were read from input.");
+		}
 		input_begin = input_next;
 	}
 }
@@ -678,7 +685,8 @@ struct encode_buffer_helper<std::codecvt<Input, Output, std::mbstate_t>, Input, 
 {
 	static std::codecvt_base::result out(const std::codecvt_base &obj, std::mbstate_t &state, const Input *input_begin, const Input *input_end, const Input *&input_next, Output *output_begin, Output *output_end, Output *&output_next)
 	{
-		return static_cast<const std::codecvt<Input, Output, std::mbstate_t>&>(obj).out(state, input_begin, input_end, input_next, output_begin, output_end, output_next);
+		const auto &cvt = static_cast<const std::codecvt<Input, Output, std::mbstate_t>&>(obj);
+		return cvt.out(state, input_begin, input_end, input_next, output_begin, output_end, output_next);
 	}
 };
 
@@ -687,7 +695,8 @@ struct encode_buffer_helper<std::codecvt<Output, Input, std::mbstate_t>, Input, 
 {
 	static std::codecvt_base::result in(const std::codecvt_base &obj, std::mbstate_t &state, const Input *input_begin, const Input *input_end, const Input *&input_next, Output *output_begin, Output *output_end, Output *&output_next)
 	{
-		return static_cast<const std::codecvt<Output, Input, std::mbstate_t>&>(obj).in(state, input_begin, input_end, input_next, output_begin, output_end, output_next);
+		const auto &cvt = static_cast<const std::codecvt<Output, Input, std::mbstate_t>&>(obj);
+		return cvt.in(state, input_begin, input_end, input_next, output_begin, output_end, output_next);
 	}
 };
 
@@ -820,19 +829,21 @@ struct encoder_from_wchar_t
 
 		// Conversion to ANSI
 		auto loc = output_enc.install();
-		const auto &cell_facet = std::use_facet<std::ctype<cell>>(loc);
-		const auto &wchar_facet = std::use_facet<std::ctype<wchar_t>>(loc);
+		const auto &ctype = std::use_facet<std::ctype<cell>>(loc);
+		const auto &cvt = std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t>>(loc);
 
 		char char_buffer[buffer_size];
+		std::mbstate_t state{};
 
 		return call_coder<WCharDecoder>([&](const wchar_t *input_begin, const wchar_t *input_end)
 		{
-			ptrdiff_t size = input_end - input_begin;
-			wchar_facet.narrow(input_begin, input_end, output_enc.unknown_char, char_buffer);
-
-			size_t pos = output.size();
-			output.resize(pos + size, 0);
-			cell_facet.widen(char_buffer, char_buffer + size, &output[pos]);
+			encode_buffer_f(wchar_t, char, cvt, out)(cvt, output_enc, state, input_begin, input_end, char_buffer, char_buffer + buffer_size, [&](const char *begin, const char *end)
+			{
+				ptrdiff_t size = end - begin;
+				size_t pos = output.size();
+				output.resize(pos + size, 0);
+				return ctype.widen(begin, end, &output[pos]);
+			});
 		}, std::forward<Args>(args)...);
 	}
 };
@@ -964,36 +975,35 @@ struct decoder_from_ansi_to_wchar_t
 	void operator()(Receiver receiver, const cell_string &input, const encoding &input_enc) const
 	{
 		auto loc = input_enc.install();
-		const auto &cell_facet = std::use_facet<std::ctype<cell>>(loc);
-		const auto &wchar_facet = std::use_facet<std::ctype<wchar_t>>(loc);
+		const auto &ctype = std::use_facet<std::ctype<cell>>(loc);
+		const auto &cvt = std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t>>(loc);
 
 		char char_buffer[buffer_size];
 		wchar_t wchar_buffer[buffer_size];
+		std::mbstate_t state{};
 
 		auto remaining = input.size();
 		auto pointer = &input[0];
 		while(remaining > buffer_size)
 		{
-			cell_facet.narrow(pointer, pointer + buffer_size, input_enc.unknown_char, char_buffer);
-			wchar_facet.widen(char_buffer, char_buffer + buffer_size, wchar_buffer);
+			ctype.narrow(pointer, pointer + buffer_size, input_enc.unknown_char, char_buffer);
 
-			receiver(
-				static_cast<const wchar_t*>(wchar_buffer),
-				static_cast<const wchar_t*>(wchar_buffer + buffer_size)
-			);
+			encode_buffer_f(char, wchar_t, cvt, in)(cvt, input_enc, state, char_buffer, char_buffer + buffer_size, wchar_buffer, wchar_buffer + buffer_size, [&](const wchar_t *begin, const wchar_t *end)
+			{
+				return receiver(begin, end);
+			});
 
 			pointer += buffer_size;
 			remaining -= buffer_size;
 		}
 		if(remaining > 0)
 		{
-			cell_facet.narrow(pointer, pointer + remaining, input_enc.unknown_char, char_buffer);
-			wchar_facet.widen(char_buffer, char_buffer + remaining, wchar_buffer);
+			ctype.narrow(pointer, pointer + remaining, input_enc.unknown_char, char_buffer);
 
-			receiver(
-				static_cast<const wchar_t*>(wchar_buffer),
-				static_cast<const wchar_t*>(wchar_buffer + remaining)
-			);
+			encode_buffer_f(char, wchar_t, cvt, in)(cvt, input_enc, state, char_buffer, char_buffer + remaining, wchar_buffer, wchar_buffer + buffer_size, [&](const wchar_t *begin, const wchar_t *end)
+			{
+				return receiver(begin, end);
+			});
 		}
 	}
 };
