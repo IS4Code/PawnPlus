@@ -296,6 +296,9 @@ namespace
 			}else if(param + 10 == spec_end && !_strnicmp(param, "fallback=", 9))
 			{
 				data.unknown_char = param[9];
+			}else if(!_stricmp(param, "native"))
+			{
+				data.flags |= encoding_data::unicode_native;
 			}else{
 				// no recognized param
 				break;
@@ -613,9 +616,39 @@ struct output_appender
 // Workaround for MSC not defining std::codecvt::id
 template <class CharType>
 using make_char_t = typename std::make_signed<CharType>::type;
+
+template <class CharType>
+struct unmake_char_helper
+{
+	using type = CharType;
+};
+
+template <>
+struct unmake_char_helper<make_char_t<char8_t>>
+{
+	using type = char8_t;
+};
+
+template <>
+struct unmake_char_helper<make_char_t<char16_t>>
+{
+	using type = char16_t;
+};
+
+template <>
+struct unmake_char_helper<make_char_t<char32_t>>
+{
+	using type = char32_t;
+};
+
+template <class CharType>
+using unmake_char_t = typename unmake_char_helper<CharType>::type;
 #else
 template <class CharType>
 using make_char_t = CharType;
+
+template <class CharType>
+using unmake_char_t = CharType;
 #endif
 
 template <class Type>
@@ -737,9 +770,98 @@ const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt(const encoding &
 		get_codecvt<CodeCvtType, CharType, 0x10FFFF>(enc);
 }
 
+#ifdef _MSC_VER
+template <class CharType, unsigned long Maxcode, std::codecvt_mode Mode>
+class codecvt_native_utf8 : public std::codecvt<CharType, u8char, std::mbstate_t>
+{
+	using original_intern_type = unmake_char_t<CharType>;
+
+	struct inner_codecvt : public std::codecvt<original_intern_type, u8char, std::mbstate_t>
+	{
+		inner_codecvt() : std::codecvt<original_intern_type, u8char, std::mbstate_t>(std::_Locinfo(), Maxcode, static_cast<std::_Codecvt_mode>(Mode), 0)
+		{
+
+		}
+	} inner;
+
+	static const original_intern_type *&reinterpret(const intern_type *&ptr)
+	{
+		return reinterpret_cast<const original_intern_type*&>(ptr);
+	}
+
+	static original_intern_type *&reinterpret(intern_type *&ptr)
+	{
+		return reinterpret_cast<original_intern_type*&>(ptr);
+	}
+
+public:
+	codecvt_native_utf8()
+	{
+
+	}
+
+protected:
+	virtual result do_out(state_type &state, const intern_type *from, const intern_type *from_end, const intern_type *&from_next, u8char *to, u8char *to_end, u8char *&to_next) const override
+	{
+		return inner.out(state, reinterpret(from), reinterpret(from_end), reinterpret(from_next), to, to_end, to_next);
+	}
+
+	virtual result do_in(state_type &state, const u8char *from, const u8char *from_end, const u8char *&from_next, intern_type *to, intern_type *to_end, intern_type *&to_next) const override
+	{
+		return inner.in(state, from, from_end, from_next, reinterpret(to), reinterpret(to_end), reinterpret(to_next));
+	}
+
+	virtual result do_unshift(state_type &state, u8char *to, u8char *to_end, u8char *&to_next) const override
+	{
+		return inner.unshift(state, to, to_end, to_next);
+	}
+
+	virtual int do_encoding() const noexcept override
+	{
+		return inner.encoding();
+	}
+
+	virtual bool do_always_noconv() const noexcept override
+	{
+		return inner.always_noconv();
+	}
+
+	virtual int do_length(state_type &state, const u8char *from, const u8char *from_end, std::size_t max) const override
+	{
+		return inner.length(state, from, from_end, max);
+	}
+
+	virtual int do_max_length() const noexcept override
+	{
+		return inner.max_length();
+	}
+};
+
+template <unsigned long Maxcode, std::codecvt_mode Mode>
+class codecvt_native_utf8<wchar_t, Maxcode, Mode> : public std::codecvt<wchar_t, u8char, std::mbstate_t>
+{
+public:
+	codecvt_native_utf8()
+	{
+
+	}
+};
+#endif
+
 template <class CharType>
 const std::codecvt<CharType, char, std::mbstate_t> &get_codecvt_utf8(const encoding &enc)
 {
+	if(!std::is_same<CharType, wchar_t>::value && enc.flags & encoding::unicode_native)
+	{
+		// conversion between UTF-8 and UTF-16/32 through the locale
+#ifdef _MSC_VER
+		// all have identical implementation
+		return get_codecvt<codecvt_native_utf8, CharType>(enc);
+#else
+		// make_char_t is identity 
+		return std::use_facet<std::codecvt<CharType, u8char, std::mbstate_t>>(enc.locale);
+#endif
+	}
 	return (sizeof(CharType) == sizeof(char16_t)) != static_cast<bool>(enc.flags & encoding::unicode_ucs) ?
 		// is 16-bit and not UCS mode, or is 32-bit and UCS mode
 		get_codecvt<std::codecvt_utf8_utf16, CharType>(enc) :

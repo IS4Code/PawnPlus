@@ -317,7 +317,10 @@ namespace strings
 			truncated_cells = 1,
 			unicode_ucs = 2,
 			unicode_extended = 4,
-			unicode_use_header = 8
+			unicode_use_header = 8,
+			unicode_native = 16,
+
+			unicode_flags = unicode_ucs | unicode_extended | unicode_use_header | unicode_native
 		} flags;
 		char unknown_char;
 
