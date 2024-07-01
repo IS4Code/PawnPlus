@@ -654,22 +654,34 @@ using unmake_char_t = CharType;
 template <class Type>
 using remove_cvref_t = typename std::remove_cv<typename std::remove_reference<Type>::type>::type;
 
+// used to store the result of previous conversion
+struct cvt_state
+{
+	std::mbstate_t state;
+	std::codecvt_base::result last_result;
+
+	cvt_state() : state(), last_result(std::codecvt_base::ok)
+	{
+
+	}
+};
+
 // The type of std::codecvt::in or std::codecvt::out
 template <class Input, class Output>
-using codecvt_process = std::codecvt_base::result(*)(const std::codecvt_base &obj, std::mbstate_t&, const Input*, const Input*, const Input*&, Output*, Output*, Output*&);
+using codecvt_process = std::codecvt_base::result(*)(const std::codecvt_base &obj, cvt_state&, const Input*, const Input*, const Input*&, Output*, Output*, Output*&);
 
 // Repeatedly calls Conversion until all input is converted and received
 template <class Input, class Output, codecvt_process<Input, Output> Conversion, class Receiver>
-void encode_buffer(const std::codecvt_base &cvt, const encoding &enc, std::mbstate_t &state, const Input *input_begin, const Input *input_end, Output *buffer_begin, Output *buffer_end, Receiver receiver)
+void encode_buffer(const std::codecvt_base &cvt, const encoding &enc, cvt_state &state, const Input *input_begin, const Input *input_end, Output *buffer_begin, Output *buffer_end, Receiver receiver)
 {
 	const Input *input_next = input_begin;
 	Output *buffer_next = buffer_begin;
 
 	// Convert until characters remain
-	while(input_begin < input_end)
+	while(input_begin < input_end || input_end == nullptr)
 	{
 		std::codecvt_base::result result = Conversion(cvt, state, input_begin, input_end, input_next, buffer_begin, buffer_end, buffer_next);
-
+		
 		if(result == std::codecvt_base::noconv)
 		{
 			std::string msg = "std::codecvt: Conversion from ";
@@ -685,22 +697,37 @@ void encode_buffer(const std::codecvt_base &cvt, const encoding &enc, std::mbsta
 			static_cast<const Output*>(buffer_next)
 		);
 
+		if(input_next == nullptr && result != std::codecvt_base::ok)
+		{
+			result = std::codecvt_base::error;
+		}
+
 		switch(result)
 		{
 			case std::codecvt_base::error:
 			{
 				const Output unknown[1] = {static_cast<Output>(static_cast<unsigned char>(enc.unknown_char))};
 				receiver(unknown, unknown + 1);
+				if(input_next == nullptr)
+				{
+					return;
+				}
 				++input_next;
 				state = {};
 			}
 			break;
 			case std::codecvt_base::partial:
-				// state hopefully prepared for the next chunk
+				// non-final chunk - use the next one
 				return;
 			case std::codecvt_base::ok:
 				// all good
 				break;
+		}
+
+		if(input_next == nullptr)
+		{
+			// processed final chunk
+			return;
 		}
 
 		if(input_next == input_begin)
@@ -717,20 +744,38 @@ struct encode_buffer_helper;
 template <class Input, class Output>
 struct encode_buffer_helper<std::codecvt<Input, Output, std::mbstate_t>, Input, Output>
 {
-	static std::codecvt_base::result out(const std::codecvt_base &obj, std::mbstate_t &state, const Input *input_begin, const Input *input_end, const Input *&input_next, Output *output_begin, Output *output_end, Output *&output_next)
+	static std::codecvt_base::result out(const std::codecvt_base &obj, cvt_state &state, const Input *input_begin, const Input *input_end, const Input *&input_next, Output *output_begin, Output *output_end, Output *&output_next)
 	{
 		const auto &cvt = static_cast<const std::codecvt<Input, Output, std::mbstate_t>&>(obj);
-		return cvt.out(state, input_begin, input_end, input_next, output_begin, output_end, output_next);
+		if(input_end == nullptr)
+		{
+			// end of data - finalize std::mbstate_t
+			auto result = cvt.unshift(state.state, output_begin, output_end, output_next);
+			if(result == std::codecvt_base::noconv)
+			{
+				result = std::codecvt_base::ok;
+			}
+			input_next = input_end;
+			return state.last_result = result;
+		}
+		return state.last_result = cvt.out(state.state, input_begin, input_end, input_next, output_begin, output_end, output_next);
 	}
 };
 
 template <class Input, class Output>
 struct encode_buffer_helper<std::codecvt<Output, Input, std::mbstate_t>, Input, Output>
 {
-	static std::codecvt_base::result in(const std::codecvt_base &obj, std::mbstate_t &state, const Input *input_begin, const Input *input_end, const Input *&input_next, Output *output_begin, Output *output_end, Output *&output_next)
+	static std::codecvt_base::result in(const std::codecvt_base &obj, cvt_state &state, const Input *input_begin, const Input *input_end, const Input *&input_next, Output *output_begin, Output *output_end, Output *&output_next)
 	{
 		const auto &cvt = static_cast<const std::codecvt<Output, Input, std::mbstate_t>&>(obj);
-		return cvt.in(state, input_begin, input_end, input_next, output_begin, output_end, output_next);
+		if(input_end == nullptr)
+		{
+			// nothing new to convert - report last result
+			input_next = input_end;
+			output_next = output_begin;
+			return state.last_result;
+		}
+		return state.last_result = cvt.in(state.state, input_begin, input_end, input_next, output_begin, output_end, output_next);
 	}
 };
 
@@ -882,7 +927,7 @@ struct encoder_from_wchar_t
 		{
 			const auto &cvt = get_codecvt_utf8<wchar_t>(output_enc);
 			char buffer[buffer_size];
-			std::mbstate_t state{};
+			cvt_state state{};
 
 			// Reads wchar_t
 			return call_coder<WCharDecoder>([&](const wchar_t *input_begin, const wchar_t *input_end)
@@ -913,7 +958,7 @@ struct encoder_from_wchar_t
 			{
 				const auto &cvt = get_codecvt_utf8<char_type>(output_enc);
 				char_type buffer[buffer_size];
-				std::mbstate_t state{};
+				cvt_state state{};
 
 				// Reads UTF-8
 				return call_coder<to_utf8>([&](const u8char *input_begin, const u8char *input_end)
@@ -956,7 +1001,7 @@ struct encoder_from_wchar_t
 		const auto &cvt = std::use_facet<std::codecvt<wchar_t, char, std::mbstate_t>>(loc);
 
 		char char_buffer[buffer_size];
-		std::mbstate_t state{};
+		cvt_state state{};
 
 		return call_coder<WCharDecoder>([&](const wchar_t *input_begin, const wchar_t *input_end)
 		{
@@ -984,7 +1029,7 @@ struct encoder_from_utf8
 		{
 			const auto &cvt = get_codecvt_utf8<wchar_t>(output_enc);
 			wchar_t buffer[buffer_size];
-			std::mbstate_t state{};
+			cvt_state state{};
 
 			// Reads UTF-8
 			return call_coder<U8CharDecoder>([&](const u8char *input_begin, const u8char *input_end)
@@ -1012,7 +1057,7 @@ struct encoder_from_utf8
 			{
 				const auto &cvt = get_codecvt_utf8<char_type>(output_enc);
 				char_type buffer[buffer_size];
-				std::mbstate_t state{};
+				cvt_state state{};
 
 				// Reads UTF-8
 				return call_coder<U8CharDecoder>([&](const u8char *input_begin, const u8char *input_end)
@@ -1071,6 +1116,12 @@ void copy_narrow(const cell *begin, const cell *end, CharType *dest, const encod
 	}
 }
 
+template <class CharType, class Receiver>
+void mark_end(Receiver &receiver)
+{
+	receiver(static_cast<const CharType*>(nullptr), static_cast<const CharType*>(nullptr));
+}
+
 template <class CharType>
 struct decoder_to_char_type
 {
@@ -1106,6 +1157,7 @@ struct decoder_to_char_type
 					static_cast<const CharType*>(char_buffer + remaining)
 				);
 			}
+			mark_end<CharType>(receiver);
 		}
 	};
 };
@@ -1123,7 +1175,7 @@ struct decoder_from_ansi_to_wchar_t
 
 		char char_buffer[buffer_size];
 		wchar_t wchar_buffer[buffer_size];
-		std::mbstate_t state{};
+		cvt_state state{};
 
 		auto remaining = input.size();
 		auto pointer = &input[0];
@@ -1148,6 +1200,11 @@ struct decoder_from_ansi_to_wchar_t
 				return receiver(begin, end);
 			});
 		}
+		encode_buffer_f(char, wchar_t, cvt, in)(cvt, input_enc, state, nullptr, nullptr, wchar_buffer, wchar_buffer + buffer_size, [&](const wchar_t *begin, const wchar_t *end)
+		{
+			return receiver(begin, end);
+		});
+		mark_end<wchar_t>(receiver);
 	}
 };
 
@@ -1166,7 +1223,7 @@ struct decoder_from_utf8_decoder
 		{
 			const auto &cvt = get_codecvt_utf8<wchar_t>(input_enc);
 			wchar_t wchar_buffer[buffer_size];
-			std::mbstate_t state{};
+			cvt_state state{};
 
 			// Read UTF-8
 			return call_coder<U8CharDecoder>([&](const u8char *begin, const u8char *end)
@@ -1198,7 +1255,7 @@ struct decoder_from_char_type
 			const auto &cvt = get_codecvt_utf8<char_type>(input_enc);
 			char_type char_buffer[buffer_size];
 			u8char utf8_buffer[buffer_size];
-			std::mbstate_t state{};
+			cvt_state state{};
 
 			auto remaining = input.size();
 			auto pointer = &input[0];
@@ -1225,6 +1282,11 @@ struct decoder_from_char_type
 					return receiver(begin, end);
 				});
 			}
+			encode_buffer_f(char_type, u8char, cvt, out)(cvt, input_enc, state, nullptr, nullptr, utf8_buffer, utf8_buffer + buffer_size, [&](const u8char *begin, const u8char *end)
+			{
+				return receiver(begin, end);
+			});
+			mark_end<u8char>(receiver);
 		}
 	};
 
