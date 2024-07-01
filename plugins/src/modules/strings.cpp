@@ -717,8 +717,13 @@ void encode_buffer(const std::codecvt_base &cvt, const encoding &enc, cvt_state 
 			}
 			break;
 			case std::codecvt_base::partial:
-				// non-final chunk - use the next one
-				return;
+				if(input_next == input_end)
+				{
+					// non-final chunk - needs more input
+					return;
+				}
+				// buffer full - continue
+				break;
 			case std::codecvt_base::ok:
 				// all good
 				break;
