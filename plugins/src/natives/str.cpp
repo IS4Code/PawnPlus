@@ -625,6 +625,35 @@ namespace Natives
 		return static_cast<cell>(str1->find(*str2, static_cast<size_t>(offset)));
 	}
 
+	template <class... Args>
+	strings::encoding find_encoding(char *locale, Args&&... args)
+	{
+		try{
+			return strings::find_encoding(locale, std::forward<Args>(args)...);
+		}catch(const std::runtime_error &)
+		{
+			amx_LogicError(errors::locale_not_found, locale);
+		}
+	}
+
+	// native str_count_chars(ConstStringTag:str, const encoding[]="", offset=0);
+	AMX_DEFINE_NATIVE_TAG(str_count_chars, 2, cell)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str == nullptr) return 0;
+
+		char *encoding;
+		amx_OptStrParam(amx, 2, encoding, nullptr);
+
+		cell offset = optparam(3, 0);
+		strings::clamp_pos(*str, offset);
+
+		const cell *chars = &(*str)[0];
+
+		return static_cast<cell>(strings::count_chars(chars + offset, chars + str->size(), find_encoding(encoding, false)));
+	}
+
 	// native String:str_clear(StringTag:str);
 	AMX_DEFINE_NATIVE_TAG(str_clear, 1, string)
 	{
@@ -743,17 +772,6 @@ namespace Natives
 			strings::format(amx, *str, *strformat, params[0] / sizeof(cell) - 2, params + 3);
 		}
 		return params[1];
-	}
-
-	template <class... Args>
-	strings::encoding find_encoding(char *locale, Args&&... args)
-	{
-		try{
-			return strings::find_encoding(locale, std::forward<Args>(args)...);
-		}catch(const std::runtime_error &)
-		{
-			amx_LogicError(errors::locale_not_found, locale);
-		}
 	}
 
 	// native String:str_to_lower(StringTag:str, const encoding[]="");
@@ -1521,6 +1539,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_eq),
 	AMX_DECLARE_NATIVE(str_findc),
 	AMX_DECLARE_NATIVE(str_find),
+	AMX_DECLARE_NATIVE(str_count_chars),
 
 	AMX_DECLARE_NATIVE(str_cat),
 	AMX_DECLARE_NATIVE(str_sub),

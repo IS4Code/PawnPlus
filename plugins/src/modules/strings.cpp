@@ -1127,6 +1127,8 @@ void mark_end(Receiver &receiver)
 	receiver(static_cast<const CharType*>(nullptr), static_cast<const CharType*>(nullptr));
 }
 
+using const_cell_span = std::pair<const cell*, const cell*>;
+
 template <class CharType>
 struct decoder_to_char_type
 {
@@ -1135,12 +1137,12 @@ struct decoder_to_char_type
 	template <class Receiver>
 	struct from_raw
 	{
-		void operator()(Receiver receiver, const cell_string &input, const encoding &input_enc) const
+		void operator()(Receiver receiver, const_cell_span input, const encoding &input_enc) const
 		{
 			CharType char_buffer[buffer_size];
 
-			auto remaining = input.size();
-			auto pointer = &input[0];
+			auto remaining = input.second - input.first;
+			auto pointer = input.first;
 			while(remaining > buffer_size)
 			{
 				copy_narrow(pointer, pointer + buffer_size, char_buffer, input_enc);
@@ -1172,7 +1174,7 @@ struct decoder_from_ansi_to_wchar_t
 {
 	// Conversion of cell -> char -> wchar_t from input
 
-	void operator()(Receiver receiver, const cell_string &input, const encoding &input_enc) const
+	void operator()(Receiver receiver, const_cell_span input, const encoding &input_enc) const
 	{
 		auto loc = input_enc.install();
 		const auto &ctype = std::use_facet<std::ctype<cell>>(loc);
@@ -1182,8 +1184,8 @@ struct decoder_from_ansi_to_wchar_t
 		wchar_t wchar_buffer[buffer_size];
 		cvt_state state{};
 
-		auto remaining = input.size();
-		auto pointer = &input[0];
+		auto remaining = input.second - input.first;
+		auto pointer = input.first;
 		while(remaining > buffer_size)
 		{
 			ctype.narrow(pointer, pointer + buffer_size, input_enc.unknown_char, char_buffer);
@@ -1255,15 +1257,15 @@ struct decoder_from_char_type
 	{
 		// Conversion to UTF-8
 
-		void operator()(U8CharReceiver receiver, const cell_string &input, const encoding &input_enc) const
+		void operator()(U8CharReceiver receiver, const_cell_span input, const encoding &input_enc) const
 		{
 			const auto &cvt = get_codecvt_utf8<char_type>(input_enc);
 			char_type char_buffer[buffer_size];
 			u8char utf8_buffer[buffer_size];
 			cvt_state state{};
 
-			auto remaining = input.size();
-			auto pointer = &input[0];
+			auto remaining = input.second - input.first;
+			auto pointer = input.first;
 			while(remaining > buffer_size)
 			{
 				copy_narrow(pointer, pointer + buffer_size, char_buffer, input_enc);
@@ -1302,6 +1304,12 @@ struct decoder_from_char_type
 	};
 };
 
+const_cell_span get_span(const cell_string &str)
+{
+	const cell *begin = &str[0];
+	return {begin, begin + str.size()};
+}
+
 void strings::change_encoding(const cell_string &input, const encoding &input_enc, cell_string &output, const encoding &output_enc)
 {
 	if(input_enc.is_unicode())
@@ -1312,10 +1320,11 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 			output = input;
 			return;
 		}
+		const_cell_span input_span = get_span(input);
 		if(input_enc.type == encoding::unicode)
 		{
 			// Treat as raw wchar_t and convert directly
-			return encoder_from_wchar_t<decoder_to_char_type<wchar_t>::template from_raw>()(output, output_enc, input, input_enc);
+			return encoder_from_wchar_t<decoder_to_char_type<wchar_t>::template from_raw>()(output, output_enc, input_span, input_enc);
 		}
 		if(output_enc.is_unicode())
 		{
@@ -1323,26 +1332,168 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 			switch(input_enc.type)
 			{
 				case encoding::utf8:
-					return encoder_from_utf8<decoder_to_char_type<u8char>::template from_raw>()(output, output_enc, input, input_enc);
+					return encoder_from_utf8<decoder_to_char_type<u8char>::template from_raw>()(output, output_enc, input_span, input_enc);
 				case encoding::utf16:
-					return encoder_from_utf8<decoder_from_char_type<char16_t>::template through_utf8>()(output, output_enc, input, input_enc);
+					return encoder_from_utf8<decoder_from_char_type<char16_t>::template through_utf8>()(output, output_enc, input_span, input_enc);
 				case encoding::utf32:
-					return encoder_from_utf8<decoder_from_char_type<char32_t>::template through_utf8>()(output, output_enc, input, input_enc);
+					return encoder_from_utf8<decoder_from_char_type<char32_t>::template through_utf8>()(output, output_enc, input_span, input_enc);
 			}
 		}else{
 			// Through as wchar_t
 			switch(input_enc.type)
 			{
 				case encoding::utf8:
-					return encoder_from_wchar_t<decoder_from_utf8_decoder<decoder_to_char_type<u8char>::template from_raw>::template through_wchar_t>()(output, output_enc, input_enc, input, input_enc);
+					return encoder_from_wchar_t<decoder_from_utf8_decoder<decoder_to_char_type<u8char>::template from_raw>::template through_wchar_t>()(output, output_enc, input_enc, input_span, input_enc);
 				case encoding::utf16:
-					return encoder_from_wchar_t<decoder_from_char_type<char16_t>::template through_wchar_t>()(output, output_enc, input_enc, input, input_enc);
+					return encoder_from_wchar_t<decoder_from_char_type<char16_t>::template through_wchar_t>()(output, output_enc, input_enc, input_span, input_enc);
 				case encoding::utf32:
-					return encoder_from_wchar_t<decoder_from_char_type<char32_t>::template through_wchar_t>()(output, output_enc, input_enc, input, input_enc);
+					return encoder_from_wchar_t<decoder_from_char_type<char32_t>::template through_wchar_t>()(output, output_enc, input_enc, input_span, input_enc);
 			}
 		}
 	}
 
 	// Always through as wchar_t
-	return encoder_from_wchar_t<decoder_from_ansi_to_wchar_t>()(output, output_enc, input, input_enc);
+	return encoder_from_wchar_t<decoder_from_ansi_to_wchar_t>()(output, output_enc, get_span(input), input_enc);
+}
+
+template <template <class> class U8CharDecoder>
+struct counter_from_utf8
+{
+	template <class... Args>
+	size_t operator()(const encoding &enc, Args&&... args) const
+	{
+		size_t result = 0;
+
+		size_t bom_part = (enc.flags & encoding::unicode_use_header) ? 0 : -1;
+
+		// Reads UTF-8
+		call_coder<U8CharDecoder>([&](const u8char *input_begin, const u8char *input_end)
+		{
+			// Count UTF-8
+			while(input_begin != input_end)
+			{
+				u8char c = *input_begin;
+				++input_begin;
+
+				switch(bom_part)
+				{
+					case 0:
+						if(c == '\xEF')
+						{
+							bom_part++;
+							continue;
+						}
+						bom_part = -1;
+						break;
+					case 1:
+						if(c == '\xBB')
+						{
+							bom_part++;
+							continue;
+						}
+						bom_part = -1;
+						break;
+					case 2:
+						if(c == '\xBF')
+						{
+							bom_part++;
+							continue;
+						}
+						bom_part = -1;
+						break;
+				}
+
+				if(!(c & 0x80))
+				{
+					// Single-byte character
+					++result;
+					continue;
+				}
+				// Multi-byte sequence
+				if(c & 0x40)
+				{
+					// Initial byte in sequence
+					++result;
+				}
+			}
+			return nullptr;
+		}, std::forward<Args>(args)...);
+
+		return result;
+	}
+};
+
+template <template <class> class WCharDecoder>
+struct counter_from_wchar_t
+{
+	template <class... Args>
+	size_t operator()(const encoding &enc, Args&&... args) const
+	{
+		return counter_from_utf8<encoder_from_wchar_t<WCharDecoder>::template to_utf8>()(enc, enc, std::forward<Args>(args)...);
+	}
+};
+
+template <template <class> class U16CharDecoder>
+struct counter_from_utf16
+{
+	template <class... Args>
+	size_t operator()(const encoding &enc, Args&&... args) const
+	{
+		size_t result = 0;
+
+		// Reads UTF-16
+		call_coder<U16CharDecoder>([&](const char16_t *input_begin, const char16_t *input_end)
+		{
+			// Count UTF-16
+			while(input_begin != input_end)
+			{
+				char16_t c = *input_begin;
+
+				if(c < 0xDC00 || c > 0xDFFF)
+				{
+					// Not a low surrogate
+					++result;
+				}
+				
+				++input_begin;
+			}
+			return nullptr;
+		}, std::forward<Args>(args)...);
+
+		return result;
+	}
+};
+
+size_t strings::count_chars(const cell *begin, const cell *end, const encoding &enc)
+{
+	if(enc.is_unicode() && enc.char_size() == sizeof(char32_t) && (enc.flags & encoding::unicode_use_header))
+	{
+		// No conversion involved
+		return end - begin;
+	}
+
+	const_cell_span input_span{begin, end};
+
+	switch(enc.type)
+	{
+		case encoding::unicode:
+			// Treat as raw wchar_t and convert directly
+			return counter_from_wchar_t<decoder_to_char_type<wchar_t>::template from_raw>()(enc, input_span, enc);
+		case encoding::utf8:
+			// Through as UTF-8
+			return counter_from_utf8<decoder_to_char_type<u8char>::template from_raw>()(enc, input_span, enc);
+		case encoding::utf16:
+			if(enc.flags & (encoding::unicode_ucs | encoding::unicode_use_header))
+			{
+				// Decode to UTF-8
+				return counter_from_utf8<decoder_from_char_type<char16_t>::template through_utf8>()(enc, input_span, enc);
+			}
+			return counter_from_utf16<decoder_to_char_type<char16_t>::template from_raw>()(enc, input_span, enc);
+		case encoding::utf32:
+			// Decode
+			return counter_from_utf8<decoder_from_char_type<char32_t>::template through_utf8>()(enc, input_span, enc);
+		default:
+			// Always through as wchar_t
+			return counter_from_wchar_t<decoder_from_ansi_to_wchar_t>()(enc, input_span, enc);
+	}
 }

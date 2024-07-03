@@ -425,6 +425,7 @@ namespace strings
 	void to_lower(cell_string &str, const encoding &enc);
 	void to_upper(cell_string &str, const encoding &enc);
 	void change_encoding(const cell_string &input, const encoding &input_enc, cell_string &output, const encoding &output_enc);
+	size_t count_chars(const cell *begin, const cell *end, const encoding &enc);
 }
 
 namespace std

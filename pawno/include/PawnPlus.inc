@@ -542,6 +542,7 @@ native bool:str_empty(ConstStringTag:str);
 native bool:str_eq(ConstStringTag:str1, ConstStringTag:str2);
 native str_findc(ConstStringTag:str, value, offset=0);
 native str_find(ConstStringTag:str, ConstStringTag:value, offset=0);
+native str_count_chars(ConstStringTag:str, const encoding[]="");
 
 native String:str_cat(ConstStringTag:str1, ConstStringTag:str2);
 native String:str_sub(ConstStringTag:str, start=0, end=cellmax);
