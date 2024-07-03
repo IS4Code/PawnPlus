@@ -317,7 +317,7 @@ namespace Natives
 		}
 	};
 
-	// native List:str_split(StringTag:str, const delims[]);
+	// native List:str_split(ConstStringTag:str, const delims[]);
 	AMX_DEFINE_NATIVE_TAG(str_split, 2, list)
 	{
 		cell_string *str;
@@ -330,7 +330,7 @@ namespace Natives
 		return strings::select_iterator<str_split_base>(delims, amx, str);
 	}
 
-	// native List:str_split_s(StringTag:str, StringTag:delims);
+	// native List:str_split_s(ConstStringTag:str, ConstStringTag:delims);
 	AMX_DEFINE_NATIVE_TAG(str_split_s, 2, list)
 	{
 		cell_string *str;
@@ -371,7 +371,7 @@ namespace Natives
 		return strings::select_iterator<str_join_base>(delim, amx, list);
 	}
 
-	// native String:str_join_s(List:list, StringTag:delim);
+	// native String:str_join_s(List:list, ConstStringTag:delim);
 	AMX_DEFINE_NATIVE_TAG(str_join_s, 2, string)
 	{
 		list_t *list;
@@ -381,7 +381,7 @@ namespace Natives
 		return strings::select_iterator<str_join_base>(delim, amx, list);
 	}
 
-	// native str_len(StringTag:str);
+	// native str_len(ConstStringTag:str);
 	AMX_DEFINE_NATIVE_TAG(str_len, 1, cell)
 	{
 		cell_string *str;
@@ -390,7 +390,7 @@ namespace Natives
 		return static_cast<cell>(str->size());
 	}
 
-	// native str_capacity(StringTag:str);
+	// native str_capacity(ConstStringTag:str);
 	AMX_DEFINE_NATIVE_TAG(str_capacity, 1, cell)
 	{
 		cell_string *str;
@@ -399,7 +399,7 @@ namespace Natives
 		return static_cast<cell>(str->capacity());
 	}
 
-	// native str_get(StringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
+	// native str_get(ConstStringTag:str, buffer[], size=sizeof(buffer), start=0, end=cellmax);
 	AMX_DEFINE_NATIVE_TAG(str_get, 3, cell)
 	{
 		if(params[3] == 0) return 0;
@@ -531,7 +531,7 @@ namespace Natives
 		return params[1];
 	}
 
-	// native String:str_sub(StringTag:str, start=0, end=cellmax);
+	// native String:str_sub(ConstStringTag:str, start=0, end=cellmax);
 	AMX_DEFINE_NATIVE_TAG(str_sub, 1, string)
 	{
 		cell_string *str;
@@ -549,7 +549,7 @@ namespace Natives
 		return 0;
 	}
 
-	// native bool:str_cmp(StringTag:str1, StringTag:str2);
+	// native bool:str_cmp(ConstStringTag:str1, ConstStringTag:str2);
 	AMX_DEFINE_NATIVE_TAG(str_cmp, 2, bool)
 	{
 		cell_string *str1;
@@ -569,7 +569,7 @@ namespace Natives
 		return str1->compare(*str2);
 	}
 
-	// native bool:str_empty(StringTag:str);
+	// native bool:str_empty(ConstStringTag:str);
 	AMX_DEFINE_NATIVE_TAG(str_empty, 1, bool)
 	{
 		cell_string *str;
@@ -578,7 +578,7 @@ namespace Natives
 		return str->empty();
 	}
 
-	// native bool:str_eq(StringTag:str1, StringTag:str2);
+	// native bool:str_eq(ConstStringTag:str1, ConstStringTag:str2);
 	AMX_DEFINE_NATIVE_TAG(str_eq, 2, bool)
 	{
 		cell_string *str1;
@@ -598,7 +598,7 @@ namespace Natives
 		return *str1 == *str2;
 	}
 
-	// native str_findc(StringTag:str, value, offset=0);
+	// native str_findc(ConstStringTag:str, value, offset=0);
 	AMX_DEFINE_NATIVE_TAG(str_findc, 2, cell)
 	{
 		cell_string *str;
@@ -610,7 +610,7 @@ namespace Natives
 		return str->find(params[2], static_cast<size_t>(offset));
 	}
 
-	// native str_find(StringTag:str, StringTag:value, offset=0);
+	// native str_find(ConstStringTag:str, ConstStringTag:value, offset=0);
 	AMX_DEFINE_NATIVE_TAG(str_find, 2, cell)
 	{
 		cell_string *str1;
