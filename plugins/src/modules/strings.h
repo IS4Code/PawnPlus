@@ -11,6 +11,7 @@
 #include <locale>
 #include <memory>
 #include <algorithm>
+#include <utility>
 
 class expression;
 
@@ -260,7 +261,7 @@ namespace strings
 	typedef impl::unaligned_char_iterator<cell> unaligned_char_iterator;
 
 	template <template <class> class Func, class... Args>
-	auto select_iterator(const cell *str, Args &&...args) -> decltype(Func<const cell*>()(static_cast<const cell*>(nullptr), static_cast<const cell*>(nullptr), std::forward<Args>(args)...))
+	auto select_iterator(const cell *str, Args &&...args) -> decltype(Func<const cell*>()(std::declval<const cell*>(), std::declval<const cell*>(), std::forward<Args>(args)...))
 	{
 		if(str == nullptr)
 		{
@@ -282,7 +283,7 @@ namespace strings
 	}
 	
 	template <template <class> class Func, class... Args>
-	auto select_iterator(const cell_string *str, Args &&...args) -> decltype(Func<const cell*>()(static_cast<const cell*>(nullptr), static_cast<const cell*>(nullptr), std::forward<Args>(args)...))
+	auto select_iterator(const cell_string *str, Args &&...args) -> decltype(Func<const cell*>()(std::declval<const cell*>(), std::declval<const cell*>(), std::forward<Args>(args)...))
 	{
 		if(str == nullptr)
 		{
