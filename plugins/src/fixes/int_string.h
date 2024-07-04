@@ -245,6 +245,23 @@ namespace impl
 			});
 		}
 
+		wchar_t narrow(char_type ch, wchar_t dflt) const
+		{
+			using unsigned_char = typename std::make_unsigned<wchar_t>::type;
+
+			if(treat_as_truncated || char_in_range<unsigned_char>(ch))
+			{
+				return static_cast<unsigned_char>(ch);
+			}
+			return dflt;
+		}
+
+		const char_type *narrow(const char_type *first, const char_type *last, wchar_t dflt, wchar_t *dest) const
+		{
+			std::transform(first, last, dest, [&](char_type c) { return narrow(c, dflt); });
+			return last;
+		}
+
 		template <class BaseCharType>
 		char_type widen(char c, const std::ctype<BaseCharType> &base) const
 		{
@@ -268,6 +285,19 @@ namespace impl
 				std::transform(first, last, dest, [&](char c) { return widen(c, base); });
 				return last;
 			});
+		}
+
+		char_type widen(wchar_t c) const
+		{
+			using unsigned_char = typename std::make_unsigned<wchar_t>::type;
+
+			return static_cast<unsigned_char>(c);
+		}
+
+		const wchar_t *widen(const wchar_t *first, const wchar_t *last, char_type *dest) const
+		{
+			std::transform(first, last, dest, [&](wchar_t c) { return widen(c); });
+			return last;
 		}
 
 		template <class BaseCharType, ctype_transform<BaseCharType> Transform>
@@ -340,6 +370,11 @@ namespace impl
 			{
 				return typeid(ctype_char_type<decltype(base)>);
 			});
+		}
+
+		bool is_unicode() const
+		{
+			return base_type != base_char;
 		}
 
 		bool truncates_cells() const

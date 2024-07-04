@@ -13,13 +13,37 @@ namespace impl
 	template <class CharType>
 	class regex_traits
 	{
+		const ::impl::int_ctype<CharType> *char_ctype;
+		std::locale base_locale;
+		bool is_wide;
+		union
+		{
+			std::regex_traits<char> char_traits;
+			std::regex_traits<wchar_t> wchar_t_traits;
+		};
+
 		void cache_locale()
 		{
-			_ctype = &std::use_facet<std::ctype<CharType>>(_locale);
+			bool was_wide = is_wide;
+			char_ctype = &std::use_facet<::impl::int_ctype<CharType>>(base_locale);
+			is_wide = char_ctype->is_unicode();
+			if(is_wide)
+			{
+				if(!was_wide)
+				{
+					char_traits.~regex_traits<char>();
+					new (&wchar_t_traits) std::regex_traits<wchar_t>();
+				}
+				wchar_t_traits.imbue(base_locale);
+			}else{
+				if(was_wide)
+				{
+					wchar_t_traits.~regex_traits<wchar_t>();
+					new (&char_traits) std::regex_traits<char>();
+				}
+				char_traits.imbue(base_locale);
+			}
 		}
-
-		const std::ctype<CharType> *_ctype;
-		std::locale _locale;
 
 		template <std::size_t Size>
 		static std::basic_string<CharType> get_str(const char(&source)[Size])
@@ -53,9 +77,19 @@ namespace impl
 			_Ch_xdigit = std::ctype_base::xdigit
 		};
 
-		regex_traits()
+		regex_traits() : is_wide(false), char_traits()
 		{
 			cache_locale();
+		}
+
+		~regex_traits()
+		{
+			if(is_wide)
+			{
+				wchar_t_traits.~regex_traits<wchar_t>();
+			}else{
+				char_traits.~regex_traits<char>();
+			}
 		}
 
 		int value(CharType ch, int base) const
@@ -90,12 +124,26 @@ namespace impl
 
 		CharType translate(CharType ch) const
 		{
+			if(is_wide)
+			{
+				wchar_t n = char_ctype->narrow(ch, L'\0');
+				if(n != L'\0')
+				{
+					return char_ctype->widen(wchar_t_traits.translate(ch));
+				}
+			}else{
+				char n = char_ctype->narrow(ch, '\0');
+				if(n != '\0')
+				{
+					return char_ctype->widen(char_traits.translate(ch));
+				}
+			}
 			return ch;
 		}
 
 		CharType translate_nocase(CharType ch) const
 		{
-			return _ctype->tolower(ch);
+			return translate(char_ctype->tolower(ch));
 		}
 
 		template <class Iterator>
@@ -116,9 +164,9 @@ namespace impl
 		{
 			if(ctype != static_cast<char_class_type>(-1))
 			{
-				return _ctype->is(ctype, ch);
+				return char_ctype->is(ctype, ch);
 			}else{
-				return ch == '_' || _ctype->is(std::ctype_base::alnum, ch);
+				return ch == '_' || char_ctype->is(std::ctype_base::alnum, ch);
 			}
 		}
 
@@ -161,14 +209,14 @@ namespace impl
 
 		locale_type imbue(locale_type loc)
 		{
-			std::swap(_locale, loc);
+			std::swap(base_locale, loc);
 			cache_locale();
 			return loc;
 		}
 
 		locale_type getloc() const
 		{
-			return _locale;
+			return base_locale;
 		}
 	};
 }
