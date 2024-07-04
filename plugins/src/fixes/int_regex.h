@@ -7,13 +7,14 @@
 #include <regex>
 #include <type_traits>
 #include <algorithm>
+#include <utility>
 
 namespace impl
 {
 	template <class CharType>
 	class regex_traits
 	{
-		const ::impl::int_ctype<CharType> *char_ctype;
+		const ::impl::int_ctype<CharType> *base_int_ctype;
 		std::locale base_locale;
 		bool is_wide;
 		union
@@ -25,8 +26,8 @@ namespace impl
 		void cache_locale()
 		{
 			bool was_wide = is_wide;
-			char_ctype = &std::use_facet<::impl::int_ctype<CharType>>(base_locale);
-			is_wide = char_ctype->is_unicode();
+			base_int_ctype = &std::use_facet<::impl::int_ctype<CharType>>(base_locale);
+			is_wide = base_int_ctype->is_unicode();
 			if(is_wide)
 			{
 				if(!was_wide)
@@ -45,12 +46,90 @@ namespace impl
 			}
 		}
 
-		template <std::size_t Size>
-		static std::basic_string<CharType> get_str(const char(&source)[Size])
+		template <class BaseCharType, std::size_t Size>
+		static std::basic_string<CharType> get_str(const BaseCharType(&source)[Size])
 		{
+			using unsigned_narrow_char_type = typename std::make_unsigned<BaseCharType>::type;
+
 			std::basic_string<CharType> result(Size - 1, CharType());
-			std::copy(std::begin(source), std::prev(std::end(source)), result.begin());
+			std::transform(std::begin(source), std::prev(std::end(source)), result.begin(), [](BaseCharType c) { return static_cast<unsigned_narrow_char_type>(c); });
 			return result;
+		}
+
+		template <class BaseCharType>
+		static std::basic_string<CharType> get_str(const std::basic_string<BaseCharType> &source)
+		{
+			using unsigned_narrow_char_type = typename std::make_unsigned<BaseCharType>::type;
+
+			std::basic_string<CharType> result(source.size(), CharType());
+			std::transform(source.begin(), source.end(), result.begin(), [](BaseCharType c) { return static_cast<unsigned_narrow_char_type>(c); });
+			return result;
+		}
+		
+		template <class Func>
+		auto get_traits(Func func) const -> decltype(func(std::declval<const std::regex_traits<char>>()))
+		{
+			if(is_wide)
+			{
+				return func(wchar_t_traits);
+			}else{
+				return func(char_traits);
+			}
+		}
+
+		template <class Traits>
+		using traits_char_type = typename std::remove_cv<typename std::remove_reference<Traits>::type>::type::char_type;
+
+		template <class Iterator>
+		using is_contiguous_iterator = std::integral_constant<bool,
+			std::is_same<Iterator, CharType*>::value ||
+			std::is_same<Iterator, const CharType*>::value ||
+			std::is_same<Iterator, typename std::basic_string<CharType>::iterator>::value ||
+			std::is_same<Iterator, typename std::basic_string<CharType>::const_iterator>::value ||
+			std::is_same<Iterator, typename std::vector<CharType>::iterator>::value ||
+			std::is_same<Iterator, typename std::vector<CharType>::const_iterator>::value
+		>;
+
+		template <class Receiver>
+		static auto make_contiguous(const CharType *begin, const CharType *end, Receiver receiver) -> decltype(receiver(std::declval<const CharType*>(), std::declval<const CharType*>()))
+		{
+			return receiver(begin, end);
+		}
+
+		template <class Iterator, class Receiver>
+		static auto make_contiguous(Iterator begin, typename std::enable_if<is_contiguous_iterator<Iterator>::value, Iterator>::type end, Receiver receiver) -> decltype(receiver(std::declval<const CharType*>(), std::declval<const CharType*>()))
+		{
+			auto ptr = &*begin;
+			return receiver(ptr, ptr + (end - begin));
+		}
+
+		template <class Iterator, class Receiver>
+		static auto make_contiguous(Iterator begin, typename std::enable_if<!is_contiguous_iterator<Iterator>::value, Iterator>::type end, Receiver receiver) -> decltype(receiver(std::declval<const CharType*>(), std::declval<const CharType*>()))
+		{
+			std::basic_string<CharType> str{begin, end};
+			auto ptr = &str[0];
+			return receiver(ptr, ptr + str.size());
+		}
+
+		template <class Iterator, class BaseCharType, class Receiver>
+		auto narrow(Iterator begin, Iterator end, const std::regex_traits<BaseCharType> &traits, Receiver receiver) const -> decltype(receiver(std::declval<const BaseCharType*>(), std::declval<const BaseCharType*>()))
+		{
+			return make_contiguous(begin, end, [&](const CharType *begin, const CharType *end)
+			{
+				auto size = end - begin;
+
+				if(size < 32)
+				{
+					BaseCharType *ptr = static_cast<BaseCharType*>(alloca(size * sizeof(BaseCharType)));
+					base_int_ctype->narrow(begin, end, BaseCharType(), ptr);
+					return receiver(ptr, ptr + size);
+				}else{
+					auto memory = std::make_unique<BaseCharType[]>(size);
+					auto ptr = memory.get();
+					base_int_ctype->narrow(begin, end, BaseCharType(), ptr);
+					return receiver(ptr, ptr + size);
+				}
+			});
 		}
 
 	public:
@@ -94,27 +173,36 @@ namespace impl
 
 		int value(CharType ch, int base) const
 		{
-			if((base != 8 && '0' <= ch && ch <= '9') || (base == 8 && '0' <= ch && ch <= '7'))
+			if('0' <= ch && ch <= '9')
 			{
-				return (ch - '0');
+				int result = ch - '0';
+				return result < base ? result : -1;
 			}
 
-			if(base != 16)
+			if(base == 16)
 			{
-				return (-1);
+				if('a' <= ch && ch <= 'f')
+				{
+					return ch - 'a' + 10;
+				}
+
+				if('A' <= ch && ch <= 'F')
+				{
+					return ch - 'A' + 10;
+				}
 			}
 
-			if('a' <= ch && ch <= 'f')
+			return get_traits([&](const auto &traits)
 			{
-				return (ch - 'a' + 10);
-			}
+				using narrow_char_type = traits_char_type<decltype(traits)>;
 
-			if('A' <= ch && ch <= 'F')
-			{
-				return (ch - 'A' + 10);
-			}
-
-			return -1;
+				narrow_char_type n = base_int_ctype->narrow(ch, narrow_char_type{});
+				if(n != narrow_char_type{})
+				{
+					return traits.value(ch, base);
+				}
+				return -1;
+			});
 		}
 
 		static size_type length(const CharType *str)
@@ -124,49 +212,59 @@ namespace impl
 
 		CharType translate(CharType ch) const
 		{
-			if(is_wide)
+			return get_traits([&](const auto &traits)
 			{
-				wchar_t n = char_ctype->narrow(ch, L'\0');
-				if(n != L'\0')
+				using narrow_char_type = traits_char_type<decltype(traits)>;
+
+				narrow_char_type n = base_int_ctype->narrow(ch, narrow_char_type{});
+				if(n != narrow_char_type{})
 				{
-					return char_ctype->widen(wchar_t_traits.translate(ch));
+					return base_int_ctype->widen(traits.translate(ch));
 				}
-			}else{
-				char n = char_ctype->narrow(ch, '\0');
-				if(n != '\0')
-				{
-					return char_ctype->widen(char_traits.translate(ch));
-				}
-			}
-			return ch;
+				return ch;
+			});
 		}
 
 		CharType translate_nocase(CharType ch) const
 		{
-			return translate(char_ctype->tolower(ch));
+			return translate(base_int_ctype->tolower(ch));
 		}
 
 		template <class Iterator>
 		string_type transform(Iterator first, Iterator last) const
 		{
-			return string_type(first, last);
+			return get_traits([&](const auto &traits)
+			{
+				using narrow_char_type = traits_char_type<decltype(traits)>;
+
+				return narrow(first, last, traits, [&](const narrow_char_type *begin, const narrow_char_type *end)
+				{
+					return get_str(traits.transform(begin, end));
+				});
+			});
 		}
 
 		template <class Iterator>
 		string_type transform_primary(Iterator first, Iterator last) const
 		{
-			string_type res(first, last);
-			std::transform(res.begin(), res.end(), res.begin(), [&](CharType c) { return tolower(c); });
-			return res;
+			return get_traits([&](const auto &traits)
+			{
+				using narrow_char_type = traits_char_type<decltype(traits)>;
+
+				return narrow(first, last, traits, [&](const narrow_char_type *begin, const narrow_char_type *end)
+				{
+					return get_str(traits.transform_primary(begin, end));
+				});
+			});
 		}
 
 		bool isctype(CharType ch, char_class_type ctype) const
 		{
 			if(ctype != static_cast<char_class_type>(-1))
 			{
-				return char_ctype->is(ctype, ch);
+				return base_int_ctype->is(ctype, ch);
 			}else{
-				return ch == '_' || char_ctype->is(std::ctype_base::alnum, ch);
+				return ch == '_' || base_int_ctype->is(std::ctype_base::alnum, ch);
 			}
 		}
 
@@ -198,13 +296,29 @@ namespace impl
 				}
 				return mask;
 			}
-			return {};
+			return get_traits([&](const auto &traits)
+			{
+				using narrow_char_type = traits_char_type<decltype(traits)>;
+
+				return narrow(first, last, traits, [&](const narrow_char_type *begin, const narrow_char_type *end)
+				{
+					return traits.lookup_classname(begin, end, icase);
+				});
+			});
 		}
 
 		template <class Iterator>
 		string_type lookup_collatename(Iterator first, Iterator last) const
 		{
-			return string_type(first, last);
+			return get_traits([&](const auto &traits)
+			{
+				using narrow_char_type = traits_char_type<decltype(traits)>;
+
+				return narrow(first, last, traits, [&](const narrow_char_type *begin, const narrow_char_type *end)
+				{
+					return get_str(traits.lookup_collatename(begin, end));
+				});
+			});
 		}
 
 		locale_type imbue(locale_type loc)
