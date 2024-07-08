@@ -282,7 +282,10 @@ namespace impl
 				{get_str("punct"), std::ctype_base::punct},
 				{get_str("space"), std::ctype_base::space},
 				{get_str("upper"), std::ctype_base::upper},
-				{get_str("xdigit"), std::ctype_base::xdigit}
+				{get_str("xdigit"), std::ctype_base::xdigit},
+				{get_str("d"), std::ctype_base::digit},
+				{get_str("s"), std::ctype_base::space},
+				{get_str("w"), static_cast<char_class_type>(-1)}
 			};
 
 			string_type key(first, last);
