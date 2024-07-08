@@ -20,6 +20,7 @@ namespace strings
 	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, int replacement_index, cell *pos, cell options, const char *format, cell *params, size_t numargs, std::weak_ptr<void> mem_handle);
 	void regex_replace(cell_string &target, const cell_string &str, const cell *pattern, AMX *amx, const expression &expr, cell *pos, cell options, std::weak_ptr<void> mem_handle);
 	void regex_replace(cell_string &target, const cell_string &str, const cell_string &pattern, AMX *amx, const expression &expr, cell *pos, cell options, std::weak_ptr<void> mem_handle);
+	cell_string collate_transform(const cell_string &str, bool primary, const encoding &enc);
 }
 
 #endif

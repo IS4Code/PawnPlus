@@ -802,3 +802,13 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
 	}
 }
+
+cell_string strings::collate_transform(const cell_string &str, bool primary, const encoding &enc)
+{
+	std::regex_traits<cell> traits;
+	traits.imbue(enc.install());
+
+	return primary
+		? traits.transform_primary(str.begin(), str.end())
+		: traits.transform(str.begin(), str.end());
+}

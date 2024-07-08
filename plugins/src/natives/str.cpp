@@ -774,7 +774,7 @@ namespace Natives
 		return params[1];
 	}
 
-	// native String:str_to_lower(StringTag:str, const encoding[]="");
+	// native String:str_to_lower(ConstStringTag:str, const encoding[]="");
 	AMX_DEFINE_NATIVE_TAG(str_to_lower, 1, string)
 	{
 		cell_string *str;
@@ -792,7 +792,7 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
-	// native String:str_to_upper(StringTag:str, const encoding[]="");
+	// native String:str_to_upper(ConstStringTag:str, const encoding[]="");
 	AMX_DEFINE_NATIVE_TAG(str_to_upper, 1, string)
 	{
 		cell_string *str;
@@ -810,7 +810,7 @@ namespace Natives
 		return strings::pool.get_id(strings::pool.add(std::move(str2)));
 	}
 
-	// native String:str_convert(StringTag:str, const from_encoding[], const to_encoding[]);
+	// native String:str_convert(ConstStringTag:str, const from_encoding[], const to_encoding[]);
 	AMX_DEFINE_NATIVE_TAG(str_convert, 3, string)
 	{
 		cell_string *str;
@@ -827,6 +827,26 @@ namespace Natives
 		cell_string out;
 		strings::change_encoding(*str, find_encoding(from_encoding, false), out, find_encoding(to_encoding, false));
 		return strings::pool.get_id(strings::pool.add(std::move(out)));
+	}
+
+	// native String:str_collation_key(ConstStringTag:str, bool:is_primary=true, const encoding[]="");
+	AMX_DEFINE_NATIVE_TAG(str_collation_key, 1, string)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+		if(str == nullptr)
+		{
+			return strings::pool.get_id(strings::pool.add());
+		}
+
+		bool is_primary = static_cast<bool>(optparam(2, 1));
+
+		char *encoding;
+		amx_OptStrParam(amx, 3, encoding, nullptr);
+
+		return strings::pool.get_id(strings::pool.add(
+			strings::collate_transform(*str, is_primary, find_encoding(encoding, false))
+		));
 	}
 
 	// native String:str_set_to_lower(StringTag:str, const encoding[]="");
@@ -875,7 +895,26 @@ namespace Natives
 		{
 			cell_string out;
 			strings::change_encoding(*str, find_encoding(from_encoding, false), out, find_encoding(to_encoding, false));
-			std::swap(*str, out);
+			*str = std::move(out);
+		}
+		return params[1];
+	}
+
+	// native String:str_set_collation_key(StringTag:str, bool:is_primary=true, const encoding[]="");
+	AMX_DEFINE_NATIVE_TAG(str_set_collation_key, 1, string)
+	{
+		cell_string *str;
+		if(!strings::pool.get_by_id(params[1], str) && str != nullptr) amx_LogicError(errors::pointer_invalid, "string", params[1]);
+
+		bool is_primary = static_cast<bool>(optparam(2, 1));
+
+		char *encoding;
+		amx_OptStrParam(amx, 3, encoding, nullptr);
+
+		if(str != nullptr)
+		{
+			cell_string result = strings::collate_transform(*str, is_primary, find_encoding(encoding, false));
+			*str = std::move(result);
 		}
 		return params[1];
 	}
@@ -1553,6 +1592,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_to_lower),
 	AMX_DECLARE_NATIVE(str_to_upper),
 	AMX_DECLARE_NATIVE(str_convert),
+	AMX_DECLARE_NATIVE(str_collation_key),
 
 	AMX_DECLARE_NATIVE(str_set),
 	AMX_DECLARE_NATIVE(str_append),
@@ -1564,6 +1604,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(str_set_to_lower),
 	AMX_DECLARE_NATIVE(str_set_to_upper),
 	AMX_DECLARE_NATIVE(str_set_convert),
+	AMX_DECLARE_NATIVE(str_set_collation_key),
 
 	AMX_DECLARE_NATIVE(str_format),
 	AMX_DECLARE_NATIVE(str_format_s),

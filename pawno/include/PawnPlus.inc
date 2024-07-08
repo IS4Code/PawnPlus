@@ -556,6 +556,7 @@ native String:str_join_s(List:list, ConstStringTag:delim);
 native String:str_to_lower(ConstStringTag:str, const encoding[]="");
 native String:str_to_upper(ConstStringTag:str, const encoding[]="");
 native String:str_convert(ConstStringTag:str, const from_encoding[], const to_encoding[]);
+native String:str_collation_key(ConstStringTag:str, bool:is_primary=true, const encoding[]="");
 
 native String:str_set(StringTag:target, ConstStringTag:other);
 native String:str_append(StringTag:target, ConstStringTag:other);
@@ -567,6 +568,7 @@ native String:str_reserve(StringTag:str, size);
 native String:str_set_to_lower(StringTag:str, const encoding[]="");
 native String:str_set_to_upper(StringTag:str, const encoding[]="");
 native String:str_set_convert(StringTag:str, const from_encoding[], const to_encoding[]);
+native String:str_set_collation_key(StringTag:str, bool:is_primary=true, const encoding[]="");
 
 native String:str_format(const format[], AnyTag:...);
 native String:str_format_s(ConstStringTag:format, AnyTag:...);
