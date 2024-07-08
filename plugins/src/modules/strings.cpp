@@ -396,6 +396,10 @@ typename encoding_info<Locale>::template make_value<Locale>::type encoding_info<
 template <>
 std::locale encoding_info<std::locale>::install() const
 {
+	if(unmodified)
+	{
+		return locale;
+	}
 	std::locale result = locale;
 	bool treat_as_truncated = static_cast<bool>(flags & truncated_cells);
 	switch(type)
@@ -441,78 +445,90 @@ void encoding_info<Locale>::fill_from_locale()
 template <>
 void encoding_info<std::locale>::fill_from_locale()
 {
-	if(type == unspecified || !(flags & truncated_cells))
+	unmodified = true;
+	if(std::has_facet<std::ctype<cell>>(locale))
 	{
-		if(std::has_facet<std::ctype<cell>>(locale))
+		const auto &ctype = std::use_facet<std::ctype<cell>>(locale);
+		auto original_type = unspecified;
+		const auto &base_type = ctype.underlying_char_type();
+		if(base_type == typeid(char))
 		{
-			const auto &ctype = std::use_facet<std::ctype<cell>>(locale);
-			if(type == unspecified)
-			{
-				const auto &base_type = ctype.underlying_char_type();
-				if(base_type == typeid(char))
-				{
-					type = ansi;
-				}else if(base_type == typeid(wchar_t))
-				{
-					type = unicode;
-				}else if(base_type == typeid(char8_t))
-				{
-					type = utf8;
-				}else if(base_type == typeid(char16_t))
-				{
-					type = utf16;
-				}else if(base_type == typeid(char32_t))
-				{
-					type = utf32;
-				}
-			}
+			original_type = ansi;
+		}else if(base_type == typeid(wchar_t))
+		{
+			original_type = unicode;
+		}else if(base_type == typeid(char8_t))
+		{
+			original_type = utf8;
+		}else if(base_type == typeid(char16_t))
+		{
+			original_type = utf16;
+		}else if(base_type == typeid(char32_t))
+		{
+			original_type = utf32;
+		}
+		if(type == unspecified)
+		{
+			type = original_type;
+		}else if(type != original_type)
+		{
+			unmodified = false;
+		}
+
+		if(ctype.truncates_cells())
+		{
 			if(!(flags & truncated_cells))
 			{
-				if(ctype.truncates_cells())
-				{
-					flags = static_cast<decltype(flags)>(flags | truncated_cells);
-				}
+				flags = static_cast<decltype(flags)>(flags | truncated_cells);
 			}
+		}else if(flags & truncated_cells)
+		{
+			unmodified = false;
+		}
+	}else{
+		unmodified = false;
+	}
+
+	auto utf_type = type;
+	if(utf_type == unicode)
+	{
+		switch(sizeof(wchar_t))
+		{
+			case sizeof(char16_t):
+				utf_type = utf16;
+				break;
+			case sizeof(char32_t):
+				utf_type = utf32;
+				break;
 		}
 	}
-	if(!(flags & unicode_ucs))
+	auto receiver = [&](const auto &ctype)
 	{
-		auto utf_type = type;
-		if(utf_type == unicode)
+		if(ctype.get_flag())
 		{
-			switch(sizeof(wchar_t))
+			if(!(flags & unicode_ucs))
 			{
-				case sizeof(char16_t):
-					utf_type = utf16;
-					break;
-				case sizeof(char32_t):
-					utf_type = utf32;
-					break;
+				flags = static_cast<decltype(flags)>(flags | unicode_ucs);
 			}
-		}
-		switch(utf_type)
+		}else if(flags & unicode_ucs)
 		{
-			case utf16:
-				if(std::has_facet<std::ctype<char16_t>>(locale))
-				{
-					const auto &ctype = std::use_facet<std::ctype<char16_t>>(locale);
-					if(ctype.get_flag())
-					{
-						flags = static_cast<decltype(flags)>(flags | unicode_ucs);
-					}
-				}
-				break;
-			case utf32:
-				if(std::has_facet<std::ctype<char32_t>>(locale))
-				{
-					const auto &ctype = std::use_facet<std::ctype<char32_t>>(locale);
-					if(ctype.get_flag())
-					{
-						flags = static_cast<decltype(flags)>(flags | unicode_ucs);
-					}
-				}
-				break;
+			unmodified = false;
 		}
+	};
+	switch(utf_type)
+	{
+		case utf16:
+			if(std::has_facet<std::ctype<char16_t>>(locale))
+			{
+				receiver(std::use_facet<std::ctype<char16_t>>(locale));
+			}
+			break;
+		case utf32:
+			if(std::has_facet<std::ctype<char32_t>>(locale))
+			{
+				receiver(std::use_facet<std::ctype<char32_t>>(locale));
+			}
+			break;
 	}
 }
 
