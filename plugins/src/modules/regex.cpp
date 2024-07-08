@@ -157,6 +157,10 @@ static void regex_options(cell options, std::regex_constants::syntax_option_type
 static const char *get_error(std::regex_constants::error_type code)
 {
 	static std::unordered_map<std::regex_constants::error_type, const char *> map{
+#ifdef _MSC_VER
+		{std::regex_constants::error_parse, "parse"},
+		{std::regex_constants::error_syntax, "syntax"},
+#endif
 		{std::regex_constants::error_collate, "collate"},
 		{std::regex_constants::error_ctype, "ctype"},
 		{std::regex_constants::error_escape, "escape"},
