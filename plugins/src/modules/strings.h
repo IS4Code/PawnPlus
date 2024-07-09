@@ -416,6 +416,11 @@ namespace strings
 					return 0;
 			}
 		}
+
+		bool is_modified() const
+		{
+			return !unmodified;
+		}
 	};
 
 	using encoding = encoding_info<std::locale>;
