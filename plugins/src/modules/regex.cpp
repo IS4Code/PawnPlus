@@ -73,7 +73,7 @@ typedef std::basic_regex<cell> cell_regex;
 
 constexpr const cell no_prev_avail_flag = 32768;
 constexpr const cell cache_flag = 4194304;
-constexpr const cell cache_addr_flag = 4194304 | 8388608;
+constexpr const cell cache_addr_flag = 8388608;
 
 static void regex_options(cell options, std::regex_constants::syntax_option_type &syntax, std::regex_constants::match_flag_type &match)
 {
