@@ -79,7 +79,7 @@ static void regex_options(cell options, std::regex_constants::syntax_option_type
 {
 	switch(options & 7)
 	{
-		default:
+		case 0:
 			syntax = std::regex_constants::ECMAScript;
 			break;
 		case 1:
@@ -96,6 +96,9 @@ static void regex_options(cell options, std::regex_constants::syntax_option_type
 			break;
 		case 5:
 			syntax = std::regex_constants::egrep;
+			break;
+		default:
+			amx_FormalError(errors::out_of_range, "options");
 			break;
 	}
 	options &= ~7;
