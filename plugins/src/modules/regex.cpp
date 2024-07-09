@@ -270,18 +270,13 @@ encoding parse_encoding_override(Iter &begin, Iter end)
 	return find_encoding(spec, false);
 }
 
-struct regex_cached
+class regex_cached
 {
 	cell_regex regex;
-	bool depends_on_global_locale;
+	bool depends_on_global_locale = false;
 	std::locale global_locale;
 
-	template <class... Args>
-	regex_cached(Args&&... args)
-	{
-		init(false, std::forward<Args>(args)...);
-	}
-
+protected:
 	template <class... Args>
 	bool update(Args&&... args)
 	{
@@ -299,7 +294,6 @@ struct regex_cached
 		return true;
 	}
 
-protected:
 	template <class Iter>
 	void init(bool reimbue, Iter pattern_begin, Iter pattern_end, const cell_string *pattern, std::regex_constants::syntax_option_type syntax_options)
 	{
@@ -322,31 +316,55 @@ protected:
 			regex.assign(pattern_begin, pattern_end, syntax_options);
 		}
 	}
+
+public:
+	const cell_regex &get_regex() const
+	{
+		return regex;
+	}
 };
 
-static std::unordered_map<std::pair<cell_string, cell>, regex_cached> regex_cache;
+class regex_cached_value : public regex_cached
+{
+	bool initialized = false;
+
+public:
+	template <class... Args>
+	bool update(Args&&... args)
+	{
+		if(!initialized)
+		{
+			regex_cached::init(false, std::forward<Args>(args)...);
+			initialized = true;
+			return true;
+		}
+		return regex_cached::update(std::forward<Args>(args)...);
+	}
+};
+
+static std::unordered_map<std::pair<cell_string, cell>, regex_cached_value> regex_cache;
 
 template <class Iter, class... KeyArgs>
 static const cell_regex &get_cached_key(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options, std::regex_constants::syntax_option_type syntax_options, KeyArgs&&... keyArgs)
 {
-	options &= 255;
 	auto result = regex_cache.emplace(
 		std::piecewise_construct,
 		std::forward_as_tuple(
 			std::piecewise_construct,
 			std::forward_as_tuple(std::forward<KeyArgs>(keyArgs)...),
-			std::forward_as_tuple(options)
+			std::forward_as_tuple(options & 255)
 		),
-		std::forward_as_tuple(
-			pattern_begin, pattern_end, pattern, syntax_options
-		)
-	);
-	regex_cached &cached = result.first->second;
-	if(!result.second)
-	{
+		std::forward_as_tuple()
+	).first;
+	auto &cached = result->second;
+	try{
 		cached.update(pattern_begin, pattern_end, pattern, syntax_options);
+	}catch(...)
+	{
+		regex_cache.erase(result);
+		throw;
 	}
-	return cached.regex;
+	return cached.get_regex();
 }
 
 template <class Iter>
@@ -362,16 +380,11 @@ static const cell_regex &get_cached(Iter pattern_begin, Iter pattern_end, const 
 	}
 }
 
-struct regex_cached_addr : regex_cached
+class regex_cached_addr : public regex_cached
 {
 	std::weak_ptr<void> mem_handle;
 
-	template <class... Args>
-	regex_cached_addr(std::weak_ptr<void> &&mem_handle, Args&&... args) : regex_cached(std::forward<Args>(args)...), mem_handle(std::move(mem_handle))
-	{
-
-	}
-
+public:
 	template <class... Args>
 	bool update(std::weak_ptr<void> &&mem_handle, Args&&... args)
 	{
@@ -379,9 +392,10 @@ struct regex_cached_addr : regex_cached
 		{
 			// different address
 			this->mem_handle = std::move(mem_handle);
+			// try updating the global locale first
 			if(!regex_cached::update(std::forward<Args>(args)...))
 			{
-				// try updating the global locale first, but init anyway
+				// but init anyway if locales match
 				init(false, std::forward<Args>(args)...);
 			}
 			return true;
@@ -399,24 +413,24 @@ template <class Iter>
 static const cell_regex &get_cached_addr(Iter pattern_begin, Iter pattern_end, cell options, std::regex_constants::syntax_option_type syntax_options, std::weak_ptr<void> &&mem_handle)
 {
 	static std::unordered_map<std::tuple<std::intptr_t, std::size_t, cell>, regex_cached_addr> regex_cache;
-	options &= 255;
 	auto result = regex_cache.emplace(
 		std::piecewise_construct,
 		std::forward_as_tuple(
 			reinterpret_cast<std::intptr_t>(&*pattern_begin),
 			pattern_end - pattern_begin,
-			options
+			options & 255
 		),
-		std::forward_as_tuple(
-			std::move(mem_handle), pattern_begin, pattern_end, nullptr, syntax_options
-		)
-	);
-	regex_cached_addr &cached = result.first->second;
-	if(!result.second)
-	{
+		std::forward_as_tuple()
+	).first;
+	auto &cached = result->second;
+	try{
 		cached.update(std::move(mem_handle), pattern_begin, pattern_end, nullptr, syntax_options);
+	}catch(...)
+	{
+		regex_cache.erase(result);
+		throw;
 	}
-	return cached.regex;
+	return cached.get_regex();
 }
 
 struct regex_info
