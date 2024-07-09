@@ -273,18 +273,25 @@ namespace impl
 		{
 			static std::unordered_map<string_type, char_class_type> map{
 				{get_str("alnum"), std::ctype_base::alnum},
+				{get_str("a"), std::ctype_base::alpha},
 				{get_str("alpha"), std::ctype_base::alpha},
+				{get_str("c"), std::ctype_base::cntrl},
 				{get_str("cntrl"), std::ctype_base::cntrl},
+				{get_str("d"), std::ctype_base::digit},
 				{get_str("digit"), std::ctype_base::digit},
+				{get_str("g"), std::ctype_base::graph},
 				{get_str("graph"), std::ctype_base::graph},
+				{get_str("l"), std::ctype_base::lower},
 				{get_str("lower"), std::ctype_base::lower},
 				{get_str("print"), std::ctype_base::print},
+				{get_str("p"), std::ctype_base::punct},
 				{get_str("punct"), std::ctype_base::punct},
-				{get_str("space"), std::ctype_base::space},
-				{get_str("upper"), std::ctype_base::upper},
-				{get_str("xdigit"), std::ctype_base::xdigit},
-				{get_str("d"), std::ctype_base::digit},
 				{get_str("s"), std::ctype_base::space},
+				{get_str("space"), std::ctype_base::space},
+				{get_str("u"), std::ctype_base::upper},
+				{get_str("upper"), std::ctype_base::upper},
+				{get_str("x"), std::ctype_base::xdigit},
+				{get_str("xdigit"), std::ctype_base::xdigit},
 				{get_str("w"), static_cast<char_class_type>(-1)}
 			};
 
