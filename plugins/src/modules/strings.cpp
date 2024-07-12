@@ -11,8 +11,6 @@
 #include <codecvt>
 #ifdef _WIN32
 #include <locale.h>
-#include <thread>
-#include <future>
 #endif
 
 using namespace strings;
@@ -583,34 +581,18 @@ void strings::set_encoding(const encoding &enc, cell category)
 			lc_cat = LC_ALL;
 		}
 
-		if(lc_cat != LC_ALL)
-		{
-			// make thread-local config and backup current locale
-			int threadconfig = _configthreadlocale(_ENABLE_PER_THREAD_LOCALE);
+		// make thread-local config and backup current locale
+		int threadconfig = _configthreadlocale(_ENABLE_PER_THREAD_LOCALE);
 
-			// get current name
-			std::string original_locale = setlocale(lc_cat, nullptr);
+		// get current name
+		std::string original_locale = setlocale(lc_cat, nullptr);
 
-			// set to empty and get final name
-			custom_locale_name = setlocale(lc_cat, "");
+		// set to empty and get final name
+		custom_locale_name = setlocale(lc_cat, "");
 
-			// restore
-			setlocale(lc_cat, original_locale.c_str());
-			_configthreadlocale(threadconfig);
-		}else{
-			std::packaged_task<std::string()> task([]() -> std::string
-			{
-				// make thread-local config (don't care about current value since this is a new thread)
-				_configthreadlocale(_ENABLE_PER_THREAD_LOCALE);
-				// get the name
-				return setlocale(LC_ALL, "");
-			});
-			auto result = task.get_future();
-			std::thread thread(std::move(task));
-			thread.join();
-
-			custom_locale_name = result.get();
-		}
+		// restore
+		setlocale(lc_cat, original_locale.c_str());
+		_configthreadlocale(threadconfig);
 #endif
 	}
 }
