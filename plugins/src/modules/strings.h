@@ -428,7 +428,8 @@ namespace strings
 	encoding find_encoding(char *&spec, bool default_if_empty);
 	void set_encoding(const encoding &enc, cell category);
 	void reset_locale();
-	const std::string &locale_name();
+	const std::string &current_locale_name();
+	std::string get_locale_name(const encoding &enc, cell category);
 
 	void to_lower(cell_string &str, const encoding &enc);
 	void to_upper(cell_string &str, const encoding &enc);

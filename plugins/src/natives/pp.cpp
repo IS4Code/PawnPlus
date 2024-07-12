@@ -407,19 +407,26 @@ namespace Natives
 		return 1;
 	}
 
-	// native pp_locale_name(locale[], size=sizeof(locale));
+	// native pp_locale_name(locale[], size=sizeof(locale), const encoding[]="", locale_category:category=locale_all);
 	AMX_DEFINE_NATIVE_TAG(pp_locale_name, 2, cell)
 	{
 		cell *addr = amx_GetAddrSafe(amx, params[1]);
-		auto name = strings::locale_name();
+
+		char *encoding;
+		amx_OptStrParam(amx, 3, encoding, nullptr);
+
+		auto name = strings::get_locale_name(find_encoding(encoding, false), optparam(4, -1));
 		amx_SetString(addr, name.c_str(), false, false, params[2]);
 		return name.size();
 	}
 
-	// native String:pp_locale_name_s();
+	// native String:pp_locale_name_s(const encoding[]="", locale_category:category=locale_all);
 	AMX_DEFINE_NATIVE_TAG(pp_locale_name_s, 0, string)
 	{
-		return strings::create(strings::locale_name());
+		char *encoding;
+		amx_OptStrParam(amx, 1, encoding, nullptr);
+
+		return strings::create(strings::get_locale_name(find_encoding(encoding, false), optparam(2, -1)));
 	}
 
 	// native pp_format_env_push(Map:env);

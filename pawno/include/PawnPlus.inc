@@ -183,8 +183,8 @@ enum locale_category (<<= 1)
 }
 
 native unit:pp_locale(const locale[], locale_category:category=locale_all);
-native pp_locale_name(locale[], size=sizeof locale);
-native String:pp_locale_name_s();
+native pp_locale_name(locale[], size=sizeof locale, const encoding[]="", locale_category:category=locale_all);
+native String:pp_locale_name_s(const encoding[]="", locale_category:category=locale_all);
 
 native unit:pp_format_env_push(Map:env);
 native unit:pp_format_env_pop();

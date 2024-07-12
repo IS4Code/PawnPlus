@@ -328,13 +328,19 @@ encoding strings::find_encoding(char *&spec, bool default_if_empty)
 {
 	auto make_encoding = [&](const encoding_data &data) -> encoding
 	{
-		if(data.locale[0] == '\0' && !default_if_empty)
+		const char *locale = data.locale;
+		if(locale[0] == '\0' && !default_if_empty)
 		{
 			encoding defaulted{std::locale(), data};
 			defaulted.fill_from_locale();
 			return defaulted;
 		}
-		return {std::locale(data.locale), data};
+		if(locale[0] == '*' && locale[1] == '\0')
+		{
+			// special case to use the system default
+			locale = "";
+		}
+		return {std::locale(locale), data};
 	};
 
 	if(!spec)
@@ -535,6 +541,64 @@ void encoding_info<std::locale>::fill_from_locale()
 	}
 }
 
+std::string get_c_locale_name(const char *lc_name, std::locale::category cat)
+{
+#ifdef _WIN32
+	// get LC_ category
+	int lc_cat;
+	if((cat - 1) & cat)
+	{
+		// multiple categories
+		lc_cat = LC_ALL;
+	}else if(cat & std::locale::collate)
+	{
+		lc_cat = LC_COLLATE;
+	}else if(cat & std::locale::ctype)
+	{
+		lc_cat = LC_CTYPE;
+	}else if(cat & std::locale::monetary)
+	{
+		lc_cat = LC_MONETARY;
+	}else if(cat & std::locale::numeric)
+	{
+		lc_cat = LC_NUMERIC;
+	}else if(cat & std::locale::time)
+	{
+		lc_cat = LC_TIME;
+	}else{
+		lc_cat = LC_ALL;
+	}
+
+	// make thread-local config and backup current locale
+	int threadconfig = _configthreadlocale(_ENABLE_PER_THREAD_LOCALE);
+
+	// get current name
+	std::string original_locale = setlocale(lc_cat, nullptr);
+
+	// set to empty and get final name
+	std::string name = setlocale(lc_cat, lc_name);
+
+	// restore
+	setlocale(lc_cat, original_locale.c_str());
+	_configthreadlocale(threadconfig);
+
+	if(name.empty() && lc_name[0] == '\0')
+	{
+		// still empty - fallback to special *
+		return "*";
+	}
+
+	return name;
+#else
+	// unused
+	if(lc_name[0] == '\0')
+	{
+		return "*";
+	}
+	return std::string();
+#endif
+}
+
 void strings::set_encoding(const encoding &enc, cell category)
 {
 	auto set_global = [](std::locale loc)
@@ -553,48 +617,14 @@ void strings::set_encoding(const encoding &enc, cell category)
 		set_global(std::locale(custom_locale, enc.locale, cat));
 	}
 	custom_locale_name = enc.locale.name();
-	if(custom_locale_name.empty())
-	{
 #ifdef _WIN32
-		// get LC_ category
-		int lc_cat;
-		if((cat - 1) & cat)
-		{
-			// multiple categories
-			lc_cat = LC_ALL;
-		}else if(cat & std::locale::collate)
-		{
-			lc_cat = LC_COLLATE;
-		}else if(cat & std::locale::ctype)
-		{
-			lc_cat = LC_CTYPE;
-		}else if(cat & std::locale::monetary)
-		{
-			lc_cat = LC_MONETARY;
-		}else if(cat & std::locale::numeric)
-		{
-			lc_cat = LC_NUMERIC;
-		}else if(cat & std::locale::time)
-		{
-			lc_cat = LC_TIME;
-		}else{
-			lc_cat = LC_ALL;
-		}
-
-		// make thread-local config and backup current locale
-		int threadconfig = _configthreadlocale(_ENABLE_PER_THREAD_LOCALE);
-
-		// get current name
-		std::string original_locale = setlocale(lc_cat, nullptr);
-
-		// set to empty and get final name
-		custom_locale_name = setlocale(lc_cat, "");
-
-		// restore
-		setlocale(lc_cat, original_locale.c_str());
-		_configthreadlocale(threadconfig);
-#endif
+	// translate the name through system
+	std::string c_name = get_c_locale_name(custom_locale_name.c_str(), cat);
+	if(!c_name.empty())
+	{
+		custom_locale_name = std::move(c_name);
 	}
+#endif
 }
 
 void strings::reset_locale()
@@ -602,9 +632,26 @@ void strings::reset_locale()
 	std::locale::global(std::locale::classic());
 }
 
-const std::string &strings::locale_name()
+const std::string &strings::current_locale_name()
 {
 	return custom_locale_name;
+}
+
+std::string strings::get_locale_name(const encoding &enc, cell category)
+{
+	if(enc.locale == std::locale())
+	{
+		return custom_locale_name;
+	}
+	std::string name = enc.locale.name();
+#ifdef _WIN32
+	std::string c_name = get_c_locale_name(name.c_str(), get_category(category));
+	if(!c_name.empty())
+	{
+		return c_name;
+	}
+#endif
+	return name;
 }
 
 using ctype_transform = const cell*(*)(const std::ctype<cell> &obj, cell*, const cell*);
