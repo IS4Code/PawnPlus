@@ -132,12 +132,361 @@ namespace impl
 			});
 		}
 
+		struct char_class
+		{
+			typedef typename std::ctype<CharType>::mask base_simple_type;
+			typedef typename std::regex_traits<char>::char_class_type base_narrow_type;
+			typedef typename std::regex_traits<wchar_t>::char_class_type base_wide_type;
+
+			enum : char
+			{
+				simple,
+				narrow,
+				wide
+			} kind;
+
+			union
+			{
+				base_simple_type base_simple;
+				base_narrow_type base_narrow;
+				base_wide_type base_wide;
+			};
+
+			template <class CharType>
+			struct char_tag {};
+
+			char_class(base_simple_type base_simple) : kind(simple), base_simple(base_simple)
+			{
+
+			}
+
+			char_class(char_tag<char>, base_narrow_type base_narrow) : kind(narrow), base_narrow(base_narrow)
+			{
+
+			}
+
+			char_class(char_tag<wchar_t>, base_wide_type base_wide) : kind(wide), base_wide(base_wide)
+			{
+
+			}
+
+			char_class() : kind(simple), base_simple()
+			{
+
+			}
+
+			char_class(const char_class &other) : kind(other.kind)
+			{
+				switch(kind)
+				{
+					case simple:
+						new (&base_simple) base_simple_type(other.base_simple);
+						break;
+					case narrow:
+						new (&base_narrow) base_narrow_type(other.base_narrow);
+						break;
+					case wide:
+						new (&base_wide) base_wide_type(other.base_wide);
+						break;
+				}
+			}
+
+			char_class(char_class &&other) : kind(other.kind)
+			{
+				switch(kind)
+				{
+					case simple:
+						new (&base_simple) base_simple_type(std::move(other.base_simple));
+						break;
+					case narrow:
+						new (&base_narrow) base_narrow_type(std::move(other.base_narrow));
+						break;
+					case wide:
+						new (&base_wide) base_wide_type(std::move(other.base_wide));
+						break;
+				}
+			}
+
+			char_class &operator=(const char_class &other)
+			{
+				if(this != &other)
+				{
+					if(kind == other.kind)
+					{
+						switch(kind)
+						{
+							case simple:
+								base_simple = other.base_simple;
+								break;
+							case narrow:
+								base_narrow = other.base_narrow;
+								break;
+							case wide:
+								base_wide = other.base_wide;
+								break;
+						}
+					}else{
+						~char_class();
+						new (this) char_class(other);
+					}
+				}
+				return *this;
+			}
+
+			char_class &operator=(char_class &&other)
+			{
+				if(this != &other)
+				{
+					if(kind == other.kind)
+					{
+						switch(kind)
+						{
+							case simple:
+								base_simple = std::move(other.base_simple);
+								break;
+							case narrow:
+								base_narrow = std::move(other.base_narrow);
+								break;
+							case wide:
+								base_wide = std::move(other.base_wide);
+								break;
+						}
+					}else{
+						this->~char_class();
+						new (this) char_class(std::move(other));
+					}
+				}
+				return *this;
+			}
+
+		private:
+			template <class Receiver>
+			auto get_value(char_tag<char>, Receiver receiver) -> decltype(receiver(base_narrow))
+			{
+				return receiver(base_narrow);
+			}
+
+			template <class Receiver>
+			auto get_value(char_tag<wchar_t>, Receiver receiver) -> decltype(receiver(base_wide))
+			{
+				return receiver(base_wide);
+			}
+
+		public:
+			template <class CharType, class Receiver>
+			auto get_value(Receiver receiver) -> decltype(get_value(char_tag<CharType>(), std::move(receiver)))
+			{
+				return get_value(char_tag<CharType>(), std::move(receiver));
+			}
+
+			template <class Operation>
+			char_class do_operation(char_class other, Operation operation) const
+			{
+				switch(kind)
+				{
+					case simple:
+						switch(other.kind)
+						{
+							case simple:
+								return char_class(operation(base_simple, other.base_simple));
+							case narrow:
+								return char_class(char_tag<char>(), operation(base_narrow_type(base_simple), other.base_narrow));
+							case wide:
+								return char_class(char_tag<wchar_t>(), operation(base_wide_type(base_simple), other.base_wide));
+						}
+						break;
+					case narrow:
+						switch(other.kind)
+						{
+							case simple:
+								return char_class(char_tag<char>(), operation(base_narrow, base_narrow_type(other.base_simple)));
+							case narrow:
+								return char_class(char_tag<char>(), operation(base_narrow, other.base_narrow));
+						}
+						break;
+					case wide:
+						switch(other.kind)
+						{
+							case simple:
+								return char_class(char_tag<wchar_t>(), operation(base_wide, base_wide_type(other.base_simple)));
+							case wide:
+								return char_class(char_tag<wchar_t>(), operation(base_wide, other.base_wide));
+						}
+						break;
+				}
+				throw std::logic_error("cannot perform operations on character classes with different underlying types");
+			}
+
+			char_class operator&(char_class other) const
+			{
+				return do_operation(other, [](auto a, auto b) { return a & b; });
+			}
+
+			char_class operator|(char_class other) const
+			{
+				return do_operation(other, [](auto a, auto b) { return a | b; });
+			}
+
+			char_class operator^(char_class other) const
+			{
+				return do_operation(other, [](auto a, auto b) { return a ^ b; });
+			}
+
+			template <class SimpleType>
+			char_class operator&(SimpleType other) const
+			{
+				return *this & char_class(other);
+			}
+
+			template <class SimpleType>
+			char_class operator|(SimpleType other) const
+			{
+				return *this | char_class(other);
+			}
+
+			template <class SimpleType>
+			char_class operator^(SimpleType other) const
+			{
+				return *this ^ char_class(other);
+			}
+
+			char_class operator~() const
+			{
+				switch(kind)
+				{
+					case simple:
+						return char_class(~base_simple);
+					case narrow:
+						return char_class(char_tag<char>(), ~base_narrow);
+					case wide:
+						return char_class(char_tag<wchar_t>(), ~base_wide);
+				}
+			}
+
+			char_class &operator&=(char_class other)
+			{
+				return *this = (*this) & other;
+			}
+
+			char_class &operator|=(char_class other)
+			{
+				return *this = (*this) | other;
+			}
+
+			char_class &operator^=(char_class other)
+			{
+				return *this = (*this) ^ other;
+			}
+
+			bool operator==(char_class other) const
+			{
+				switch(kind)
+				{
+					case simple:
+						switch(other.kind)
+						{
+							case simple:
+								return base_simple == other.base_simple;
+							case narrow:
+								return base_narrow_type(base_simple) == other.base_narrow;
+							case wide:
+								return base_wide_type(base_simple) == other.base_wide;
+						}
+					case narrow:
+						switch(other.kind)
+						{
+							case simple:
+								return base_narrow == base_narrow_type(other.base_simple);
+							case narrow:
+								return base_narrow == other.base_narrow;
+							case wide:
+								return false;
+						}
+					case wide:
+						switch(other.kind)
+						{
+							case simple:
+								return base_wide == base_wide_type(other.base_simple);
+							case narrow:
+								return false;
+							case wide:
+								return base_wide == other.base_wide;
+						}
+				}
+			}
+
+			template <class SimpleType>
+			bool operator==(SimpleType other) const
+			{
+				switch(kind)
+				{
+					case simple:
+						return base_simple == other;
+					case narrow:
+						return base_narrow == base_narrow_type(other);
+					case wide:
+						return base_wide == base_wide_type(other);
+					default:
+						return false;
+				}
+			}
+
+			bool operator!=(char_class other) const
+			{
+				return !((*this) == other);
+			}
+
+			template <class SimpleType>
+			bool operator!=(SimpleType other) const
+			{
+				return !((*this) == other);
+			}
+
+			explicit operator bool() const
+			{
+				switch(kind)
+				{
+					case simple:
+						return static_cast<bool>(base_simple);
+					case narrow:
+						return static_cast<bool>(base_narrow);
+					case wide:
+						return static_cast<bool>(base_wide);
+					default:
+						return false;
+				}
+			}
+
+#ifdef _WIN32
+			operator base_simple_type() const
+			{
+				return base_simple;
+			}
+#endif
+
+			~char_class()
+			{
+				switch(kind)
+				{
+					case simple:
+						base_simple.~base_simple_type();
+						break;
+					case narrow:
+						base_narrow.~base_narrow_type();
+						break;
+					case wide:
+						base_wide.~base_wide_type();
+						break;
+				}
+			}
+		};
+
 	public:
 		typedef CharType char_type;
 		typedef std::basic_string<CharType> string_type;
 		typedef std::size_t size_type;
 		typedef std::locale locale_type;
-		typedef typename std::ctype<CharType>::mask char_class_type;
+		typedef char_class char_class_type;
 
 		typedef typename std::make_unsigned<CharType>::type _Uelem;
 		enum _Char_class_type
@@ -258,20 +607,44 @@ namespace impl
 			});
 		}
 
-		bool isctype(CharType ch, char_class_type ctype) const
+		bool isctype(CharType ch, char_class ctype) const
 		{
-			if(ctype != static_cast<char_class_type>(-1))
+			switch(ctype.kind)
 			{
-				return base_int_ctype->is(ctype, ch);
-			}else{
-				return ch == '_' || base_int_ctype->is(std::ctype_base::alnum, ch);
+				case char_class::simple:
+				{
+					char_class::base_simple_type value = ctype.base_simple;
+					if(value != static_cast<char_class::base_simple_type>(-1))
+					{
+						return base_int_ctype->is(value, ch);
+					}else{
+						return ch == '_' || base_int_ctype->is(std::ctype_base::alnum, ch);
+					}
+				}
+				default:
+					return get_traits([&](const auto &traits)
+					{
+						using narrow_char_type = traits_char_type<decltype(traits)>;
+
+						narrow_char_type narrowed = base_int_ctype->narrow(ch, narrow_char_type());
+						if(!narrowed && ch)
+						{
+							// cannot be narrowed
+							return false;
+						}
+
+						return ctype.get_value<narrow_char_type>([&](auto value)
+						{
+							return traits.isctype(narrowed, value);
+						});
+					});
 			}
 		}
 
 		template <class Iterator>
-		char_class_type lookup_classname(Iterator first, Iterator last, bool icase = false) const
+		char_class lookup_classname(Iterator first, Iterator last, bool icase = false) const
 		{
-			static std::unordered_map<string_type, char_class_type> map{
+			static std::unordered_map<string_type, char_class::base_simple_type> map{
 				{get_str("alnum"), std::ctype_base::alnum},
 				{get_str("a"), std::ctype_base::alpha},
 				{get_str("alpha"), std::ctype_base::alpha},
@@ -292,7 +665,7 @@ namespace impl
 				{get_str("upper"), std::ctype_base::upper},
 				{get_str("x"), std::ctype_base::xdigit},
 				{get_str("xdigit"), std::ctype_base::xdigit},
-				{get_str("w"), static_cast<char_class_type>(-1)}
+				{get_str("w"), static_cast<char_class::base_simple_type>(-1)}
 			};
 
 			string_type key(first, last);
@@ -304,16 +677,16 @@ namespace impl
 				{
 					mask |= std::ctype_base::lower | std::ctype_base::upper;
 				}
-				return mask;
+				return char_class(mask);
 			}
 			return get_traits([&](const auto &traits)
 			{
 				using narrow_char_type = traits_char_type<decltype(traits)>;
 
-				return narrow(first, last, traits, [&](const narrow_char_type *begin, const narrow_char_type *end)
+				return char_class(char_class::char_tag<narrow_char_type>(), narrow(first, last, traits, [&](const narrow_char_type *begin, const narrow_char_type *end)
 				{
 					return traits.lookup_classname(begin, end, icase);
-				});
+				}));
 			});
 		}
 
