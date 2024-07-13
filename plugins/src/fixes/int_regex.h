@@ -152,7 +152,7 @@ namespace impl
 				base_wide_type base_wide;
 			};
 
-			template <class CharType>
+			template <class CheckCharType>
 			struct char_tag {};
 
 			char_class(base_simple_type base_simple) : kind(simple), base_simple(base_simple)
@@ -259,24 +259,17 @@ namespace impl
 				return *this;
 			}
 
-		private:
+		public:
 			template <class Receiver>
-			auto get_value(char_tag<char>, Receiver receiver) -> decltype(receiver(base_narrow))
+			auto get_value(char_tag<char>, Receiver receiver) const -> decltype(receiver(base_narrow))
 			{
 				return receiver(base_narrow);
 			}
 
 			template <class Receiver>
-			auto get_value(char_tag<wchar_t>, Receiver receiver) -> decltype(receiver(base_wide))
+			auto get_value(char_tag<wchar_t>, Receiver receiver) const -> decltype(receiver(base_wide))
 			{
 				return receiver(base_wide);
-			}
-
-		public:
-			template <class CharType, class Receiver>
-			auto get_value(Receiver receiver) -> decltype(get_value(char_tag<CharType>(), std::move(receiver)))
-			{
-				return get_value(char_tag<CharType>(), std::move(receiver));
 			}
 
 			template <class Operation>
@@ -442,21 +435,6 @@ namespace impl
 				return !((*this) == other);
 			}
 
-			explicit operator bool() const
-			{
-				switch(kind)
-				{
-					case simple:
-						return static_cast<bool>(base_simple);
-					case narrow:
-						return static_cast<bool>(base_narrow);
-					case wide:
-						return static_cast<bool>(base_wide);
-					default:
-						return false;
-				}
-			}
-
 #ifdef _WIN32
 			operator base_simple_type() const
 			{
@@ -613,8 +591,8 @@ namespace impl
 			{
 				case char_class::simple:
 				{
-					char_class::base_simple_type value = ctype.base_simple;
-					if(value != static_cast<char_class::base_simple_type>(-1))
+					typename char_class::base_simple_type value = ctype.base_simple;
+					if(value != static_cast<typename char_class::base_simple_type>(-1))
 					{
 						return base_int_ctype->is(value, ch);
 					}else{
@@ -633,7 +611,7 @@ namespace impl
 							return false;
 						}
 
-						return ctype.get_value<narrow_char_type>([&](auto value)
+						return ctype.get_value(typename char_class::template char_tag<narrow_char_type>(), [&](auto value)
 						{
 							return traits.isctype(narrowed, value);
 						});
@@ -644,7 +622,7 @@ namespace impl
 		template <class Iterator>
 		char_class lookup_classname(Iterator first, Iterator last, bool icase = false) const
 		{
-			static std::unordered_map<string_type, char_class::base_simple_type> map{
+			static std::unordered_map<string_type, typename char_class::base_simple_type> map{
 				{get_str("alnum"), std::ctype_base::alnum},
 				{get_str("a"), std::ctype_base::alpha},
 				{get_str("alpha"), std::ctype_base::alpha},
@@ -665,7 +643,7 @@ namespace impl
 				{get_str("upper"), std::ctype_base::upper},
 				{get_str("x"), std::ctype_base::xdigit},
 				{get_str("xdigit"), std::ctype_base::xdigit},
-				{get_str("w"), static_cast<char_class::base_simple_type>(-1)}
+				{get_str("w"), static_cast<typename char_class::base_simple_type>(-1)}
 			};
 
 			string_type key(first, last);
@@ -683,7 +661,7 @@ namespace impl
 			{
 				using narrow_char_type = traits_char_type<decltype(traits)>;
 
-				return char_class(char_class::char_tag<narrow_char_type>(), narrow(first, last, traits, [&](const narrow_char_type *begin, const narrow_char_type *end)
+				return char_class(typename char_class::template char_tag<narrow_char_type>(), narrow(first, last, traits, [&](const narrow_char_type *begin, const narrow_char_type *end)
 				{
 					return traits.lookup_classname(begin, end, icase);
 				}));
