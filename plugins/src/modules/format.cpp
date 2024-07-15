@@ -190,7 +190,7 @@ namespace strings
 						Iter pos_end = format_begin;
 						while(format_begin != format_end && !std::isalpha(*format_begin))
 						{
-							if(*format_begin == '$')
+							if(*format_begin == '$' && !pos_found && format_begin != last)
 							{
 								pos_found = true;
 								pos_end = format_begin;
