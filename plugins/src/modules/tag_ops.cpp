@@ -315,6 +315,9 @@ struct null_operations : public tag_operations
 	}
 };
 
+template <class Iter>
+bool format_money(long double value, Iter &begin, Iter &end, strings::num_parser<Iter> &&parse_num, cell_string &buf);
+
 template <class Self>
 struct cell_operations : public null_operations<Self>
 {
@@ -678,24 +681,8 @@ struct cell_operations : public null_operations<Self>
 			break;
 			case 'm':
 			{
-				long double value = *arg;
-				if(begin != end)
+				if(format_money(*arg, begin, end, std::move(parse_num), buf))
 				{
-					bool international = true;
-					if(*begin == '$')
-					{
-						international = false;
-						++begin;
-					}
-					cell order = -parse_num(begin, end);
-					if(begin == end)
-					{
-						value *= std::pow(10.0L, order);
-						buf.append(strings::to_string(std::put_money(value, international)));
-						return true;
-					}
-				}else{
-					buf.append(strings::to_string(std::put_money(value, true)));
 					return true;
 				}
 			}
@@ -704,6 +691,76 @@ struct cell_operations : public null_operations<Self>
 		return null_operations<Self>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
 	}
 };
+
+template <bool International>
+long double adjust_digits(long double value, cell num_digits)
+{
+	std::locale loc;
+	const auto &punct = std::use_facet<std::moneypunct<char, International>>(loc);
+	num_digits -= punct.frac_digits();
+	return value * std::pow(10.0L, -num_digits);
+}
+
+long double adjust_digits(long double value, cell num_digits, bool international)
+{
+	return international ? adjust_digits<true>(value, num_digits) : adjust_digits<false>(value, num_digits);
+}
+
+template <class Iter>
+bool format_money(long double value, Iter &begin, Iter &end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+{
+	if(begin == end)
+	{
+		buf.append(strings::to_string(std::put_money(value, true), std::showbase));
+		return true;
+	}
+	bool international = true;
+	if(*begin == '$')
+	{
+		international = false;
+		++begin;
+		if(begin == end)
+		{
+			buf.append(strings::to_string(std::put_money(value, international), std::showbase));
+			return true;
+		}
+	}
+	if(*begin == '.')
+	{
+		++begin;
+		cell precision = parse_num(begin, end);
+		if(begin == end)
+		{
+			value = adjust_digits(value, precision, international);
+			buf.append(strings::to_string(std::put_money(value, international), std::showbase));
+			return true;
+		}
+		return false;
+	}
+	char padding = static_cast<ucell>(*begin);
+	++begin;
+	cell width = parse_num(begin, end);
+	if(width < 0)
+	{
+		return false;
+	}
+	if(begin == end)
+	{
+		buf.append(strings::to_string(std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+		return true;
+	}else if(*begin == '.')
+	{
+		++begin;
+		cell precision = parse_num(begin, end);
+		if(begin == end)
+		{
+			value = adjust_digits(value, precision, international);
+			buf.append(strings::to_string(std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+			return true;
+		}
+	}
+	return false;
+}
 
 struct signed_operations : public cell_operations<signed_operations>
 {
@@ -1223,24 +1280,8 @@ struct float_operations : public cell_operations<float_operations>
 			break;
 			case 'm':
 			{
-				long double value = amx_ctof(*arg);
-				if(begin != end)
+				if(format_money(amx_ctof(*arg), begin, end, std::move(parse_num), buf))
 				{
-					bool international = true;
-					if(*begin == '$')
-					{
-						international = false;
-						++begin;
-					}
-					cell order = -parse_num(begin, end);
-					if(begin == end)
-					{
-						value *= std::pow(10.0L, order);
-						buf.append(strings::to_string(std::put_money(value, international)));
-						return true;
-					}
-				}else{
-					buf.append(strings::to_string(std::put_money(value, true)));
 					return true;
 				}
 			}
