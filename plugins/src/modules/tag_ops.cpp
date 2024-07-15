@@ -13,6 +13,7 @@
 #include "fixes/linux.h"
 #include "utils/optional.h"
 #include "utils/contiguous_iterator.h"
+#include "utils/systools.h"
 #include <vector>
 #include <algorithm>
 #include <cmath>
@@ -654,7 +655,7 @@ struct cell_operations : public null_operations<Self>
 						// add seconds to time
 						timezone_offset *= 60;
 						time += timezone_offset;
-						value = *std::gmtime(&time);
+						value = aux::gmtime(time);
 #ifndef _MSC_VER
 						if(timezone_offset != 0)
 						{
@@ -664,12 +665,12 @@ struct cell_operations : public null_operations<Self>
 						}
 #endif
 					}else{
-						value = *std::localtime(&time);
+						value = aux::localtime(time);
 					}
 					buf.append(strings::to_string(std::put_time(&value, format.c_str())));
 					return true;
 				}else{
-					std::tm value = *std::localtime(&time);
+					std::tm value = aux::localtime(time);
 					buf.append(strings::to_string(std::put_time(&value, "%c")));
 					return true;
 				}

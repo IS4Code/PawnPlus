@@ -452,7 +452,7 @@ namespace Natives
 	// native pp_stackspace();
 	AMX_DEFINE_NATIVE_TAG(pp_stackspace, 0, cell)
 	{
-		return stackspace();
+		return aux::stackspace();
 	}
 
 	// native pp_daytime(bool:utc=false);
@@ -467,17 +467,9 @@ namespace Natives
 		
 		if(optparam(1, 0))
 		{
-#ifdef _WIN32
-			gmtime_s(&tm, &time);
-#else
-			gmtime_r(&time, &tm);
-#endif
+			tm = aux::gmtime(time);
 		}else{
-#ifdef _WIN32
-			localtime_s(&tm, &time);
-#else
-			localtime_r(&time, &tm);
-#endif
+			tm = aux::localtime(time);
 		}
 		return static_cast<ucell>(((tm.tm_hour * 60 + tm.tm_min) * 60 + tm.tm_sec) * 1000 + ms.count());
 	}

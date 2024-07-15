@@ -1,12 +1,14 @@
 #include "systools.h"
+#include <time.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef _WIN32
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-size_t stackspace()
+std::size_t aux::stackspace()
 {
 	MEMORY_BASIC_INFORMATION mbi;
 	VirtualQuery(static_cast<LPCVOID>(&mbi), &mbi, sizeof(mbi));
@@ -17,7 +19,7 @@ size_t stackspace()
 
 #include <pthread.h>
 
-size_t stackspace()
+std::size_t aux::stackspace()
 {
 	pthread_attr_t attr;
 	pthread_getattr_np(pthread_self(), &attr);
@@ -28,3 +30,25 @@ size_t stackspace()
 }
 
 #endif
+
+std::tm aux::gmtime(const std::time_t &time)
+{
+	std::tm tm;
+#ifdef _WIN32
+	gmtime_s(&tm, &time);
+#else
+	gmtime_r(&time, &tm);
+#endif
+	return tm;
+}
+
+std::tm aux::localtime(const std::time_t &time)
+{
+	std::tm tm;
+#ifdef _WIN32
+	localtime_s(&tm, &time);
+#else
+	localtime_r(&time, &tm);
+#endif
+	return tm;
+}

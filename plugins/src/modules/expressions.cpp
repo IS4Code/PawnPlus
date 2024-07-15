@@ -234,7 +234,7 @@ int &expression::operator[](size_t index) const
 
 void expression::checkstack() const
 {
-	if(stackspace() < 32768)
+	if(aux::stackspace() < 32768)
 	{
 		amx_ExpressionError("recursion too deep");
 	}

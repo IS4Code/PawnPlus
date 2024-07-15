@@ -1,8 +1,14 @@
 #ifndef SYSTOOLS_H_INCLUDED
 #define SYSTOOLS_H_INCLUDED
 
-#include <stddef.h>
+#include <cstddef>
+#include <ctime>
 
-size_t stackspace();
+namespace aux
+{
+	std::size_t stackspace();
+	std::tm localtime(const std::time_t &time);
+	std::tm gmtime(const std::time_t &time);
+}
 
 #endif
