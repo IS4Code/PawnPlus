@@ -275,9 +275,9 @@ cell constant_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void constant_expression::to_string(strings::cell_string &str) const noexcept
+void constant_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
-	str.append(value.to_string());
+	str.append(value.to_string(encoding));
 }
 
 decltype(expression_pool)::object_ptr constant_expression::clone() const
@@ -310,9 +310,9 @@ cell handle_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void handle_expression::to_string(strings::cell_string &str) const noexcept
+void handle_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
-	str.append(handle->get().to_string());
+	str.append(handle->get().to_string(encoding));
 }
 
 decltype(expression_pool)::object_ptr handle_expression::clone() const
@@ -416,11 +416,11 @@ cell weak_expression::get_count(const args_type &args) const noexcept
 	return invalid_count;
 }
 
-void weak_expression::to_string(strings::cell_string &str) const noexcept
+void weak_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	if(auto lock = ptr.lock())
 	{
-		lock->to_string(str);
+		lock->to_string(str, encoding);
 	}else{
 		str.append(strings::convert("dead weak expression"));
 	}
@@ -481,7 +481,7 @@ cell arg_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void arg_expression::to_string(strings::cell_string &str) const noexcept
+void arg_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("$arg"));
 	str.append(strings::convert(std::to_string(index)));
@@ -526,7 +526,7 @@ cell empty_expression::get_count(const args_type &args) const noexcept
 	return 0;
 }
 
-void empty_expression::to_string(strings::cell_string &str) const noexcept
+void empty_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("()"));
 }
@@ -551,10 +551,10 @@ cell void_expression::get_count(const args_type &args) const noexcept
 	return 0;
 }
 
-void void_expression::to_string(strings::cell_string &str) const noexcept
+void void_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("void("));
-	expr->to_string(str);
+	expr->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -681,7 +681,7 @@ cell arg_pack_expression::get_count(const args_type &args) const noexcept
 	}
 }
 
-void arg_pack_expression::to_string(strings::cell_string &str) const noexcept
+void arg_pack_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("$args"));
 	if(begin != 0 || end != -1)
@@ -759,12 +759,12 @@ cell range_expression::get_count(const args_type &args) const noexcept
 	return invalid_count;
 }
 
-void range_expression::to_string(strings::cell_string &str) const noexcept
+void range_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('(');
-	begin->to_string(str);
+	begin->to_string(str, encoding);
 	str.append(strings::convert(".."));
-	end->to_string(str);
+	end->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -808,10 +808,10 @@ cell nested_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void nested_expression::to_string(strings::cell_string &str) const noexcept
+void nested_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('+');
-	expr->to_string(str);
+	expr->to_string(str, encoding);
 }
 
 const expression_ptr &nested_expression::get_operand() const noexcept
@@ -1018,13 +1018,13 @@ cell comma_expression::get_count(const args_type &args) const noexcept
 	return l + r;
 }
 
-void comma_expression::to_string(strings::cell_string &str) const noexcept
+void comma_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('(');
-	left->to_string(str);
+	left->to_string(str, encoding);
 	str.push_back(',');
 	str.push_back(' ');
-	right->to_string(str);
+	right->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -1085,7 +1085,7 @@ dyn_object env_expression::index_assign(const args_type &args, const exec_info &
 	return (*info.env)[indices[0]] = std::move(value);
 }
 
-void env_expression::to_string(strings::cell_string &str) const noexcept
+void env_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("$env"));
 }
@@ -1170,10 +1170,10 @@ const expression_ptr &info_set_expression::get_operand() const noexcept
 	return expr;
 }
 
-void env_set_expression::to_string(strings::cell_string &str) const noexcept
+void env_set_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('[');
-	expr->to_string(str);
+	expr->to_string(str, encoding);
 	if((new_env.owner_before(std::weak_ptr<map_t>{}) || std::weak_ptr<map_t>{}.owner_before(new_env)) && readonly)
 	{
 		str.append(strings::convert("]{env, env_readonly}"));
@@ -1222,10 +1222,10 @@ expression::exec_info amx_set_expression::get_info(const exec_info &info) const
 	return info;
 }
 
-void amx_set_expression::to_string(strings::cell_string &str) const noexcept
+void amx_set_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('[');
-	expr->to_string(str);
+	expr->to_string(str, encoding);
 	str.append(strings::convert("]{amx}"));
 }
 
@@ -1259,11 +1259,11 @@ cell assign_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void assign_expression::to_string(strings::cell_string &str) const noexcept
+void assign_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
-	left->to_string(str);
+	left->to_string(str, encoding);
 	str.append(strings::convert(" = "));
-	right->to_string(str);
+	right->to_string(str, encoding);
 }
 
 const expression_ptr &assign_expression::get_left() const noexcept
@@ -1475,12 +1475,12 @@ cell try_expression::get_count(const args_type &args) const noexcept
 	return invalid_count;
 }
 
-void try_expression::to_string(strings::cell_string &str) const noexcept
+void try_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("try["));
-	main->to_string(str);
+	main->to_string(str, encoding);
 	str.append(strings::convert("]catch["));
-	fallback->to_string(str);
+	fallback->to_string(str, encoding);
 	str.push_back(']');
 }
 
@@ -1532,9 +1532,9 @@ void call_expression::execute_multi(const args_type &args, const exec_info &info
 	func->call_multi(args, info, func_args, output);
 }
 
-void call_expression::to_string(strings::cell_string &str) const noexcept
+void call_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
-	func->to_string(str);
+	func->to_string(str, encoding);
 	str.push_back('(');
 	bool first = true;
 	for(const auto &arg : args)
@@ -1546,7 +1546,7 @@ void call_expression::to_string(strings::cell_string &str) const noexcept
 			str.push_back(',');
 			str.push_back(' ');
 		}
-		arg->to_string(str);
+		arg->to_string(str, encoding);
 	}
 	str.push_back(')');
 }
@@ -1631,13 +1631,13 @@ cell index_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void index_expression::to_string(strings::cell_string &str) const noexcept
+void index_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
-	arr->to_string(str);
+	arr->to_string(str, encoding);
 	for(const auto &index : indices)
 	{
 		str.push_back('[');
-		index->to_string(str);
+		index->to_string(str, encoding);
 		str.push_back(']');
 	}
 }
@@ -1793,10 +1793,10 @@ std::tuple<cell*, size_t, tag_ptr> bind_expression::address(const args_type &arg
 	return operand->address(combine_args(args, info, storage), info, indices);
 }
 
-void bind_expression::to_string(strings::cell_string &str) const noexcept
+void bind_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('[');
-	operand->to_string(str);
+	operand->to_string(str, encoding);
 	str.push_back(']');
 	str.push_back('(');
 	bool first = true;
@@ -1809,7 +1809,7 @@ void bind_expression::to_string(strings::cell_string &str) const noexcept
 			str.push_back(',');
 			str.push_back(' ');
 		}
-		arg->to_string(str);
+		arg->to_string(str, encoding);
 	}
 	str.push_back(')');
 }
@@ -1896,11 +1896,11 @@ cell cast_expression::get_count(const args_type &args) const noexcept
 	return operand->get_count(args);
 }
 
-void cast_expression::to_string(strings::cell_string &str) const noexcept
+void cast_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert(new_tag->format_name()));
 	str.push_back(':');
-	operand->to_string(str);
+	operand->to_string(str, encoding);
 }
 
 const expression_ptr &cast_expression::get_operand() const noexcept
@@ -2020,7 +2020,7 @@ cell array_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void array_expression::to_string(strings::cell_string &str) const noexcept
+void array_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('{');
 	bool first = true;
@@ -2033,7 +2033,7 @@ void array_expression::to_string(strings::cell_string &str) const noexcept
 			str.push_back(',');
 			str.push_back(' ');
 		}
-		arg->to_string(str);
+		arg->to_string(str, encoding);
 	}
 	str.push_back('}');
 }
@@ -2122,7 +2122,7 @@ cell global_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void global_expression::to_string(strings::cell_string &str) const noexcept
+void global_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(name);
 }
@@ -2569,7 +2569,7 @@ cell symbol_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void symbol_expression::to_string(strings::cell_string &str) const noexcept
+void symbol_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	if(!target_amx.expired())
 	{
@@ -2663,7 +2663,7 @@ cell native_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void native_expression::to_string(strings::cell_string &str) const noexcept
+void native_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert(name));
 }
@@ -2764,7 +2764,7 @@ cell public_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void public_expression::to_string(strings::cell_string &str) const noexcept
+void public_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert(name));
 }
@@ -2873,7 +2873,7 @@ cell pubvar_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void pubvar_expression::to_string(strings::cell_string &str) const noexcept
+void pubvar_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert(name));
 }
@@ -2926,7 +2926,7 @@ cell intrinsic_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void intrinsic_expression::to_string(strings::cell_string &str) const noexcept
+void intrinsic_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert(name));
 }
@@ -2941,10 +2941,10 @@ cell quote_expression::execute_inner(const args_type &args, const exec_info &inf
 	return expression_pool.get_id(static_cast<const expression_base*>(operand.get())->clone());
 }
 
-void quote_expression::to_string(strings::cell_string &str) const noexcept
+void quote_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('<');
-	operand->to_string(str);
+	operand->to_string(str, encoding);
 	str.push_back('>');
 }
 
@@ -3049,10 +3049,10 @@ cell dequote_expression::get_count(const args_type &args) const noexcept
 	return invalid_count;
 }
 
-void dequote_expression::to_string(strings::cell_string &str) const noexcept
+void dequote_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('^');
-	operand->to_string(str);
+	operand->to_string(str, encoding);
 }
 
 const expression_ptr &dequote_expression::get_operand() const noexcept
@@ -3070,12 +3070,12 @@ bool logic_and_expression::execute_inner(const args_type &args, const exec_info 
 	return left->execute_bool(args, info) && right->execute_bool(args, info);
 }
 
-void logic_and_expression::to_string(strings::cell_string &str) const noexcept
+void logic_and_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('(');
-	left->to_string(str);
+	left->to_string(str, encoding);
 	str.append(strings::convert(" && "));
-	right->to_string(str);
+	right->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -3099,12 +3099,12 @@ bool logic_or_expression::execute_inner(const args_type &args, const exec_info &
 	return left->execute_bool(args, info) || right->execute_bool(args, info);
 }
 
-void logic_or_expression::to_string(strings::cell_string &str) const noexcept
+void logic_or_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('(');
-	left->to_string(str);
+	left->to_string(str, encoding);
 	str.append(strings::convert(" || "));
-	right->to_string(str);
+	right->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -3228,14 +3228,14 @@ const expression_ptr &conditional_expression::get_right() const noexcept
 	return on_false;
 }
 
-void conditional_expression::to_string(strings::cell_string &str) const noexcept
+void conditional_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('(');
-	cond->to_string(str);
+	cond->to_string(str, encoding);
 	str.append(strings::convert(" ? "));
-	on_true->to_string(str);
+	on_true->to_string(str, encoding);
 	str.append(strings::convert(" : "));
-	on_false->to_string(str);
+	on_false->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -3320,13 +3320,13 @@ const expression_ptr &select_expression::get_right() const noexcept
 	return list;
 }
 
-void select_expression::to_string(strings::cell_string &str) const noexcept
+void select_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('(');
-	list->to_string(str);
+	list->to_string(str, encoding);
 	str.push_back(')');
 	str.append(strings::convert("select["));
-	func->to_string(str);
+	func->to_string(str, encoding);
 	str.push_back(']');
 }
 
@@ -3409,13 +3409,13 @@ const expression_ptr &where_expression::get_right() const noexcept
 	return list;
 }
 
-void where_expression::to_string(strings::cell_string &str) const noexcept
+void where_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('(');
-	list->to_string(str);
+	list->to_string(str, encoding);
 	str.push_back(')');
 	str.append(strings::convert("where["));
-	func->to_string(str);
+	func->to_string(str, encoding);
 	str.push_back(']');
 }
 
@@ -3438,10 +3438,10 @@ cell tagof_expression::execute_inner(const args_type &args, const exec_info &inf
 	return tag->uid;
 }
 
-void tagof_expression::to_string(strings::cell_string &str) const noexcept
+void tagof_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("tagof("));
-	operand->to_string(str);
+	operand->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -3483,14 +3483,14 @@ cell sizeof_expression::execute_inner(const args_type &args, const exec_info &in
 	}
 }
 
-void sizeof_expression::to_string(strings::cell_string &str) const noexcept
+void sizeof_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("sizeof("));
-	operand->to_string(str);
+	operand->to_string(str, encoding);
 	for(const auto &expr : indices)
 	{
 		str.push_back('[');
-		expr->to_string(str);
+		expr->to_string(str, encoding);
 		str.push_back(']');
 	}
 	str.push_back(')');
@@ -3512,10 +3512,10 @@ cell rankof_expression::execute_inner(const args_type &args, const exec_info &in
 	return static_rank != invalid_rank ? static_rank : operand->execute(args, info).get_rank();
 }
 
-void rankof_expression::to_string(strings::cell_string &str) const noexcept
+void rankof_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("rankof("));
-	operand->to_string(str);
+	operand->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -3578,10 +3578,10 @@ cell addressof_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void addressof_expression::to_string(strings::cell_string &str) const noexcept
+void addressof_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("addressof("));
-	operand->to_string(str);
+	operand->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -3598,7 +3598,7 @@ decltype(expression_pool)::object_ptr addressof_expression::clone() const
 dyn_object nameof_expression::execute(const args_type &args, const exec_info &info) const
 {
 	strings::cell_string str;
-	operand->to_string(str);
+	operand->to_string(str, strings::default_encoding());
 	return dyn_object(str.data(), str.size() + 1, tags::find_tag(tags::tag_char));
 }
 
@@ -3610,7 +3610,7 @@ tag_ptr nameof_expression::get_tag(const args_type &args) const noexcept
 cell nameof_expression::get_size(const args_type &args) const noexcept
 {
 	strings::cell_string str;
-	operand->to_string(str);
+	operand->to_string(str, strings::default_encoding());
 	return str.size() + 1;
 }
 
@@ -3624,10 +3624,10 @@ cell nameof_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void nameof_expression::to_string(strings::cell_string &str) const noexcept
+void nameof_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.append(strings::convert("nameof("));
-	operand->to_string(str);
+	operand->to_string(str, encoding);
 	str.push_back(')');
 }
 
@@ -3845,10 +3845,10 @@ cell extract_expression::get_count(const args_type &args) const noexcept
 	return 1;
 }
 
-void extract_expression::to_string(strings::cell_string &str) const noexcept
+void extract_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('*');
-	var->to_string(str);
+	var->to_string(str, encoding);
 }
 
 const expression_ptr &extract_expression::get_operand() const noexcept
@@ -3872,10 +3872,10 @@ cell variant_expression::execute_inner(const args_type &args, const exec_info &i
 	return variants::pool.get_id(ptr);
 }
 
-void variant_expression::to_string(strings::cell_string &str) const noexcept
+void variant_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('&');
-	value->to_string(str);
+	value->to_string(str, encoding);
 }
 
 const expression_ptr &variant_expression::get_operand() const noexcept
@@ -3906,10 +3906,10 @@ cell string_expression::execute_inner(const args_type &args, const exec_info &in
 	}
 }
 
-void string_expression::to_string(strings::cell_string &str) const noexcept
+void string_expression::to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept
 {
 	str.push_back('@');
-	value->to_string(str);
+	value->to_string(str, encoding);
 }
 
 const expression_ptr &string_expression::get_operand() const noexcept

@@ -25,12 +25,12 @@ struct format_val
 		cell type = *end;
 		const cell *data = obj.get_cell_addr(nullptr, 0);
 		auto &buf = strings::pool.add();
-		if(!obj.get_tag()->get_ops().format_base(obj.get_tag(), data, type, begin, end, strings::num_parser<Iter>{
+		if(!obj.get_tag()->get_ops().format_base(obj.get_tag(), data, {type, begin, end, strings::num_parser<Iter>{
 			nullptr, [](void *ptr, Iter &begin, Iter end)
 			{
 				return strings::format_specific<Iter>::parse_num_simple(begin, end);
 			}
-		}, *buf))
+		}, *buf, strings::default_encoding()}))
 		{
 			strings::pool.remove(buf);
 			amx_FormalError(errors::invalid_format, "invalid value or specifier parameter");
@@ -237,7 +237,7 @@ namespace Natives
 			cell result = strings::select_iterator<format_val>(format, obj);
 			if(result != 0) return result;
 		}
-		return strings::pool.get_id(strings::pool.add(obj.to_string()));
+		return strings::pool.get_id(strings::pool.add(obj.to_string(strings::default_encoding())));
 	}
 
 	// native String:str_val_arr(const AnyTag:value[], size=sizeof(value), TagTag:tag_id=tagof(value), const format[]="");
@@ -251,7 +251,7 @@ namespace Natives
 			cell result = strings::select_iterator<format_val>(format, obj);
 			if(result != 0) return result;
 		}
-		return strings::pool.get_id(strings::pool.add(obj.to_string()));
+		return strings::pool.get_id(strings::pool.add(obj.to_string(strings::default_encoding())));
 	}
 
 	// native String:str_val_var(ConstVariantTag:value, const format[]="");
@@ -269,7 +269,7 @@ namespace Natives
 			cell result = strings::select_iterator<format_val>(format, *var);
 			if(result != 0) return result;
 		}
-		return strings::pool.get_id(strings::pool.add(var->to_string()));
+		return strings::pool.get_id(strings::pool.add(var->to_string(strings::default_encoding())));
 	}
 
 	template <class Iter>
@@ -346,6 +346,7 @@ namespace Natives
 		cell operator()(Iter delim_begin, Iter delim_end, AMX *amx, list_t *list) const
 		{
 			auto &str = strings::pool.add();
+			strings::encoding encoding = strings::default_encoding();
 			bool first = true;
 			for(auto &obj : *list)
 			{
@@ -355,7 +356,7 @@ namespace Natives
 				}else{
 					str->append(delim_begin, delim_end);
 				}
-				str->append(obj.to_string());
+				str->append(obj.to_string(encoding));
 			}
 
 			return strings::pool.get_id(str);

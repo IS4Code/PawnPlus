@@ -23,7 +23,7 @@ static void concat(const expression::exec_info &info, parser_options options, co
 	strings::cell_string result;
 	for(const auto &arg : input)
 	{
-		result.append(arg.to_string());
+		result.append(arg.to_string(strings::default_encoding()));
 	}
 	output.emplace_back(result.c_str(), result.size() + 1, tags::find_tag(tags::tag_char));
 }

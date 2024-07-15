@@ -1181,15 +1181,15 @@ dyn_object dyn_object::operator~() const
 	return operator_cell_func<std::bit_not<cell>>();
 }
 
-std::basic_string<cell> dyn_object::to_string() const
+std::basic_string<cell> dyn_object::to_string(const strings::encoding &encoding) const
 {
 	const auto &ops = tag->get_ops();
 	if(is_cell())
 	{
-		return ops.to_string(tag, cell_value);
+		return ops.to_string(tag, cell_value, encoding);
 	}else{
 		const cell *begin = this->begin();
-		return ops.to_string(tag, begin, end() - begin);
+		return ops.to_string(tag, begin, end() - begin, encoding);
 	}
 }
 

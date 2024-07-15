@@ -33,17 +33,14 @@ namespace strings
 	}
 
 	template <class Obj, class... Args>
-	cell_string to_string(Obj &&obj, Args&&... args)
+	cell_string to_string(const encoding &encoding, Obj &&obj, Args&&... args)
 	{
 		std::ostringstream ostream;
-		ostream.imbue(std::locale());
+		ostream.imbue(encoding.locale);
 		stream::push_args(ostream, std::forward<Args>(args)...);
 		ostream << std::forward<Obj>(obj);
 		return convert(ostream.str());
 	}
-
-	template <class Iter>
-	struct format_state;
 
 	template <class Iter>
 	struct num_parser
@@ -58,27 +55,27 @@ namespace strings
 	};
 
 	template <class Iter>
-	bool append_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, num_parser<Iter> &&parse_num)
+	bool append_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, const num_parser<Iter> &parse_num, const encoding &encoding)
 	{
-		return append_format(buf, obj.get_specifier(), begin, end, obj, std::move(parse_num));
+		return append_format(obj, strings::format_info<Iter>{obj.get_specifier(), begin, end, parse_num, buf, encoding});
 	}
 
 	template <class Iter>
-	bool append_format(cell_string &buf, cell specifier, Iter begin, Iter end, const dyn_object &obj, num_parser<Iter> &&parse_num)
+	bool append_format(const dyn_object &obj, const strings::format_info<Iter> &info)
 	{
 		auto tag = obj.get_tag();
 		if(obj.empty() || (obj.is_array() && !tag->inherits_from(tags::tag_char)))
 		{
-			if(begin == end)
+			if(info.fmt_begin == info.fmt_end)
 			{
-				buf.append(obj.to_string());
+				info.target.append(obj.to_string(info.encoding));
 				return true;
 			}
 			return false;
 		}
 
 		const cell *data = obj.get_cell_addr(nullptr, 0);
-		return tag->get_ops().format_base(tag, data, specifier, begin, end, std::move(parse_num), buf);
+		return tag->get_ops().format_base(tag, data, info);
 	}
 		
 	template <class StringIter>
@@ -161,7 +158,7 @@ namespace strings
 		template <class StringIter>
 		struct append
 		{
-			bool operator()(StringIter begin, StringIter end, Iter param_begin, Iter param_end, num_parser<Iter> &&parse_num, cell_string &buf) const
+			bool operator()(StringIter begin, StringIter end, Iter param_begin, Iter param_end, const num_parser<Iter> &parse_num, cell_string &buf) const
 			{
 				if(param_begin == param_end)
 				{

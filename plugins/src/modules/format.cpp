@@ -16,13 +16,14 @@ std::stack<std::weak_ptr<map_t>> strings::format_env;
 namespace strings
 {
 	template <class Iter>
-	struct format_state
+	class format_state
 	{
 		AMX *amx;
 		cell argn = -1;
 		cell maxargn = -1;
 		cell argc;
 		const cell *args;
+		const strings::encoding *encoding;
 
 		const cell *get_arg(cell argi) const
 		{
@@ -112,7 +113,7 @@ namespace strings
 			{
 				case 'P':
 				{
-					if(append_format(buf, begin, end, dyn_object(amx, arg[0], arg[1]), get_num_parser()))
+					if(append_format(buf, begin, end, dyn_object(amx, arg[0], arg[1]), get_num_parser(), *encoding))
 					{
 						return;
 					}
@@ -123,15 +124,16 @@ namespace strings
 					bool is_string;
 					if(auto ops = tag_operations::from_specifier(type, is_string))
 					{
+						strings::format_info<Iter> info{type, begin, end, get_num_parser(), buf, *encoding};
 						if(is_string)
 						{
 							cell val = strings::create(arg, false, false);
-							if(ops->format_base(nullptr, &val, type, begin, end, get_num_parser(), buf))
+							if(ops->format_base(nullptr, &val, info))
 							{
 								return;
 							}
 						}else{
-							if(ops->format_base(nullptr, arg, type, begin, end, get_num_parser(), buf))
+							if(ops->format_base(nullptr, arg, info))
 							{
 								return;
 							}
@@ -145,6 +147,7 @@ namespace strings
 			amx_FormalError(errors::invalid_format, "invalid value or specifier parameter");
 		}
 
+	public:
 		void operator()(Iter format_begin, Iter format_end, AMX *amx, strings::cell_string &buf, cell argc, const cell *args)
 		{
 			auto flen = format_end - format_begin;
@@ -164,6 +167,8 @@ namespace strings
 			this->amx = amx;
 			this->argc = argc;
 			this->args = args;
+			strings::encoding encoding = strings::default_encoding();
+			this->encoding = &encoding;
 
 			buf.reserve(buf.size() + flen + 8 * argc);
 
@@ -267,7 +272,7 @@ namespace strings
 
 						if(format_begin == brace_end)
 						{
-							buf.append(expr->execute({}, info).to_string());
+							buf.append(expr->execute({}, info).to_string(encoding));
 						}else{
 							++format_begin;
 							if(format_begin == brace_end)
@@ -277,7 +282,9 @@ namespace strings
 							}
 							last = format_begin;
 							format_begin = std::prev(brace_end);
-							append_format(buf, *format_begin, last, format_begin, expr->execute({}, info), get_num_parser());
+							append_format(expr->execute({}, info), strings::format_info<Iter>{
+								*format_begin, last, format_begin, get_num_parser(), buf, encoding
+							});
 						}
 						
 						format_begin = last = std::next(brace_end);

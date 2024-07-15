@@ -9,6 +9,17 @@ namespace strings
 {
 	template <class Iter>
 	struct num_parser;
+
+	template <class Iter>
+	struct format_info
+	{
+		cell type;
+		Iter &fmt_begin;
+		Iter &fmt_end;
+		const num_parser<Iter> &parse_num;
+		cell_string &target;
+		const encoding &encoding;
+	};
 }
 
 class tag_operations
@@ -44,9 +55,9 @@ public:
 	virtual bool gte(tag_ptr tag, cell a, cell b) const = 0;
 	virtual bool not(tag_ptr tag, cell a) const = 0;
 
-	virtual std::basic_string<cell> to_string(tag_ptr tag, cell arg) const = 0;
-	virtual std::basic_string<cell> to_string(tag_ptr tag, const cell *arg, cell size) const = 0;
-	virtual bool append_string(tag_ptr tag, cell arg, std::basic_string<cell> &str) const = 0;
+	virtual std::basic_string<cell> to_string(tag_ptr tag, cell arg, const strings::encoding &encoding) const = 0;
+	virtual std::basic_string<cell> to_string(tag_ptr tag, const cell *arg, cell size, const strings::encoding &encoding) const = 0;
+	virtual bool append_string(tag_ptr tag, cell arg, std::basic_string<cell> &str, const strings::encoding &encoding) const = 0;
 	virtual char format_spec(tag_ptr tag, bool arr) const = 0;
 	virtual bool del(tag_ptr tag, cell arg) const = 0;
 	virtual bool release(tag_ptr tag, cell arg) const = 0;
@@ -66,10 +77,10 @@ protected:
 	using it4_t = strings::unaligned_const_char_iterator;
 
 public:
-	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it1_t fmt_begin, it1_t fmt_end, strings::num_parser<it1_t> &&parse_num, std::basic_string<cell> &str) const = 0;
-	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it2_t fmt_begin, it2_t fmt_end, strings::num_parser<it2_t> &&parse_num, std::basic_string<cell> &str) const = 0;
-	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it3_t fmt_begin, it3_t fmt_end, strings::num_parser<it3_t> &&parse_num, std::basic_string<cell> &str) const = 0;
-	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it4_t fmt_begin, it4_t fmt_end, strings::num_parser<it4_t> &&parse_num, std::basic_string<cell> &str) const = 0;
+	virtual bool format_base(tag_ptr tag, const cell *arg, const strings::format_info<it1_t> &info) const = 0;
+	virtual bool format_base(tag_ptr tag, const cell *arg, const strings::format_info<it2_t> &info) const = 0;
+	virtual bool format_base(tag_ptr tag, const cell *arg, const strings::format_info<it3_t> &info) const = 0;
+	virtual bool format_base(tag_ptr tag, const cell *arg, const strings::format_info<it4_t> &info) const = 0;
 
 	virtual std::unique_ptr<tag_operations> derive(tag_ptr tag, cell uid, const char *name) const = 0;
 	virtual tag_ptr get_element() const = 0;

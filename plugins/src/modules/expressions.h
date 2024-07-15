@@ -81,7 +81,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept;
 	virtual cell get_rank(const args_type &args) const noexcept;
 	virtual cell get_count(const args_type &args) const noexcept;
-	virtual void to_string(strings::cell_string &str) const noexcept = 0;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept = 0;
 
 	virtual ~expression() = default;
 	int &operator[](size_t index) const;
@@ -132,7 +132,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
 	virtual const dyn_object &get_value() const override
@@ -161,7 +161,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
 	virtual const dyn_object &get_value() const override
@@ -187,7 +187,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override = 0;
 	virtual cell get_rank(const args_type &args) const noexcept override = 0;
 	virtual cell get_count(const args_type &args) const noexcept override = 0;
-	virtual void to_string(strings::cell_string &str) const noexcept override = 0;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override = 0;
 	virtual decltype(expression_pool)::object_ptr clone() const override = 0;
 };
 
@@ -215,7 +215,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
 protected:
@@ -237,7 +237,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
 protected:
@@ -273,7 +273,7 @@ public:
 	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -295,7 +295,7 @@ public:
 	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual void execute_multi(const args_type &args, const exec_info &info, call_args_type &output) const override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -321,7 +321,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -362,7 +362,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -386,7 +386,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -403,7 +403,7 @@ public:
 	virtual void execute_discard(const args_type &args, const exec_info &info) const override;
 	virtual dyn_object index(const args_type &args, const exec_info &info, const call_args_type &indices) const override;
 	virtual dyn_object index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -459,7 +459,7 @@ public:
 
 	}
 
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
 protected:
@@ -481,7 +481,7 @@ public:
 
 	}
 
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 
 protected:
@@ -518,7 +518,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept override;
 	virtual const expression_ptr &get_right() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -545,7 +545,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept override;
 	virtual const expression_ptr &get_right() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -585,7 +585,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept override;
 	virtual const expression_ptr &get_right() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -613,7 +613,7 @@ public:
 	virtual tag_ptr get_tag(const args_type &args) const noexcept override;
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -642,7 +642,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -681,7 +681,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -711,7 +711,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -737,7 +737,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -757,7 +757,7 @@ public:
 	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override;
 	virtual dyn_object index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -786,7 +786,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -810,7 +810,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -836,7 +836,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -862,7 +862,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -884,7 +884,7 @@ public:
 	virtual void call_discard(const args_type &args, const exec_info &info, const call_args_type &call_args) const override;
 	virtual void call_multi(const args_type &args, const exec_info &info, const call_args_type &call_args, call_args_type &output) const override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
 
@@ -975,10 +975,10 @@ public:
 		return 1;
 	}
 
-	virtual void to_string(strings::cell_string &str) const noexcept override
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override
 	{
 		str.append(strings::convert(expr_impl::unary_object_operator_name<Func>()()));
-		operand->to_string(str);
+		operand->to_string(str, encoding);
 	}
 
 	virtual const expression_ptr &get_operand() const noexcept override
@@ -1132,12 +1132,12 @@ public:
 		return 1;
 	}
 
-	virtual void to_string(strings::cell_string &str) const noexcept override
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override
 	{
 		str.push_back('(');
-		left->to_string(str);
+		left->to_string(str, encoding);
 		str.append(strings::convert(expr_impl::binary_object_operator_name<Func>()()));
-		right->to_string(str);
+		right->to_string(str, encoding);
 		str.push_back(')');
 	}
 
@@ -1213,7 +1213,7 @@ public:
 	}
 
 	virtual cell execute_inner(const args_type &args, const exec_info &info) const override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -1249,7 +1249,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -1265,7 +1265,7 @@ public:
 		return Value;
 	}
 
-	virtual void to_string(strings::cell_string &str) const noexcept override
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override
 	{
 		str.append(strings::convert(Value ? "true" : "false"));
 	}
@@ -1313,10 +1313,10 @@ public:
 		return (operand->execute(args, info).*Func)();
 	}
 
-	virtual void to_string(strings::cell_string &str) const noexcept override
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override
 	{
 		str.append(strings::convert(expr_impl::unary_logic_operator_name<Func>()()));
-		operand->to_string(str);
+		operand->to_string(str, encoding);
 	}
 
 	virtual const expression_ptr &get_operand() const noexcept override
@@ -1418,12 +1418,12 @@ public:
 		return (left->execute(args, info).*Func)(right->execute(args, info));
 	}
 
-	virtual void to_string(strings::cell_string &str) const noexcept override
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override
 	{
 		str.push_back('(');
-		left->to_string(str);
+		left->to_string(str, encoding);
 		str.append(strings::convert(expr_impl::binary_logic_operator_name<Func>()()));
-		right->to_string(str);
+		right->to_string(str, encoding);
 		str.push_back(')');
 	}
 
@@ -1460,7 +1460,7 @@ public:
 	}
 
 	virtual bool execute_inner(const args_type &args, const exec_info &info) const override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept override;
 	virtual const expression_ptr &get_right() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -1483,7 +1483,7 @@ public:
 	}
 
 	virtual bool execute_inner(const args_type &args, const exec_info &info) const override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept override;
 	virtual const expression_ptr &get_right() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -1520,7 +1520,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept;
 	virtual const expression_ptr &get_left() const noexcept;
 	virtual const expression_ptr &get_right() const noexcept;
@@ -1549,7 +1549,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept;
 	virtual const expression_ptr &get_right() const noexcept;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -1577,7 +1577,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_left() const noexcept;
 	virtual const expression_ptr &get_right() const noexcept;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
@@ -1599,7 +1599,7 @@ public:
 	}
 
 	virtual cell execute_inner(const args_type &args, const exec_info &info) const override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -1631,7 +1631,7 @@ public:
 	}
 
 	virtual cell execute_inner(const args_type &args, const exec_info &info) const override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -1652,7 +1652,7 @@ public:
 	}
 
 	virtual cell execute_inner(const args_type &args, const exec_info &info) const override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -1677,7 +1677,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -1702,7 +1702,7 @@ public:
 	virtual cell get_size(const args_type &args) const noexcept override;
 	virtual cell get_rank(const args_type &args) const noexcept override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -1726,7 +1726,7 @@ public:
 	virtual dyn_object assign(const args_type &args, const exec_info &info, dyn_object &&value) const override;
 	virtual dyn_object index_assign(const args_type &args, const exec_info &info, const call_args_type &indices, dyn_object &&value) const override;
 	virtual cell get_count(const args_type &args) const noexcept override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -1747,7 +1747,7 @@ public:
 	}
 
 	virtual cell execute_inner(const args_type &args, const exec_info &info) const override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };
@@ -1768,7 +1768,7 @@ public:
 	}
 
 	virtual cell execute_inner(const args_type &args, const exec_info &info) const override;
-	virtual void to_string(strings::cell_string &str) const noexcept override;
+	virtual void to_string(strings::cell_string &str, const strings::encoding &encoding) const noexcept override;
 	virtual const expression_ptr &get_operand() const noexcept override;
 	virtual decltype(expression_pool)::object_ptr clone() const override;
 };

@@ -741,7 +741,7 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const cell_
 					select_iterator<replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner>(repl.begin(), target, begin, end);
 					continue;
 				}
-				cell_string str = repl.to_string();
+				cell_string str = repl.to_string(strings::default_encoding());
 				typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<cell_string::const_iterator>()(str.cbegin(), str.cend(), target, begin, end);
 			}else{
 				++it;
@@ -933,7 +933,7 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const cell_
 		}
 
 		amx::guard guard(amx);
-		auto result = expr.execute(ref_args, info).to_string();
+		auto result = expr.execute(ref_args, info).to_string(strings::default_encoding());
 		target.append(result.cbegin(), result.cend());
 
 		if(group.second != begin)

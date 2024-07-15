@@ -26,6 +26,9 @@
 #include <regex>
 
 using cell_string = strings::cell_string;
+using encoding = strings::encoding;
+template <class Iter>
+using format_info = strings::format_info<Iter>;
 
 template <class T>
 inline void hash_combine(size_t& seed, const T& v)
@@ -159,7 +162,7 @@ struct null_operations : public tag_operations
 		return a == 0;
 	}
 
-	virtual cell_string to_string(tag_ptr tag, cell arg) const override
+	virtual cell_string to_string(tag_ptr tag, cell arg, const encoding &encoding) const override
 	{
 		cell_string str;
 		if(tag->uid != tag_uid)
@@ -167,11 +170,11 @@ struct null_operations : public tag_operations
 			str.append(strings::convert(tag->format_name()));
 			str.push_back(':');
 		}
-		append_string(tag, arg, str);
+		append_string(tag, arg, str, encoding);
 		return str;
 	}
 
-	virtual cell_string to_string(tag_ptr tag, const cell *arg, cell size) const override
+	virtual cell_string to_string(tag_ptr tag, const cell *arg, cell size, const encoding &encoding) const override
 	{
 		cell_string str;
 		if(tag->uid != tag_uid)
@@ -190,7 +193,7 @@ struct null_operations : public tag_operations
 				str.push_back(',');
 				str.push_back(' ');
 			}
-			append_string(tag, arg[i], str);
+			append_string(tag, arg[i], str, encoding);
 		}
 		str.push_back('}');
 		return str;
@@ -251,7 +254,7 @@ struct null_operations : public tag_operations
 		return std::hash<cell>()(arg);
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		str.append(strings::convert(tags::find_tag(tag_uid)->format_name()));
 		str.push_back(':');
@@ -281,43 +284,43 @@ struct null_operations : public tag_operations
 		return nullptr;
 	}
 
-	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it1_t fmt_begin, it1_t fmt_end, strings::num_parser<it1_t> &&parse_num, cell_string &str) const override
+	virtual bool format_base(tag_ptr tag, const cell *arg, const format_info<it1_t> &info) const override
 	{
 		if(!tag) tag = tags::find_tag(tag_uid);
-		return Self::format(*this, tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
+		return Self::format(*this, tag, arg, info);
 	}
 
-	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it2_t fmt_begin, it2_t fmt_end, strings::num_parser<it2_t> &&parse_num, cell_string &str) const override
+	virtual bool format_base(tag_ptr tag, const cell *arg, const format_info<it2_t> &info) const override
 	{
 		if(!tag) tag = tags::find_tag(tag_uid);
-		return Self::format(*this, tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
+		return Self::format(*this, tag, arg, info);
 	}
 
-	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it3_t fmt_begin, it3_t fmt_end, strings::num_parser<it3_t> &&parse_num, cell_string &str) const override
+	virtual bool format_base(tag_ptr tag, const cell *arg, const format_info<it3_t> &info) const override
 	{
 		if(!tag) tag = tags::find_tag(tag_uid);
-		return Self::format(*this, tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
+		return Self::format(*this, tag, arg, info);
 	}
 
-	virtual bool format_base(tag_ptr tag, const cell *arg, cell type, it4_t fmt_begin, it4_t fmt_end, strings::num_parser<it4_t> &&parse_num, cell_string &str) const override
+	virtual bool format_base(tag_ptr tag, const cell *arg, const format_info<it4_t> &info) const override
 	{
 		if(!tag) tag = tags::find_tag(tag_uid);
-		return Self::format(*this, tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
+		return Self::format(*this, tag, arg, info);
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, strings::num_parser<Iter> &&parse_num, cell_string &str)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, const format_info<Iter> &info)
 	{
-		if(fmt_begin == fmt_end)
+		if(info.fmt_begin == info.fmt_end)
 		{
-			return ops.append_string(tag, *arg, str);
+			return ops.append_string(tag, *arg, info.target, info.encoding);
 		}
 		return false;
 	}
 };
 
 template <class Iter>
-bool format_money(long double value, Iter &begin, Iter &end, strings::num_parser<Iter> &&parse_num, cell_string &buf);
+bool format_money(long double value, const format_info<Iter> &info);
 
 template <class Self>
 struct cell_operations : public null_operations<Self>
@@ -427,7 +430,7 @@ struct cell_operations : public null_operations<Self>
 		return arg;
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		str.append(strings::convert(std::to_string(arg)));
 		return true;
@@ -435,51 +438,51 @@ struct cell_operations : public null_operations<Self>
 
 private:
 	template <class Type, class Iter, class... Args>
-	static bool format_num(Type value, Iter &begin, Iter &end, strings::num_parser<Iter> &&parse_num, cell_string &buf, Args&&... args)
+	static bool format_num(Type value, const format_info<Iter> &info, Args&&... args)
 	{
-		if(begin == end)
+		if(info.fmt_begin == info.fmt_end)
 		{
-			buf.append(strings::to_string(value, std::forward<Args>(args)...));
+			info.target.append(strings::to_string(info.encoding, value, std::forward<Args>(args)...));
 			return true;
-		}else if(*begin == '.')
+		}else if(*info.fmt_begin == '.')
 		{
-			++begin;
-			cell precision = parse_num(begin, end);
-			if(begin == end)
+			++info.fmt_begin;
+			cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+			if(info.fmt_begin == info.fmt_end)
 			{
 				long double fvalue = value * std::pow(10.0L, -std::abs(precision));
 				if(precision >= 0)
 				{
-					buf.append(strings::to_string(fvalue, std::forward<Args>(args)..., std::setprecision(precision), std::fixed));
+					info.target.append(strings::to_string(info.encoding, fvalue, std::forward<Args>(args)..., std::setprecision(precision), std::fixed));
 				}else{
-					buf.append(strings::to_string(fvalue, std::forward<Args>(args)..., std::setprecision(-precision), std::defaultfloat));
+					info.target.append(strings::to_string(info.encoding, fvalue, std::forward<Args>(args)..., std::setprecision(-precision), std::defaultfloat));
 				}
 				return true;
 			}
 		}else{
-			char padding = static_cast<ucell>(*begin);
-			++begin;
-			cell width = parse_num(begin, end);
+			char padding = static_cast<ucell>(*info.fmt_begin);
+			++info.fmt_begin;
+			cell width = info.parse_num(info.fmt_begin, info.fmt_end);
 			if(width < 0)
 			{
 				return false;
 			}
-			if(begin == end)
+			if(info.fmt_begin == info.fmt_end)
 			{
-				buf.append(strings::to_string(value, std::forward<Args>(args)..., std::setw(width), std::setfill(padding)));
+				info.target.append(strings::to_string(info.encoding, value, std::forward<Args>(args)..., std::setw(width), std::setfill(padding)));
 				return true;
-			}else if(*begin == '.')
+			}else if(*info.fmt_begin == '.')
 			{
-				++begin;
-				cell precision = parse_num(begin, end);
-				if(begin == end)
+				++info.fmt_begin;
+				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+				if(info.fmt_begin == info.fmt_end)
 				{
 					long double fvalue = value * std::pow(10.0L, -std::abs(precision));
 					if(precision >= 0)
 					{
-						buf.append(strings::to_string(fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed));
+						info.target.append(strings::to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed));
 					}else{
-						buf.append(strings::to_string(fvalue, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat));
+						info.target.append(strings::to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat));
 					}
 					return true;
 				}
@@ -490,14 +493,14 @@ private:
 
 public:
 	template <class Iter>
-	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, const format_info<Iter> &info)
 	{
-		switch(type)
+		switch(info.type)
 		{
 			case 'd':
 			case 'i':
 			{
-				if(format_num(*arg, begin, end, std::move(parse_num), buf))
+				if(format_num(*arg, info))
 				{
 					return true;
 				}
@@ -505,7 +508,7 @@ public:
 			break;
 			case 'u':
 			{
-				if(format_num(static_cast<ucell>(*arg), begin, end, std::move(parse_num), buf))
+				if(format_num(static_cast<ucell>(*arg), info))
 				{
 					return true;
 				}
@@ -514,7 +517,7 @@ public:
 			case 'h':
 			case 'x':
 			{
-				if(format_num(*arg, begin, end, std::move(parse_num), buf, std::hex, std::uppercase))
+				if(format_num(*arg, info, std::hex, std::uppercase))
 				{
 					return true;
 				}
@@ -522,7 +525,7 @@ public:
 			break;
 			case 'o':
 			{
-				if(format_num(static_cast<ucell>(*arg), begin, end, std::move(parse_num), buf, std::oct))
+				if(format_num(static_cast<ucell>(*arg), info, std::oct))
 				{
 					return true;
 				}
@@ -531,37 +534,37 @@ public:
 			case 'b':
 			{
 				std::bitset<sizeof(cell) * 8> bits(*arg);
-				if(begin != end)
+				if(info.fmt_begin != info.fmt_end)
 				{
-					cell zero = *begin;
-					++begin;
-					if(begin != end)
+					cell zero = *info.fmt_begin;
+					++info.fmt_begin;
+					if(info.fmt_begin != info.fmt_end)
 					{
-						cell one = *begin;
-						++begin;
-						if(begin == end)
+						cell one = *info.fmt_begin;
+						++info.fmt_begin;
+						if(info.fmt_begin == info.fmt_end)
 						{
-							buf.append(bits.to_string<cell>(zero, one));
+							info.target.append(bits.to_string<cell>(zero, one));
 							return true;
-						}else if(*begin == '.')
+						}else if(*info.fmt_begin == '.')
 						{
-							++begin;
-							cell limit = parse_num(begin, end);
-							if(begin == end && limit > 0)
+							++info.fmt_begin;
+							cell limit = info.parse_num(info.fmt_begin, info.fmt_end);
+							if(info.fmt_begin == info.fmt_end && limit > 0)
 							{
 								cell_string val(bits.to_string<cell>(zero, one));
 								if(val.size() > static_cast<size_t>(limit))
 								{
-									buf.append(val.begin() + val.size() - limit, val.end());
+									info.target.append(val.begin() + val.size() - limit, val.end());
 								}else{
-									buf.append(val);
+									info.target.append(val);
 								}
 								return true;
 							}
 						}
 					}
 				}else{
-					buf.append(bits.to_string<cell>());
+					info.target.append(bits.to_string<cell>());
 					return true;
 				}
 			}
@@ -575,17 +578,17 @@ public:
 				}else{
 					time = std::time(nullptr);
 				}
-				if(begin == end)
+				if(info.fmt_begin == info.fmt_end)
 				{
 					std::tm value = aux::localtime(time);
-					buf.append(strings::to_string(std::put_time(&value, "%c")));
+					info.target.append(strings::to_string(info.encoding, std::put_time(&value, "%c")));
 					return true;
 				}
 				bool offset_found = false;
 				cell timezone_offset;
-				Iter begin_after_escaped = end;
+				Iter begin_after_escaped = info.fmt_end;
 
-				Iter format_end = end;
+				Iter format_end = info.fmt_end;
 				do{
 					--format_end;
 
@@ -596,18 +599,18 @@ public:
 						// potential UTC offset
 						Iter offset_begin = format_end;
 						++offset_begin;
-						if(offset_begin != end)
+						if(offset_begin != info.fmt_end)
 						{
 							// data after
-							timezone_offset = 60 * parse_num(offset_begin, end);
-							offset_found = offset_begin == end;
+							timezone_offset = 60 * info.parse_num(offset_begin, info.fmt_end);
+							offset_found = offset_begin == info.fmt_end;
 							if(!offset_found)
 							{
 								// there is more data
-								if(*offset_begin == ':' && ++offset_begin != end)
+								if(*offset_begin == ':' && ++offset_begin != info.fmt_end)
 								{
-									timezone_offset += parse_num(offset_begin, end);
-									if(offset_begin == end)
+									timezone_offset += info.parse_num(offset_begin, info.fmt_end);
+									if(offset_begin == info.fmt_end)
 									{
 										// minutes and end found
 										offset_found = true;
@@ -619,7 +622,7 @@ public:
 						{
 							timezone_offset = -timezone_offset;
 						}
-						if(offset_found && format_end != begin)
+						if(offset_found && format_end != info.fmt_begin)
 						{
 							// ensure not escaped
 							Iter percent_it = format_end;
@@ -633,7 +636,7 @@ public:
 									break;
 								}
 								--percent_it;
-							}while(percent_it != begin);
+							}while(percent_it != info.fmt_begin);
 							if(escaped)
 							{
 								// preceded by escaping %
@@ -648,27 +651,26 @@ public:
 						if(!offset_found)
 						{
 							// revert
-							format_end = end;
+							format_end = info.fmt_end;
 						}
 						break;
 					}
-				}while(format_end != begin);
+				}while(format_end != info.fmt_begin);
 
 				// before escaped suffix
-				auto format_initial_length = format_end - begin;
-				std::string format(format_initial_length + (end - begin_after_escaped), '\0');
+				auto format_initial_length = format_end - info.fmt_begin;
+				std::string format(format_initial_length + (info.fmt_end - begin_after_escaped), '\0');
 
 				// narrow before and after % using ctype<cell>
-				std::locale locale;
-				const auto &ctype = std::use_facet<std::ctype<cell>>(locale);
-				aux::make_contiguous(begin, format_end, [&](const cell *p_begin, const cell *p_end)
+				const auto &ctype = std::use_facet<std::ctype<cell>>(info.encoding.locale);
+				aux::make_contiguous(info.fmt_begin, format_end, [&](const cell *p_begin, const cell *p_end)
 				{
-					ctype.narrow(p_begin, p_end, '?', &format[0]);
+					ctype.narrow(p_begin, p_end, info.encoding.unknown_char, &format[0]);
 					return nullptr;
 				});
-				aux::make_contiguous(begin_after_escaped, end, [&](const cell *p_begin, const cell *p_end)
+				aux::make_contiguous(begin_after_escaped, info.fmt_end, [&](const cell *p_begin, const cell *p_end)
 				{
-					ctype.narrow(p_begin, p_end, '?', &format[format_initial_length]);
+					ctype.narrow(p_begin, p_end, info.encoding.unknown_char, &format[format_initial_length]);
 					return nullptr;
 				});
 
@@ -704,87 +706,86 @@ public:
 					value = aux::localtime(time);
 				}
 
-				buf.append(strings::to_string(std::put_time(&value, format.c_str())));
+				info.target.append(strings::to_string(info.encoding, std::put_time(&value, format.c_str())));
 				return true;
 			}
 			break;
 			case 'm':
 			{
-				if(format_money(*arg, begin, end, std::move(parse_num), buf))
+				if(format_money(*arg, info))
 				{
 					return true;
 				}
 			}
 			break;
 		}
-		return null_operations<Self>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
+		return null_operations<Self>::format(ops, tag, arg, info);
 	}
 };
 
 template <bool International>
-long double adjust_digits(long double value, cell num_digits)
+long double adjust_digits(long double value, cell num_digits, const std::locale &locale)
 {
-	std::locale loc;
-	const auto &punct = std::use_facet<std::moneypunct<char, International>>(loc);
+	const auto &punct = std::use_facet<std::moneypunct<char, International>>(locale);
 	num_digits -= punct.frac_digits();
 	return value * std::pow(10.0L, -num_digits);
 }
 
-long double adjust_digits(long double value, cell num_digits, bool international)
+long double adjust_digits(long double value, cell num_digits, bool international, const std::locale &locale)
 {
-	return international ? adjust_digits<true>(value, num_digits) : adjust_digits<false>(value, num_digits);
+	return international ? adjust_digits<true>(value, num_digits, locale) : adjust_digits<false>(value, num_digits, locale);
 }
 
 template <class Iter>
-bool format_money(long double value, Iter &begin, Iter &end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+bool format_money(long double value, const format_info<Iter> &info)
 {
-	if(begin == end)
+	if(info.fmt_begin == info.fmt_end)
 	{
-		buf.append(strings::to_string(std::put_money(value, true), std::showbase));
+		info.target.append(strings::to_string(info.encoding, std::put_money(value, true), std::showbase));
 		return true;
 	}
 	bool international = true;
-	if(*begin == '$')
+	if(*info.fmt_begin == '$')
 	{
 		international = false;
-		++begin;
-		if(begin == end)
+		++info.fmt_begin;
+		if(info.fmt_begin == info.fmt_end)
 		{
-			buf.append(strings::to_string(std::put_money(value, international), std::showbase));
+			info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase));
 			return true;
 		}
 	}
-	if(*begin == '.')
+	if(*info.fmt_begin == '.')
 	{
-		++begin;
-		cell precision = parse_num(begin, end);
-		if(begin == end)
+		++info.fmt_begin;
+		cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+		if(info.fmt_begin == info.fmt_end)
 		{
-			value = adjust_digits(value, precision, international);
-			buf.append(strings::to_string(std::put_money(value, international), std::showbase));
+			value = adjust_digits(value, precision, international, info.encoding.locale);
+			info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase));
 			return true;
 		}
 		return false;
 	}
-	char padding = static_cast<ucell>(*begin);
-	++begin;
-	cell width = parse_num(begin, end);
+	char padding = static_cast<ucell>(*info.fmt_begin);
+	++info.fmt_begin;
+	cell width = info.parse_num(info.fmt_begin, info.fmt_end);
 	if(width < 0)
 	{
 		return false;
 	}
-	if(begin == end)
+	if(info.fmt_begin == info.fmt_end)
 	{
-		buf.append(strings::to_string(std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+		info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
 		return true;
-	}else if(*begin == '.')
+	}else if(*info.fmt_begin == '.')
 	{
-		++begin;
-		cell precision = parse_num(begin, end);
-		if(begin == end)
+		++info.fmt_begin;
+		cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+		if(info.fmt_begin == info.fmt_end)
 		{
-			value = adjust_digits(value, precision, international);
-			buf.append(strings::to_string(std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+			value = adjust_digits(value, precision, international, info.encoding.locale);
+			info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
 			return true;
 		}
 	}
@@ -893,7 +894,7 @@ struct signed_operations : public cell_operations<signed_operations>
 		return !a;
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		str.append(strings::convert(tags::find_tag(tag_uid)->format_name()));
 		str.push_back(':');
@@ -1004,7 +1005,7 @@ struct unsigned_operations : public cell_operations<unsigned_operations>
 		return !static_cast<ucell>(a);
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		str.append(strings::convert(tags::find_tag(tag_uid)->format_name()));
 		str.push_back(':');
@@ -1013,17 +1014,19 @@ struct unsigned_operations : public cell_operations<unsigned_operations>
 	}
 	
 	template <class Iter>
-	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, const format_info<Iter> &info)
 	{
-		switch(type)
+		switch(info.type)
 		{
 			case 'd':
 			{
-				return cell_operations<unsigned_operations>::format(ops, tag, arg, 'u', begin, end, std::move(parse_num), buf);
+				format_info<Iter> copy = info;
+				copy.type = 'u';
+				return cell_operations<unsigned_operations>::format(ops, tag, arg, info);
 			}
 			break;
 		}
-		return cell_operations<unsigned_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
+		return cell_operations<unsigned_operations>::format(ops, tag, arg, info);
 	}
 };
 
@@ -1034,7 +1037,7 @@ struct bool_operations : public cell_operations<bool_operations>
 
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		static auto str_true = strings::convert("true");
 		static auto str_false = strings::convert("false");
@@ -1067,14 +1070,14 @@ struct char_operations : public cell_operations<char_operations>
 		this->register_specifier('e');
 	}
 
-	virtual cell_string to_string(tag_ptr tag, cell arg) const override
+	virtual cell_string to_string(tag_ptr tag, cell arg, const encoding &encoding) const override
 	{
 		cell_string str;
-		append_string(tag, arg, str);
+		append_string(tag, arg, str, encoding);
 		return str;
 	}
 
-	virtual cell_string to_string(tag_ptr tag, const cell *arg, cell size) const override
+	virtual cell_string to_string(tag_ptr tag, const cell *arg, cell size, const encoding &encoding) const override
 	{
 		cell_string str(arg, size);
 		size_t null = str.find(0);
@@ -1090,20 +1093,20 @@ struct char_operations : public cell_operations<char_operations>
 		return arr ? 's' : 'c';
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		str.push_back(arg);
 		return true;
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, const format_info<Iter> &info)
 	{
-		switch(type)
+		switch(info.type)
 		{
 			case 's':
 			{
-				if(strings::select_iterator<strings::format_specific<Iter>::template append>(arg, begin, end, std::move(parse_num), buf))
+				if(strings::select_iterator<strings::format_specific<Iter>::template append>(arg, info.fmt_begin, info.fmt_end, info.parse_num, info.target))
 				{
 					return true;
 				}
@@ -1112,7 +1115,7 @@ struct char_operations : public cell_operations<char_operations>
 			case 'q':
 			case 'e':
 			{
-				if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(arg, begin, end, buf))
+				if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(arg, info.fmt_begin, info.fmt_end, info.target))
 				{
 					return true;
 				}
@@ -1120,22 +1123,22 @@ struct char_operations : public cell_operations<char_operations>
 			break;
 			case 'c':
 			{
-				if(begin == end)
+				if(info.fmt_begin == info.fmt_end)
 				{
-					buf.append(1, *arg);
+					info.target.append(1, *arg);
 					return true;
 				}else{
-					cell count = parse_num(begin, end);
-					if(begin == end && count > 0)
+					cell count = info.parse_num(info.fmt_begin, info.fmt_end);
+					if(info.fmt_begin == info.fmt_end && count > 0)
 					{
-						buf.append(count, *arg);
+						info.target.append(count, *arg);
 						return true;
 					}
 				}
 			}
 			break;
 		}
-		return cell_operations<char_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
+		return cell_operations<char_operations>::format(ops, tag, arg, info);
 	}
 };
 
@@ -1244,62 +1247,62 @@ struct float_operations : public cell_operations<float_operations>
 		return arr ? 'a' : 'f';
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
-		str.append(strings::to_string(amx_ctof(arg)));
+		str.append(strings::to_string(encoding, amx_ctof(arg)));
 		return true;
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, const format_info<Iter> &info)
 	{
-		switch(type)
+		switch(info.type)
 		{
 			case 'f':
 			case 'd':
 			{
 				float val = amx_ctof(*arg);
-				if(begin == end)
+				if(info.fmt_begin == info.fmt_end)
 				{
-					buf.append(strings::to_string(val));
+					info.target.append(strings::to_string(info.encoding, val));
 					return true;
-				}else if(*begin == '.')
+				}else if(*info.fmt_begin == '.')
 				{
-					++begin;
-					cell precision = parse_num(begin, end);
-					if(begin == end)
+					++info.fmt_begin;
+					cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+					if(info.fmt_begin == info.fmt_end)
 					{
 						if(precision >= 0)
 						{
-							buf.append(strings::to_string(val, std::setprecision(precision), std::fixed));
+							info.target.append(strings::to_string(info.encoding, val, std::setprecision(precision), std::fixed));
 						}else{
-							buf.append(strings::to_string(val, std::setprecision(-precision), std::defaultfloat));
+							info.target.append(strings::to_string(info.encoding, val, std::setprecision(-precision), std::defaultfloat));
 						}
 						return true;
 					}
 				}else{
-					char padding = static_cast<ucell>(*begin);
-					++begin;
-					cell width = parse_num(begin, end);
+					char padding = static_cast<ucell>(*info.fmt_begin);
+					++info.fmt_begin;
+					cell width = info.parse_num(info.fmt_begin, info.fmt_end);
 					if(width < 0)
 					{
 						break;
 					}
-					if(begin == end)
+					if(info.fmt_begin == info.fmt_end)
 					{
-						buf.append(strings::to_string(val, std::setw(width), std::setfill(padding)));
+						info.target.append(strings::to_string(info.encoding, val, std::setw(width), std::setfill(padding)));
 						return true;
-					}else if(*begin == '.')
+					}else if(*info.fmt_begin == '.')
 					{
-						++begin;
-						cell precision = parse_num(begin, end);
-						if(begin == end)
+						++info.fmt_begin;
+						cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+						if(info.fmt_begin == info.fmt_end)
 						{
 							if(precision >= 0)
 							{
-								buf.append(strings::to_string(val, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed));
+								info.target.append(strings::to_string(info.encoding, val, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed));
 							}else{
-								buf.append(strings::to_string(val, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat));
+								info.target.append(strings::to_string(info.encoding, val, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat));
 							}
 							return true;
 						}
@@ -1309,14 +1312,14 @@ struct float_operations : public cell_operations<float_operations>
 			break;
 			case 'm':
 			{
-				if(format_money(amx_ctof(*arg), begin, end, std::move(parse_num), buf))
+				if(format_money(amx_ctof(*arg), info))
 				{
 					return true;
 				}
 			}
 			break;
 		}
-		return cell_operations<float_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
+		return cell_operations<float_operations>::format(ops, tag, arg, info);
 	}
 };
 
@@ -1439,7 +1442,7 @@ struct string_operations : public null_operations<string_operations>
 		return null_operations::hash(tag, arg);
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		cell_string *ptr;
 		if(strings::pool.get_by_id(arg, ptr))
@@ -1461,16 +1464,16 @@ struct string_operations : public null_operations<string_operations>
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, const format_info<Iter> &info)
 	{
-		switch(type)
+		switch(info.type)
 		{
 			case 'S':
 			{
 				cell_string *str;
 				if(strings::pool.get_by_id(*arg, str) || str == nullptr)
 				{
-					if(strings::select_iterator<strings::format_specific<Iter>::template append>(str, begin, end, std::move(parse_num), buf))
+					if(strings::select_iterator<strings::format_specific<Iter>::template append>(str, info.fmt_begin, info.fmt_end, info.parse_num, info.target))
 					{
 						return true;
 					}
@@ -1483,7 +1486,7 @@ struct string_operations : public null_operations<string_operations>
 				cell_string *str;
 				if(strings::pool.get_by_id(*arg, str) || str == nullptr)
 				{
-					if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(str, begin, end, buf))
+					if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(str, info.fmt_begin, info.fmt_end, info.target))
 					{
 						return true;
 					}
@@ -1491,7 +1494,7 @@ struct string_operations : public null_operations<string_operations>
 			}
 			break;
 		}
-		return null_operations<string_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
+		return null_operations<string_operations>::format(ops, tag, arg, info);
 	}
 };
 
@@ -1687,13 +1690,13 @@ struct variant_operations : public null_operations<variant_operations>
 		return null_operations::hash(tag, arg);
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		dyn_object *var;
 		if(variants::pool.get_by_id(arg, var))
 		{
 			str.push_back('(');
-			str.append(var->to_string());
+			str.append(var->to_string(encoding));
 			str.push_back(')');
 			return true;
 		}else if(var == nullptr)
@@ -1721,27 +1724,27 @@ struct variant_operations : public null_operations<variant_operations>
 	}
 	
 	template <class Iter>
-	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, const format_info<Iter> &info)
 	{
-		switch(type)
+		switch(info.type)
 		{
 			case 'V':
 			{
 				dyn_object *var;
 				if(variants::pool.get_by_id(*arg, var))
 				{
-					if(strings::append_format(buf, begin, end, *var, std::move(parse_num)))
+					if(strings::append_format(info.target, info.fmt_begin, info.fmt_end, *var, info.parse_num, info.encoding))
 					{
 						return true;
 					}
-				}else if(var == nullptr && begin == end)
+				}else if(var == nullptr && info.fmt_begin == info.fmt_end)
 				{
 					return true;
 				}
 			}
 			break;
 		}
-		return null_operations<variant_operations>::format(ops, tag, arg, type, begin, end, std::move(parse_num), buf);
+		return null_operations<variant_operations>::format(ops, tag, arg, info);
 	}
 };
 
@@ -1800,13 +1803,13 @@ struct handle_operations : public null_operations<handle_operations>
 		return null_operations::hash(tag, arg);
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		handle_t *handle;
 		if(handle_pool.get_by_id(arg, handle))
 		{
 			str.push_back('<');
-			str.append(handle->get().to_string());
+			str.append(handle->get().to_string(encoding));
 			str.push_back('>');
 			return true;
 		}else if(handle == nullptr)
@@ -2229,7 +2232,7 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 		return null_operations::hash(tag, arg);
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		dyn_iterator *iter;
 		if(iter_pool.get_by_id(arg, iter))
@@ -2238,23 +2241,23 @@ struct iter_operations : public generic_operations<iter_operations, tags::tag_it
 			const std::pair<const dyn_object, dyn_object> *pair;
 			if(iter->extract(pair))
 			{
-				str.append(pair->first.to_string());
+				str.append(pair->first.to_string(encoding));
 				str.push_back('=');
 				str.push_back('>');
-				str.append(pair->second.to_string());
+				str.append(pair->second.to_string(encoding));
 			}else{
 				std::shared_ptr<const std::pair<const dyn_object, dyn_object>> spair;
 				if(iter->extract(spair))
 				{
-					str.append(spair->first.to_string());
+					str.append(spair->first.to_string(encoding));
 					str.push_back('=');
 					str.push_back('>');
-					str.append(spair->second.to_string());
+					str.append(spair->second.to_string(encoding));
 				}else{
 					dyn_object *obj;
 					if(iter->extract(obj))
 					{
-						str.append(obj->to_string());
+						str.append(obj->to_string(encoding));
 					}
 				}
 			}
@@ -2292,16 +2295,16 @@ struct ref_operations : public generic_operations<ref_operations, tags::tag_ref>
 
 	}
 	
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		auto base = tags::find_tag(tag_uid);
 		if(tag != base && tag->inherits_from(base))
 		{
 			auto subtag = tags::find_tag(tag->name.substr(base->name.size()+1).c_str());
-			str.append(subtag->get_ops().to_string(subtag, arg));
+			str.append(subtag->get_ops().to_string(subtag, arg, encoding));
 			return true;
 		}else{
-			return null_operations::append_string(tag, arg, str);
+			return null_operations::append_string(tag, arg, str, encoding);
 		}
 	}
 
@@ -2612,12 +2615,12 @@ struct expression_operations : public null_operations<expression_operations>
 		return true;
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		expression *ptr;
 		if(expression_pool.get_by_id(arg, ptr))
 		{
-			ptr->to_string(str);
+			ptr->to_string(str, encoding);
 			return true;
 		}
 		return false;
@@ -3109,29 +3112,29 @@ public:
 		return true;
 	}
 
-	virtual cell_string to_string(tag_ptr tag, cell arg) const override
+	virtual cell_string to_string(tag_ptr tag, cell arg, const encoding &encoding) const override
 	{
 		if(dyn_ops.find(op_type::string) != dyn_ops.end())
 		{
-			return null_operations::to_string(tags::find_tag(tag_uid), arg);
+			return null_operations::to_string(tags::find_tag(tag_uid), arg, encoding);
 		}
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
-		return base->get_ops().to_string(tag, arg);
+		return base->get_ops().to_string(tag, arg, encoding);
 	}
 
-	virtual cell_string to_string(tag_ptr tag, const cell *arg, cell size) const override
+	virtual cell_string to_string(tag_ptr tag, const cell *arg, cell size, const encoding &encoding) const override
 	{
 		if(dyn_ops.find(op_type::string) != dyn_ops.end())
 		{
-			return null_operations::to_string(tags::find_tag(tag_uid), arg, size);
+			return null_operations::to_string(tags::find_tag(tag_uid), arg, size, encoding);
 		}
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
-		return base->get_ops().to_string(tag, arg, size);
+		return base->get_ops().to_string(tag, arg, size, encoding);
 	}
 
-	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str) const override
+	virtual bool append_string(tag_ptr tag, cell arg, cell_string &str, const encoding &encoding) const override
 	{
 		auto it = dyn_ops.find(op_type::string);
 		if(it != dyn_ops.end() && it->second)
@@ -3147,7 +3150,7 @@ public:
 		}
 		tag_ptr base = tags::find_tag(tag_uid)->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
-		return base->get_ops().append_string(tag, arg, str);
+		return base->get_ops().append_string(tag, arg, str, encoding);
 	}
 
 	virtual cell call_dyn_op(tag_ptr tag, op_type type, cell *args, size_t numargs) const override
@@ -3163,30 +3166,30 @@ public:
 	}
 
 	template <class Iter>
-	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter fmt_begin, Iter fmt_end, strings::num_parser<Iter> &&parse_num, cell_string &str)
+	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, const format_info<Iter> &info)
 	{
 		auto it = static_cast<const dynamic_operations&>(ops).dyn_ops.find(op_type::format);
 		if(it != static_cast<const dynamic_operations&>(ops).dyn_ops.end() && it->second)
 		{
 			cell fmt;
-			if(fmt_begin == fmt_end)
+			if(info.fmt_begin == info.fmt_end)
 			{
 				fmt = 0;
 			}else{
-				fmt = strings::pool.get_id(strings::pool.emplace(fmt_begin, fmt_end));
+				fmt = strings::pool.get_id(strings::pool.emplace(info.fmt_begin, info.fmt_end));
 			}
-			cell result = it->second->invoke(tag, *arg, type, fmt);
+			cell result = it->second->invoke(tag, *arg, info.type, fmt);
 			cell_string *ptr;
 			if(strings::pool.get_by_id(result, ptr))
 			{
-				str.append(*ptr);
+				info.target.append(*ptr);
 				return true;
 			}
 			return ptr == nullptr;
 		}
 		tag_ptr base = tags::find_tag(ops.get_tag_uid())->base;
 		if(base == nullptr) base = tags::find_tag(tags::tag_unknown);
-		return base->get_ops().format_base(tag, arg, type, fmt_begin, fmt_end, std::move(parse_num), str);
+		return base->get_ops().format_base(tag, arg, info);
 	}
 };
 
@@ -3242,7 +3245,7 @@ cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numar
 			return numargs >= 1 ? not(tag, args[0]) : 0;
 
 		case op_type::string:
-			return numargs >= 1 ? strings::pool.get_id(strings::pool.add(to_string(tag, args[0]))) : 0;
+			return numargs >= 1 ? strings::pool.get_id(strings::pool.add(to_string(tag, args[0], strings::default_encoding()))) : 0;
 		case op_type::del:
 			return numargs >= 1 ? del(tag, args[0]) : 0;
 		case op_type::release:
@@ -3273,19 +3276,21 @@ cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numar
 					bool result;
 					if(format == nullptr)
 					{
-						result = format_base(tag, &args[0], args[1], nullptr, nullptr, strings::num_parser<const cell*>{
+						const cell *null = nullptr;
+						result = format_base(tag, &args[0], {args[1], null, null, strings::num_parser<const cell*>{
 							nullptr, [](void *ptr, const cell *&begin, const cell *end)
 							{
 								return strings::format_specific<const cell*>::parse_num_simple(begin, end);
 							}
-						}, *ref);
+						}, *ref, strings::default_encoding()});
 					}else{
-						result = format_base(tag, &args[0], args[1], format->cbegin(), format->cend(), strings::num_parser<cell_string::const_iterator>{
+						strings::cell_string::const_iterator begin = format->cbegin(), end = format->cend();
+						result = format_base(tag, &args[0], {args[1], begin, end, strings::num_parser<cell_string::const_iterator>{
 							nullptr, [](void *ptr, cell_string::const_iterator &begin, cell_string::const_iterator end)
 							{
 								return strings::format_specific<cell_string::const_iterator>::parse_num_simple(begin, end);
 							}
-						}, *ref);
+						}, *ref, strings::default_encoding()});
 					}
 					if(result)
 					{

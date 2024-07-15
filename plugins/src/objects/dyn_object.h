@@ -177,7 +177,7 @@ public:
 	const cell *end() const;
 	const cell *data_begin() const;
 
-	std::basic_string<cell> to_string() const;
+	std::basic_string<cell> to_string(const strings::encoding &encoding) const;
 	dyn_object operator+(const dyn_object &obj) const;
 	dyn_object operator-(const dyn_object &obj) const;
 	dyn_object operator*(const dyn_object &obj) const;

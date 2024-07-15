@@ -362,6 +362,14 @@ encoding strings::find_encoding(char *&spec, bool default_if_empty)
 	return make_encoding(parse_encoding(spec));
 }
 
+encoding strings::default_encoding()
+{
+	static encoding_data empty(nullptr);
+	encoding result{std::locale(), empty};
+	result.fill_from_locale();
+	return result;
+}
+
 template <class Facet, class... Args>
 void add_facet(std::locale &target, Args&&... args)
 {

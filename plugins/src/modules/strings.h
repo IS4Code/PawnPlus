@@ -426,6 +426,7 @@ namespace strings
 	using encoding = encoding_info<std::locale>;
 
 	encoding find_encoding(char *&spec, bool default_if_empty);
+	encoding default_encoding();
 	void set_encoding(const encoding &enc, cell category);
 	void reset_locale();
 	const std::string &current_locale_name();
