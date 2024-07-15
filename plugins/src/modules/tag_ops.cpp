@@ -436,19 +436,53 @@ private:
 	template <class Type, class Iter, class... Args>
 	static bool format_num(Type value, Iter &begin, Iter &end, strings::num_parser<Iter> &&parse_num, cell_string &buf, Args&&... args)
 	{
-		if(begin != end)
+		if(begin == end)
 		{
-			char padding = static_cast<ucell>(*begin);
+			buf.append(strings::to_string(value, std::forward<Args>(args)...));
+			return true;
+		}else if(*begin == '.')
+		{
 			++begin;
-			cell width = parse_num(begin, end);
-			if(begin == end && width > 0)
+			cell precision = parse_num(begin, end);
+			if(begin == end)
 			{
-				buf.append(strings::to_string(value, std::forward<Args>(args)..., std::setw(width), std::setfill(padding)));
+				long double fvalue = value * std::pow(10.0L, -std::abs(precision));
+				if(precision >= 0)
+				{
+					buf.append(strings::to_string(fvalue, std::forward<Args>(args)..., std::setprecision(precision), std::fixed));
+				}else{
+					buf.append(strings::to_string(fvalue, std::forward<Args>(args)..., std::setprecision(-precision), std::defaultfloat));
+				}
 				return true;
 			}
 		}else{
-			buf.append(strings::to_string(value, std::forward<Args>(args)...));
-			return true;
+			char padding = static_cast<ucell>(*begin);
+			++begin;
+			cell width = parse_num(begin, end);
+			if(width < 0)
+			{
+				return false;
+			}
+			if(begin == end)
+			{
+				buf.append(strings::to_string(value, std::forward<Args>(args)..., std::setw(width), std::setfill(padding)));
+				return true;
+			}else if(*begin == '.')
+			{
+				++begin;
+				cell precision = parse_num(begin, end);
+				if(begin == end)
+				{
+					long double fvalue = value * std::pow(10.0L, -std::abs(precision));
+					if(precision >= 0)
+					{
+						buf.append(strings::to_string(fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed));
+					}else{
+						buf.append(strings::to_string(fvalue, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat));
+					}
+					return true;
+				}
+			}
 		}
 		return false;
 	}
