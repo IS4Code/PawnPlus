@@ -432,6 +432,28 @@ struct cell_operations : public null_operations<Self>
 		return true;
 	}
 
+private:
+	template <class Type, class Iter, class... Args>
+	static bool format_num(Type value, Iter &begin, Iter &end, strings::num_parser<Iter> &&parse_num, cell_string &buf, Args&&... args)
+	{
+		if(begin != end)
+		{
+			char padding = static_cast<ucell>(*begin);
+			++begin;
+			cell width = parse_num(begin, end);
+			if(begin == end && width > 0)
+			{
+				buf.append(strings::to_string(value, std::forward<Args>(args)..., std::setw(width), std::setfill(padding)));
+				return true;
+			}
+		}else{
+			buf.append(strings::to_string(value, std::forward<Args>(args)...));
+			return true;
+		}
+		return false;
+	}
+
+public:
 	template <class Iter>
 	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, cell type, Iter begin, Iter end, strings::num_parser<Iter> &&parse_num, cell_string &buf)
 	{
@@ -440,37 +462,16 @@ struct cell_operations : public null_operations<Self>
 			case 'd':
 			case 'i':
 			{
-				if(begin != end)
+				if(format_num(*arg, begin, end, std::move(parse_num), buf))
 				{
-					char padding = static_cast<ucell>(*begin);
-					++begin;
-					cell width = parse_num(begin, end);
-					if(begin == end && width > 0)
-					{
-						buf.append(strings::to_string(*arg, std::setw(width), std::setfill(padding)));
-						return true;
-					}
-				}else{
-					buf.append(strings::to_string(*arg));
 					return true;
 				}
 			}
 			break;
 			case 'u':
 			{
-				ucell val = static_cast<ucell>(*arg);
-				if(begin != end)
+				if(format_num(static_cast<ucell>(*arg), begin, end, std::move(parse_num), buf))
 				{
-					char padding = static_cast<ucell>(*begin);
-					++begin;
-					cell width = parse_num(begin, end);
-					if(begin == end && width > 0)
-					{
-						buf.append(strings::to_string(val, std::setw(width), std::setfill(padding)));
-						return true;
-					}
-				}else{
-					buf.append(strings::to_string(val));
 					return true;
 				}
 			}
@@ -478,36 +479,16 @@ struct cell_operations : public null_operations<Self>
 			case 'h':
 			case 'x':
 			{
-				if(begin != end)
+				if(format_num(*arg, begin, end, std::move(parse_num), buf, std::hex, std::uppercase))
 				{
-					char padding = static_cast<ucell>(*begin);
-					++begin;
-					cell width = parse_num(begin, end);
-					if(begin == end && width > 0)
-					{
-						buf.append(strings::to_string(*arg, std::hex, std::uppercase, std::setw(width), std::setfill(padding)));
-						return true;
-					}
-				}else{
-					buf.append(strings::to_string(*arg, std::hex, std::uppercase));
 					return true;
 				}
 			}
 			break;
 			case 'o':
 			{
-				if(begin != end)
+				if(format_num(static_cast<ucell>(*arg), begin, end, std::move(parse_num), buf, std::oct))
 				{
-					char padding = static_cast<ucell>(*begin);
-					++begin;
-					cell width = parse_num(begin, end);
-					if(begin == end && width > 0)
-					{
-						buf.append(strings::to_string(*arg, std::oct, std::setw(width), std::setfill(padding)));
-						return true;
-					}
-				}else{
-					buf.append(strings::to_string(*arg, std::oct));
 					return true;
 				}
 			}
