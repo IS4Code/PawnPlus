@@ -2,6 +2,7 @@
 #define INT_REGEX_H_INCLUDED
 
 #include "int_string.h"
+#include "utils/contiguous_iterator.h"
 
 #include <string>
 #include <regex>
@@ -720,41 +721,10 @@ namespace impl
 		template <class Traits>
 		using traits_char_type = typename std::remove_cv<typename std::remove_reference<Traits>::type>::type::char_type;
 
-		template <class Iterator>
-		using is_contiguous_iterator = std::integral_constant<bool,
-			std::is_same<Iterator, CharType*>::value ||
-			std::is_same<Iterator, const CharType*>::value ||
-			std::is_same<Iterator, typename std::basic_string<CharType>::iterator>::value ||
-			std::is_same<Iterator, typename std::basic_string<CharType>::const_iterator>::value ||
-			std::is_same<Iterator, typename std::vector<CharType>::iterator>::value ||
-			std::is_same<Iterator, typename std::vector<CharType>::const_iterator>::value
-		>;
-
-		template <class Receiver>
-		static auto make_contiguous(const CharType *begin, const CharType *end, Receiver receiver) -> decltype(receiver(std::declval<const CharType*>(), std::declval<const CharType*>()))
-		{
-			return receiver(begin, end);
-		}
-
-		template <class Iterator, class Receiver>
-		static auto make_contiguous(Iterator begin, typename std::enable_if<is_contiguous_iterator<Iterator>::value, Iterator>::type end, Receiver receiver) -> decltype(receiver(std::declval<const CharType*>(), std::declval<const CharType*>()))
-		{
-			auto ptr = &*begin;
-			return receiver(ptr, ptr + (end - begin));
-		}
-
-		template <class Iterator, class Receiver>
-		static auto make_contiguous(Iterator begin, typename std::enable_if<!is_contiguous_iterator<Iterator>::value, Iterator>::type end, Receiver receiver) -> decltype(receiver(std::declval<const CharType*>(), std::declval<const CharType*>()))
-		{
-			std::basic_string<CharType> str{begin, end};
-			auto ptr = &str[0];
-			return receiver(ptr, ptr + str.size());
-		}
-
 		template <class Iterator, class BaseCharType, class Receiver>
 		auto narrow(Iterator begin, Iterator end, const std::regex_traits<BaseCharType> &traits, Receiver receiver) const -> decltype(receiver(std::declval<const BaseCharType*>(), std::declval<const BaseCharType*>()))
 		{
-			return make_contiguous(begin, end, [&](const CharType *begin, const CharType *end)
+			return aux::make_contiguous(begin, end, [&](const CharType *begin, const CharType *end)
 			{
 				auto size = end - begin;
 

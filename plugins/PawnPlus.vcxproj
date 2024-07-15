@@ -246,6 +246,7 @@
     <ClInclude Include="src\objects\reset.h" />
     <ClInclude Include="src\objects\stored_param.h" />
     <ClInclude Include="src\utils\block_pool.h" />
+    <ClInclude Include="src\utils\contiguous_iterator.h" />
     <ClInclude Include="src\utils\func_pool.h" />
     <ClInclude Include="src\utils\hybrid_cont.h" />
     <ClInclude Include="src\utils\hybrid_map.h" />
