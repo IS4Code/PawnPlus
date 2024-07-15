@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <bitset>
 #include <iomanip>
+#include <regex>
 
 using cell_string = strings::cell_string;
 
@@ -574,124 +575,137 @@ public:
 				}else{
 					time = std::time(nullptr);
 				}
-				if(begin != end)
+				if(begin == end)
 				{
-					bool offset_found = false;
-					cell timezone_offset;
-					Iter begin_after_escaped = end;
-
-					Iter format_end = end;
-					do{
-						--format_end;
-
-						char c = *format_end;
-						bool negative = c == '-';
-						if(c == '+' || negative)
-						{
-							// potential UTC offset
-							Iter offset_begin = format_end;
-							++offset_begin;
-							if(offset_begin != end)
-							{
-								// data after
-								timezone_offset = 60 * parse_num(offset_begin, end);
-								offset_found = offset_begin == end;
-								if(!offset_found)
-								{
-									// there is more data
-									if(*offset_begin == ':' && ++offset_begin != end)
-									{
-										timezone_offset += parse_num(offset_begin, end);
-										if(offset_begin == end)
-										{
-											// minutes and end found
-											offset_found = true;
-										}
-									}
-								}
-							}
-							if(negative)
-							{
-								timezone_offset = -timezone_offset;
-							}
-							if(offset_found && format_end != begin)
-							{
-								// ensure not escaped
-								Iter percent_it = format_end;
-								--percent_it;
-								bool escaped = false;
-								do{
-									if(*percent_it == '%')
-									{
-										escaped = !escaped;
-									}else{
-										break;
-									}
-									--percent_it;
-								}while(percent_it != begin);
-								if(escaped)
-								{
-									// preceded by escaping %
-									offset_found = false;
-									// store the operator
-									begin_after_escaped = format_end;
-									// strip the %
-									--format_end;
-									break;
-								}
-							}
-							if(!offset_found)
-							{
-								// revert
-								format_end = end;
-							}
-							break;
-						}
-					}while(format_end != begin);
-
-					// before escaped suffix
-					auto format_initial_length = format_end - begin;
-					std::string format(format_initial_length + (end - begin_after_escaped), '\0');
-
-					// narrow before and after % using ctype<cell>
-					std::locale locale;
-					const auto &ctype = std::use_facet<std::ctype<cell>>(locale);
-					aux::make_contiguous(begin, format_end, [&](const cell *p_begin, const cell *p_end)
-					{
-						ctype.narrow(p_begin, p_end, '?', &format[0]);
-						return nullptr;
-					});
-					aux::make_contiguous(begin_after_escaped, end, [&](const cell *p_begin, const cell *p_end)
-					{
-						ctype.narrow(p_begin, p_end, '?', &format[format_initial_length]);
-						return nullptr;
-					});
-
-					std::tm value;
-					if(offset_found)
-					{
-						// add seconds to time
-						timezone_offset *= 60;
-						time += timezone_offset;
-						value = aux::gmtime(time);
-#ifndef _MSC_VER
-						if(timezone_offset != 0)
-						{
-							// and timezone offset if present
-							value.tm_gmtoff = timezone_offset;
-							value.tm_zone = nullptr;
-						}
-#endif
-					}else{
-						value = aux::localtime(time);
-					}
-					buf.append(strings::to_string(std::put_time(&value, format.c_str())));
-					return true;
-				}else{
 					std::tm value = aux::localtime(time);
 					buf.append(strings::to_string(std::put_time(&value, "%c")));
 					return true;
 				}
+				bool offset_found = false;
+				cell timezone_offset;
+				Iter begin_after_escaped = end;
+
+				Iter format_end = end;
+				do{
+					--format_end;
+
+					char c = *format_end;
+					bool negative = c == '-';
+					if(c == '+' || negative)
+					{
+						// potential UTC offset
+						Iter offset_begin = format_end;
+						++offset_begin;
+						if(offset_begin != end)
+						{
+							// data after
+							timezone_offset = 60 * parse_num(offset_begin, end);
+							offset_found = offset_begin == end;
+							if(!offset_found)
+							{
+								// there is more data
+								if(*offset_begin == ':' && ++offset_begin != end)
+								{
+									timezone_offset += parse_num(offset_begin, end);
+									if(offset_begin == end)
+									{
+										// minutes and end found
+										offset_found = true;
+									}
+								}
+							}
+						}
+						if(negative)
+						{
+							timezone_offset = -timezone_offset;
+						}
+						if(offset_found && format_end != begin)
+						{
+							// ensure not escaped
+							Iter percent_it = format_end;
+							--percent_it;
+							bool escaped = false;
+							do{
+								if(*percent_it == '%')
+								{
+									escaped = !escaped;
+								}else{
+									break;
+								}
+								--percent_it;
+							}while(percent_it != begin);
+							if(escaped)
+							{
+								// preceded by escaping %
+								offset_found = false;
+								// store the operator
+								begin_after_escaped = format_end;
+								// strip the %
+								--format_end;
+								break;
+							}
+						}
+						if(!offset_found)
+						{
+							// revert
+							format_end = end;
+						}
+						break;
+					}
+				}while(format_end != begin);
+
+				// before escaped suffix
+				auto format_initial_length = format_end - begin;
+				std::string format(format_initial_length + (end - begin_after_escaped), '\0');
+
+				// narrow before and after % using ctype<cell>
+				std::locale locale;
+				const auto &ctype = std::use_facet<std::ctype<cell>>(locale);
+				aux::make_contiguous(begin, format_end, [&](const cell *p_begin, const cell *p_end)
+				{
+					ctype.narrow(p_begin, p_end, '?', &format[0]);
+					return nullptr;
+				});
+				aux::make_contiguous(begin_after_escaped, end, [&](const cell *p_begin, const cell *p_end)
+				{
+					ctype.narrow(p_begin, p_end, '?', &format[format_initial_length]);
+					return nullptr;
+				});
+
+				static std::regex valid_pattern = ([]()
+				{
+					std::regex result;
+					result.imbue(std::locale::classic());
+					result.assign("^(?:[^%\\0]+|%(?:E[YyCcxX]|0[ymUWVdewuHIMS]|[%ntYyCGgbhBmUWVjdeaAwuHIMScxXDFrRTpzZ]))*$", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+					return result;
+				})();
+
+				if(!std::regex_match(format, valid_pattern))
+				{
+					return false;
+				}
+
+				std::tm value;
+				if(offset_found)
+				{
+					// add seconds to time
+					timezone_offset *= 60;
+					time += timezone_offset;
+					value = aux::gmtime(time);
+#ifndef _MSC_VER
+					if(timezone_offset != 0)
+					{
+						// and timezone offset if present
+						value.tm_gmtoff = timezone_offset;
+						value.tm_zone = nullptr;
+					}
+#endif
+				}else{
+					value = aux::localtime(time);
+				}
+
+				buf.append(strings::to_string(std::put_time(&value, format.c_str())));
+				return true;
 			}
 			break;
 			case 'm':
