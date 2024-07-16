@@ -454,6 +454,20 @@ std::locale encoding_info<std::locale>::install() const
 }
 
 template <class Locale>
+encoding_info<Locale> encoding_info<Locale>::make_installed() const
+{
+	if(unmodified)
+	{
+		return *this;
+	}
+	encoding_info<Locale> result{install(), *this};
+	result.unmodified = true;
+	return result;
+}
+
+template encoding_info<std::locale> encoding_info<std::locale>::make_installed() const;
+
+template <class Locale>
 void encoding_info<Locale>::fill_from_locale()
 {
 	static_assert(false_dep<Locale>::value, "This function is not implemented.");

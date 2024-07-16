@@ -127,7 +127,7 @@ namespace strings
 		private:
 			void append_convert(StringIter begin, StringIter end, cell_string &buf, const encoding &encoding) const
 			{
-				if(encoding.is_modified())
+				if(encoding.locale != std::locale())
 				{
 					change_encoding(begin, end, default_encoding(), buf, encoding);
 				}else{

@@ -327,16 +327,16 @@ namespace strings
 		char unknown_char;
 
 	private:
-		bool unmodified;
+		bool unmodified = false;
 
 		template <class LocaleRef>
-		encoding_info(std::nullptr_t, LocaleRef &&locale) : locale(std::forward<LocaleRef>(locale)), type{}, unmodified{false}, flags{}, unknown_char{'?'}
+		encoding_info(std::nullptr_t, LocaleRef &&locale) : locale(std::forward<LocaleRef>(locale)), type{}, flags{}, unknown_char{'?'}
 		{
 
 		}
 
 		template <class LocaleRef, class OtherLocale>
-		encoding_info(std::nullptr_t, LocaleRef &&locale, const encoding_info<OtherLocale> &enc) : locale(std::forward<LocaleRef>(locale)), type{static_cast<decltype(type)>(enc.type)}, unmodified{false}, flags{static_cast<decltype(flags)>(enc.flags)}, unknown_char{enc.unknown_char}
+		encoding_info(std::nullptr_t, LocaleRef &&locale, const encoding_info<OtherLocale> &enc) : locale(std::forward<LocaleRef>(locale)), type{static_cast<decltype(type)>(enc.type)}, flags{static_cast<decltype(flags)>(enc.flags)}, unknown_char{enc.unknown_char}
 		{
 
 		}
@@ -383,6 +383,8 @@ namespace strings
 		}
 
 		typename make_value<Locale>::type install() const;
+
+		encoding_info<Locale> make_installed() const;
 
 		void fill_from_locale();
 

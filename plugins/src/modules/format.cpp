@@ -156,7 +156,7 @@ namespace strings
 			spec[size] = '\0';
 			try{
 				auto enc = find_encoding(spec, false);
-				*encoding = strings::encoding(enc.install(), enc);
+				*encoding = enc.make_installed();
 			}catch(const std::runtime_error &)
 			{
 				amx_LogicError(errors::locale_not_found, spec);
