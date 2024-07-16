@@ -1106,7 +1106,7 @@ struct char_operations : public cell_operations<char_operations>
 		{
 			case 's':
 			{
-				if(strings::select_iterator<strings::format_specific<Iter>::template append>(arg, info.fmt_begin, info.fmt_end, info.parse_num, info.target))
+				if(strings::select_iterator<strings::format_specific<Iter>::template append>(arg, info.fmt_begin, info.fmt_end, info.target, info.parse_num, info.encoding))
 				{
 					return true;
 				}
@@ -1115,7 +1115,7 @@ struct char_operations : public cell_operations<char_operations>
 			case 'q':
 			case 'e':
 			{
-				if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(arg, info.fmt_begin, info.fmt_end, info.target))
+				if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(arg, info.fmt_begin, info.fmt_end, info.target, info.parse_num, info.encoding))
 				{
 					return true;
 				}
@@ -1473,7 +1473,7 @@ struct string_operations : public null_operations<string_operations>
 				cell_string *str;
 				if(strings::pool.get_by_id(*arg, str) || str == nullptr)
 				{
-					if(strings::select_iterator<strings::format_specific<Iter>::template append>(str, info.fmt_begin, info.fmt_end, info.parse_num, info.target))
+					if(strings::select_iterator<strings::format_specific<Iter>::template append>(str, info.fmt_begin, info.fmt_end, info.target, info.parse_num, info.encoding))
 					{
 						return true;
 					}
@@ -1486,7 +1486,7 @@ struct string_operations : public null_operations<string_operations>
 				cell_string *str;
 				if(strings::pool.get_by_id(*arg, str) || str == nullptr)
 				{
-					if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(str, info.fmt_begin, info.fmt_end, info.target))
+					if(strings::select_iterator<strings::format_specific<Iter>::template add_query>(str, info.fmt_begin, info.fmt_end, info.target, info.parse_num, info.encoding))
 					{
 						return true;
 					}

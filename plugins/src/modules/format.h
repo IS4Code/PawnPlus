@@ -120,49 +120,32 @@ namespace strings
 			}
 			return val;
 		}
-
-		template <class QueryIter>
-		struct add_query
-		{
-			bool operator()(QueryIter begin, QueryIter end, Iter escape_begin, Iter escape_end, cell_string &buf) const
-			{
-				bool custom = escape_begin != escape_end;
-				cell escape_char;
-				if(custom)
-				{
-					escape_char = *escape_begin;
-					++escape_begin;
-					custom = escape_begin != escape_end;
-				}else{
-					escape_char = '\\';
-				}
-				auto last = begin;
-				while(begin != end)
-				{
-					if((!custom && (*begin == '\'' || *begin == '\\')) || std::find(escape_begin, escape_end, *begin) != escape_end)
-					{
-						buf.append(last, begin);
-						buf.append(1, escape_char);
-						buf.append(1, *begin);
-						++begin;
-						last = begin;
-					}else{
-						++begin;
-					}
-				}
-				buf.append(last, end);
-				return true;
-			}
-		};
 		
 		template <class StringIter>
 		struct append
 		{
-			bool operator()(StringIter begin, StringIter end, Iter param_begin, Iter param_end, const num_parser<Iter> &parse_num, cell_string &buf) const
+		private:
+			void append_convert(StringIter begin, StringIter end, cell_string &buf, const encoding &encoding) const
 			{
+				if(encoding.is_modified())
+				{
+					change_encoding(begin, end, default_encoding(), buf, encoding);
+				}else{
+					buf.append(begin, end);
+				}
+			}
+
+		public:
+			bool operator()(StringIter begin, StringIter end, Iter param_begin, Iter param_end, cell_string &buf, const num_parser<Iter> &parse_num, const encoding &encoding) const
+			{
+				auto appender = [&](StringIter sub_begin, StringIter sub_end)
+				{
+					append_convert(sub_begin, sub_end, buf, encoding);
+				};
+
 				if(param_begin == param_end)
 				{
-					buf.append(begin, end);
+					appender(begin, end);
 					return true;
 				}else{
 					if(*param_begin == '.')
@@ -173,12 +156,9 @@ namespace strings
 						{
 							return false;
 						}
-						auto new_end = begin + max;
-						if(new_end > end)
-						{
-							new_end = end;
-						}
-						buf.append(begin, new_end);
+						cell length = std::distance(begin, end);
+						auto new_end = begin + std::min(max, length);
+						appender(begin, new_end);
 						return true;
 					}else{
 						cell padding = *param_begin;
@@ -195,7 +175,7 @@ namespace strings
 							{
 								buf.append(width - size, padding);
 							}
-							buf.append(begin, end);
+							appender(begin, end);
 							return true;
 						}else if(*param_begin == '.')
 						{
@@ -208,7 +188,7 @@ namespace strings
 							auto new_end = begin + max;
 							if(new_end <= end)
 							{
-								buf.append(begin, new_end);
+								appender(begin, new_end);
 							}else{
 								auto size = end - begin;
 								if(size < width)
@@ -219,13 +199,48 @@ namespace strings
 									}
 									buf.append(width - size, padding);
 								}
-								buf.append(begin, end);
+								appender(begin, end);
 							}
 							return true;
 						}
 						return false;
 					}
 				}
+			}
+		};
+
+		template <class QueryIter>
+		struct add_query
+		{
+			bool operator()(QueryIter begin, QueryIter end, Iter escape_begin, Iter escape_end, cell_string &buf, const num_parser<Iter> &parse_num, const encoding &encoding) const
+			{
+				bool custom = escape_begin != escape_end;
+				cell escape_char;
+				if(custom)
+				{
+					escape_char = *escape_begin;
+					++escape_begin;
+					custom = escape_begin != escape_end;
+				}else{
+					escape_char = '\\';
+				}
+				append<QueryIter> appender;
+				auto last = begin;
+				while(begin != end)
+				{
+					if((!custom && (*begin == '\'' || *begin == '\\')) || std::find(escape_begin, escape_end, *begin) != escape_end)
+					{
+						appender(last, begin, escape_end, escape_end, buf, parse_num, encoding);
+						buf.append(1, escape_char);
+						buf.append(1, *begin);
+						++begin;
+						last = begin;
+					}else{
+						++begin;
+					}
+				}
+				appender(last, end, escape_end, escape_end, buf, parse_num, encoding);
+				return true;
 			}
 		};
 	};

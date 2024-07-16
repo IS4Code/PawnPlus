@@ -2,6 +2,7 @@
 #define STRINGS_H_INCLUDED
 
 #include "objects/object_pool.h"
+#include "utils/contiguous_iterator.h"
 #include "sdk/amx/amx.h"
 #include "fixes/int_string.h"
 #include <string>
@@ -434,8 +435,24 @@ namespace strings
 
 	void to_lower(cell_string &str, const encoding &enc);
 	void to_upper(cell_string &str, const encoding &enc);
+	bool can_change_encoding(const encoding &input_enc, const encoding &output_enc);
+	void change_encoding(std::pair<const cell*, const cell*> input, const encoding &input_enc, cell_string &output, const encoding &output_enc);
 	void change_encoding(const cell_string &input, const encoding &input_enc, cell_string &output, const encoding &output_enc);
 	size_t count_chars(const cell *begin, const cell *end, const encoding &enc);
+
+	template <class Iter>
+	void change_encoding(Iter input_begin, Iter input_end, const encoding &input_enc, cell_string &output, const encoding &output_enc)
+	{
+		if(!can_change_encoding(input_enc, output_enc))
+		{
+			output.append(input_begin, input_end);
+			return;
+		}
+		aux::make_contiguous(input_begin, input_end, [&](const cell *begin, const cell *end)
+		{
+			change_encoding(std::make_pair(begin, end), input_enc, output, output_enc);
+		});
+	}
 }
 
 namespace std

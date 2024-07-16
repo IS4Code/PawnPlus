@@ -1420,23 +1420,19 @@ struct decoder_from_char_type
 	};
 };
 
-const_cell_span get_span(const cell_string &str)
+bool strings::can_change_encoding(const encoding &input_enc, const encoding &output_enc)
 {
-	const cell *begin = &str[0];
-	return {begin, begin + str.size()};
+	if(output_enc.is_unicode() && input_enc.char_size() == output_enc.char_size())
+	{
+		return false;
+	}
+	return true;
 }
 
-void strings::change_encoding(const cell_string &input, const encoding &input_enc, cell_string &output, const encoding &output_enc)
+void strings::change_encoding(std::pair<const cell*, const cell*> input_span, const encoding &input_enc, cell_string &output, const encoding &output_enc)
 {
 	if(input_enc.is_unicode())
 	{
-		if(output_enc.is_unicode() && input_enc.char_size() == output_enc.char_size())
-		{
-			// No conversion involved
-			output = input;
-			return;
-		}
-		const_cell_span input_span = get_span(input);
 		if(input_enc.type == encoding::unicode)
 		{
 			// Treat as raw wchar_t and convert directly
@@ -1469,7 +1465,23 @@ void strings::change_encoding(const cell_string &input, const encoding &input_en
 	}
 
 	// Always through as wchar_t
-	return encoder_from_wchar_t<decoder_from_ansi_to_wchar_t>()(output, output_enc, get_span(input), input_enc);
+	return encoder_from_wchar_t<decoder_from_ansi_to_wchar_t>()(output, output_enc, input_span, input_enc);
+}
+
+static const_cell_span get_span(const cell_string &str)
+{
+	const cell *begin = &str[0];
+	return {begin, begin + str.size()};
+}
+
+void strings::change_encoding(const cell_string &input, const encoding &input_enc, cell_string &output, const encoding &output_enc)
+{
+	if(!can_change_encoding(input_enc, output_enc))
+	{
+		output.append(input);
+		return;
+	}
+	return change_encoding(get_span(input), input_enc, output, output_enc);
 }
 
 template <template <class> class U8CharDecoder>
