@@ -8,6 +8,8 @@
 #include <sstream>
 #include <bitset>
 #include <iomanip>
+#include <algorithm>
+#include <type_traits>
 
 using namespace strings;
 
@@ -23,7 +25,7 @@ namespace strings
 		cell maxargn = -1;
 		cell argc;
 		const cell *args;
-		const strings::encoding *encoding;
+		strings::encoding *encoding;
 
 		const cell *get_arg(cell argi) const
 		{
@@ -147,6 +149,20 @@ namespace strings
 			amx_FormalError(errors::invalid_format, "invalid value or specifier parameter");
 		}
 
+		template <class Iter>
+		void parse_encoding_buffer(Iter begin, Iter end, char *spec, std::size_t size)
+		{
+			std::copy(begin, end, reinterpret_cast<unsigned char*>(spec));
+			spec[size] = '\0';
+			try{
+				auto enc = find_encoding(spec, false);
+				*encoding = strings::encoding(enc.install(), enc);
+			}catch(const std::runtime_error &)
+			{
+				amx_LogicError(errors::locale_not_found, spec);
+			}
+		}
+
 	public:
 		void operator()(Iter format_begin, Iter format_end, AMX *amx, strings::cell_string &buf, cell argc, const cell *args)
 		{
@@ -256,12 +272,33 @@ namespace strings
 					if(*format_begin != ':')
 					{
 						const auto brace_end = std::find(format_begin, format_end, '}');
-						if(brace_end != format_end && brace_end - brace_begin == 7)
+						if(brace_end != format_end)
 						{
-							if(std::all_of(std::next(brace_begin), brace_end, [](cell c) {return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }))
+							auto size = std::distance(brace_begin, brace_end);
+							if(size == 7 && std::all_of(std::next(brace_begin), brace_end, [](cell c) {return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }))
 							{
 								format_begin = last = std::next(brace_end);
 								buf.append(brace_begin, format_begin);
+								continue;
+							}
+							size -= 1;
+							auto selector_begin = std::next(brace_begin);
+							static const cell enc_selector[] = {'$', 'e', 'n', 'c', ':'};
+							constexpr auto enc_size = std::extent<decltype(enc_selector)>::value;
+							if(size >= enc_size && std::equal(std::begin(enc_selector), std::end(enc_selector), selector_begin))
+							{
+								format_begin = last = std::next(brace_end);
+								std::advance(selector_begin, enc_size);
+								size -= enc_size;
+								if(size < 32)
+								{
+									char *ptr = static_cast<char*>(alloca((size + 1) * sizeof(char)));
+									parse_encoding_buffer(selector_begin, brace_end, ptr, size);
+								}else{
+									auto memory = std::make_unique<char[]>(size + 1);
+									auto ptr = memory.get();
+									parse_encoding_buffer(selector_begin, brace_end, ptr, size);
+								}
 								continue;
 							}
 						}
