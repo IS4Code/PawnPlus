@@ -453,9 +453,9 @@ private:
 				long double fvalue = value * std::pow(10.0L, -std::abs(precision));
 				if(precision >= 0)
 				{
-					info.target.append(strings::to_string(info.encoding, fvalue, std::forward<Args>(args)..., std::setprecision(precision), std::fixed));
+					info.target.append(strings::to_string(info.encoding, fvalue, std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
 				}else{
-					info.target.append(strings::to_string(info.encoding, fvalue, std::forward<Args>(args)..., std::setprecision(-precision), std::defaultfloat));
+					info.target.append(strings::to_string(info.encoding, fvalue, std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
 				}
 				return true;
 			}
@@ -469,7 +469,7 @@ private:
 			}
 			if(info.fmt_begin == info.fmt_end)
 			{
-				info.target.append(strings::to_string(info.encoding, value, std::forward<Args>(args)..., std::setw(width), std::setfill(padding)));
+				info.target.append(strings::to_string(info.encoding, value, std::setw(width), std::setfill(padding), std::forward<Args>(args)...));
 				return true;
 			}else if(*info.fmt_begin == '.')
 			{
@@ -480,9 +480,9 @@ private:
 					long double fvalue = value * std::pow(10.0L, -std::abs(precision));
 					if(precision >= 0)
 					{
-						info.target.append(strings::to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed));
+						info.target.append(strings::to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
 					}else{
-						info.target.append(strings::to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat));
+						info.target.append(strings::to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
 					}
 					return true;
 				}
@@ -517,7 +517,7 @@ public:
 			case 'h':
 			case 'x':
 			{
-				if(format_num(*arg, info, std::hex, std::uppercase))
+				if(format_num(*arg, info, std::hex, std::hexfloat, std::uppercase))
 				{
 					return true;
 				}
