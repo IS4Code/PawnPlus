@@ -1436,7 +1436,7 @@ struct decoder_from_char_type
 
 bool strings::can_change_encoding(const encoding &input_enc, const encoding &output_enc)
 {
-	if(output_enc.is_unicode() && input_enc.char_size() == output_enc.char_size())
+	if(input_enc.is_unicode() && output_enc.is_unicode() && input_enc.char_size() == output_enc.char_size())
 	{
 		return false;
 	}
