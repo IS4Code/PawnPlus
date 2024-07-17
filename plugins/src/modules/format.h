@@ -8,7 +8,10 @@
 
 #include <stack>
 #include <cctype>
+#include <cmath>
 #include <sstream>
+#include <type_traits>
+#include <locale>
 
 namespace strings
 {
@@ -119,6 +122,144 @@ namespace strings
 				++begin;
 			}
 			return val;
+		}
+
+	private:
+		template <class Type>
+		static long double to_decimal(Type value, typename std::enable_if<std::is_integral<Type>::value, cell>::type precision)
+		{
+			return value * std::pow(10.0L, -std::abs(precision));
+		}
+
+		template <class Type>
+		static typename std::enable_if<std::is_floating_point<Type>::value, Type>::type to_decimal(Type value, cell)
+		{
+			return value;
+		}
+
+	public:
+		template <class Type, class... Args>
+		static bool format_num(Type value, const format_info<Iter> &info, Args&&... args)
+		{
+			if(info.fmt_begin == info.fmt_end)
+			{
+				info.target.append(to_string(info.encoding, value, std::forward<Args>(args)...));
+				return true;
+			}else if(*info.fmt_begin == '.')
+			{
+				++info.fmt_begin;
+				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+				if(info.fmt_begin == info.fmt_end)
+				{
+					auto fvalue = to_decimal(value, precision);
+					if(precision >= 0)
+					{
+						info.target.append(to_string(info.encoding, fvalue, std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
+					}else{
+						info.target.append(to_string(info.encoding, fvalue, std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
+					}
+					return true;
+				}
+			}else{
+				char padding = static_cast<ucell>(*info.fmt_begin);
+				++info.fmt_begin;
+				cell width = info.parse_num(info.fmt_begin, info.fmt_end);
+				if(width < 0)
+				{
+					return false;
+				}
+				if(info.fmt_begin == info.fmt_end)
+				{
+					info.target.append(to_string(info.encoding, value, std::setw(width), std::setfill(padding), std::forward<Args>(args)...));
+					return true;
+				}else if(*info.fmt_begin == '.')
+				{
+					++info.fmt_begin;
+					cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+					if(info.fmt_begin == info.fmt_end)
+					{
+						auto fvalue = to_decimal(value, precision);
+						if(precision >= 0)
+						{
+							info.target.append(to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
+						}else{
+							info.target.append(to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
+						}
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+		
+	private:
+		template <bool International>
+		static long double adjust_digits(long double value, cell num_digits, const std::locale &locale)
+		{
+			const auto &punct = std::use_facet<std::moneypunct<char, International>>(locale);
+			num_digits -= punct.frac_digits();
+			return value * std::pow(10.0L, -num_digits);
+		}
+
+		static long double adjust_digits(long double value, cell num_digits, bool international, const std::locale &locale)
+		{
+			return international ? adjust_digits<true>(value, num_digits, locale) : adjust_digits<false>(value, num_digits, locale);
+		}
+
+	public:
+		static bool format_money(long double value, const format_info<Iter> &info)
+		{
+			if(info.fmt_begin == info.fmt_end)
+			{
+				info.target.append(strings::to_string(info.encoding, std::put_money(value, true), std::showbase));
+				return true;
+			}
+			bool international = true;
+			if(*info.fmt_begin == '$')
+			{
+				international = false;
+				++info.fmt_begin;
+				if(info.fmt_begin == info.fmt_end)
+				{
+					info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase));
+					return true;
+				}
+			}
+			if(*info.fmt_begin == '.')
+			{
+				++info.fmt_begin;
+				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+				if(info.fmt_begin == info.fmt_end)
+				{
+					value = adjust_digits(value, precision, international, info.encoding.locale);
+					info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase));
+					return true;
+				}
+				return false;
+			}
+			char padding = static_cast<ucell>(*info.fmt_begin);
+			++info.fmt_begin;
+			cell width = info.parse_num(info.fmt_begin, info.fmt_end);
+			if(width < 0)
+			{
+				return false;
+			}
+			if(info.fmt_begin == info.fmt_end)
+			{
+				info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+				return true;
+			}else if(*info.fmt_begin == '.')
+			{
+				++info.fmt_begin;
+				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
+				if(info.fmt_begin == info.fmt_end)
+				{
+					value = adjust_digits(value, precision, international, info.encoding.locale);
+					info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+					return true;
+				}
+			}
+			return false;
 		}
 		
 		template <class StringIter>

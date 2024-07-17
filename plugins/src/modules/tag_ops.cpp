@@ -319,9 +319,6 @@ struct null_operations : public tag_operations
 	}
 };
 
-template <class Iter>
-bool format_money(long double value, const format_info<Iter> &info);
-
 template <class Self>
 struct cell_operations : public null_operations<Self>
 {
@@ -436,75 +433,6 @@ struct cell_operations : public null_operations<Self>
 		return true;
 	}
 
-private:
-	template <class Type>
-	static long double to_decimal(Type value, typename std::enable_if<std::is_integral<Type>::value, cell>::type precision)
-	{
-		return value * std::pow(10.0L, -std::abs(precision));
-	}
-
-	template <class Type>
-	static typename std::enable_if<std::is_floating_point<Type>::value, Type>::type to_decimal(Type value, cell)
-	{
-		return value;
-	}
-
-protected:
-	template <class Type, class Iter, class... Args>
-	static bool format_num(Type value, const format_info<Iter> &info, Args&&... args)
-	{
-		if(info.fmt_begin == info.fmt_end)
-		{
-			info.target.append(strings::to_string(info.encoding, value, std::forward<Args>(args)...));
-			return true;
-		}else if(*info.fmt_begin == '.')
-		{
-			++info.fmt_begin;
-			cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-			if(info.fmt_begin == info.fmt_end)
-			{
-				auto fvalue = to_decimal(value, precision);
-				if(precision >= 0)
-				{
-					info.target.append(strings::to_string(info.encoding, fvalue, std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
-				}else{
-					info.target.append(strings::to_string(info.encoding, fvalue, std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
-				}
-				return true;
-			}
-		}else{
-			char padding = static_cast<ucell>(*info.fmt_begin);
-			++info.fmt_begin;
-			cell width = info.parse_num(info.fmt_begin, info.fmt_end);
-			if(width < 0)
-			{
-				return false;
-			}
-			if(info.fmt_begin == info.fmt_end)
-			{
-				info.target.append(strings::to_string(info.encoding, value, std::setw(width), std::setfill(padding), std::forward<Args>(args)...));
-				return true;
-			}else if(*info.fmt_begin == '.')
-			{
-				++info.fmt_begin;
-				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-				if(info.fmt_begin == info.fmt_end)
-				{
-					auto fvalue = to_decimal(value, precision);
-					if(precision >= 0)
-					{
-						info.target.append(strings::to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
-					}else{
-						info.target.append(strings::to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
-					}
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-public:
 	template <class Iter>
 	static bool format(const tag_operations &ops, tag_ptr tag, const cell *arg, const format_info<Iter> &info)
 	{
@@ -513,7 +441,7 @@ public:
 			case 'd':
 			case 'i':
 			{
-				if(format_num(*arg, info))
+				if(strings::format_specific<Iter>::format_num(*arg, info))
 				{
 					return true;
 				}
@@ -521,7 +449,7 @@ public:
 			break;
 			case 'u':
 			{
-				if(format_num(static_cast<ucell>(*arg), info))
+				if(strings::format_specific<Iter>::format_num(static_cast<ucell>(*arg), info))
 				{
 					return true;
 				}
@@ -530,7 +458,7 @@ public:
 			case 'h':
 			case 'x':
 			{
-				if(format_num(*arg, info, std::hex, std::hexfloat, std::uppercase))
+				if(strings::format_specific<Iter>::format_num(*arg, info, std::hex, std::hexfloat, std::uppercase))
 				{
 					return true;
 				}
@@ -538,7 +466,7 @@ public:
 			break;
 			case 'o':
 			{
-				if(format_num(static_cast<ucell>(*arg), info, std::oct))
+				if(strings::format_specific<Iter>::format_num(static_cast<ucell>(*arg), info, std::oct))
 				{
 					return true;
 				}
@@ -725,7 +653,7 @@ public:
 			break;
 			case 'm':
 			{
-				if(format_money(*arg, info))
+				if(strings::format_specific<Iter>::format_money(*arg, info))
 				{
 					return true;
 				}
@@ -735,75 +663,6 @@ public:
 		return null_operations<Self>::format(ops, tag, arg, info);
 	}
 };
-
-template <bool International>
-long double adjust_digits(long double value, cell num_digits, const std::locale &locale)
-{
-	const auto &punct = std::use_facet<std::moneypunct<char, International>>(locale);
-	num_digits -= punct.frac_digits();
-	return value * std::pow(10.0L, -num_digits);
-}
-
-long double adjust_digits(long double value, cell num_digits, bool international, const std::locale &locale)
-{
-	return international ? adjust_digits<true>(value, num_digits, locale) : adjust_digits<false>(value, num_digits, locale);
-}
-
-template <class Iter>
-bool format_money(long double value, const format_info<Iter> &info)
-{
-	if(info.fmt_begin == info.fmt_end)
-	{
-		info.target.append(strings::to_string(info.encoding, std::put_money(value, true), std::showbase));
-		return true;
-	}
-	bool international = true;
-	if(*info.fmt_begin == '$')
-	{
-		international = false;
-		++info.fmt_begin;
-		if(info.fmt_begin == info.fmt_end)
-		{
-			info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase));
-			return true;
-		}
-	}
-	if(*info.fmt_begin == '.')
-	{
-		++info.fmt_begin;
-		cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-		if(info.fmt_begin == info.fmt_end)
-		{
-			value = adjust_digits(value, precision, international, info.encoding.locale);
-			info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase));
-			return true;
-		}
-		return false;
-	}
-	char padding = static_cast<ucell>(*info.fmt_begin);
-	++info.fmt_begin;
-	cell width = info.parse_num(info.fmt_begin, info.fmt_end);
-	if(width < 0)
-	{
-		return false;
-	}
-	if(info.fmt_begin == info.fmt_end)
-	{
-		info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
-		return true;
-	}else if(*info.fmt_begin == '.')
-	{
-		++info.fmt_begin;
-		cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-		if(info.fmt_begin == info.fmt_end)
-		{
-			value = adjust_digits(value, precision, international, info.encoding.locale);
-			info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
-			return true;
-		}
-	}
-	return false;
-}
 
 struct signed_operations : public cell_operations<signed_operations>
 {
@@ -1274,7 +1133,7 @@ struct float_operations : public cell_operations<float_operations>
 			case 'f':
 			case 'd':
 			{
-				if(format_num(amx_ctof(*arg), info))
+				if(strings::format_specific<Iter>::format_num(amx_ctof(*arg), info))
 				{
 					return true;
 				}
@@ -1282,7 +1141,7 @@ struct float_operations : public cell_operations<float_operations>
 			break;
 			case 'x':
 			{
-				if(format_num(amx_ctof(*arg), info, std::hexfloat, std::uppercase))
+				if(strings::format_specific<Iter>::format_num(amx_ctof(*arg), info, std::hexfloat, std::uppercase))
 				{
 					return true;
 				}
@@ -1290,7 +1149,7 @@ struct float_operations : public cell_operations<float_operations>
 			break;
 			case 'm':
 			{
-				if(format_money(amx_ctof(*arg), info))
+				if(strings::format_specific<Iter>::format_money(amx_ctof(*arg), info))
 				{
 					return true;
 				}
