@@ -5,6 +5,8 @@
 #include "containers.h"
 #include "tag_ops.h"
 #include "errors.h"
+#include "utils/contiguous_iterator.h"
+#include "utils/systools.h"
 
 #include <stack>
 #include <cctype>
@@ -12,6 +14,9 @@
 #include <sstream>
 #include <type_traits>
 #include <locale>
+#include <bitset>
+#include <ctime>
+#include <iomanip>
 
 namespace strings
 {
@@ -57,14 +62,19 @@ namespace strings
 		}
 	};
 
-	inline bool is_format_letter(cell c)
+	inline bool is_letter(cell c)
 	{
 		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 	}
 
+	inline bool is_digit(cell c)
+	{
+		return c >= '0' && c <= '9';
+	}
+
 	inline bool is_hex_digit(cell c)
 	{
-		return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+		return is_digit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 	}
 
 	template <class Iter>
@@ -100,6 +110,11 @@ namespace strings
 		}
 	};
 
+	namespace impl
+	{
+		bool check_valid_time_format(std::string format);
+	}
+
 	template <class Iter>
 	struct format_specific
 	{
@@ -126,7 +141,7 @@ namespace strings
 			}
 			cell val = 0;
 			cell c;
-			while(begin != end && std::isdigit(c = *begin))
+			while(begin != end && is_digit(c = *begin))
 			{
 				val = (val * 10) + (c - '0');
 				++begin;
@@ -233,7 +248,7 @@ namespace strings
 		{
 			if(info.fmt_begin == info.fmt_end)
 			{
-				info.target.append(strings::to_string(info.encoding, std::put_money(value, true), std::showbase));
+				info.target.append(to_string(info.encoding, std::put_money(value, true), std::showbase));
 				return true;
 			}
 			bool international = true;
@@ -243,7 +258,7 @@ namespace strings
 				++info.fmt_begin;
 				if(info.fmt_begin == info.fmt_end)
 				{
-					info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase));
+					info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase));
 					return true;
 				}
 			}
@@ -258,7 +273,7 @@ namespace strings
 				if(info.fmt_begin == info.fmt_end)
 				{
 					value = adjust_digits(value, precision, international, info.encoding.locale);
-					info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase));
+					info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase));
 					return true;
 				}
 				return false;
@@ -272,7 +287,7 @@ namespace strings
 			}
 			if(info.fmt_begin == info.fmt_end)
 			{
-				info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+				info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
 				return true;
 			}else if(*info.fmt_begin == '.')
 			{
@@ -285,11 +300,183 @@ namespace strings
 				if(info.fmt_begin == info.fmt_end)
 				{
 					value = adjust_digits(value, precision, international, info.encoding.locale);
-					info.target.append(strings::to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+					info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
 					return true;
 				}
 			}
 			return false;
+		}
+		
+		static bool format_bits(cell value, const format_info<Iter> &info)
+		{
+			std::bitset<sizeof(cell) * 8> bits(value);
+			if(info.fmt_begin == info.fmt_end)
+			{
+				info.target.append(bits.to_string<cell>());
+				return true;
+			}
+			cell zero = *info.fmt_begin;
+			++info.fmt_begin;
+			if(info.fmt_begin == info.fmt_end)
+			{
+				return false;
+			}
+			cell one = *info.fmt_begin;
+			++info.fmt_begin;
+			if(info.fmt_begin == info.fmt_end)
+			{
+				info.target.append(bits.to_string<cell>(zero, one));
+				return true;
+			}else if(*info.fmt_begin == '.')
+			{
+				++info.fmt_begin;
+				cell limit = info.parse_num(info.fmt_begin, info.fmt_end);
+				if(info.fmt_begin == info.fmt_end && limit > 0)
+				{
+					cell_string val(bits.to_string<cell>(zero, one));
+					if(val.size() > static_cast<size_t>(limit))
+					{
+						info.target.append(val.begin() + val.size() - limit, val.end());
+					}else{
+						info.target.append(val);
+					}
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		static bool format_time(cell value, const format_info<Iter> &info)
+		{
+			std::time_t time;
+			if(*arg != -1)
+			{
+				time = static_cast<std::time_t>(*arg);
+			}else{
+				time = std::time(nullptr);
+			}
+			if(info.fmt_begin == info.fmt_end)
+			{
+				std::tm value = aux::localtime(time);
+				info.target.append(to_string(info.encoding, std::put_time(&value, "%c")));
+				return true;
+			}
+			bool offset_found = false;
+			cell timezone_offset;
+			Iter begin_after_escaped = info.fmt_end;
+
+			Iter format_end = info.fmt_end;
+			do{
+				--format_end;
+
+				char c = *format_end;
+				bool negative = c == '-';
+				if(c == '+' || negative)
+				{
+					// potential UTC offset
+					Iter offset_begin = format_end;
+					++offset_begin;
+					if(offset_begin != info.fmt_end)
+					{
+						// data after
+						timezone_offset = 60 * info.parse_num(offset_begin, info.fmt_end);
+						offset_found = offset_begin == info.fmt_end;
+						if(!offset_found)
+						{
+							// there is more data
+							if(*offset_begin == ':' && ++offset_begin != info.fmt_end)
+							{
+								timezone_offset += info.parse_num(offset_begin, info.fmt_end);
+								if(offset_begin == info.fmt_end)
+								{
+									// minutes and end found
+									offset_found = true;
+								}
+							}
+						}
+					}
+					if(negative)
+					{
+						timezone_offset = -timezone_offset;
+					}
+					if(offset_found && format_end != info.fmt_begin)
+					{
+						// ensure not escaped
+						Iter percent_it = format_end;
+						--percent_it;
+						bool escaped = false;
+						do{
+							if(*percent_it == '%')
+							{
+								escaped = !escaped;
+							}else{
+								break;
+							}
+							--percent_it;
+						}while(percent_it != info.fmt_begin);
+						if(escaped)
+						{
+							// preceded by escaping %
+							offset_found = false;
+							// store the operator
+							begin_after_escaped = format_end;
+							// strip the %
+							--format_end;
+							break;
+						}
+					}
+					if(!offset_found)
+					{
+						// revert
+						format_end = info.fmt_end;
+					}
+					break;
+				}
+			}while(format_end != info.fmt_begin);
+
+			// before escaped suffix
+			auto format_initial_length = format_end - info.fmt_begin;
+			std::string format(format_initial_length + (info.fmt_end - begin_after_escaped), '\0');
+
+			// narrow before and after % using ctype<cell>
+			const auto &ctype = std::use_facet<std::ctype<cell>>(info.encoding.locale);
+			aux::make_contiguous(info.fmt_begin, format_end, [&](const cell *p_begin, const cell *p_end)
+			{
+				ctype.narrow(p_begin, p_end, info.encoding.unknown_char, &format[0]);
+				return nullptr;
+			});
+			aux::make_contiguous(begin_after_escaped, info.fmt_end, [&](const cell *p_begin, const cell *p_end)
+			{
+				ctype.narrow(p_begin, p_end, info.encoding.unknown_char, &format[format_initial_length]);
+				return nullptr;
+			});
+
+			if(!check_valid_time_format(format))
+			{
+				return false;
+			}
+
+			std::tm value;
+			if(offset_found)
+			{
+				// add seconds to time
+				timezone_offset *= 60;
+				time += timezone_offset;
+				value = aux::gmtime(time);
+#ifndef _MSC_VER
+				if(timezone_offset != 0)
+				{
+					// and timezone offset if present
+					value.tm_gmtoff = timezone_offset;
+					value.tm_zone = nullptr;
+				}
+#endif
+			}else{
+				value = aux::localtime(time);
+			}
+
+			info.target.append(to_string(info.encoding, std::put_time(&value, format.c_str())));
+			return true;
 		}
 		
 		template <class StringIter>

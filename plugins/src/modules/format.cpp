@@ -6,10 +6,9 @@
 
 #include <cctype>
 #include <sstream>
-#include <bitset>
-#include <iomanip>
 #include <algorithm>
 #include <type_traits>
+#include <regex>
 
 using namespace strings;
 
@@ -93,7 +92,7 @@ namespace strings
 			}
 			cell val = 0;
 			cell c;
-			while(begin != end && std::isdigit(c = *begin))
+			while(begin != end && is_digit(c = *begin))
 			{
 				val = (val * 10) + (c - '0');
 				++begin;
@@ -209,7 +208,7 @@ namespace strings
 						last = format_begin;
 						bool pos_found = false;
 						Iter pos_end = format_begin;
-						while(format_begin != format_end && !is_format_letter(*format_begin))
+						while(format_begin != format_end && !is_letter(*format_begin))
 						{
 							if(*format_begin == '$' && !pos_found && format_begin != last)
 							{
@@ -388,4 +387,17 @@ void strings::format(AMX *amx, strings::cell_string &buf, const cell *format, ce
 void strings::format(AMX *amx, strings::cell_string &buf, const cell_string &format, cell argc, cell *args)
 {
 	format_state<cell_string::const_iterator>()(format.begin(), format.end(), amx, buf, argc, args);
+}
+
+bool strings::impl::check_valid_time_format(std::string format)
+{
+	static std::regex valid_pattern = ([]()
+	{
+		std::regex result;
+		result.imbue(std::locale::classic());
+		result.assign("^(?:[^%\\0]+|%(?:E[YyCcxX]|0[ymUWVdewuHIMS]|[%ntYyCGgbhBmUWVjdeaAwuHIMScxXDFrRTpzZ]))*$", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+		return result;
+	})();
+
+	return std::regex_match(format, valid_pattern);
 }

@@ -12,18 +12,13 @@
 #include "objects/stored_param.h"
 #include "fixes/linux.h"
 #include "utils/optional.h"
-#include "utils/contiguous_iterator.h"
-#include "utils/systools.h"
 #include <vector>
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <ctime>
 #include <memory>
 #include <unordered_map>
-#include <bitset>
 #include <iomanip>
-#include <regex>
 
 using cell_string = strings::cell_string;
 using encoding = strings::encoding;
@@ -474,181 +469,14 @@ struct cell_operations : public null_operations<Self>
 			break;
 			case 'b':
 			{
-				std::bitset<sizeof(cell) * 8> bits(*arg);
-				if(info.fmt_begin != info.fmt_end)
+				if(strings::format_specific<Iter>::format_bits(*arg, info))
 				{
-					cell zero = *info.fmt_begin;
-					++info.fmt_begin;
-					if(info.fmt_begin != info.fmt_end)
-					{
-						cell one = *info.fmt_begin;
-						++info.fmt_begin;
-						if(info.fmt_begin == info.fmt_end)
-						{
-							info.target.append(bits.to_string<cell>(zero, one));
-							return true;
-						}else if(*info.fmt_begin == '.')
-						{
-							++info.fmt_begin;
-							cell limit = info.parse_num(info.fmt_begin, info.fmt_end);
-							if(info.fmt_begin == info.fmt_end && limit > 0)
-							{
-								cell_string val(bits.to_string<cell>(zero, one));
-								if(val.size() > static_cast<size_t>(limit))
-								{
-									info.target.append(val.begin() + val.size() - limit, val.end());
-								}else{
-									info.target.append(val);
-								}
-								return true;
-							}
-						}
-					}
-				}else{
-					info.target.append(bits.to_string<cell>());
 					return true;
 				}
 			}
 			break;
 			case 't':
 			{
-				std::time_t time;
-				if(*arg != -1)
-				{
-					time = static_cast<std::time_t>(*arg);
-				}else{
-					time = std::time(nullptr);
-				}
-				if(info.fmt_begin == info.fmt_end)
-				{
-					std::tm value = aux::localtime(time);
-					info.target.append(strings::to_string(info.encoding, std::put_time(&value, "%c")));
-					return true;
-				}
-				bool offset_found = false;
-				cell timezone_offset;
-				Iter begin_after_escaped = info.fmt_end;
-
-				Iter format_end = info.fmt_end;
-				do{
-					--format_end;
-
-					char c = *format_end;
-					bool negative = c == '-';
-					if(c == '+' || negative)
-					{
-						// potential UTC offset
-						Iter offset_begin = format_end;
-						++offset_begin;
-						if(offset_begin != info.fmt_end)
-						{
-							// data after
-							timezone_offset = 60 * info.parse_num(offset_begin, info.fmt_end);
-							offset_found = offset_begin == info.fmt_end;
-							if(!offset_found)
-							{
-								// there is more data
-								if(*offset_begin == ':' && ++offset_begin != info.fmt_end)
-								{
-									timezone_offset += info.parse_num(offset_begin, info.fmt_end);
-									if(offset_begin == info.fmt_end)
-									{
-										// minutes and end found
-										offset_found = true;
-									}
-								}
-							}
-						}
-						if(negative)
-						{
-							timezone_offset = -timezone_offset;
-						}
-						if(offset_found && format_end != info.fmt_begin)
-						{
-							// ensure not escaped
-							Iter percent_it = format_end;
-							--percent_it;
-							bool escaped = false;
-							do{
-								if(*percent_it == '%')
-								{
-									escaped = !escaped;
-								}else{
-									break;
-								}
-								--percent_it;
-							}while(percent_it != info.fmt_begin);
-							if(escaped)
-							{
-								// preceded by escaping %
-								offset_found = false;
-								// store the operator
-								begin_after_escaped = format_end;
-								// strip the %
-								--format_end;
-								break;
-							}
-						}
-						if(!offset_found)
-						{
-							// revert
-							format_end = info.fmt_end;
-						}
-						break;
-					}
-				}while(format_end != info.fmt_begin);
-
-				// before escaped suffix
-				auto format_initial_length = format_end - info.fmt_begin;
-				std::string format(format_initial_length + (info.fmt_end - begin_after_escaped), '\0');
-
-				// narrow before and after % using ctype<cell>
-				const auto &ctype = std::use_facet<std::ctype<cell>>(info.encoding.locale);
-				aux::make_contiguous(info.fmt_begin, format_end, [&](const cell *p_begin, const cell *p_end)
-				{
-					ctype.narrow(p_begin, p_end, info.encoding.unknown_char, &format[0]);
-					return nullptr;
-				});
-				aux::make_contiguous(begin_after_escaped, info.fmt_end, [&](const cell *p_begin, const cell *p_end)
-				{
-					ctype.narrow(p_begin, p_end, info.encoding.unknown_char, &format[format_initial_length]);
-					return nullptr;
-				});
-
-				static std::regex valid_pattern = ([]()
-				{
-					std::regex result;
-					result.imbue(std::locale::classic());
-					result.assign("^(?:[^%\\0]+|%(?:E[YyCcxX]|0[ymUWVdewuHIMS]|[%ntYyCGgbhBmUWVjdeaAwuHIMScxXDFrRTpzZ]))*$", std::regex_constants::ECMAScript | std::regex_constants::optimize);
-					return result;
-				})();
-
-				if(!std::regex_match(format, valid_pattern))
-				{
-					return false;
-				}
-
-				std::tm value;
-				if(offset_found)
-				{
-					// add seconds to time
-					timezone_offset *= 60;
-					time += timezone_offset;
-					value = aux::gmtime(time);
-#ifndef _MSC_VER
-					if(timezone_offset != 0)
-					{
-						// and timezone offset if present
-						value.tm_gmtoff = timezone_offset;
-						value.tm_zone = nullptr;
-					}
-#endif
-				}else{
-					value = aux::localtime(time);
-				}
-
-				info.target.append(strings::to_string(info.encoding, std::put_time(&value, format.c_str())));
-				return true;
 			}
 			break;
 			case 'm':
