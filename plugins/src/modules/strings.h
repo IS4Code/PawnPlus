@@ -464,7 +464,7 @@ namespace std
 	{
 		typedef typename strings::impl::aligned_char_iterator<Elem>::char_type &reference;
 		typedef typename strings::impl::aligned_char_iterator<Elem>::char_type *pointer;
-		typedef Elem value_type;
+		typedef typename std::remove_cv<Elem>::type value_type;
 		typedef std::ptrdiff_t difference_type;
 		typedef std::random_access_iterator_tag iterator_category;
 	};
@@ -474,7 +474,7 @@ namespace std
 	{
 		typedef typename strings::impl::unaligned_char_iterator<Elem>::char_type &reference;
 		typedef typename strings::impl::unaligned_char_iterator<Elem>::char_type *pointer;
-		typedef Elem value_type;
+		typedef typename std::remove_cv<Elem>::type value_type;
 		typedef std::ptrdiff_t difference_type;
 		typedef std::random_access_iterator_tag iterator_category;
 	};
