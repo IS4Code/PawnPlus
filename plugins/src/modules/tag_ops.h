@@ -11,15 +11,7 @@ namespace strings
 	struct num_parser;
 
 	template <class Iter>
-	struct format_info
-	{
-		cell type;
-		Iter &fmt_begin;
-		Iter &fmt_end;
-		const num_parser<Iter> &parse_num;
-		cell_string &target;
-		const encoding &encoding;
-	};
+	struct format_info;
 }
 
 class tag_operations

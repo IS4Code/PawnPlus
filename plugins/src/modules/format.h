@@ -62,6 +62,17 @@ namespace strings
 		}
 	};
 
+	template <class Iter>
+	struct format_info
+	{
+		cell type;
+		const Iter &fmt_begin;
+		const Iter &fmt_end;
+		const num_parser<Iter> &parse_num;
+		cell_string &target;
+		const encoding &encoding;
+	};
+
 	inline bool is_letter(cell c)
 	{
 		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
@@ -170,15 +181,17 @@ namespace strings
 			{
 				info.target.append(to_string(info.encoding, value, std::forward<Args>(args)...));
 				return true;
-			}else if(*info.fmt_begin == '.')
+			}
+			Iter pos = info.fmt_begin;
+			if(*pos == '.')
 			{
-				++info.fmt_begin;
-				if(info.fmt_begin == info.fmt_end)
+				++pos;
+				if(pos == info.fmt_end)
 				{
 					return false;
 				}
-				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-				if(info.fmt_begin == info.fmt_end)
+				cell precision = info.parse_num(pos, info.fmt_end);
+				if(pos == info.fmt_end)
 				{
 					auto fvalue = to_decimal(value, precision);
 					if(precision >= 0)
@@ -190,30 +203,30 @@ namespace strings
 					return true;
 				}
 			}else{
-				char padding = static_cast<ucell>(*info.fmt_begin);
-				++info.fmt_begin;
-				if(info.fmt_begin == info.fmt_end)
+				char padding = static_cast<ucell>(*pos);
+				++pos;
+				if(pos == info.fmt_end)
 				{
 					return false;
 				}
-				cell width = info.parse_num(info.fmt_begin, info.fmt_end);
+				cell width = info.parse_num(pos, info.fmt_end);
 				if(width < 0)
 				{
 					return false;
 				}
-				if(info.fmt_begin == info.fmt_end)
+				if(pos == info.fmt_end)
 				{
 					info.target.append(to_string(info.encoding, value, std::setw(width), std::setfill(padding), std::forward<Args>(args)...));
 					return true;
-				}else if(*info.fmt_begin == '.')
+				}else if(*pos == '.')
 				{
-					++info.fmt_begin;
-					if(info.fmt_begin == info.fmt_end)
+					++pos;
+					if(pos == info.fmt_end)
 					{
 						return false;
 					}
-					cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-					if(info.fmt_begin == info.fmt_end)
+					cell precision = info.parse_num(pos, info.fmt_end);
+					if(pos == info.fmt_end)
 					{
 						auto fvalue = to_decimal(value, precision);
 						if(precision >= 0)
@@ -252,25 +265,26 @@ namespace strings
 				return true;
 			}
 			bool international = true;
-			if(*info.fmt_begin == '$')
+			Iter pos = info.fmt_begin;
+			if(*pos == '$')
 			{
 				international = false;
-				++info.fmt_begin;
-				if(info.fmt_begin == info.fmt_end)
+				++pos;
+				if(pos == info.fmt_end)
 				{
 					info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase));
 					return true;
 				}
 			}
-			if(*info.fmt_begin == '.')
+			if(*pos == '.')
 			{
-				++info.fmt_begin;
-				if(info.fmt_begin == info.fmt_end)
+				++pos;
+				if(pos == info.fmt_end)
 				{
 					return false;
 				}
-				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-				if(info.fmt_begin == info.fmt_end)
+				cell precision = info.parse_num(pos, info.fmt_end);
+				if(pos == info.fmt_end)
 				{
 					value = adjust_digits(value, precision, international, info.encoding.locale);
 					info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase));
@@ -278,26 +292,26 @@ namespace strings
 				}
 				return false;
 			}
-			char padding = static_cast<ucell>(*info.fmt_begin);
-			++info.fmt_begin;
-			cell width = info.parse_num(info.fmt_begin, info.fmt_end);
+			char padding = static_cast<ucell>(*pos);
+			++pos;
+			cell width = info.parse_num(pos, info.fmt_end);
 			if(width < 0)
 			{
 				return false;
 			}
-			if(info.fmt_begin == info.fmt_end)
+			if(pos == info.fmt_end)
 			{
 				info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
 				return true;
-			}else if(*info.fmt_begin == '.')
+			}else if(*pos == '.')
 			{
-				++info.fmt_begin;
-				if(info.fmt_begin == info.fmt_end)
+				++pos;
+				if(pos == info.fmt_end)
 				{
 					return false;
 				}
-				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-				if(info.fmt_begin == info.fmt_end)
+				cell precision = info.parse_num(pos, info.fmt_end);
+				if(pos == info.fmt_end)
 				{
 					value = adjust_digits(value, precision, international, info.encoding.locale);
 					info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
@@ -315,23 +329,24 @@ namespace strings
 				info.target.append(bits.to_string<cell>());
 				return true;
 			}
-			cell zero = *info.fmt_begin;
-			++info.fmt_begin;
-			if(info.fmt_begin == info.fmt_end)
+			Iter pos = info.fmt_begin;
+			cell zero = *pos;
+			++pos;
+			if(pos == info.fmt_end)
 			{
 				return false;
 			}
-			cell one = *info.fmt_begin;
-			++info.fmt_begin;
-			if(info.fmt_begin == info.fmt_end)
+			cell one = *pos;
+			++pos;
+			if(pos == info.fmt_end)
 			{
 				info.target.append(bits.to_string<cell>(zero, one));
 				return true;
-			}else if(*info.fmt_begin == '.')
+			}else if(*pos == '.')
 			{
-				++info.fmt_begin;
-				cell limit = info.parse_num(info.fmt_begin, info.fmt_end);
-				if(info.fmt_begin == info.fmt_end && limit > 0)
+				++pos;
+				cell limit = info.parse_num(pos, info.fmt_end);
+				if(pos == info.fmt_end && limit > 0)
 				{
 					cell_string val(bits.to_string<cell>(zero, one));
 					if(val.size() > static_cast<size_t>(limit))

@@ -828,8 +828,9 @@ struct char_operations : public cell_operations<char_operations>
 					info.target.append(1, *arg);
 					return true;
 				}else{
-					cell count = info.parse_num(info.fmt_begin, info.fmt_end);
-					if(info.fmt_begin == info.fmt_end && count > 0)
+					Iter pos = info.fmt_begin;
+					cell count = info.parse_num(pos, info.fmt_end);
+					if(pos == info.fmt_end && count > 0)
 					{
 						info.target.append(count, *arg);
 						return true;
