@@ -437,6 +437,19 @@ struct cell_operations : public null_operations<Self>
 	}
 
 private:
+	template <class Type>
+	static long double to_decimal(Type value, typename std::enable_if<std::is_integral<Type>::value, cell>::type precision)
+	{
+		return value * std::pow(10.0L, -std::abs(precision));
+	}
+
+	template <class Type>
+	static typename std::enable_if<std::is_floating_point<Type>::value, Type>::type to_decimal(Type value, cell)
+	{
+		return value;
+	}
+
+protected:
 	template <class Type, class Iter, class... Args>
 	static bool format_num(Type value, const format_info<Iter> &info, Args&&... args)
 	{
@@ -450,7 +463,7 @@ private:
 			cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
 			if(info.fmt_begin == info.fmt_end)
 			{
-				long double fvalue = value * std::pow(10.0L, -std::abs(precision));
+				auto fvalue = to_decimal(value, precision);
 				if(precision >= 0)
 				{
 					info.target.append(strings::to_string(info.encoding, fvalue, std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
@@ -477,7 +490,7 @@ private:
 				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
 				if(info.fmt_begin == info.fmt_end)
 				{
-					long double fvalue = value * std::pow(10.0L, -std::abs(precision));
+					auto fvalue = to_decimal(value, precision);
 					if(precision >= 0)
 					{
 						info.target.append(strings::to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
@@ -1261,52 +1274,17 @@ struct float_operations : public cell_operations<float_operations>
 			case 'f':
 			case 'd':
 			{
-				float val = amx_ctof(*arg);
-				if(info.fmt_begin == info.fmt_end)
+				if(format_num(amx_ctof(*arg), info))
 				{
-					info.target.append(strings::to_string(info.encoding, val));
 					return true;
-				}else if(*info.fmt_begin == '.')
+				}
+			}
+			break;
+			case 'x':
+			{
+				if(format_num(amx_ctof(*arg), info, std::hexfloat, std::uppercase))
 				{
-					++info.fmt_begin;
-					cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-					if(info.fmt_begin == info.fmt_end)
-					{
-						if(precision >= 0)
-						{
-							info.target.append(strings::to_string(info.encoding, val, std::setprecision(precision), std::fixed));
-						}else{
-							info.target.append(strings::to_string(info.encoding, val, std::setprecision(-precision), std::defaultfloat));
-						}
-						return true;
-					}
-				}else{
-					char padding = static_cast<ucell>(*info.fmt_begin);
-					++info.fmt_begin;
-					cell width = info.parse_num(info.fmt_begin, info.fmt_end);
-					if(width < 0)
-					{
-						break;
-					}
-					if(info.fmt_begin == info.fmt_end)
-					{
-						info.target.append(strings::to_string(info.encoding, val, std::setw(width), std::setfill(padding)));
-						return true;
-					}else if(*info.fmt_begin == '.')
-					{
-						++info.fmt_begin;
-						cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
-						if(info.fmt_begin == info.fmt_end)
-						{
-							if(precision >= 0)
-							{
-								info.target.append(strings::to_string(info.encoding, val, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed));
-							}else{
-								info.target.append(strings::to_string(info.encoding, val, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat));
-							}
-							return true;
-						}
-					}
+					return true;
 				}
 			}
 			break;
