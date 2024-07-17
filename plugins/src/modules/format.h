@@ -57,8 +57,18 @@ namespace strings
 		}
 	};
 
+	inline bool is_format_letter(cell c)
+	{
+		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+	}
+
+	inline bool is_hex_digit(cell c)
+	{
+		return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+	}
+
 	template <class Iter>
-	bool append_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, const num_parser<Iter> &parse_num, const encoding &encoding)
+	bool append_implied_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, const num_parser<Iter> &parse_num, const encoding &encoding)
 	{
 		return append_format(obj, strings::format_info<Iter>{obj.get_specifier(), begin, end, parse_num, buf, encoding});
 	}
@@ -148,6 +158,10 @@ namespace strings
 			}else if(*info.fmt_begin == '.')
 			{
 				++info.fmt_begin;
+				if(info.fmt_begin == info.fmt_end)
+				{
+					return false;
+				}
 				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
 				if(info.fmt_begin == info.fmt_end)
 				{
@@ -163,6 +177,10 @@ namespace strings
 			}else{
 				char padding = static_cast<ucell>(*info.fmt_begin);
 				++info.fmt_begin;
+				if(info.fmt_begin == info.fmt_end)
+				{
+					return false;
+				}
 				cell width = info.parse_num(info.fmt_begin, info.fmt_end);
 				if(width < 0)
 				{
@@ -175,6 +193,10 @@ namespace strings
 				}else if(*info.fmt_begin == '.')
 				{
 					++info.fmt_begin;
+					if(info.fmt_begin == info.fmt_end)
+					{
+						return false;
+					}
 					cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
 					if(info.fmt_begin == info.fmt_end)
 					{
@@ -228,6 +250,10 @@ namespace strings
 			if(*info.fmt_begin == '.')
 			{
 				++info.fmt_begin;
+				if(info.fmt_begin == info.fmt_end)
+				{
+					return false;
+				}
 				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
 				if(info.fmt_begin == info.fmt_end)
 				{
@@ -251,6 +277,10 @@ namespace strings
 			}else if(*info.fmt_begin == '.')
 			{
 				++info.fmt_begin;
+				if(info.fmt_begin == info.fmt_end)
+				{
+					return false;
+				}
 				cell precision = info.parse_num(info.fmt_begin, info.fmt_end);
 				if(info.fmt_begin == info.fmt_end)
 				{

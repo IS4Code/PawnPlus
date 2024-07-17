@@ -1570,7 +1570,7 @@ struct variant_operations : public null_operations<variant_operations>
 				dyn_object *var;
 				if(variants::pool.get_by_id(*arg, var))
 				{
-					if(strings::append_format(info.target, info.fmt_begin, info.fmt_end, *var, info.parse_num, info.encoding))
+					if(strings::append_implied_format(info.target, info.fmt_begin, info.fmt_end, *var, info.parse_num, info.encoding))
 					{
 						return true;
 					}

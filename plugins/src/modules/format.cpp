@@ -115,7 +115,7 @@ namespace strings
 			{
 				case 'P':
 				{
-					if(append_format(buf, begin, end, dyn_object(amx, arg[0], arg[1]), get_num_parser(), *encoding))
+					if(append_implied_format(buf, begin, end, dyn_object(amx, arg[0], arg[1]), get_num_parser(), *encoding))
 					{
 						return;
 					}
@@ -209,7 +209,7 @@ namespace strings
 						last = format_begin;
 						bool pos_found = false;
 						Iter pos_end = format_begin;
-						while(format_begin != format_end && !std::isalpha(*format_begin))
+						while(format_begin != format_end && !is_format_letter(*format_begin))
 						{
 							if(*format_begin == '$' && !pos_found && format_begin != last)
 							{
@@ -275,7 +275,7 @@ namespace strings
 						if(brace_end != format_end)
 						{
 							auto size = std::distance(brace_begin, brace_end);
-							if(size == 7 && std::all_of(std::next(brace_begin), brace_end, [](cell c) {return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); }))
+							if(size == 7 && std::all_of(std::next(brace_begin), brace_end, [](cell c) {return is_hex_digit(c); }))
 							{
 								format_begin = last = std::next(brace_end);
 								buf.append(brace_begin, format_begin);
