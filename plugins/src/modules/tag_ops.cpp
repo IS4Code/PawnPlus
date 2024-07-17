@@ -2940,11 +2940,12 @@ cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numar
 				{
 					auto &ref = strings::pool.add();
 					bool result;
+					static cell dummy;
 					if(format == nullptr)
 					{
 						const cell *null = nullptr;
 						result = format_base(tag, &args[0], {args[1], null, null, strings::num_parser<const cell*>{
-							nullptr, [](void *ptr, const cell *&begin, const cell *end)
+							nullptr, dummy, [](void *ptr, const cell *&begin, const cell *end)
 							{
 								return strings::format_specific<const cell*>::parse_num_simple(begin, end);
 							}
@@ -2952,7 +2953,7 @@ cell tag_operations::call_op(tag_ptr tag, op_type type, cell *args, size_t numar
 					}else{
 						strings::cell_string::const_iterator begin = format->cbegin(), end = format->cend();
 						result = format_base(tag, &args[0], {args[1], begin, end, strings::num_parser<cell_string::const_iterator>{
-							nullptr, [](void *ptr, cell_string::const_iterator &begin, cell_string::const_iterator end)
+							nullptr, dummy, [](void *ptr, cell_string::const_iterator &begin, cell_string::const_iterator end)
 							{
 								return strings::format_specific<cell_string::const_iterator>::parse_num_simple(begin, end);
 							}

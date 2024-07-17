@@ -25,8 +25,9 @@ struct format_val
 		cell type = *end;
 		const cell *data = obj.get_cell_addr(nullptr, 0);
 		auto &buf = strings::pool.add();
+		static cell dummy;
 		if(!obj.get_tag()->get_ops().format_base(obj.get_tag(), data, {type, begin, end, strings::num_parser<Iter>{
-			nullptr, [](void *ptr, Iter &begin, Iter end)
+			nullptr, dummy, [](void *ptr, Iter &begin, Iter end)
 			{
 				return strings::format_specific<Iter>::parse_num_simple(begin, end);
 			}

@@ -17,6 +17,7 @@
 #include <bitset>
 #include <ctime>
 #include <iomanip>
+#include <exception>
 
 namespace strings
 {
@@ -53,12 +54,13 @@ namespace strings
 	template <class Iter>
 	struct num_parser
 	{
-		void *state;
-		cell(*parse_func)(void *state, Iter &begin, Iter end);
+		void *object;
+		cell &position;
+		cell(*parse_func)(void *object, Iter &begin, Iter end);
 
 		cell operator()(Iter &begin, Iter end) const
 		{
-			return parse_func(state, begin, end);
+			return parse_func(object, begin, end);
 		}
 	};
 
@@ -91,7 +93,43 @@ namespace strings
 	template <class Iter>
 	bool append_implied_format(cell_string &buf, Iter begin, Iter end, const dyn_object &obj, const num_parser<Iter> &parse_num, const encoding &encoding)
 	{
-		return append_format(obj, strings::format_info<Iter>{obj.get_specifier(), begin, end, parse_num, buf, encoding});
+		strings::format_info<Iter> info{obj.get_specifier(), begin, end, parse_num, buf, encoding};
+		if(begin == end || !is_letter(*std::prev(end)))
+		{
+			// format cannot be interpreted with its own specifier
+			return append_format(obj, info);
+		}
+		cell arg_position = parse_num.position;
+		std::exception_ptr format_exception;
+		try{
+			if(append_format(obj, info))
+			{
+				return true;
+			}
+		}catch(...)
+		{
+			format_exception = std::current_exception();
+		}
+		std::swap(arg_position, parse_num.position);
+		--end;
+		info.type = *end;
+		// state restored, try again
+		try{
+			if(append_format(obj, info))
+			{
+				return true;
+			}
+		}catch(...)
+		{
+
+		}
+		// still bad - restore original
+		parse_num.position = arg_position;
+		if(format_exception)
+		{
+			std::rethrow_exception(format_exception);
+		}
+		return false;
 	}
 
 	template <class Iter>

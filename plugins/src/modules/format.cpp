@@ -102,7 +102,7 @@ namespace strings
 
 		num_parser<Iter> get_num_parser()
 		{
-			return num_parser<Iter>{this, [](void *state, Iter &begin, Iter end)
+			return num_parser<Iter>{this, argn, [](void *state, Iter &begin, Iter end)
 			{
 				return static_cast<format_state<Iter>*>(state)->parse_num(begin, end);
 			}};
