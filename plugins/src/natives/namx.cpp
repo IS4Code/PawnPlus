@@ -178,9 +178,7 @@ namespace Natives
 	// native amx_public_name(index, name[], size=sizeof(name));
 	AMX_DEFINE_NATIVE_TAG(amx_public_name, 3, cell)
 	{
-		int len;
-		amx_NameLength(amx, &len);
-		char *name = static_cast<char*>(alloca(len + 1));
+		char *name = amx_NameBuffer(amx);
 		if(amx_GetPublic(amx, params[1], name) != AMX_ERR_NONE)
 		{
 			amx_LogicError(errors::out_of_range, "index");
