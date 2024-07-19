@@ -192,40 +192,46 @@ template <class Iter>
 encoding parse_encoding_override(Iter &begin, Iter end)
 {
 	Iter it = begin, start;
-	int state = 0;
+	enum {
+		at_start,
+		found_parenthesis,
+		found_question_mark,
+		found_dollar,
+		encoding_loop
+	} state = at_start;
 	while(it != end)
 	{
 		switch(state)
 		{
-			case 0:
+			case at_start:
 				if(*it != '(')
 				{
 					break;
 				}
 				++it;
-				++state;
+				state = found_parenthesis;
 				continue;
-			case 1:
+			case found_parenthesis:
 				if(*it != '?')
 				{
 					break;
 				}
 				++it;
-				++state;
+				state = found_question_mark;
 				continue;
-			case 2:
+			case found_question_mark:
 				if(*it != '$')
 				{
 					break;
 				}
 				++it;
-				++state;
+				state = found_dollar;
 				continue;
-			case 3:
+			case found_dollar:
 				start = it;
-				++state;
+				state = encoding_loop;
 				goto loop;
-			case 4:
+			case encoding_loop:
 			loop:
 			{
 				if(*it != ')')
