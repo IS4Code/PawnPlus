@@ -71,6 +71,7 @@ namespace std
 
 typedef std::basic_regex<cell> cell_regex;
 
+constexpr const cell percent_escaped_flag = 128;
 constexpr const cell no_prev_avail_flag = 32768;
 constexpr const cell cache_flag = 4194304;
 constexpr const cell cache_addr_flag = 8388608;
@@ -273,6 +274,162 @@ encoding parse_encoding_override(Iter &begin, Iter end)
 	return find_encoding(spec, false);
 }
 
+template <class Iter, typename std::iterator_traits<Iter>::value_type Backslash = '\\', typename std::iterator_traits<Iter>::value_type Percent = '%'>
+class percent_escaped
+{
+	Iter inner;
+	mutable enum : char {
+		unobserved,
+		at_percent,
+		at_backslash,
+		after_percent,
+		after_backslash,
+		normal
+	} state;
+
+private:
+	using deref_type = typename std::remove_reference<typename std::iterator_traits<Iter>::reference>::type;
+
+	void check_state() const
+	{
+		switch(state)
+		{
+			case unobserved:
+				switch(*inner)
+				{
+					case Backslash:
+						state = at_backslash;
+						break;
+					case Percent:
+						state = at_percent;
+						break;
+					default:
+						state = normal;
+						break;
+				}
+				break;
+			case after_percent:
+				state = normal;
+				break;
+		}
+	}
+
+public:
+	using value_type = typename std::iterator_traits<Iter>::value_type;
+	using reference = const deref_type&;
+	using pointer = const deref_type*;
+	using difference_type = typename std::iterator_traits<Iter>::difference_type;
+
+	percent_escaped(Iter inner) : inner(inner), state(unobserved)
+	{
+
+	}
+
+	reference operator*() const
+	{
+		check_state();
+		if(state == at_percent)
+		{
+			static const deref_type backslashRef = Backslash;
+			return backslashRef;
+		}
+		return *inner;
+	}
+
+	pointer operator->() const
+	{
+		return &this->operator*();
+	}
+
+	percent_escaped& operator++()
+	{
+		check_state();
+		switch(state)
+		{
+			case at_backslash:
+				state = after_backslash;
+				break;
+			case at_percent:
+				++inner;
+				state = after_percent;
+				break;
+			default:
+				++inner;
+				state = unobserved;
+				break;
+		}
+		return *this;
+	}
+
+	percent_escaped operator++(int)
+	{
+		auto tmp = *this;
+		++*this;
+		return tmp;
+	}
+
+	bool operator==(const percent_escaped &it) const
+	{
+		return inner == it.inner && ((state == after_backslash) == (it.state == after_backslash));
+	}
+
+	bool operator!=(const percent_escaped &it) const
+	{
+		return !(*this == it);
+	}
+};
+
+namespace std
+{
+	template <class Iter, typename std::iterator_traits<Iter>::value_type Backslash, typename std::iterator_traits<Iter>::value_type Percent>
+	struct iterator_traits<percent_escaped<Iter, Backslash, Percent>>
+	{
+		using reference = typename percent_escaped<Iter, Backslash, Percent>::reference;
+		using pointer = typename percent_escaped<Iter, Backslash, Percent>::pointer;
+		using value_type = typename percent_escaped<Iter, Backslash, Percent>::value_type;
+		using difference_type = typename percent_escaped<Iter, Backslash, Percent>::difference_type;
+		using iterator_category =  std::input_iterator_tag;
+	};
+}
+
+template <class Iter>
+void configure_regex(cell_regex &regex, Iter pattern_begin, Iter pattern_end, Iter orig_begin, const cell_string *pattern, std::regex_constants::syntax_option_type syntax_options, bool use_percent_escaped)
+{
+	if(use_percent_escaped)
+	{
+		std::string msg;
+		for(const auto &c : cell_string(percent_escaped<Iter>(pattern_begin), percent_escaped<Iter>(pattern_end)))
+		{
+			msg.append(1, static_cast<unsigned char>(c));
+		}
+		logprintf("%s", msg.c_str());
+		regex.assign(percent_escaped<Iter>(pattern_begin), percent_escaped<Iter>(pattern_end), syntax_options);
+	}else if(pattern != nullptr && pattern_begin == orig_begin)
+	{
+		// construct from string if available and equivalent
+		regex.assign(*pattern, syntax_options);
+	}else{
+		// construct from range
+		regex.assign(pattern_begin, pattern_end, syntax_options);
+	}
+}
+
+template <class Iter>
+cell_regex construct_regex(Iter pattern_begin, Iter pattern_end, Iter orig_begin, const cell_string *pattern, std::regex_constants::syntax_option_type syntax_options, bool use_percent_escaped)
+{
+	if(use_percent_escaped)
+	{
+		return cell_regex(percent_escaped<Iter>(pattern_begin), percent_escaped<Iter>(pattern_end), syntax_options);
+	}else if(pattern != nullptr && pattern_begin == orig_begin)
+	{
+		// construct from string if available and equivalent
+		return cell_regex(*pattern, syntax_options);
+	}else{
+		// construct from range
+		return cell_regex(pattern_begin, pattern_end, syntax_options);
+	}
+}
+
 class regex_cached
 {
 	cell_regex regex;
@@ -297,8 +454,8 @@ protected:
 		return true;
 	}
 
-	template <class Iter>
-	void init(bool reimbue, Iter pattern_begin, Iter pattern_end, const cell_string *pattern, std::regex_constants::syntax_option_type syntax_options)
+	template <class Iter, class... Args>
+	void init(bool reimbue, Iter pattern_begin, Iter pattern_end, Args&&... args)
 	{
 		Iter orig_begin = pattern_begin;
 		encoding enc = parse_encoding_override(pattern_begin, pattern_end);
@@ -310,14 +467,7 @@ protected:
 
 		depends_on_global_locale = enc.locale == global_locale;
 
-		if(pattern != nullptr && pattern_begin == orig_begin)
-		{
-			// construct from string if available and equivalent
-			regex.assign(*pattern, syntax_options);
-		}else{
-			// construct from range
-			regex.assign(pattern_begin, pattern_end, syntax_options);
-		}
+		configure_regex(regex, pattern_begin, pattern_end, orig_begin, std::forward<Args>(args)...);
 	}
 
 public:
@@ -361,7 +511,7 @@ static const cell_regex &get_cached_key(Iter pattern_begin, Iter pattern_end, co
 	).first;
 	auto &cached = result->second;
 	try{
-		cached.update(pattern_begin, pattern_end, pattern, syntax_options);
+		cached.update(pattern_begin, pattern_end, pattern, syntax_options, options & percent_escaped_flag);
 	}catch(...)
 	{
 		regex_cache.erase(result);
@@ -427,7 +577,7 @@ static const cell_regex &get_cached_addr(Iter pattern_begin, Iter pattern_end, c
 	).first;
 	auto &cached = result->second;
 	try{
-		cached.update(std::move(mem_handle), pattern_begin, pattern_end, nullptr, syntax_options);
+		cached.update(std::move(mem_handle), pattern_begin, pattern_end, nullptr, syntax_options, options & percent_escaped_flag);
 	}catch(...)
 	{
 		regex_cache.erase(result);
@@ -455,8 +605,8 @@ struct regex_info
 	}
 };
 
-template <class Iter>
-cell_regex create_regex(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, std::regex_constants::syntax_option_type syntax_options)
+template <class Iter, class... Args>
+cell_regex create_regex(Iter pattern_begin, Iter pattern_end, Args&&... args)
 {
 	Iter orig_begin = pattern_begin;
 	encoding enc = parse_encoding_override(pattern_begin, pattern_end);
@@ -465,14 +615,10 @@ cell_regex create_regex(Iter pattern_begin, Iter pattern_end, const cell_string 
 		// has custom locale or modified properties
 		cell_regex regex;
 		regex.imbue(enc.install());
-		regex.assign(pattern_begin, pattern_end, syntax_options);
+		configure_regex(regex, pattern_begin, pattern_end, orig_begin, std::forward<Args>(args)...);
 		return regex;
 	}
-	if(pattern != nullptr && orig_begin == pattern_begin)
-	{
-		return cell_regex(*pattern, syntax_options);
-	}
-	return cell_regex(pattern_begin, pattern_end, syntax_options);
+	return construct_regex(pattern_begin, pattern_end, orig_begin, std::forward<Args>(args)...);
 }
 
 template <class Iter, class Receiver>
@@ -496,7 +642,7 @@ auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, Rec
 			: get_cached(pattern_begin, pattern_end, info.pattern, info.options, syntax_options);
 		return receiver(regex, match_options, info.begin(), info.string.cend());
 	}
-	cell_regex regex = create_regex(pattern_begin, pattern_end, info.pattern, syntax_options);
+	cell_regex regex = create_regex(pattern_begin, pattern_end, info.pattern, syntax_options, info.options & percent_escaped_flag);
 	return receiver(regex, match_options, info.begin(), info.string.cend());
 }
 

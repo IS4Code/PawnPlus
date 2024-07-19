@@ -592,6 +592,7 @@ enum regex_options (<<= 1)
     regex_nosubs,
     regex_optimize,
     regex_collate,
+    regex_percents,
     
     regex_not_bol = 256,
     regex_not_eol,
