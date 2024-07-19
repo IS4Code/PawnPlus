@@ -386,7 +386,7 @@
     <ClInclude Include="src\fixes\char8_t.h">
       <Filter>src\fixes</Filter>
     </ClInclude>
-    <ClInclude Include="src\utils\contiguous_iterator.h">
+    <ClInclude Include="src\utils\memory.h">
       <Filter>src\utils</Filter>
     </ClInclude>
   </ItemGroup>

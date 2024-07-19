@@ -5,7 +5,7 @@
 #include "containers.h"
 #include "tag_ops.h"
 #include "errors.h"
-#include "utils/contiguous_iterator.h"
+#include "utils/memory.h"
 #include "utils/systools.h"
 
 #include <stack>

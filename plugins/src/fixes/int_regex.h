@@ -2,7 +2,7 @@
 #define INT_REGEX_H_INCLUDED
 
 #include "int_string.h"
-#include "utils/contiguous_iterator.h"
+#include "utils/memory.h"
 
 #include <string>
 #include <regex>
@@ -728,17 +728,11 @@ namespace impl
 			{
 				auto size = end - begin;
 
-				if(size < 32)
+				return aux::alloc_inline<BaseCharType>(size, [&](BaseCharType *ptr)
 				{
-					BaseCharType *ptr = static_cast<BaseCharType*>(alloca(size * sizeof(BaseCharType)));
 					base_int_ctype->narrow(begin, end, BaseCharType(), ptr);
 					return receiver(ptr, ptr + size);
-				}else{
-					auto memory = std::make_unique<BaseCharType[]>(size);
-					auto ptr = memory.get();
-					base_int_ctype->narrow(begin, end, BaseCharType(), ptr);
-					return receiver(ptr, ptr + size);
-				}
+				});
 			});
 		}
 

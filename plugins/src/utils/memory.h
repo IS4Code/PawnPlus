@@ -1,9 +1,11 @@
-#ifndef CONTIGUOUS_ITERATOR_H_INCLUDED
-#define CONTIGUOUS_ITERATOR_H_INCLUDED
+#ifndef UTILS_MEMORY_H_INCLUDED
+#define UTILS_MEMORY_H_INCLUDED
 
 #include <type_traits>
 #include <utility>
 #include <iterator>
+#include <memory>
+#include <malloc.h>
 
 namespace aux
 {
@@ -45,6 +47,19 @@ namespace aux
 		std::basic_string<iterator_value<Iterator>> str{begin, end};
 		const_iterator_pointer<Iterator> ptr = &str[0];
 		return receiver(ptr, ptr + str.size());
+	}
+
+	template <class Type, class Receiver>
+	auto alloc_inline(std::size_t size, Receiver receiver) -> decltype(receiver(std::declval<Type*>()))
+	{
+		if(size * sizeof(Type) < 128)
+		{
+			Type *ptr = static_cast<Type*>(alloca(size * sizeof(Type)));
+			return receiver(ptr);
+		}
+		auto memory = std::make_unique<Type[]>(size);
+		Type *ptr = memory.get();
+		return receiver(ptr);
 	}
 }
 

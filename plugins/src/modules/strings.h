@@ -2,7 +2,7 @@
 #define STRINGS_H_INCLUDED
 
 #include "objects/object_pool.h"
-#include "utils/contiguous_iterator.h"
+#include "utils/memory.h"
 #include "sdk/amx/amx.h"
 #include "fixes/int_string.h"
 #include <string>

@@ -148,20 +148,6 @@ namespace strings
 			amx_FormalError(errors::invalid_format, "invalid value or specifier parameter");
 		}
 
-		template <class Iter>
-		void parse_encoding_buffer(Iter begin, Iter end, char *spec, std::size_t size)
-		{
-			std::copy(begin, end, reinterpret_cast<unsigned char*>(spec));
-			spec[size] = '\0';
-			try{
-				auto enc = find_encoding(spec, false);
-				*encoding = enc.make_installed();
-			}catch(const std::runtime_error &)
-			{
-				amx_LogicError(errors::locale_not_found, spec);
-			}
-		}
-
 	public:
 		void operator()(Iter format_begin, Iter format_end, AMX *amx, strings::cell_string &buf, cell argc, const cell *args)
 		{
@@ -289,15 +275,17 @@ namespace strings
 								format_begin = last = std::next(brace_end);
 								std::advance(selector_begin, enc_size);
 								size -= enc_size;
-								if(size < 32)
+								encoding = aux::alloc_inline<char>(size + 1, [&](char *spec)
 								{
-									char *ptr = static_cast<char*>(alloca((size + 1) * sizeof(char)));
-									parse_encoding_buffer(selector_begin, brace_end, ptr, size);
-								}else{
-									auto memory = std::make_unique<char[]>(size + 1);
-									auto ptr = memory.get();
-									parse_encoding_buffer(selector_begin, brace_end, ptr, size);
-								}
+									std::copy(selector_begin, brace_end, reinterpret_cast<unsigned char*>(spec));
+									spec[size] = '\0';
+									try{
+										return find_encoding(spec, false);
+									}catch(const std::runtime_error &)
+									{
+										amx_LogicError(errors::locale_not_found, spec);
+									}
+								}).make_installed();
 								continue;
 							}
 						}

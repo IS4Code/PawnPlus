@@ -189,30 +189,6 @@ static const char *get_error(std::regex_constants::error_type code)
 }
 
 template <class Iter>
-encoding parse_encoding_buffer(Iter begin, Iter end, char *spec, std::size_t size)
-{
-	std::copy(begin, end, reinterpret_cast<unsigned char*>(spec));
-	spec[size] = '\0';
-	return find_encoding(spec, false);
-}
-
-template <class Iter>
-encoding parse_encoding(Iter begin, Iter end)
-{
-	auto size = end - begin;
-
-	if(size < 32)
-	{
-		char *ptr = static_cast<char*>(alloca((size + 1) * sizeof(char)));
-		return parse_encoding_buffer(begin, end, ptr, size);
-	}else{
-		auto memory = std::make_unique<char[]>(size + 1);
-		auto ptr = memory.get();
-		return parse_encoding_buffer(begin, end, ptr, size);
-	}
-}
-
-template <class Iter>
 encoding parse_encoding_override(Iter &begin, Iter end)
 {
 	Iter it = begin, start;
@@ -258,7 +234,13 @@ encoding parse_encoding_override(Iter &begin, Iter end)
 					continue;
 				}
 				try{
-					encoding enc = parse_encoding(start, it);
+					auto size = std::distance(start, it);
+					encoding enc = aux::alloc_inline<char>(size + 1, [&](char *spec)
+					{
+						std::copy(start, it, reinterpret_cast<unsigned char*>(spec));
+						spec[size] = '\0';
+						return find_encoding(spec, false);
+					});
 					++it;
 					begin = it;
 					return enc;
