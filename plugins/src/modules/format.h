@@ -72,7 +72,7 @@ namespace strings
 		const Iter &fmt_end;
 		const num_parser<Iter> &parse_num;
 		cell_string &target;
-		const encoding &encoding;
+		const encoding &enc;
 	};
 
 	inline bool is_letter(cell c)
@@ -140,7 +140,7 @@ namespace strings
 		{
 			if(info.fmt_begin == info.fmt_end)
 			{
-				info.target.append(obj.to_string(info.encoding));
+				info.target.append(obj.to_string(info.enc));
 				return true;
 			}
 			return false;
@@ -217,7 +217,7 @@ namespace strings
 		{
 			if(info.fmt_begin == info.fmt_end)
 			{
-				info.target.append(to_string(info.encoding, value, std::forward<Args>(args)...));
+				info.target.append(to_string(info.enc, value, std::forward<Args>(args)...));
 				return true;
 			}
 			Iter pos = info.fmt_begin;
@@ -234,9 +234,9 @@ namespace strings
 					auto fvalue = to_decimal(value, precision);
 					if(precision >= 0)
 					{
-						info.target.append(to_string(info.encoding, fvalue, std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
+						info.target.append(to_string(info.enc, fvalue, std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
 					}else{
-						info.target.append(to_string(info.encoding, fvalue, std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
+						info.target.append(to_string(info.enc, fvalue, std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
 					}
 					return true;
 				}
@@ -254,7 +254,7 @@ namespace strings
 				}
 				if(pos == info.fmt_end)
 				{
-					info.target.append(to_string(info.encoding, value, std::setw(width), std::setfill(padding), std::forward<Args>(args)...));
+					info.target.append(to_string(info.enc, value, std::setw(width), std::setfill(padding), std::forward<Args>(args)...));
 					return true;
 				}else if(*pos == '.')
 				{
@@ -269,9 +269,9 @@ namespace strings
 						auto fvalue = to_decimal(value, precision);
 						if(precision >= 0)
 						{
-							info.target.append(to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
+							info.target.append(to_string(info.enc, fvalue, std::setw(width), std::setfill(padding), std::setprecision(precision), std::fixed, std::forward<Args>(args)...));
 						}else{
-							info.target.append(to_string(info.encoding, fvalue, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
+							info.target.append(to_string(info.enc, fvalue, std::setw(width), std::setfill(padding), std::setprecision(-precision), std::defaultfloat, std::forward<Args>(args)...));
 						}
 						return true;
 					}
@@ -299,7 +299,7 @@ namespace strings
 		{
 			if(info.fmt_begin == info.fmt_end)
 			{
-				info.target.append(to_string(info.encoding, std::put_money(value, true), std::showbase));
+				info.target.append(to_string(info.enc, std::put_money(value, true), std::showbase));
 				return true;
 			}
 			bool international = true;
@@ -310,7 +310,7 @@ namespace strings
 				++pos;
 				if(pos == info.fmt_end)
 				{
-					info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase));
+					info.target.append(to_string(info.enc, std::put_money(value, international), std::showbase));
 					return true;
 				}
 			}
@@ -324,8 +324,8 @@ namespace strings
 				cell precision = info.parse_num(pos, info.fmt_end);
 				if(pos == info.fmt_end)
 				{
-					value = adjust_digits(value, precision, international, info.encoding.locale);
-					info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase));
+					value = adjust_digits(value, precision, international, info.enc.locale);
+					info.target.append(to_string(info.enc, std::put_money(value, international), std::showbase));
 					return true;
 				}
 				return false;
@@ -339,7 +339,7 @@ namespace strings
 			}
 			if(pos == info.fmt_end)
 			{
-				info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+				info.target.append(to_string(info.enc, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
 				return true;
 			}else if(*pos == '.')
 			{
@@ -351,8 +351,8 @@ namespace strings
 				cell precision = info.parse_num(pos, info.fmt_end);
 				if(pos == info.fmt_end)
 				{
-					value = adjust_digits(value, precision, international, info.encoding.locale);
-					info.target.append(to_string(info.encoding, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
+					value = adjust_digits(value, precision, international, info.enc.locale);
+					info.target.append(to_string(info.enc, std::put_money(value, international), std::showbase, std::setw(width), std::setfill(padding)));
 					return true;
 				}
 			}
@@ -402,16 +402,16 @@ namespace strings
 		static bool format_time(cell value, const format_info<Iter> &info)
 		{
 			std::time_t time;
-			if(*arg != -1)
+			if(value != -1)
 			{
-				time = static_cast<std::time_t>(*arg);
+				time = static_cast<std::time_t>(value);
 			}else{
 				time = std::time(nullptr);
 			}
 			if(info.fmt_begin == info.fmt_end)
 			{
 				std::tm value = aux::localtime(time);
-				info.target.append(to_string(info.encoding, std::put_time(&value, "%c")));
+				info.target.append(to_string(info.enc, std::put_time(&value, "%c")));
 				return true;
 			}
 			bool offset_found = false;
@@ -492,43 +492,43 @@ namespace strings
 			std::string format(format_initial_length + (info.fmt_end - begin_after_escaped), '\0');
 
 			// narrow before and after % using ctype<cell>
-			const auto &ctype = std::use_facet<std::ctype<cell>>(info.encoding.locale);
+			const auto &ctype = std::use_facet<std::ctype<cell>>(info.enc.locale);
 			aux::make_contiguous(info.fmt_begin, format_end, [&](const cell *p_begin, const cell *p_end)
 			{
-				ctype.narrow(p_begin, p_end, info.encoding.unknown_char, &format[0]);
+				ctype.narrow(p_begin, p_end, info.enc.unknown_char, &format[0]);
 				return nullptr;
 			});
 			aux::make_contiguous(begin_after_escaped, info.fmt_end, [&](const cell *p_begin, const cell *p_end)
 			{
-				ctype.narrow(p_begin, p_end, info.encoding.unknown_char, &format[format_initial_length]);
+				ctype.narrow(p_begin, p_end, info.enc.unknown_char, &format[format_initial_length]);
 				return nullptr;
 			});
 
-			if(!check_valid_time_format(format))
+			if(!impl::check_valid_time_format(format))
 			{
 				return false;
 			}
 
-			std::tm value;
+			std::tm tm;
 			if(offset_found)
 			{
 				// add seconds to time
 				timezone_offset *= 60;
 				time += timezone_offset;
-				value = aux::gmtime(time);
+				tm = aux::gmtime(time);
 #ifndef _MSC_VER
 				if(timezone_offset != 0)
 				{
 					// and timezone offset if present
-					value.tm_gmtoff = timezone_offset;
-					value.tm_zone = nullptr;
+					tm.tm_gmtoff = timezone_offset;
+					tm.tm_zone = nullptr;
 				}
 #endif
 			}else{
-				value = aux::localtime(time);
+				tm = aux::localtime(time);
 			}
 
-			info.target.append(to_string(info.encoding, std::put_time(&value, format.c_str())));
+			info.target.append(to_string(info.enc, std::put_time(&tm, format.c_str())));
 			return true;
 		}
 		

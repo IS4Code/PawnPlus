@@ -35,7 +35,7 @@ namespace aux
 	}
 
 	template <class Iterator, class Receiver>
-	auto make_contiguous(Iterator begin, typename std::enable_if<is_contiguous_iterator<Iterator>::value, Iterator>::type end, Receiver receiver) -> decltype(receiver(std::declval<const_iterator_pointer<Iterator>>(), std::declval<const_iterator_pointer<Iterator>>()))
+	auto make_contiguous(Iterator begin, typename std::enable_if<is_contiguous_iterator<Iterator>::value && !std::is_pointer<Iterator>::value, Iterator>::type end, Receiver receiver) -> decltype(receiver(std::declval<const_iterator_pointer<Iterator>>(), std::declval<const_iterator_pointer<Iterator>>()))
 	{
 		const_iterator_pointer<Iterator> ptr = &*begin;
 		return receiver(ptr, ptr + (end - begin));
