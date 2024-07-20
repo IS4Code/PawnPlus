@@ -1,5 +1,6 @@
 #include "regex.h"
 #include "errors.h"
+#include "format.h"
 #include "modules/expressions.h"
 #include "objects/stored_param.h"
 #include "fixes/int_regex.h"
@@ -1122,4 +1123,17 @@ cell_string strings::collate_transform(const cell_string &str, bool primary, con
 	return primary
 		? traits.transform_primary(str.begin(), str.end())
 		: traits.transform(str.begin(), str.end());
+}
+
+bool strings::impl::check_valid_time_format(std::string format)
+{
+	static std::regex valid_pattern = ([]()
+	{
+		std::regex result;
+		result.imbue(std::locale::classic());
+		result.assign("^(?:[^%\\0]+|%(?:E[YyCcxX]|0[ymUWVdewuHIMS]|[%ntYyCGgbhBmUWVjdeaAwuHIMScxXDFrRTpzZ]))*$", std::regex_constants::ECMAScript | std::regex_constants::optimize);
+		return result;
+	})();
+
+	return std::regex_match(format, valid_pattern);
 }
