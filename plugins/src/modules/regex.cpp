@@ -610,8 +610,34 @@ cell_regex create_regex(Iter pattern_begin, Iter pattern_end, Args&&... args)
 	return construct_regex(pattern_begin, pattern_end, orig_begin, std::forward<Args>(args)...);
 }
 
+template <class Iter>
+struct match_state
+{
+	using iterator = Iter;
+
+	const cell_regex &regex;
+	std::regex_constants::match_flag_type options;
+	Iter begin;
+	const Iter end;
+	std::match_results<Iter> &match;
+
+	match_state(const cell_regex &regex,
+		std::regex_constants::match_flag_type options,
+		Iter begin,
+		Iter end,
+		std::match_results<Iter> &match) : regex(regex), options(options), begin(begin), end(end), match(match)
+	{
+
+	}
+
+	bool search() const
+	{
+		return std::regex_search(begin, end, match, regex, options);
+	}
+};
+
 template <class Iter, class Receiver>
-auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, Receiver receiver) -> decltype(receiver(std::declval<cell_regex>(), std::declval<std::regex_constants::match_flag_type>(), std::declval<cell_string::const_iterator>(), std::declval<cell_string::const_iterator>()))
+auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, Receiver receiver) -> decltype(receiver(std::declval<match_state<cell_string::const_iterator>&&>()))
 {
 	std::regex_constants::syntax_option_type syntax_options;
 	std::regex_constants::match_flag_type match_options;
@@ -624,15 +650,16 @@ auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, Rec
 	{
 		match_options |= std::regex_constants::match_prev_avail;
 	}
+	std::match_results<cell_string::const_iterator> match;
 	if(info.options & cache_flag)
 	{
 		const cell_regex &regex = info.options & cache_addr_flag
 			? get_cached_addr(pattern_begin, pattern_end, info.options, syntax_options, std::move(info.mem_handle))
 			: get_cached(pattern_begin, pattern_end, info.pattern, info.options, syntax_options);
-		return receiver(regex, match_options, info.begin(), info.string.cend());
+		return receiver(match_state<cell_string::const_iterator>(regex, match_options, info.begin(), info.string.cend(), match));
 	}
 	cell_regex regex = create_regex(pattern_begin, pattern_end, info.pattern, syntax_options, info.options & percent_escaped_flag);
-	return receiver(regex, match_options, info.begin(), info.string.cend());
+	return receiver(match_state<cell_string::const_iterator>(regex, match_options, info.begin(), info.string.cend(), match));
 }
 
 template <class Iter>
@@ -640,16 +667,15 @@ struct regex_search_base
 {
 	bool operator()(Iter pattern_begin, Iter pattern_end, const regex_info &info) const
 	{
-		std::match_results<cell_string::const_iterator> match;
-		if(!get_regex(pattern_begin, pattern_end, info, [&](const cell_regex &regex, std::regex_constants::match_flag_type match_options, cell_string::const_iterator begin, cell_string::const_iterator end)
+		return get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
-			return std::regex_search(begin, end, match, regex, match_options);
-		}))
-		{
-			return false;
-		}
-		info.found(match[0].second);
-		return true;
+			if(!state.search())
+			{
+				return false;
+			}
+			info.found(state.match[0].second);
+			return true;
+		});
 	}
 };
 
@@ -680,24 +706,23 @@ struct regex_extract_base
 {
 	cell operator()(Iter pattern_begin, Iter pattern_end, const regex_info &info) const
 	{
-		std::match_results<cell_string::const_iterator> match;
-		if(!get_regex(pattern_begin, pattern_end, info, [&](const cell_regex &regex, std::regex_constants::match_flag_type match_options, cell_string::const_iterator begin, cell_string::const_iterator end)
+		return get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
-			return std::regex_search(begin, end, match, regex, match_options);
-		}))
-		{
-			return 0;
-		}
-		info.found(match[0].second);
-		tag_ptr chartag = tags::find_tag(tags::tag_char);
-		auto list = list_pool.add();
-		for(auto &group : match)
-		{
-			dyn_object obj(&*group.first, group.length() + 1, chartag);
-			*(obj.end() - 1) = 0;
-			list->push_back(std::move(obj));
-		}
-		return list_pool.get_id(list);
+			if(!state.search())
+			{
+				return 0;
+			}
+			info.found(state.match[0].second);
+			tag_ptr chartag = tags::find_tag(tags::tag_char);
+			auto list = list_pool.add();
+			for(auto &group : state.match)
+			{
+				dyn_object obj(&*group.first, group.length() + 1, chartag);
+				*(obj.end() - 1) = 0;
+				list->push_back(std::move(obj));
+			}
+			return list_pool.get_id(list);
+		});
 	}
 };
 
@@ -778,22 +803,21 @@ struct replace_sub_match_base
 	};
 };
 
-template <class StringIter, class ReplacementIter>
-void replace(cell_string &target, StringIter &begin, StringIter end, const cell_regex &regex, ReplacementIter replacement_begin, ReplacementIter replacement_end, std::regex_constants::match_flag_type match_options)
+template <class ReplacementIter, class RegexState>
+void replace_str(cell_string &target, RegexState &state, ReplacementIter replacement_begin, ReplacementIter replacement_end)
 {
-	std::match_results<StringIter> result;
-	while(std::regex_search(begin, end, result, regex, match_options))
+	while(state.search())
 	{
-		const auto &group = result[0];
-		target.append(begin, group.first);
-		typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, std::next(result.cbegin()), result.cend());
-		if(group.second != begin)
+		const auto &group = state.match[0];
+		target.append(state.begin, group.first);
+		typename replace_sub_match_base<typename std::match_results<typename RegexState::iterator>::const_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, std::next(state.match.cbegin()), state.match.cend());
+		if(group.second != state.begin)
 		{
-			match_options |= std::regex_constants::match_prev_avail;
+			state.options |= std::regex_constants::match_prev_avail;
 		}
-		begin = group.second;
+		state.begin = group.second;
 	}
-	target.append(begin, end);
+	target.append(state.begin, state.end);
 }
 
 template <class PatternIter>
@@ -804,11 +828,11 @@ struct regex_replace_base
 	{
 		void operator()(ReplacementIter replacement_begin, ReplacementIter replacement_end, PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const regex_info &info) const
 		{
-			get_regex(pattern_begin, pattern_end, info, [&](const cell_regex &regex, std::regex_constants::match_flag_type match_options, cell_string::const_iterator begin, cell_string::const_iterator end)
+			get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
 			{
-				target.append(info.string.cbegin(), begin);
-				replace(target, begin, end, regex, replacement_begin, replacement_end, match_options);
-				info.found(begin);
+				target.append(info.string.cbegin(), state.begin);
+				replace_str(target, state, replacement_begin, replacement_end);
+				info.found(state.begin);
 				return nullptr;
 			});
 		}
@@ -840,16 +864,17 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}
 }
 
-template <class StringIter>
-void replace(cell_string &target, StringIter &begin, StringIter end, const cell_regex &regex, const list_t &replacement, std::regex_constants::match_flag_type match_options)
+template <class RegexState>
+void replace_list(cell_string &target, RegexState &state, const list_t &replacement)
 {
-	std::match_results<StringIter> result;
-	while(std::regex_search(begin, end, result, regex, match_options))
+	using iterator = typename RegexState::iterator;
+
+	while(state.search())
 	{
-		const auto &group = result[0];
-		target.append(begin, group.first);
+		const auto &group = state.match[0];
+		target.append(state.begin, group.first);
 		size_t index = 0;
-		for(auto it = std::next(result.cbegin()); it != result.cend();)
+		for(auto it = std::next(state.match.cbegin()); it != state.match.cend();)
 		{
 			index++;
 			const auto &capture = *it;
@@ -859,7 +884,7 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const cell_
 
 				auto begin = it;
 				++it;
-				auto end = std::find_if(it, result.cend(), [](const std::sub_match<StringIter> &match) {return !match.matched; });
+				auto end = std::find_if(it, state.match.cend(), [](const std::sub_match<iterator> &match) {return !match.matched; });
 				it = end;
 
 				if(repl.get_tag()->inherits_from(tags::tag_string))
@@ -868,27 +893,27 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const cell_
 					cell_string *repl_str;
 					if(strings::pool.get_by_id(value, repl_str))
 					{
-						typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, begin, end);
+						typename replace_sub_match_base<typename std::match_results<iterator>::const_iterator>::template inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, begin, end);
 						continue;
 					}
 				}else if(repl.get_tag()->inherits_from(tags::tag_char) && repl.is_array())
 				{
-					select_iterator<replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner>(repl.begin(), target, begin, end);
+					select_iterator<replace_sub_match_base<typename std::match_results<iterator>::const_iterator>::template inner>(repl.begin(), target, begin, end);
 					continue;
 				}
 				cell_string str = repl.to_string(strings::default_encoding());
-				typename replace_sub_match_base<typename std::match_results<StringIter>::const_iterator>::template inner<cell_string::const_iterator>()(str.cbegin(), str.cend(), target, begin, end);
+				typename replace_sub_match_base<typename std::match_results<iterator>::const_iterator>::template inner<cell_string::const_iterator>()(str.cbegin(), str.cend(), target, begin, end);
 			}else{
 				++it;
 			}
 		}
-		if(group.second != begin)
+		if(group.second != state.begin)
 		{
-			match_options |= std::regex_constants::match_prev_avail;
+			state.options |= std::regex_constants::match_prev_avail;
 		}
-		begin = group.second;
+		state.begin = group.second;
 	}
-	target.append(begin, end);
+	target.append(state.begin, state.end);
 }
 
 template <class PatternIter>
@@ -896,11 +921,11 @@ struct regex_replace_list_base
 {
 	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const list_t &replacement, const regex_info &info) const
 	{
-		get_regex(pattern_begin, pattern_end, info, [&](const cell_regex &regex, std::regex_constants::match_flag_type match_options, cell_string::const_iterator begin, cell_string::const_iterator end)
+		get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
-			target.append(info.string.cbegin(), begin);
-			replace(target, begin, end, regex, replacement, match_options);
-			info.found(begin);
+			target.append(info.string.cbegin(), state.begin);
+			replace_list(target, state, replacement);
+			info.found(state.begin);
 			return nullptr;
 		});
 	}
@@ -926,8 +951,8 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}
 }
 
-template <class StringIter>
-void replace(cell_string &target, StringIter &begin, StringIter end, const cell_regex &regex, AMX *amx, int replacement_index, std::regex_constants::match_flag_type match_options, const char *format, cell *params, size_t numargs)
+template <class RegexState>
+void replace_func(cell_string &target, RegexState &state, AMX *amx, int replacement_index, const char *format, cell *params, size_t numargs)
 {
 	std::vector<stored_param> arg_values;
 	if(format != nullptr)
@@ -940,17 +965,16 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const cell_
 		}
 	}
 
-	std::match_results<StringIter> result;
-	while(std::regex_search(begin, end, result, regex, match_options))
+	while(state.search())
 	{
-		const auto &group = result[0];
-		target.append(begin, group.first);
+		const auto &group = state.match[0];
+		target.append(state.begin, group.first);
 
 		amx::guard guard(amx);
 
-		for(int i = result.size() - 1; i >= 0; i--)
+		for(int i = state.match.size() - 1; i >= 0; i--)
 		{
-			const auto &capture = result[i];
+			const auto &capture = state.match[i];
 
 			amx_Push(amx, capture.length());
 
@@ -989,13 +1013,13 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const cell_
 			target.append(repl->cbegin(), repl->cend());
 		}
 
-		if(group.second != begin)
+		if(group.second != state.begin)
 		{
-			match_options |= std::regex_constants::match_prev_avail;
+			state.options |= std::regex_constants::match_prev_avail;
 		}
-		begin = group.second;
+		state.begin = group.second;
 	}
-	target.append(begin, end);
+	target.append(state.begin, state.end);
 }
 
 template <class PatternIter>
@@ -1003,11 +1027,11 @@ struct regex_replace_func_base
 {
 	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, AMX *amx, int replacement_index, const regex_info &info, const char *format, cell *params, size_t numargs) const
 	{
-		get_regex(pattern_begin, pattern_end, info, [&](const cell_regex &regex, std::regex_constants::match_flag_type match_options, cell_string::const_iterator begin, cell_string::const_iterator end)
+		get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
-			target.append(info.string.cbegin(), begin);
-			replace(target, begin, end, regex, amx, replacement_index, match_options, format, params, numargs);
-			info.found(begin);
+			target.append(info.string.cbegin(), state.begin);
+			replace_func(target, state, amx, replacement_index, format, params, numargs);
+			info.found(state.begin);
 			return nullptr;
 		});
 	}
@@ -1033,28 +1057,27 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}
 }
 
-template <class StringIter>
-void replace(cell_string &target, StringIter &begin, StringIter end, const cell_regex &regex, AMX *amx, const expression &expr, std::regex_constants::match_flag_type match_options)
+template <class RegexState>
+void replace_expr(cell_string &target, RegexState &state, AMX *amx, const expression &expr)
 {
 	expression::exec_info info(amx);
 
 	std::vector<dyn_object> args;
-	args.resize(regex.mark_count() + 1);
+	args.resize(state.regex.mark_count() + 1);
 	expression::args_type ref_args;
 	for(const auto &arg : args)
 	{
 		ref_args.push_back(std::cref(arg));
 	}
 
-	std::match_results<StringIter> result;
-	while(std::regex_search(begin, end, result, regex, match_options))
+	while(state.search())
 	{
-		auto group = result[0];
-		target.append(begin, group.first);
+		auto group = state.match[0];
+		target.append(state.begin, group.first);
 
-		for(size_t i = 0; i < result.size(); i++)
+		for(size_t i = 0; i < state.match.size(); i++)
 		{
-			const auto &capture = result[i];
+			const auto &capture = state.match[i];
 			if(capture.matched)
 			{
 				auto len = capture.length();
@@ -1071,13 +1094,13 @@ void replace(cell_string &target, StringIter &begin, StringIter end, const cell_
 		auto result = expr.execute(ref_args, info).to_string(strings::default_encoding());
 		target.append(result.cbegin(), result.cend());
 
-		if(group.second != begin)
+		if(group.second != state.begin)
 		{
-			match_options |= std::regex_constants::match_prev_avail;
+			state.options |= std::regex_constants::match_prev_avail;
 		}
-		begin = group.second;
+		state.begin = group.second;
 	}
-	target.append(begin, end);
+	target.append(state.begin, state.end);
 }
 
 template <class PatternIter>
@@ -1085,11 +1108,11 @@ struct regex_replace_expr_base
 {
 	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, AMX *amx, const expression &expr, const regex_info &info) const
 	{
-		get_regex(pattern_begin, pattern_end, info, [&](const cell_regex &regex, std::regex_constants::match_flag_type match_options, cell_string::const_iterator begin, cell_string::const_iterator end)
+		get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
-			target.append(info.string.cbegin(), begin);
-			replace(target, begin, end, regex, amx, expr, match_options);
-			info.found(begin);
+			target.append(info.string.cbegin(), state.begin);
+			replace_expr(target, state, amx, expr);
+			info.found(state.begin);
 			return nullptr;
 		});
 	}
