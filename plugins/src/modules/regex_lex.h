@@ -69,6 +69,11 @@ namespace
 			}
 			return result;
 		}
+
+		constexpr typename Traits::char_type escape_char() const noexcept
+		{
+			return Traits::escape_char;
+		}
 	};
 
 	template <class Iter>

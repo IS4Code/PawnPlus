@@ -627,13 +627,15 @@ struct match_state
 	std::regex_constants::match_flag_type options;
 	Iter begin;
 	const Iter end;
+	const cell esc_char;
 	match_type &match;
 
 	match_state(const cell_regex &regex,
 		std::regex_constants::match_flag_type options,
+		bool percent_escaped,
 		Iter begin,
 		Iter end,
-		match_type &match) : regex(regex), options(options), begin(begin), end(end), match(match)
+		match_type &match) : regex(regex), options(options), esc_char(percent_escaped ? '%' : '\\'), begin(begin), end(end), match(match)
 	{
 
 	}
@@ -641,6 +643,11 @@ struct match_state
 	bool search() const
 	{
 		return std::regex_search(begin, end, match, regex, options);
+	}
+
+	cell escape_char() const noexcept
+	{
+		return esc_char;
 	}
 };
 
@@ -670,10 +677,10 @@ auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, Rec
 		const cell_regex &regex = info.options & cache_addr_flag
 			? get_cached_addr(pattern_begin, pattern_end, info.options, syntax_options, std::move(info.mem_handle))
 			: get_cached(pattern_begin, pattern_end, info.pattern, info.options, syntax_options);
-		return receiver(match_state<str_iterator>(regex, match_options, info.begin(), info.string.cend(), match));
+		return receiver(match_state<str_iterator>(regex, match_options, info.options & percent_escaped_flag, info.begin(), info.string.cend(), match));
 	}
 	cell_regex regex = create_regex(pattern_begin, pattern_end, info.pattern, syntax_options, info.options & percent_escaped_flag);
-	return receiver(match_state<str_iterator>(regex, match_options, info.begin(), info.string.cend(), match));
+	return receiver(match_state<str_iterator>(regex, match_options, info.options & percent_escaped_flag, info.begin(), info.string.cend(), match));
 }
 
 template <class Iter>
@@ -776,12 +783,12 @@ struct replace_sub_match_base
 	template <class Iter>
 	struct inner
 	{
-		void operator()(Iter begin, Iter end, cell_string &target, SubIter sbegin, SubIter send) const
+		void operator()(Iter begin, Iter end, cell_string &target, cell escape_char, SubIter sbegin, SubIter send) const
 		{
 			auto last = begin;
 			while(begin != end)
 			{
-				if(*begin == '$' || *begin == '\\')
+				if(*begin == '$' || *begin == escape_char)
 				{
 					auto c = *begin;
 					auto spec = begin;
@@ -854,7 +861,7 @@ void replace_str(cell_string &target, RegexState &state, ReplacementIter replace
 	{
 		const auto &group = state.match[0];
 		target.append(state.begin, group.first);
-		typename replace_sub_match_base<group_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, std::next(state.match.cbegin()), state.match.cend());
+		typename replace_sub_match_base<group_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, state.escape_char(), std::next(state.match.cbegin()), state.match.cend());
 		if(!replace_move_next(target, state, group))
 		{
 			break;
@@ -942,16 +949,16 @@ void replace_list(cell_string &target, RegexState &state, const list_t &replacem
 					cell_string *repl_str;
 					if(strings::pool.get_by_id(value, repl_str))
 					{
-						typename replace_sub_match_base<group_iterator>::template inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, begin, end);
+						typename replace_sub_match_base<group_iterator>::template inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, state.escape_char(), begin, end);
 						continue;
 					}
 				}else if(repl.get_tag()->inherits_from(tags::tag_char) && repl.is_array())
 				{
-					select_iterator<replace_sub_match_base<group_iterator>::template inner>(repl.begin(), target, begin, end);
+					select_iterator<replace_sub_match_base<group_iterator>::template inner>(repl.begin(), target, state.escape_char(), begin, end);
 					continue;
 				}
 				cell_string str = repl.to_string(strings::default_encoding());
-				typename replace_sub_match_base<group_iterator>::template inner<cell_string::const_iterator>()(str.cbegin(), str.cend(), target, begin, end);
+				typename replace_sub_match_base<group_iterator>::template inner<cell_string::const_iterator>()(str.cbegin(), str.cend(), target, state.escape_char(), begin, end);
 			}else{
 				++it;
 			}
