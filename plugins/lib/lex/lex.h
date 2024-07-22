@@ -1470,6 +1470,11 @@ namespace pg
 		{
 			using str_char_type = typename std::iterator_traits<StrIter>::value_type;
 
+			if(prev_avail && pattern.anchor)
+			{
+				return false;
+			}
+
 			detail::match_state_iter<StrIter, PatIter, Traits> ms{begin, end, pattern, mr, prev_avail, not_frontier_begin, not_frontier_end};
 			if(ms.level == 0)
 			{
@@ -1490,14 +1495,14 @@ namespace pg
 				}
 				else
 				{
-					if(pos == end)
+					if(pos == end || result.first == end)
 					{
 						break;
 					}
 					pos = std::next(result.first);
 				}
 			}
-			while(pos != end && !only_first && !pattern.anchor);
+			while(!only_first && !pattern.anchor);
 
 			return false;
 		}

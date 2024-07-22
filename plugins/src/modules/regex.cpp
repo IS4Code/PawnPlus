@@ -825,6 +825,26 @@ struct replace_sub_match_base
 	};
 };
 
+template <class RegexState, class RegexGroup>
+static bool replace_move_next(cell_string &target, RegexState &state, const RegexGroup &group)
+{
+	state.options |= std::regex_constants::match_prev_avail;
+	state.begin = group.second;
+	if(group.first == group.second)
+	{
+		// zero-length group - always move by one character
+		if(state.begin == state.end)
+		{
+			// at end - cannot move
+			return false;
+		}
+		// append the skipped character
+		target.append(1, *state.begin);
+		++state.begin;
+	}
+	return true;
+}
+
 template <class ReplacementIter, class RegexState>
 void replace_str(cell_string &target, RegexState &state, ReplacementIter replacement_begin, ReplacementIter replacement_end)
 {
@@ -835,11 +855,10 @@ void replace_str(cell_string &target, RegexState &state, ReplacementIter replace
 		const auto &group = state.match[0];
 		target.append(state.begin, group.first);
 		typename replace_sub_match_base<group_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, std::next(state.match.cbegin()), state.match.cend());
-		if(group.second != state.begin)
+		if(!replace_move_next(target, state, group))
 		{
-			state.options |= std::regex_constants::match_prev_avail;
+			break;
 		}
-		state.begin = group.second;
 	}
 	target.append(state.begin, state.end);
 }
@@ -937,11 +956,10 @@ void replace_list(cell_string &target, RegexState &state, const list_t &replacem
 				++it;
 			}
 		}
-		if(group.second != state.begin)
+		if(!replace_move_next(target, state, group))
 		{
-			state.options |= std::regex_constants::match_prev_avail;
+			break;
 		}
-		state.begin = group.second;
 	}
 	target.append(state.begin, state.end);
 }
@@ -1049,11 +1067,10 @@ void replace_func(cell_string &target, RegexState &state, AMX *amx, int replacem
 			target.append(repl->cbegin(), repl->cend());
 		}
 
-		if(group.second != state.begin)
+		if(!replace_move_next(target, state, group))
 		{
-			state.options |= std::regex_constants::match_prev_avail;
+			break;
 		}
-		state.begin = group.second;
 	}
 	target.append(state.begin, state.end);
 }
@@ -1136,11 +1153,10 @@ void replace_expr(cell_string &target, RegexState &state, AMX *amx, const expres
 		auto result = expr.execute(ref_args, info).to_string(strings::default_encoding());
 		target.append(result.cbegin(), result.cend());
 
-		if(group.second != state.begin)
+		if(!replace_move_next(target, state, group))
 		{
-			state.options |= std::regex_constants::match_prev_avail;
+			break;
 		}
-		state.begin = group.second;
 	}
 	target.append(state.begin, state.end);
 }
