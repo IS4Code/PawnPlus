@@ -260,7 +260,7 @@ struct regex_info
 };
 
 template <class Iter, class Receiver>
-auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, Receiver receiver) -> decltype(receiver(std::declval<match_state<cell_string::const_iterator>&&>()))
+auto get_regex_state(Iter pattern_begin, Iter pattern_end, const regex_info &info, Receiver receiver) -> decltype(receiver(std::declval<match_state<cell_string::const_iterator>&&>()))
 {
 	using str_iterator = cell_string::const_iterator;
 
@@ -278,17 +278,9 @@ auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, Rec
 	if((info.options & syntax_mask) == lex_lang)
 	{
 		return get_lex(pattern_begin, pattern_end, info, syntax_options, match_options, std::move(receiver));
+	}else{
+		return get_regex(pattern_begin, pattern_end, info, syntax_options, match_options, std::move(receiver));
 	}
-	std::match_results<str_iterator> match;
-	if(info.options & cache_flag)
-	{
-		const cell_regex &regex = info.options & cache_addr_flag
-			? get_cached_addr(pattern_begin, pattern_end, info.options, syntax_options, std::move(info.mem_handle))
-			: get_cached(pattern_begin, pattern_end, info.pattern, info.options, syntax_options);
-		return receiver(match_state<str_iterator>(regex, match_options, info.options & percent_escaped_flag, info.begin(), info.string.cend(), match));
-	}
-	cell_regex regex = create_regex(pattern_begin, pattern_end, info.pattern, syntax_options, info.options & percent_escaped_flag);
-	return receiver(match_state<str_iterator>(regex, match_options, info.options & percent_escaped_flag, info.begin(), info.string.cend(), match));
 }
 
 template <class Iter>
@@ -296,7 +288,7 @@ struct regex_search_base
 {
 	bool operator()(Iter pattern_begin, Iter pattern_end, const regex_info &info) const
 	{
-		return get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
+		return get_regex_state(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
 			if(!state.search())
 			{
@@ -339,7 +331,7 @@ struct regex_extract_base
 {
 	cell operator()(Iter pattern_begin, Iter pattern_end, const regex_info &info) const
 	{
-		return get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
+		return get_regex_state(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
 			if(!state.search())
 			{
@@ -486,7 +478,7 @@ struct regex_replace_base
 	{
 		void operator()(ReplacementIter replacement_begin, ReplacementIter replacement_end, PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const regex_info &info) const
 		{
-			get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
+			get_regex_state(pattern_begin, pattern_end, info, [&](auto &&state)
 			{
 				target.append(info.string.cbegin(), state.begin);
 				replace_str(target, state, replacement_begin, replacement_end);
@@ -584,7 +576,7 @@ struct regex_replace_list_base
 {
 	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, const list_t &replacement, const regex_info &info) const
 	{
-		get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
+		get_regex_state(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
 			target.append(info.string.cbegin(), state.begin);
 			replace_list(target, state, replacement);
@@ -695,7 +687,7 @@ struct regex_replace_func_base
 {
 	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, AMX *amx, int replacement_index, const regex_info &info, const char *format, cell *params, size_t numargs) const
 	{
-		get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
+		get_regex_state(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
 			target.append(info.string.cbegin(), state.begin);
 			replace_func(target, state, amx, replacement_index, format, params, numargs);
@@ -781,7 +773,7 @@ struct regex_replace_expr_base
 {
 	void operator()(PatternIter pattern_begin, PatternIter pattern_end, cell_string &target, AMX *amx, const expression &expr, const regex_info &info) const
 	{
-		get_regex(pattern_begin, pattern_end, info, [&](auto &&state)
+		get_regex_state(pattern_begin, pattern_end, info, [&](auto &&state)
 		{
 			target.append(info.string.cbegin(), state.begin);
 			replace_expr(target, state, amx, expr);

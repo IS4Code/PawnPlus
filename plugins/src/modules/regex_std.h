@@ -7,6 +7,8 @@
 
 typedef std::basic_regex<cell> cell_regex;
 
+struct regex_info;
+
 namespace
 {
 	const char *get_error(std::regex_constants::error_type code)
@@ -402,6 +404,23 @@ namespace
 			return esc_char;
 		}
 	};
+	
+	template <class Iter, class Receiver>
+	auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, std::regex_constants::syntax_option_type syntax_options, std::regex_constants::match_flag_type match_options, Receiver receiver) -> decltype(receiver(std::declval<match_state<cell_string::const_iterator>&&>()))
+	{
+		using str_iterator = cell_string::const_iterator;
+
+		std::match_results<str_iterator> match;
+		if(info.options & cache_flag)
+		{
+			const cell_regex &regex = info.options & cache_addr_flag
+				? get_cached_addr(pattern_begin, pattern_end, info.options, syntax_options, std::move(info.mem_handle))
+				: get_cached(pattern_begin, pattern_end, info.pattern, info.options, syntax_options);
+			return receiver(match_state<str_iterator>(regex, match_options, info.options & percent_escaped_flag, info.begin(), info.string.cend(), match));
+		}
+		cell_regex regex = create_regex(pattern_begin, pattern_end, info.pattern, syntax_options, info.options & percent_escaped_flag);
+		return receiver(match_state<str_iterator>(regex, match_options, info.options & percent_escaped_flag, info.begin(), info.string.cend(), match));
+	}
 }
 
 #endif
