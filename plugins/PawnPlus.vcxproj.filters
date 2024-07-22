@@ -401,6 +401,9 @@
     <ClInclude Include="src\modules\regex_lex.h">
       <Filter>src\modules</Filter>
     </ClInclude>
+    <ClInclude Include="src\modules\regex_std.h">
+      <Filter>src\modules</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="PawnPlus.def" />

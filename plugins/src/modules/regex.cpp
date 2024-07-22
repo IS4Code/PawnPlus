@@ -4,8 +4,6 @@
 #include "modules/expressions.h"
 #include "objects/stored_param.h"
 #include "fixes/int_regex.h"
-#include "regex_std.h"
-#include "regex_lex.h"
 
 #include <regex>
 #include <utility>
@@ -71,6 +69,9 @@ namespace std
 		}
 	};
 }
+
+#include "regex_std.h"
+#include "regex_lex.h"
 
 constexpr const cell syntax_mask = 7;
 constexpr const cell percent_escaped_flag = 128;

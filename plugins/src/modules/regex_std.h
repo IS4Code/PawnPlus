@@ -142,20 +142,23 @@ namespace
 			return !(*this == it);
 		}
 	};
+}
 
-	namespace std
+namespace std
+{
+	template <class Iter, typename std::iterator_traits<Iter>::value_type Backslash, typename std::iterator_traits<Iter>::value_type Percent>
+	struct iterator_traits<percent_escaped<Iter, Backslash, Percent>>
 	{
-		template <class Iter, typename std::iterator_traits<Iter>::value_type Backslash, typename std::iterator_traits<Iter>::value_type Percent>
-		struct iterator_traits<percent_escaped<Iter, Backslash, Percent>>
-		{
-			using reference = typename percent_escaped<Iter, Backslash, Percent>::reference;
-			using pointer = typename percent_escaped<Iter, Backslash, Percent>::pointer;
-			using value_type = typename percent_escaped<Iter, Backslash, Percent>::value_type;
-			using difference_type = typename percent_escaped<Iter, Backslash, Percent>::difference_type;
-			using iterator_category =  std::input_iterator_tag;
-		};
-	}
+		using reference = typename percent_escaped<Iter, Backslash, Percent>::reference;
+		using pointer = typename percent_escaped<Iter, Backslash, Percent>::pointer;
+		using value_type = typename percent_escaped<Iter, Backslash, Percent>::value_type;
+		using difference_type = typename percent_escaped<Iter, Backslash, Percent>::difference_type;
+		using iterator_category =  std::input_iterator_tag;
+	};
+}
 
+namespace
+{
 	template <class Iter>
 	void configure_regex(cell_regex &regex, Iter pattern_begin, Iter pattern_end, Iter orig_begin, const cell_string *pattern, std::regex_constants::syntax_option_type syntax_options, bool use_percent_escaped)
 	{
@@ -166,7 +169,6 @@ namespace
 			{
 				msg.append(1, static_cast<unsigned char>(c));
 			}
-			logprintf("%s", msg.c_str());
 			regex.assign(percent_escaped<Iter>(pattern_begin), percent_escaped<Iter>(pattern_end), syntax_options);
 		}else if(pattern != nullptr && pattern_begin == orig_begin)
 		{
