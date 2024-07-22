@@ -4,6 +4,7 @@
 #include "modules/expressions.h"
 #include "objects/stored_param.h"
 #include "fixes/int_regex.h"
+#include "regex_lex.h"
 
 #include <regex>
 #include <utility>
@@ -72,14 +73,16 @@ namespace std
 
 typedef std::basic_regex<cell> cell_regex;
 
+constexpr const cell syntax_mask = 7;
 constexpr const cell percent_escaped_flag = 128;
 constexpr const cell no_prev_avail_flag = 32768;
 constexpr const cell cache_flag = 4194304;
 constexpr const cell cache_addr_flag = 8388608;
+constexpr const cell lex_lang = 6;
 
 static void regex_options(cell options, std::regex_constants::syntax_option_type &syntax, std::regex_constants::match_flag_type &match)
 {
-	switch(options & 7)
+	switch(options & syntax_mask)
 	{
 		case 0:
 			syntax = std::regex_constants::ECMAScript;
@@ -99,11 +102,14 @@ static void regex_options(cell options, std::regex_constants::syntax_option_type
 		case 5:
 			syntax = std::regex_constants::egrep;
 			break;
+		case lex_lang:
+			syntax = {};
+			break;
 		default:
 			amx_FormalError(errors::out_of_range, "options");
 			break;
 	}
-	options &= ~7;
+	options &= ~syntax_mask;
 	if(options & 8)
 	{
 		syntax |= std::regex_constants::icase;
@@ -614,18 +620,20 @@ template <class Iter>
 struct match_state
 {
 	using iterator = Iter;
+	using match_type = std::match_results<Iter>;
+	using match_iterator = typename match_type::const_iterator;
 
 	const cell_regex &regex;
 	std::regex_constants::match_flag_type options;
 	Iter begin;
 	const Iter end;
-	std::match_results<Iter> &match;
+	match_type &match;
 
 	match_state(const cell_regex &regex,
 		std::regex_constants::match_flag_type options,
 		Iter begin,
 		Iter end,
-		std::match_results<Iter> &match) : regex(regex), options(options), begin(begin), end(end), match(match)
+		match_type &match) : regex(regex), options(options), begin(begin), end(end), match(match)
 	{
 
 	}
@@ -639,6 +647,8 @@ struct match_state
 template <class Iter, class Receiver>
 auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, Receiver receiver) -> decltype(receiver(std::declval<match_state<cell_string::const_iterator>&&>()))
 {
+	using str_iterator = cell_string::const_iterator;
+
 	std::regex_constants::syntax_option_type syntax_options;
 	std::regex_constants::match_flag_type match_options;
 	regex_options(info.options, syntax_options, match_options);
@@ -650,16 +660,20 @@ auto get_regex(Iter pattern_begin, Iter pattern_end, const regex_info &info, Rec
 	{
 		match_options |= std::regex_constants::match_prev_avail;
 	}
-	std::match_results<cell_string::const_iterator> match;
+	if((info.options & syntax_mask) == lex_lang)
+	{
+		return get_lex(pattern_begin, pattern_end, info, syntax_options, match_options, std::move(receiver));
+	}
+	std::match_results<str_iterator> match;
 	if(info.options & cache_flag)
 	{
 		const cell_regex &regex = info.options & cache_addr_flag
 			? get_cached_addr(pattern_begin, pattern_end, info.options, syntax_options, std::move(info.mem_handle))
 			: get_cached(pattern_begin, pattern_end, info.pattern, info.options, syntax_options);
-		return receiver(match_state<cell_string::const_iterator>(regex, match_options, info.begin(), info.string.cend(), match));
+		return receiver(match_state<str_iterator>(regex, match_options, info.begin(), info.string.cend(), match));
 	}
 	cell_regex regex = create_regex(pattern_begin, pattern_end, info.pattern, syntax_options, info.options & percent_escaped_flag);
-	return receiver(match_state<cell_string::const_iterator>(regex, match_options, info.begin(), info.string.cend(), match));
+	return receiver(match_state<str_iterator>(regex, match_options, info.begin(), info.string.cend(), match));
 }
 
 template <class Iter>
@@ -686,7 +700,9 @@ bool strings::regex_search(const cell_string &str, const cell *pattern, cell *po
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
-		return 0;
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -697,7 +713,9 @@ bool strings::regex_search(const cell_string &str, const cell_string &pattern, c
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
-		return 0;
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -733,7 +751,9 @@ cell strings::regex_extract(const cell_string &str, const cell *pattern, cell *p
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
-		return 0;
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -744,7 +764,9 @@ cell strings::regex_extract(const cell_string &str, const cell_string &pattern, 
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
-		return 0;
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -806,11 +828,13 @@ struct replace_sub_match_base
 template <class ReplacementIter, class RegexState>
 void replace_str(cell_string &target, RegexState &state, ReplacementIter replacement_begin, ReplacementIter replacement_end)
 {
+	using group_iterator = typename RegexState::match_iterator;
+
 	while(state.search())
 	{
 		const auto &group = state.match[0];
 		target.append(state.begin, group.first);
-		typename replace_sub_match_base<typename std::match_results<typename RegexState::iterator>::const_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, std::next(state.match.cbegin()), state.match.cend());
+		typename replace_sub_match_base<group_iterator>::template inner<ReplacementIter>()(replacement_begin, replacement_end, target, std::next(state.match.cbegin()), state.match.cend());
 		if(group.second != state.begin)
 		{
 			state.options |= std::regex_constants::match_prev_avail;
@@ -851,6 +875,9 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -861,13 +888,16 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
 template <class RegexState>
 void replace_list(cell_string &target, RegexState &state, const list_t &replacement)
 {
-	using iterator = typename RegexState::iterator;
+	using group_iterator = typename RegexState::match_iterator;
 
 	while(state.search())
 	{
@@ -884,7 +914,7 @@ void replace_list(cell_string &target, RegexState &state, const list_t &replacem
 
 				auto begin = it;
 				++it;
-				auto end = std::find_if(it, state.match.cend(), [](const std::sub_match<iterator> &match) {return !match.matched; });
+				auto end = std::find_if(it, state.match.cend(), [](const auto &match) {return !match.matched; });
 				it = end;
 
 				if(repl.get_tag()->inherits_from(tags::tag_string))
@@ -893,16 +923,16 @@ void replace_list(cell_string &target, RegexState &state, const list_t &replacem
 					cell_string *repl_str;
 					if(strings::pool.get_by_id(value, repl_str))
 					{
-						typename replace_sub_match_base<typename std::match_results<iterator>::const_iterator>::template inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, begin, end);
+						typename replace_sub_match_base<group_iterator>::template inner<cell_string::const_iterator>()(repl_str->cbegin(), repl_str->cend(), target, begin, end);
 						continue;
 					}
 				}else if(repl.get_tag()->inherits_from(tags::tag_char) && repl.is_array())
 				{
-					select_iterator<replace_sub_match_base<typename std::match_results<iterator>::const_iterator>::template inner>(repl.begin(), target, begin, end);
+					select_iterator<replace_sub_match_base<group_iterator>::template inner>(repl.begin(), target, begin, end);
 					continue;
 				}
 				cell_string str = repl.to_string(strings::default_encoding());
-				typename replace_sub_match_base<typename std::match_results<iterator>::const_iterator>::template inner<cell_string::const_iterator>()(str.cbegin(), str.cend(), target, begin, end);
+				typename replace_sub_match_base<group_iterator>::template inner<cell_string::const_iterator>()(str.cbegin(), str.cend(), target, begin, end);
 			}else{
 				++it;
 			}
@@ -938,6 +968,9 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -948,6 +981,9 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -1044,6 +1080,9 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -1054,6 +1093,9 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -1125,6 +1167,9 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 
@@ -1135,6 +1180,9 @@ void strings::regex_replace(cell_string &target, const cell_string &str, const c
 	}catch(const std::regex_error &err)
 	{
 		amx_FormalError("%s (%s)", err.what(), get_error(err.code()));
+	}catch(const lex::lex_error &err)
+	{
+		amx_FormalError(err.what(), err.first_arg());
 	}
 }
 

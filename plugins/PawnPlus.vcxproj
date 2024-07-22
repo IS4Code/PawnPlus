@@ -130,6 +130,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="lib\lex\lex.cpp" />
     <ClCompile Include="lib\sdk\amxplugin.cpp" />
     <ClCompile Include="lib\sdk\amx\amxdbg.c" />
     <ClCompile Include="lib\subhook\subhook.c" />
@@ -184,6 +185,7 @@
     <ClCompile Include="src\utils\thread.cpp" />
     <ClCompile Include="src\utils\thread_posix.cpp" />
     <ClCompile Include="src\utils\thread_win.cpp" />
+    <ClInclude Include="lib\lex\lex.h" />
     <ClInclude Include="lib\sdk\amx\amx.h" />
     <ClInclude Include="lib\sdk\amx\amxdbg.h" />
     <ClInclude Include="lib\sdk\amx\getch.h" />
@@ -233,6 +235,7 @@
     <ClInclude Include="src\modules\iterators.h" />
     <ClInclude Include="src\modules\parser.h" />
     <ClInclude Include="src\modules\regex.h" />
+    <ClInclude Include="src\modules\regex_lex.h" />
     <ClInclude Include="src\modules\serialize.h" />
     <ClInclude Include="src\modules\strings.h" />
     <ClInclude Include="src\modules\tags.h" />

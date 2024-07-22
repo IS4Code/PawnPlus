@@ -21,6 +21,7 @@ PawnPlus: clean
 	$(GCC) $(PawnPlus) ./lib/sdk/amx/*.c
 	$(GPP) $(PawnPlus) ./lib/sdk/*.cpp
 	$(GCC) $(PawnPlus) ./lib/subhook/*.c
+	$(GPP) $(PawnPlus) ./lib/lex/*.cpp
 	$(GPP) $(PawnPlus) ./src/api/*.cpp
 	$(GPP) $(PawnPlus) ./src/utils/*.cpp
 	$(GPP) $(PawnPlus) ./src/objects/*.cpp

@@ -166,6 +166,9 @@
     <ClCompile Include="src\fixes\int_string.cpp">
       <Filter>src\fixes</Filter>
     </ClCompile>
+    <ClCompile Include="lib\lex\lex.cpp">
+      <Filter>lib\lex</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="src">
@@ -200,6 +203,9 @@
     </Filter>
     <Filter Include="lib\sdk\amx">
       <UniqueIdentifier>{80240169-b172-4ef7-b38b-3491b1243c69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lib\lex">
+      <UniqueIdentifier>{fbab3bca-29bc-4e90-8702-2efb48ec5ffc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -388,6 +394,12 @@
     </ClInclude>
     <ClInclude Include="src\utils\memory.h">
       <Filter>src\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="lib\lex\lex.h">
+      <Filter>lib\lex</Filter>
+    </ClInclude>
+    <ClInclude Include="src\modules\regex_lex.h">
+      <Filter>src\modules</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

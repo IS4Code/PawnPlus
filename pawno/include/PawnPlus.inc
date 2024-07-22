@@ -587,6 +587,7 @@ enum regex_options (<<= 1)
     regex_awk = 3,
     regex_grep = 4,
     regex_egrep = 5,
+    regex_lex = 6,
     
     regex_icase = 8,
     regex_nosubs,
