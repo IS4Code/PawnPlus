@@ -128,11 +128,12 @@ namespace
 			bool match_class(str_char_type c, char_type cl) const
 			{
 				bool neg = ctype.is(std::ctype_base::upper, cl);
-				if(neg)
+				char_type cll = neg ? ctype.tolower(cl) : cl;
+				char_class_type test = regex_traits.lookup_classname(&cll, &cll + 1, Icase);
+				if(test == char_class_type())
 				{
-					cl = ctype.tolower(cl);
+					return c == cl;
 				}
-				char_class_type test = regex_traits.lookup_classname(&cl, &cl + 1, Icase);
 				return regex_traits.isctype(c, test) != neg;
 			}
 		};
