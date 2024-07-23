@@ -205,6 +205,13 @@ namespace
 		std::locale global_locale;
 
 	protected:
+		void reset()
+		{
+			global_locale = std::locale();
+			regex.imbue(global_locale);
+			depends_on_global_locale = false;
+		}
+
 		template <class... Args>
 		bool update(Args&&... args)
 		{

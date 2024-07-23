@@ -171,7 +171,7 @@ namespace
 					if(min <= c2 && c2 <= max)
 					{
 						return true;
-					}else if(c != c2)
+					} else if(c != c2)
 					{
 						// was upper already, toupper(c) should not do anything
 						// unless toupper(tolower(c)) != toupper(c)
@@ -179,7 +179,7 @@ namespace
 					}
 					c2 = ctype.toupper(c);
 					return min <= c2 && c2 <= max;
-				}else{
+				} else {
 					std::basic_string<char_type> minkey = regex_traits.transform(&min, &min + 1);
 					std::basic_string<char_type> maxkey = regex_traits.transform(&max, &max + 1);
 					std::basic_string<str_char_type> ckey = regex_traits.transform(&c, &c + 1);
@@ -196,7 +196,7 @@ namespace
 					if(minkey <= ckey && ckey <= maxkey)
 					{
 						return true;
-					}else if(c != c2)
+					} else if(c != c2)
 					{
 						return false;
 					}
@@ -213,14 +213,14 @@ namespace
 					if(!Icase)
 					{
 						return c == d;
-					}else{
+					} else {
 						return ctype.tolower(c) == ctype.tolower(d);
 					}
-				}else{
+				} else {
 					if(!Icase)
 					{
 						return regex_traits.translate(c) == regex_traits.translate(d);
-					}else{
+					} else {
 						return regex_traits.translate_nocase(c) == regex_traits.translate_nocase(d);
 					}
 				}
@@ -236,7 +236,7 @@ namespace
 
 	template <class StrIter, class PatIter>
 	using default_lex_match_state = lex_match_state<StrIter, PatIter, lex_traits<PatIter, '\\', false, false>>&&;
-	
+
 	template <class Iter, class Traits>
 	class lex_cached
 	{
@@ -245,6 +245,12 @@ namespace
 		std::locale global_locale;
 
 	protected:
+		void reset()
+		{
+			global_locale = std::locale();
+			depends_on_global_locale = false;
+		}
+
 		template <class... Args>
 		bool update(Args&&... args)
 		{
@@ -290,17 +296,41 @@ namespace
 	template <class Iter, class Traits>
 	using lex_cached_value = cached_value<lex_cached<Iter, Traits>>;
 
-	template <class Iter, class Traits>
-	static std::unordered_map<std::pair<cell_string, cell>, lex_cached_value<Iter, Traits>> &lex_cache()
+	struct unique_cell_string : public std::unique_ptr<const cell_string>
 	{
-		static std::unordered_map<std::pair<cell_string, cell>, lex_cached_value<Iter, Traits>> data;
+		template <class... Args>
+		unique_cell_string(Args&&... args) : unique_ptr(std::make_unique<cell_string>(std::forward<Args>(args)...))
+		{
+
+		}
+	};
+}
+
+namespace std
+{
+	template <>
+	struct hash<unique_cell_string>
+	{
+		size_t operator()(const unique_cell_string &obj) const
+		{
+			return obj == nullptr ? 0 : std::hash<cell_string>()(*obj);
+		}
+	};
+}
+
+namespace
+{
+	template <class Iter, class Traits>
+	static std::unordered_map<std::pair<unique_cell_string, cell>, lex_cached_value<Iter, Traits>> &lex_cache()
+	{
+		static std::unordered_map<std::pair<unique_cell_string, cell>, lex_cached_value<Iter, Traits>> data;
 		return data;
 	}
 	
-	template <class Iter, class Traits, class... KeyArgs>
-	const lex::pattern_iter<Iter, Traits> &get_lex_cached_key(Iter pattern_begin, Iter pattern_end, cell options, KeyArgs&&... keyArgs)
+	template <class Traits, class... KeyArgs>
+	const lex::pattern_iter<cell_string::const_iterator, Traits> &get_lex_cached_key(cell options, KeyArgs&&... keyArgs)
 	{
-		auto &cache = lex_cache<Iter, Traits>();
+		auto &cache = lex_cache<cell_string::const_iterator, Traits>();
 		auto result = cache.emplace(
 			std::piecewise_construct,
 			std::forward_as_tuple(
@@ -310,9 +340,10 @@ namespace
 			),
 			std::forward_as_tuple()
 		).first;
+		const auto &key = result->first.first;
 		auto &cached = result->second;
 		try{
-			cached.update(pattern_begin, pattern_end);
+			cached.update(key->begin(), key->end());
 		}catch(...)
 		{
 			cache.erase(result);
@@ -322,15 +353,15 @@ namespace
 	}
 
 	template <class Iter, class Traits>
-	const lex::pattern_iter<Iter, Traits> &get_lex_cached(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options)
+	const lex::pattern_iter<cell_string::const_iterator, Traits> &get_lex_cached(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options)
 	{
 		if(pattern == nullptr)
 		{
 			// key from range
-			return get_lex_cached_key<Iter, Traits>(pattern_begin, pattern_end, options, pattern_begin, pattern_end);
+			return get_lex_cached_key<Traits>(options, pattern_begin, pattern_end);
 		}else{
 			// key from string
-			return get_lex_cached_key<Iter, Traits>(pattern_begin, pattern_end, options, *pattern);
+			return get_lex_cached_key<Traits>(options, *pattern);
 		}
 	}
 
@@ -382,10 +413,14 @@ namespace
 
 		if(info.options & cache_flag)
 		{
-			const lex::pattern_iter<PatIter, traits> &pattern = info.options & cache_addr_flag
-				? get_lex_cached_addr<PatIter, traits>(pattern_begin, pattern_end, info.options, std::move(info.mem_handle))
-				: get_lex_cached<PatIter, traits>(pattern_begin, pattern_end, info.pattern, info.options);
-			return receiver(lex_match_state<StrIter, PatIter, traits>(pattern, std::forward<Args>(args)...));
+			if(info.options & cache_addr_flag)
+			{
+				const lex::pattern_iter<PatIter, traits> &pattern = get_lex_cached_addr<PatIter, traits>(pattern_begin, pattern_end, info.options, std::move(info.mem_handle));
+				return receiver(lex_match_state<StrIter, PatIter, traits>(pattern, std::forward<Args>(args)...));
+			}else{
+				const lex::pattern_iter<cell_string::const_iterator, traits> &pattern = get_lex_cached<PatIter, traits>(pattern_begin, pattern_end, info.pattern, info.options);
+				return receiver(lex_match_state<StrIter, cell_string::const_iterator, traits>(pattern, std::forward<Args>(args)...));
+			}
 		}
 		lex::pattern_iter<PatIter, traits> pattern = create_lex<PatIter, traits>(pattern_begin, pattern_end);
 		return receiver(lex_match_state<StrIter, PatIter, traits>(pattern, std::forward<Args>(args)...));

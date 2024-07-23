@@ -110,12 +110,9 @@ public:
 		{
 			// different address
 			this->mem_handle = std::move(mem_handle);
-			// try updating the global locale first
-			if(!Base::update(std::forward<Args>(args)...))
-			{
-				// but init anyway if locales match
-				Base::init(false, std::forward<Args>(args)...);
-			}
+			// reset to initial state and re-init
+			Base::reset();
+			Base::init(false, std::forward<Args>(args)...);
 			return true;
 		}
 		if(!Base::update(std::forward<Args>(args)...))
