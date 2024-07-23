@@ -762,10 +762,12 @@ namespace pg
 
 			pattern_iter() = default;
 
-			pattern_iter(const Iter begin, const Iter end)
+			template <typename... Args>
+			pattern_iter(const Iter begin, const Iter end, Args&&... args)
 				: end(end)
 				, anchor(begin != end && *begin == '^')
 				, begin(anchor ? std::next(begin) : begin)
+				, traits(std::forward<Args>(args)...)
 			{
 				enum class capture_state { available, unfinished, finished };
 
