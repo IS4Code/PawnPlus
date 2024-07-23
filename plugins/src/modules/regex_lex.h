@@ -76,13 +76,10 @@ namespace
 		}
 	};
 
-	template <class Iter>
-	using it_value_type = typename std::iterator_traits<Iter>::value_type;
-
-	template <typename PatIter, it_value_type<PatIter> EscapeChar>
+	template <typename PatCharT, PatCharT EscapeChar>
 	struct lex_traits_base
 	{
-		using char_type = typename std::iterator_traits<PatIter>::value_type;
+		using char_type = PatCharT;
 		using locale_type = typename std::regex_traits<char_type>::locale_type;
 		using char_class_type = typename std::regex_traits<char_type>::char_class_type;
 
@@ -106,10 +103,10 @@ namespace
 			return *this;
 		}
 
-		template <typename StrIter, bool Icase>
+		template <typename StrCharT, bool Icase>
 		struct state_base
 		{
-			using str_char_type = typename std::iterator_traits<StrIter>::value_type;
+			using str_char_type = StrCharT;
 
 			static_assert(std::is_same<char_type, str_char_type>::value, "Comparing strings of different types!");
 
@@ -144,11 +141,11 @@ namespace
 		}
 	};
 
-	template <typename PatIter, it_value_type<PatIter> EscapeChar, bool Icase, bool Collate>
-	struct lex_traits : public lex_traits_base<PatIter, EscapeChar>
+	template <typename PatCharT, PatCharT EscapeChar, bool Icase, bool Collate>
+	struct lex_traits : public lex_traits_base<PatCharT, EscapeChar>
 	{
-		template <typename StrIter>
-		struct state : public state_base<StrIter, Icase>
+		template <typename StrCharT>
+		struct state : public state_base<StrCharT, Icase>
 		{
 			state(const lex_traits &traits) : state_base(traits)
 			{
@@ -171,7 +168,7 @@ namespace
 					if(min <= c2 && c2 <= max)
 					{
 						return true;
-					} else if(c != c2)
+					}else if(c != c2)
 					{
 						// was upper already, toupper(c) should not do anything
 						// unless toupper(tolower(c)) != toupper(c)
@@ -179,7 +176,7 @@ namespace
 					}
 					c2 = ctype.toupper(c);
 					return min <= c2 && c2 <= max;
-				} else {
+				}else{
 					std::basic_string<char_type> minkey = regex_traits.transform(&min, &min + 1);
 					std::basic_string<char_type> maxkey = regex_traits.transform(&max, &max + 1);
 					std::basic_string<str_char_type> ckey = regex_traits.transform(&c, &c + 1);
@@ -196,7 +193,7 @@ namespace
 					if(minkey <= ckey && ckey <= maxkey)
 					{
 						return true;
-					} else if(c != c2)
+					}else if(c != c2)
 					{
 						return false;
 					}
@@ -213,29 +210,29 @@ namespace
 					if(!Icase)
 					{
 						return c == d;
-					} else {
+					}else{
 						return ctype.tolower(c) == ctype.tolower(d);
 					}
-				} else {
+				}else{
 					if(!Icase)
 					{
 						return regex_traits.translate(c) == regex_traits.translate(d);
-					} else {
+					}else{
 						return regex_traits.translate_nocase(c) == regex_traits.translate_nocase(d);
 					}
 				}
 			}
 		};
 
-		template <typename StrIter>
-		state<StrIter> get_state() const &
+		template <typename StrCharT>
+		state<StrCharT> get_state() const &
 		{
-			return state<StrIter>(*this);
+			return state<StrCharT>(*this);
 		}
 	};
 
 	template <class StrIter, class PatIter>
-	using default_lex_match_state = lex_match_state<StrIter, PatIter, lex_traits<PatIter, '\\', false, false>>&&;
+	using default_lex_match_state = lex_match_state<StrIter, PatIter, lex_traits<typename std::iterator_traits<PatIter>::value_type, '\\', false, false>>&&;
 
 	template <class Iter, class Traits>
 	class lex_cached
@@ -406,10 +403,10 @@ namespace
 		return lex::pattern_iter<Iter, Traits>(pattern_begin, pattern_end, std::forward<Args>(args)...);
 	}
 
-	template <class StrIter, class PatIter, it_value_type<PatIter> EscapeChar, bool Icase, bool Collate, class Receiver, class... Args>
+	template <class StrIter, class PatIter, typename std::iterator_traits<PatIter>::value_type EscapeChar, bool Icase, bool Collate, class Receiver, class... Args>
 	auto get_lex_traits_final(const regex_info &info, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
 	{
-		using traits = lex_traits<PatIter, EscapeChar, Icase, Collate>;
+		using traits = lex_traits<typename std::iterator_traits<PatIter>::value_type, EscapeChar, Icase, Collate>;
 
 		if(info.options & cache_flag)
 		{
@@ -426,7 +423,7 @@ namespace
 		return receiver(lex_match_state<StrIter, PatIter, traits>(pattern, std::forward<Args>(args)...));
 	}
 
-	template <class StrIter, class PatIter, it_value_type<PatIter> EscapeChar, bool Icase, class Receiver, class... Args>
+	template <class StrIter, class PatIter, typename std::iterator_traits<PatIter>::value_type EscapeChar, bool Icase, class Receiver, class... Args>
 	auto get_lex_traits_collate(const regex_info &info, std::regex_constants::syntax_option_type syntax_options, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
 	{
 		if(syntax_options & std::regex_constants::collate)
@@ -437,7 +434,7 @@ namespace
 		}
 	}
 
-	template <class StrIter, class PatIter, it_value_type<PatIter> EscapeChar, class Receiver, class... Args>
+	template <class StrIter, class PatIter, typename std::iterator_traits<PatIter>::value_type EscapeChar, class Receiver, class... Args>
 	auto get_lex_traits_icase(const regex_info &info, std::regex_constants::syntax_option_type syntax_options, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
 	{
 		if(syntax_options & std::regex_constants::icase)

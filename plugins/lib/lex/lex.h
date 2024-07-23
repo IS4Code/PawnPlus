@@ -74,11 +74,11 @@ namespace pg
 {
 	namespace lex
 	{
-		template <typename PatIter>
+		template <typename PatCharT>
 		struct pattern_traits
 		{
 			using locale_type = std::locale;
-			using char_type = typename std::iterator_traits<PatIter>::value_type;
+			using char_type = PatCharT;
 
 			enum : char_type
 			{
@@ -87,10 +87,10 @@ namespace pg
 
 			locale_type locale;
 
-			template <typename StrIter>
+			template <typename StrCharT>
 			struct state
 			{
-				using str_char_type = typename std::iterator_traits<StrIter>::value_type;
+				using str_char_type = StrCharT;
 
 				using uchar_t = typename std::make_unsigned<typename std::common_type<str_char_type, char_type>::type>::type;
 
@@ -191,10 +191,10 @@ namespace pg
 				}
 			};
 
-			template <typename StrIter>
-			state<StrIter> get_state() const &
+			template <typename StrCharT>
+			state<StrCharT> get_state() const &
 			{
-				return state<StrIter>(*this);
+				return state<StrCharT>(*this);
 			}
 
 			locale_type imbue(locale_type loc)
@@ -913,7 +913,7 @@ namespace pg
 			}
 		};
 
-		template <class CharT, typename Traits = pattern_traits<const CharT*>>
+		template <class CharT, typename Traits = pattern_traits<CharT>>
 		struct pattern : public pattern_iter<const CharT*, Traits>
 		{
 			pattern(const CharT *p) : pattern_iter(p, p + std::char_traits<CharT>::length(p))
@@ -998,7 +998,7 @@ namespace pg
 				std::pair<difference_type, difference_type> &pos;
 			};
 
-			template <typename StrCharT, typename PatCharT, typename Traits = pattern_traits<const PatCharT*>>
+			template <typename StrCharT, typename PatCharT, typename Traits = pattern_traits<PatCharT>>
 			using match_state = match_state_iter<const StrCharT*, const PatCharT*, Traits>;
 
 			template <typename StrIter, typename PatIter, typename Traits>
@@ -1008,10 +1008,10 @@ namespace pg
 				using pat_char_type = typename std::iterator_traits<PatIter>::value_type;
 
 				const match_state_iter<StrIter, PatIter, Traits> &ms;
-				const typename Traits::template state<StrIter> traits_state;
+				const typename Traits::template state<str_char_type> traits_state;
 
 			public:
-				matcher(const match_state_iter<StrIter, PatIter, Traits> &ms) : ms(ms), traits_state(ms.p.traits.get_state<StrIter>())
+				matcher(const match_state_iter<StrIter, PatIter, Traits> &ms) : ms(ms), traits_state(ms.p.traits.get_state<str_char_type>())
 				{
 				}
 
