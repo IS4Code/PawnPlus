@@ -93,6 +93,19 @@ namespace
 
 		std::regex_traits<char_type> regex_traits;
 
+		lex_traits_base() = default;
+
+		lex_traits_base(const lex_traits_base &other)
+		{
+			*this = other;
+		}
+
+		lex_traits_base &operator=(const lex_traits_base &other)
+		{
+			regex_traits.imbue(other.regex_traits.getloc());
+			return *this;
+		}
+
 		template <typename StrIter, bool Icase>
 		struct state_base
 		{
@@ -222,45 +235,191 @@ namespace
 
 	template <class StrIter, class PatIter>
 	using default_lex_match_state = lex_match_state<StrIter, PatIter, lex_traits<PatIter, '\\', false, false>>&&;
+	
+	template <class Iter, class Traits>
+	class lex_cached
+	{
+		lex::pattern_iter<Iter, Traits> pattern;
+		bool depends_on_global_locale = false;
+		std::locale global_locale;
+
+	protected:
+		template <class... Args>
+		bool update(Args&&... args)
+		{
+			if(!depends_on_global_locale)
+			{
+				return false;
+			}
+			std::locale new_global;
+			if(global_locale == new_global)
+			{
+				return false;
+			}
+			global_locale = std::move(new_global);
+			init(true, std::forward<Args>(args)...);
+			return true;
+		}
+
+		void init(bool updating, Iter pattern_begin, Iter pattern_end)
+		{
+			encoding enc = parse_encoding_override(pattern_begin, pattern_end);
+
+			if(!updating)
+			{
+				pattern = lex::pattern_iter<Iter, Traits>(pattern_begin, pattern_end);
+			}
+
+			if(updating || enc.is_modified())
+			{
+				// has custom locale or modified properties, or default locale changed
+				pattern.imbue(enc.install());
+			}
+
+			depends_on_global_locale = enc.locale == global_locale;
+		}
+
+	public:
+		const lex::pattern_iter<Iter, Traits> &get_pattern() const
+		{
+			return pattern;
+		}
+	};
+
+	template <class Iter, class Traits>
+	using lex_cached_value = cached_value<lex_cached<Iter, Traits>>;
+
+	template <class Iter, class Traits>
+	static std::unordered_map<std::pair<cell_string, cell>, lex_cached_value<Iter, Traits>> &lex_cache()
+	{
+		static std::unordered_map<std::pair<cell_string, cell>, lex_cached_value<Iter, Traits>> data;
+		return data;
+	}
+	
+	template <class Iter, class Traits, class... KeyArgs>
+	const lex::pattern_iter<Iter, Traits> &get_lex_cached_key(Iter pattern_begin, Iter pattern_end, cell options, KeyArgs&&... keyArgs)
+	{
+		auto &cache = lex_cache<Iter, Traits>();
+		auto result = cache.emplace(
+			std::piecewise_construct,
+			std::forward_as_tuple(
+				std::piecewise_construct,
+				std::forward_as_tuple(std::forward<KeyArgs>(keyArgs)...),
+				std::forward_as_tuple(options & pattern_mask)
+			),
+			std::forward_as_tuple()
+		).first;
+		auto &cached = result->second;
+		try{
+			cached.update(pattern_begin, pattern_end);
+		}catch(...)
+		{
+			cache.erase(result);
+			throw;
+		}
+		return cached.get_pattern();
+	}
+
+	template <class Iter, class Traits>
+	const lex::pattern_iter<Iter, Traits> &get_lex_cached(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options)
+	{
+		if(pattern == nullptr)
+		{
+			// key from range
+			return get_lex_cached_key<Iter, Traits>(pattern_begin, pattern_end, options, pattern_begin, pattern_end);
+		}else{
+			// key from string
+			return get_lex_cached_key<Iter, Traits>(pattern_begin, pattern_end, options, *pattern);
+		}
+	}
+
+	template <class Iter, class Traits>
+	using lex_cached_addr = cached_addr<lex_cached<Iter, Traits>>;
+
+	template <class Iter, class Traits>
+	const lex::pattern_iter<Iter, Traits> &get_lex_cached_addr(Iter pattern_begin, Iter pattern_end, cell options, std::weak_ptr<void> &&mem_handle)
+	{
+		static std::unordered_map<std::tuple<std::intptr_t, std::size_t, cell>, lex_cached_addr<Iter, Traits>> cache;
+		auto result = cache.emplace(
+			std::piecewise_construct,
+			std::forward_as_tuple(
+				reinterpret_cast<std::intptr_t>(&*pattern_begin),
+				std::distance(pattern_begin, pattern_end),
+				options & pattern_mask
+			),
+			std::forward_as_tuple()
+		).first;
+		auto &cached = result->second;
+		try{
+			cached.update(std::move(mem_handle), pattern_begin, pattern_end);
+		}catch(...)
+		{
+			cache.erase(result);
+			throw;
+		}
+		return cached.get_pattern();
+	}
+
+	template <class Iter, class Traits, class... Args>
+	lex::pattern_iter<Iter, Traits> create_lex(Iter pattern_begin, Iter pattern_end, Args&&... args)
+	{
+		encoding enc = parse_encoding_override(pattern_begin, pattern_end);
+		if(enc.is_modified())
+		{
+			// has custom locale or modified properties
+			lex::pattern_iter<Iter, Traits> pattern(pattern_begin, pattern_end, std::forward<Args>(args)...);
+			pattern.imbue(enc.install());
+			return pattern;
+		}
+		return lex::pattern_iter<Iter, Traits>(pattern_begin, pattern_end, std::forward<Args>(args)...);
+	}
 
 	template <class StrIter, class PatIter, it_value_type<PatIter> EscapeChar, bool Icase, bool Collate, class Receiver, class... Args>
-	auto get_lex_traits_final(Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
+	auto get_lex_traits_final(const regex_info &info, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
 	{
 		using traits = lex_traits<PatIter, EscapeChar, Icase, Collate>;
-		lex::pattern_iter<PatIter, traits> pattern(pattern_begin, pattern_end);
+
+		if(info.options & cache_flag)
+		{
+			const lex::pattern_iter<PatIter, traits> &pattern = info.options & cache_addr_flag
+				? get_lex_cached_addr<PatIter, traits>(pattern_begin, pattern_end, info.options, std::move(info.mem_handle))
+				: get_lex_cached<PatIter, traits>(pattern_begin, pattern_end, info.pattern, info.options);
+			return receiver(lex_match_state<StrIter, PatIter, traits>(pattern, std::forward<Args>(args)...));
+		}
+		lex::pattern_iter<PatIter, traits> pattern = create_lex<PatIter, traits>(pattern_begin, pattern_end);
 		return receiver(lex_match_state<StrIter, PatIter, traits>(pattern, std::forward<Args>(args)...));
 	}
 
 	template <class StrIter, class PatIter, it_value_type<PatIter> EscapeChar, bool Icase, class Receiver, class... Args>
-	auto get_lex_traits_collate(std::regex_constants::syntax_option_type syntax_options, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
+	auto get_lex_traits_collate(const regex_info &info, std::regex_constants::syntax_option_type syntax_options, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
 	{
 		if(syntax_options & std::regex_constants::collate)
 		{
-			return get_lex_traits_final<StrIter, PatIter, EscapeChar, Icase, true>(std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
+			return get_lex_traits_final<StrIter, PatIter, EscapeChar, Icase, true>(info, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
 		}else{
-			return get_lex_traits_final<StrIter, PatIter, EscapeChar, Icase, false>(std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
+			return get_lex_traits_final<StrIter, PatIter, EscapeChar, Icase, false>(info, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
 		}
 	}
 
 	template <class StrIter, class PatIter, it_value_type<PatIter> EscapeChar, class Receiver, class... Args>
-	auto get_lex_traits_icase(std::regex_constants::syntax_option_type syntax_options, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
+	auto get_lex_traits_icase(const regex_info &info, std::regex_constants::syntax_option_type syntax_options, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
 	{
 		if(syntax_options & std::regex_constants::icase)
 		{
-			return get_lex_traits_collate<StrIter, PatIter, EscapeChar, true>(syntax_options, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
+			return get_lex_traits_collate<StrIter, PatIter, EscapeChar, true>(info, syntax_options, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
 		}else{
-			return get_lex_traits_collate<StrIter, PatIter, EscapeChar, false>(syntax_options, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
+			return get_lex_traits_collate<StrIter, PatIter, EscapeChar, false>(info, syntax_options, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
 		}
 	}
 
 	template <class StrIter, class PatIter, class Receiver, class... Args>
-	auto get_lex_traits_percent(bool percent_escaped, std::regex_constants::syntax_option_type syntax_options, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
+	auto get_lex_traits_percent(const regex_info &info, std::regex_constants::syntax_option_type syntax_options, Receiver &&receiver, PatIter pattern_begin, PatIter pattern_end, Args&&... args) -> decltype(receiver(std::declval<default_lex_match_state<StrIter, PatIter>>()))
 	{
-		if(percent_escaped)
+		if(info.options & percent_escaped_flag)
 		{
-			return get_lex_traits_icase<StrIter, PatIter, '%'>(syntax_options, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
+			return get_lex_traits_icase<StrIter, PatIter, '%'>(info, syntax_options, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
 		}else{
-			return get_lex_traits_icase<StrIter, PatIter, '\\'>(syntax_options, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
+			return get_lex_traits_icase<StrIter, PatIter, '\\'>(info, syntax_options, std::move(receiver), pattern_begin, pattern_end, std::forward<Args>(args)...);
 		}
 	}
 
@@ -273,8 +432,7 @@ namespace
 
 		lex::basic_match_result_iter<str_iterator> match;
 
-		bool percent_escaped = info.options & percent_escaped_flag;
-		return get_lex_traits_percent<str_iterator, Iter>(percent_escaped, syntax_options, std::move(receiver), pattern_begin, pattern_end, match_options, nosubs, info.begin(), info.string.cend(), match);
+		return get_lex_traits_percent<str_iterator, Iter>(info, syntax_options, std::move(receiver), pattern_begin, pattern_end, match_options, nosubs, info.begin(), info.string.cend(), match);
 	}
 }
 

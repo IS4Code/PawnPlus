@@ -245,35 +245,19 @@ namespace
 		}
 	};
 
-	class regex_cached_value : public regex_cached
-	{
-		bool initialized = false;
-
-	public:
-		template <class... Args>
-		bool update(Args&&... args)
-		{
-			if(!initialized)
-			{
-				regex_cached::init(false, std::forward<Args>(args)...);
-				initialized = true;
-				return true;
-			}
-			return regex_cached::update(std::forward<Args>(args)...);
-		}
-	};
+	using regex_cached_value = cached_value<regex_cached>;
 
 	std::unordered_map<std::pair<cell_string, cell>, regex_cached_value> regex_cache;
 
 	template <class Iter, class... KeyArgs>
-	const cell_regex &get_cached_key(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options, std::regex_constants::syntax_option_type syntax_options, KeyArgs&&... keyArgs)
+	const cell_regex &get_regex_cached_key(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options, std::regex_constants::syntax_option_type syntax_options, KeyArgs&&... keyArgs)
 	{
 		auto result = regex_cache.emplace(
 			std::piecewise_construct,
 			std::forward_as_tuple(
 				std::piecewise_construct,
 				std::forward_as_tuple(std::forward<KeyArgs>(keyArgs)...),
-				std::forward_as_tuple(options & 255)
+				std::forward_as_tuple(options & pattern_mask)
 			),
 			std::forward_as_tuple()
 		).first;
@@ -289,57 +273,31 @@ namespace
 	}
 
 	template <class Iter>
-	const cell_regex &get_cached(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
+	const cell_regex &get_regex_cached(Iter pattern_begin, Iter pattern_end, const cell_string *pattern, cell options, std::regex_constants::syntax_option_type syntax_options)
 	{
 		if(pattern == nullptr)
 		{
 			// key from range
-			return get_cached_key(pattern_begin, pattern_end, pattern, options, syntax_options, pattern_begin, pattern_end);
+			return get_regex_cached_key(pattern_begin, pattern_end, pattern, options, syntax_options, pattern_begin, pattern_end);
 		}else{
 			// key from string
-			return get_cached_key(pattern_begin, pattern_end, pattern, options, syntax_options, *pattern);
+			return get_regex_cached_key(pattern_begin, pattern_end, pattern, options, syntax_options, *pattern);
 		}
 	}
 
-	class regex_cached_addr : public regex_cached
-	{
-		std::weak_ptr<void> mem_handle;
+	using regex_cached_addr = cached_addr<regex_cached>;
 
-	public:
-		template <class... Args>
-		bool update(std::weak_ptr<void> &&mem_handle, Args&&... args)
-		{
-			if(this->mem_handle.owner_before(mem_handle) || mem_handle.owner_before(this->mem_handle))
-			{
-				// different address
-				this->mem_handle = std::move(mem_handle);
-				// try updating the global locale first
-				if(!regex_cached::update(std::forward<Args>(args)...))
-				{
-					// but init anyway if locales match
-					init(false, std::forward<Args>(args)...);
-				}
-				return true;
-			}
-			if(!regex_cached::update(std::forward<Args>(args)...))
-			{
-				return false;
-			}
-			this->mem_handle = std::move(mem_handle);
-			return true;
-		}
-	};
+	std::unordered_map<std::tuple<std::intptr_t, std::size_t, cell>, regex_cached_addr> regex_cache_addr;
 
 	template <class Iter>
-	const cell_regex &get_cached_addr(Iter pattern_begin, Iter pattern_end, cell options, std::regex_constants::syntax_option_type syntax_options, std::weak_ptr<void> &&mem_handle)
+	const cell_regex &get_regex_cached_addr(Iter pattern_begin, Iter pattern_end, cell options, std::regex_constants::syntax_option_type syntax_options, std::weak_ptr<void> &&mem_handle)
 	{
-		static std::unordered_map<std::tuple<std::intptr_t, std::size_t, cell>, regex_cached_addr> regex_cache;
-		auto result = regex_cache.emplace(
+		auto result = regex_cache_addr.emplace(
 			std::piecewise_construct,
 			std::forward_as_tuple(
 				reinterpret_cast<std::intptr_t>(&*pattern_begin),
-				pattern_end - pattern_begin,
-				options & 255
+				std::distance(pattern_begin, pattern_end),
+				options & pattern_mask
 			),
 			std::forward_as_tuple()
 		).first;
@@ -348,7 +306,7 @@ namespace
 			cached.update(std::move(mem_handle), pattern_begin, pattern_end, nullptr, syntax_options, options & percent_escaped_flag);
 		}catch(...)
 		{
-			regex_cache.erase(result);
+			regex_cache_addr.erase(result);
 			throw;
 		}
 		return cached.get_regex();
@@ -414,8 +372,8 @@ namespace
 		if(info.options & cache_flag)
 		{
 			const cell_regex &regex = info.options & cache_addr_flag
-				? get_cached_addr(pattern_begin, pattern_end, info.options, syntax_options, std::move(info.mem_handle))
-				: get_cached(pattern_begin, pattern_end, info.pattern, info.options, syntax_options);
+				? get_regex_cached_addr(pattern_begin, pattern_end, info.options, syntax_options, std::move(info.mem_handle))
+				: get_regex_cached(pattern_begin, pattern_end, info.pattern, info.options, syntax_options);
 			return receiver(match_state<str_iterator>(regex, match_options, info.options & percent_escaped_flag, info.begin(), info.string.cend(), match));
 		}
 		cell_regex regex = create_regex(pattern_begin, pattern_end, info.pattern, syntax_options, info.options & percent_escaped_flag);

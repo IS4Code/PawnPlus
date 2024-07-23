@@ -70,15 +70,65 @@ namespace std
 	};
 }
 
-#include "regex_std.h"
-#include "regex_lex.h"
-
 constexpr const cell syntax_mask = 7;
+constexpr const cell pattern_mask = 255;
 constexpr const cell percent_escaped_flag = 128;
 constexpr const cell no_prev_avail_flag = 32768;
 constexpr const cell cache_flag = 4194304;
 constexpr const cell cache_addr_flag = 8388608;
-constexpr const cell lex_lang = 6;
+constexpr const cell lex_syntax = 6;
+
+template <class Base>
+class cached_value : public Base
+{
+	bool initialized = false;
+
+public:
+	template <class... Args>
+	bool update(Args&&... args)
+	{
+		if(!initialized)
+		{
+			Base::init(false, std::forward<Args>(args)...);
+			initialized = true;
+			return true;
+		}
+		return Base::update(std::forward<Args>(args)...);
+	}
+};
+
+template <class Base>
+class cached_addr : public Base
+{
+	std::weak_ptr<void> mem_handle;
+
+public:
+	template <class... Args>
+	bool update(std::weak_ptr<void> &&mem_handle, Args&&... args)
+	{
+		if(this->mem_handle.owner_before(mem_handle) || mem_handle.owner_before(this->mem_handle))
+		{
+			// different address
+			this->mem_handle = std::move(mem_handle);
+			// try updating the global locale first
+			if(!Base::update(std::forward<Args>(args)...))
+			{
+				// but init anyway if locales match
+				Base::init(false, std::forward<Args>(args)...);
+			}
+			return true;
+		}
+		if(!Base::update(std::forward<Args>(args)...))
+		{
+			return false;
+		}
+		this->mem_handle = std::move(mem_handle);
+		return true;
+	}
+};
+
+#include "regex_std.h"
+#include "regex_lex.h"
 
 static void regex_options(cell options, std::regex_constants::syntax_option_type &syntax, std::regex_constants::match_flag_type &match)
 {
@@ -102,7 +152,7 @@ static void regex_options(cell options, std::regex_constants::syntax_option_type
 		case 5:
 			syntax = std::regex_constants::egrep;
 			break;
-		case lex_lang:
+		case lex_syntax:
 			syntax = {};
 			break;
 		default:
@@ -275,7 +325,7 @@ auto get_regex_state(Iter pattern_begin, Iter pattern_end, const regex_info &inf
 	{
 		match_options |= std::regex_constants::match_prev_avail;
 	}
-	if((info.options & syntax_mask) == lex_lang)
+	if((info.options & syntax_mask) == lex_syntax)
 	{
 		return get_lex(pattern_begin, pattern_end, info, syntax_options, match_options, std::move(receiver));
 	}else{

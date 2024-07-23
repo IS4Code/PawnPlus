@@ -760,6 +760,8 @@ namespace pg
 
 			Traits traits;
 
+			pattern_iter() = default;
+
 			pattern_iter(const Iter begin, const Iter end)
 				: end(end)
 				, anchor(begin != end && *begin == '^')
