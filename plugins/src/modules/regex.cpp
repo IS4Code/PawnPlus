@@ -124,6 +124,9 @@ public:
 	}
 };
 
+template <class Iter>
+encoding parse_encoding_override(Iter &begin, Iter end);
+
 #include "regex_std.h"
 #include "regex_lex.h"
 

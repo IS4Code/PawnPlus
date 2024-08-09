@@ -306,6 +306,8 @@ namespace pg
 			template <typename, typename, typename>
 			friend class detail::matcher;
 
+			using base = std::pair<Iter, Iter>;
+
 			enum : char {
 				unfinished,
 				position
@@ -314,7 +316,7 @@ namespace pg
 			Iter init() const noexcept(std::is_nothrow_move_constructible<Iter>::value)
 			{
 				assert(first_set);
-				return first;
+				return base::first;
 			}
 
 			void init(Iter i)
@@ -323,16 +325,16 @@ namespace pg
 				difference_type d = 0;
 				if(matched)
 				{
-					d = std::distance(first, second);
+					d = std::distance(base::first, base::second);
 				}
-				first = i;
-				second = std::next(i, d);
+				base::first = i;
+				base::second = std::next(i, d);
 			}
 
 			difference_type len() const
 			{
 				assert(first_set && matched);
-				return std::distance(first, second);
+				return std::distance(base::first, base::second);
 			}
 
 			void len(difference_type l)
@@ -341,20 +343,20 @@ namespace pg
 				assert(l >= 0);
 				state = position;
 				matched = true;
-				second = std::next(first, l);
+				base::second = std::next(base::first, l);
 			}
 
 			void mark_unfinished() noexcept(std::is_nothrow_copy_assignable<Iter>::value)
 			{
 				state = unfinished;
-				second = first;
+				base::second = base::first;
 				matched = false;
 			}
 
 			void mark_position() noexcept(std::is_nothrow_copy_assignable<Iter>::value)
 			{
 				state = position;
-				second = first;
+				base::second = base::first;
 				matched = false;
 			}
 
@@ -366,7 +368,7 @@ namespace pg
 			Iter begin() const noexcept(std::is_nothrow_move_constructible<Iter>::value)
 			{
 				assert(first_set);
-				return first;
+				return base::first;
 			}
 
 			Iter end() const noexcept(std::is_nothrow_move_constructible<Iter>::value)
@@ -375,7 +377,7 @@ namespace pg
 				{
 					return begin();
 				}
-				return second;
+				return base::second;
 			}
 
 			bool first_set = false;
@@ -384,7 +386,7 @@ namespace pg
 			string_type str() const
 			{
 				if(!matched) return {};
-				return {first, second};
+				return {base::first, base::second};
 			}
 
 			operator string_type() const
@@ -399,7 +401,7 @@ namespace pg
 				{
 					return detail::char_compare(begin, begin, begin, end);
 				}
-				return detail::char_compare(first, second, begin, end);
+				return detail::char_compare(base::first, base::second, begin, end);
 			}
 
 			template <typename It>
@@ -411,7 +413,7 @@ namespace pg
 					{
 						return 0;
 					}
-					return compare(first, first);
+					return compare(base::first, base::first);
 				}
 				return compare(m.first, m.second);
 			}
@@ -428,7 +430,7 @@ namespace pg
 
 			difference_type length() const
 			{
-				return std::distance(first, second);
+				return std::distance(base::first, base::second);
 			}
 
 			template <typename It>
@@ -918,27 +920,27 @@ namespace pg
 		template <class CharT, typename Traits = pattern_traits<CharT>>
 		struct pattern : public pattern_iter<const CharT*, Traits>
 		{
-			pattern(const CharT *p) : pattern_iter(p, p + std::char_traits<CharT>::length(p))
+			pattern(const CharT *p) : pattern_iter<const CharT*, Traits>(p, p + std::char_traits<CharT>::length(p))
 			{
 			}
 
-			pattern(const CharT *p, size_t l) : pattern_iter(p, p + l)
+			pattern(const CharT *p, size_t l) : pattern_iter<const CharT*, Traits>(p, p + l)
 			{
 			}
 
 			template <size_t N>
-			pattern(const CharT(&p)[N]) : pattern_iter(std::begin(p), std::end(p))
+			pattern(const CharT(&p)[N]) : pattern_iter<const CharT*, Traits>(std::begin(p), std::end(p))
 			{
 			}
 
-			template <typename Traits, typename Allocator>
-			pattern(const std::basic_string<CharT, Traits, Allocator> &s) : pattern_iter(&s[0], &s[0] + s.size())
+			template <typename StrTraits, typename StrAllocator>
+			pattern(const std::basic_string<CharT, StrTraits, StrAllocator> &s) : pattern_iter<const CharT*, Traits>(&s[0], &s[0] + s.size())
 			{
 			}
 
 #if defined(__cpp_lib_string_view)
 			template <typename Traits>
-			pattern(const std::basic_string_view<CharT, Traits> &s) : pattern_iter(&s[0], &s[0] + s.size())
+			pattern(const std::basic_string_view<CharT, Traits> &s) : pattern_iter<const CharT*, Traits>(&s[0], &s[0] + s.size())
 			{
 			}
 #endif
@@ -1013,7 +1015,7 @@ namespace pg
 				const typename Traits::template state<str_char_type> traits_state;
 
 			public:
-				matcher(const match_state_iter<StrIter, PatIter, Traits> &ms) : ms(ms), traits_state(ms.p.traits.get_state<str_char_type>())
+				matcher(const match_state_iter<StrIter, PatIter, Traits> &ms) : ms(ms), traits_state(ms.p.traits.template get_state<str_char_type>())
 				{
 				}
 
@@ -1438,31 +1440,31 @@ namespace pg
 			struct string_context : string_context_iter<const CharT*>
 			{
 				string_context(const CharT *s) noexcept
-					: string_context_iter(s, s + std::char_traits<CharT>::length(s))
+					: string_context_iter<const CharT*>(s, s + std::char_traits<CharT>::length(s))
 				{
 				}
 
 				string_context(const CharT *s, size_t l) noexcept
-					: string_context_iter(s, s + l)
+					: string_context_iter<const CharT*>(s, s + l)
 				{
 				}
 
 				template <size_t N>
 				string_context(const CharT(&s)[N]) noexcept
-					: string_context_iter(std::begin(s), std::end(s))
+					: string_context_iter<const CharT*>(std::begin(s), std::end(s))
 				{
 				}
 
 				template <typename Traits, typename Allocator>
 				string_context(const std::basic_string<CharT, Traits, Allocator> &s) noexcept
-					: string_context_iter(&s[0], &s[0] + s.size())
+					: string_context_iter<const CharT*>(&s[0], &s[0] + s.size())
 				{
 				}
 
 #if defined(__cpp_lib_string_view)
 				template <typename Traits>
 				string_context(const std::basic_string_view<CharT, Traits> &s) noexcept
-					: string_context_iter(&s[0], &s[0] + s.size())
+					: string_context_iter<const CharT*>(&s[0], &s[0] + s.size())
 				{
 				}
 #endif
