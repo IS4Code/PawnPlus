@@ -222,6 +222,12 @@ namespace Hooks
 	{
 		int ret = base_func(amx, amx_addr, phys_addr);
 
+		if(amx_addr == 0)
+		{
+			// coming from amx_GetData
+			return ret;
+		}
+
 		if(ret == AMX_ERR_MEMACCESS)
 		{
 			if(strings::pool.is_null_address(amx, amx_addr))
@@ -248,7 +254,8 @@ namespace Hooks
 			// so checking the actual cell value is necessary,
 			// but there is a chance that it will interpret
 			// a number as a string. Better have it disabled by default.
-			if(strings::pool.is_null_address(amx, **phys_addr))
+			amx_addr = **phys_addr;
+			if(strings::pool.is_null_address(amx, amx_addr))
 			{
 				strings::null_value2[0] = 1;
 				strings::null_value2[1] = 0;
