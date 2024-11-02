@@ -407,7 +407,6 @@ private:
 				}
 				case '(':
 				{
-					auto old = begin;
 					++begin;
 					auto inner = parse_outer_expression(amx, begin, end, ')');
 					++begin;
@@ -1116,7 +1115,13 @@ private:
 					{
 						break;
 					}
+					auto old = begin;
 					++begin;
+					if(begin != end && *begin == '&')
+					{
+						begin = old;
+						return result;
+					}
 					auto inner = parse_operand(amx, begin, end, endchar);
 					if(!inner)
 					{
@@ -1131,7 +1136,13 @@ private:
 					{
 						break;
 					}
+					auto old = begin;
 					++begin;
+					if(begin != end && *begin == '|')
+					{
+						begin = old;
+						return result;
+					}
 					auto inner = parse_operand(amx, begin, end, endchar);
 					if(!inner)
 					{
@@ -1196,7 +1207,6 @@ private:
 					{
 						break;
 					}
-					auto old = begin;
 					++begin;
 					if(begin == end || *begin != '&')
 					{
@@ -1213,7 +1223,6 @@ private:
 					{
 						break;
 					}
-					auto old = begin;
 					++begin;
 					if(begin == end || *begin != '|')
 					{
