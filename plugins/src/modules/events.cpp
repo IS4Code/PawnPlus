@@ -91,6 +91,11 @@ public:
 		return handlers.end();
 	}
 
+	void push_front(std::unique_ptr<event_info> &&obj)
+	{
+		handlers.insert(handlers.begin(), std::move(obj));
+	}
+
 	void push_back(std::unique_ptr<event_info> &&obj)
 	{
 		handlers.push_back(std::move(obj));
@@ -172,7 +177,12 @@ namespace events
 		}
 		auto ptr = std::unique_ptr<event_info>(new event_info(flags, amx, function, format, params, numargs));
 		cell id = reinterpret_cast<cell>(ptr.get());
-		list->push_back(std::move(ptr));
+		if(flags & 8)
+		{
+			list->push_front(std::move(ptr));
+		}else{
+			list->push_back(std::move(ptr));
+		}
 		info.handler_ids[id] = index;
 		return id;
 	}

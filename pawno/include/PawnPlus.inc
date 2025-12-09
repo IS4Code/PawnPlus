@@ -210,6 +210,7 @@ enum handler_flags
     handler_return = 1,
     handler_args = 2,
     handler_inverted_return = 4,
+    handler_add_first = 8,
 }
 
 const Guard:INVALID_GUARD = Guard:0;
