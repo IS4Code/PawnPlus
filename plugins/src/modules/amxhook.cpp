@@ -56,6 +56,7 @@ class hooked_func
 	std::vector<std::unique_ptr<hook_handler>> handlers;
 	size_t handler_level = -1;
 	std::vector<cell> removed_handlers;
+	bool use_trampoline;
 
 public:
 	hooked_func(std::string name, AMX_NATIVE native, AMX_NATIVE hook, size_t index);
@@ -77,6 +78,8 @@ constexpr const size_t max_hooked_natives = 1024;
 std::array<std::unique_ptr<hooked_func>, max_hooked_natives> native_hooks;
 std::unordered_map<AMX_NATIVE, size_t> hooks_map;
 std::unordered_map<cell, size_t> hook_handlers;
+
+bool amxhook::use_trampoline = true;
 
 cell native_hook_handler(size_t index, AMX *amx, cell *params)
 {
@@ -176,7 +179,7 @@ bool amxhook::remove_hook(cell id)
 	return true;
 }
 
-hooked_func::hooked_func(std::string name, AMX_NATIVE native, AMX_NATIVE hook, size_t index) : name(name), native(native), index(index)
+hooked_func::hooked_func(std::string name, AMX_NATIVE native, AMX_NATIVE hook, size_t index) : name(name), native(native), index(index), use_trampoline(amxhook::use_trampoline)
 {
 	this->hook = subhook_new(reinterpret_cast<void*>(native), reinterpret_cast<void*>(hook), {});
 	subhook_install(this->hook);
@@ -233,7 +236,14 @@ cell hooked_func::invoke(AMX *amx, cell *params)
 		{
 			if(handler_level == 0)
 			{
-				result = reinterpret_cast<AMX_NATIVE>(subhook_get_trampoline(hook))(amx, params);
+				if(use_trampoline)
+				{
+					result = reinterpret_cast<AMX_NATIVE>(subhook_get_trampoline(hook))(amx, params);
+				}else{
+					subhook_remove(hook);
+					result = native(amx, params);
+					subhook_install(hook);
+				}
 				ok = true;
 			}else{
 				handler_level--;

@@ -83,6 +83,14 @@ namespace Natives
 		return orig;
 	}
 
+	// native bool:pp_native_hook_recursive(bool:recursive);
+	AMX_DEFINE_NATIVE_TAG(pp_native_hook_recursive, 1, bool)
+	{
+		bool orig = amxhook::use_trampoline;
+		amxhook::use_trampoline = params[1];
+		return orig;
+	}
+
 	// native pp_tick();
 	AMX_DEFINE_NATIVE_TAG(pp_tick, 0, cell)
 	{
@@ -580,6 +588,7 @@ static AMX_NATIVE_INFO native_list[] =
 	AMX_DECLARE_NATIVE(pp_hook_check_ref_args),
 	AMX_DECLARE_NATIVE(pp_public_min_index),
 	AMX_DECLARE_NATIVE(pp_use_funcidx),
+	AMX_DECLARE_NATIVE(pp_native_hook_recursive),
 	AMX_DECLARE_NATIVE(pp_tick),
 	AMX_DECLARE_NATIVE(pp_num_tasks),
 	AMX_DECLARE_NATIVE(pp_num_local_strings),

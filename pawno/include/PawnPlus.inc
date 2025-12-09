@@ -128,6 +128,7 @@ native pp_max_recursion(level);
 native bool:pp_toggle_exec_hook(bool:toggle);
 native pp_public_min_index(index);
 native bool:pp_use_funcidx(bool:use);
+native bool:pp_native_hook_recursive(bool:recursive);
 
 native unit:pp_tick();
 native pp_num_tasks();
