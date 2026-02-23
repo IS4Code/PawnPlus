@@ -487,6 +487,12 @@ namespace strings
 				}
 			}while(format_end != info.fmt_begin);
 
+			if(!offset_found && begin_after_escaped == info.fmt_end)
+			{
+				// revert if no + or - found
+				format_end = info.fmt_end;
+			}
+
 			// before escaped suffix
 			auto format_initial_length = format_end - info.fmt_begin;
 			std::string format(format_initial_length + (info.fmt_end - begin_after_escaped), '\0');
